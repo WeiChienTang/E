@@ -1,10 +1,10 @@
-@* 採購單品項管理組件 - 繼承 BaseDetailTableComponent，只保留採購特有邏輯 *@
-@inherits BaseDetailTableComponent<PurchaseOrder, PurchaseOrderDetail, PurchaseOrderTable.ProductItem>
+﻿@* 採購單品項管理組件 - 繼承 BaseDetailTableComponent，只保留採購特有邏輯 *@
+@inherits BaseDetailTableComponent<PurchaseOrder, PurchaseOrderDetail, PurchaseOrderTable.ItemItem>
 
 @using ERPCore2.Models.Enums
 @inject IStringLocalizer<SharedResource> L
 @inject IPurchaseOrderDetailService PurchaseOrderDetailService
-@inject IProductSupplierService ProductSupplierService
+@inject IItemSupplierService ItemSupplierService
 @inject ISystemParameterService SystemParameterService
 @inject INotificationService NotificationService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
@@ -26,12 +26,12 @@ else
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <GenericInteractiveTableComponent @ref="tableComponent"
-                                      TItem="ProductItem"
+                                      TItem="ItemItem"
                                       OnDataChanged="@NotifyDetailsChangedAsync"
                                       Items="@Items"
                                       ColumnDefinitions="@GetColumnDefinitions()"
                                       IsReadOnly="@IsReadOnly"
-                                      EmptyMessage="@L["Message.NoProducts"]"
+                                      EmptyMessage="@L["Message.NoItems"]"
                                       ShowBuiltInActions="true"
                                       ShowBuiltInDeleteButton="false"
                                       ActionsColumnWidth = "60px"
@@ -40,7 +40,7 @@ else
                                       EnableAutoEmptyRow="true"
                                       AllowAddNewRow="@(!IsReadOnly)"
                                       DataLoadCompleted="@_dataLoadCompleted"
-                                      CreateEmptyItem="@(() => new ProductItem())" />
+                                      CreateEmptyItem="@(() => new ItemItem())" />
         </div>
 
         <div class="card-footer">
@@ -67,27 +67,26 @@ else
 <!-- 相關單據查看 Modal -->
 <RelatedDocumentsModalComponent IsVisible="@showRelatedDocumentsModal"
                                IsVisibleChanged="@((bool visible) => showRelatedDocumentsModal = visible)"
-                               ProductName="@selectedProductName"
+                               ItemName="@selectedItemName"
                                RelatedDocuments="@relatedDocuments"
                                IsLoading="@isLoadingRelatedDocuments"
                                OnDocumentClick="@HandleRelatedDocumentClick" />
 
 @code {
     // ===== 採購特有參數 =====
-
-    [Parameter] public List<Product> Products { get; set; } = new List<Product>();
+    [Parameter] public List<Item> ItemEntities { get; set; } = new List<Item>();
     [Parameter] public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
     [Parameter] public EventCallback<(RelatedDocumentType type, int id)> OnOpenRelatedDocument { get; set; }
 
     // ===== 廠商已知品項（供應品項目錄）=====
-    private HashSet<int> _supplierKnownProductIds = new();
+    private HashSet<int> _supplierKnownItemIds = new();
 
     // ===== 智能下單 =====
     private bool _hasLastPurchaseRecord = false;
 
     // ===== 相關單據查看 =====
     private bool showRelatedDocumentsModal = false;
-    private string selectedProductName = string.Empty;
+    private string selectedItemName = string.Empty;
     private List<RelatedDocument>? relatedDocuments = null;
     private bool isLoadingRelatedDocuments = false;
 
@@ -97,7 +96,7 @@ else
     // ===== BaseDetailTableComponent 抽象方法實作 =====
 
     /// <summary>
-    /// 將 ExistingDetails (PurchaseOrderDetail) 對應到 ProductItem 列表
+    /// 將 ExistingDetails (PurchaseOrderDetail) 對應到 ItemItem 列表
     /// </summary>
     protected override async Task LoadItemsFromDetailsAsync()
     {
@@ -116,14 +115,14 @@ else
 
         foreach (var detail in ExistingDetails)
         {
-            var product = Products.FirstOrDefault(p => p.Id == detail.ProductId);
+            var product = ItemEntities.FirstOrDefault(p => p.Id == detail.ItemId);
             if (product == null) continue;
 
-            var item = new ProductItem
+            var item = new ItemItem
             {
-                SelectedProduct = product,
-                SelectedProductId = detail.ProductId,
-                ProductSearchValue = $"[{product.Code}] {product.Name}",
+                SelectedItem = product,
+                SelectedItemId = detail.ItemId,
+                ItemSearchValue = $"[{product.Code}] {product.Name}",
                 Quantity = detail.OrderQuantity,
                 ReceivedQuantity = detail.ReceivedQuantity,
                 Price = detail.UnitPrice,
@@ -147,13 +146,13 @@ else
         => Items.Any(p => !DetailLockHelper.CanDeleteItem(p, out _, checkReceiving: true));
 
     /// <summary>
-    /// 將 ProductItem 轉換回 PurchaseOrderDetail 列表
+    /// 將 ItemItem 轉換回 PurchaseOrderDetail 列表
     /// </summary>
     protected override List<PurchaseOrderDetail> ConvertItemsToDetails()
     {
         var details = new List<PurchaseOrderDetail>();
 
-        foreach (var item in Items.Where(x => x.SelectedProduct != null))
+        foreach (var item in Items.Where(x => x.SelectedItem != null))
         {
             PurchaseOrderDetail detail;
 
@@ -168,7 +167,7 @@ else
                     detail.PurchaseOrderId = MainEntity.Id;
             }
 
-            detail.ProductId = item.SelectedProduct!.Id;
+            detail.ItemId = item.SelectedItem!.Id;
             detail.OrderQuantity = item.Quantity;
             detail.ReceivedQuantity = item.ReceivedQuantity;
             detail.UnitPrice = item.Price;
@@ -191,9 +190,9 @@ else
     /// </summary>
     protected override async Task OnCounterpartyChangedAsync()
     {
-        _supplierKnownProductIds.Clear();
+        _supplierKnownItemIds.Clear();
         if (SelectedSupplierId.HasValue && SelectedSupplierId.Value > 0)
-            await LoadSupplierKnownProductsAsync(SelectedSupplierId.Value);
+            await LoadSupplierKnownItemsAsync(SelectedSupplierId.Value);
     }
 
     /// <summary>
@@ -206,16 +205,16 @@ else
 
     // ===== 私有初始化方法 =====
 
-    private async Task LoadSupplierKnownProductsAsync(int supplierId)
+    private async Task LoadSupplierKnownItemsAsync(int supplierId)
     {
         try
         {
-            var bindings = await ProductSupplierService.GetBySupplierIdAsync(supplierId);
-            _supplierKnownProductIds = bindings.Select(b => b.ProductId).ToHashSet();
+            var bindings = await ItemSupplierService.GetBySupplierIdAsync(supplierId);
+            _supplierKnownItemIds = bindings.Select(b => b.ItemId).ToHashSet();
         }
         catch
         {
-            _supplierKnownProductIds = new HashSet<int>();
+            _supplierKnownItemIds = new HashSet<int>();
         }
     }
 
@@ -247,69 +246,69 @@ else
         // 品項選擇欄位 - 觸發欄位
         columns.Add(new()
         {
-            Title = L["Column.ProductCodeName"],
-            PropertyName = "ProductSearchValue",
-            EmptyCheckPropertyName = "SelectedProduct",
+            Title = L["Column.ItemCodeName"],
+            PropertyName = "ItemSearchValue",
+            EmptyCheckPropertyName = "SelectedItem",
             TriggerEmptyRowOnFilled = true,
             ColumnType = InteractiveColumnType.SearchableSelect,
             Width = "250px",
-            Tooltip = L["Tooltip.PurchaseProductSearch"].ToString(),
-            Placeholder = L["Placeholder.PurchaseProductSearch"].ToString(),
-            SearchValuePropertyName = nameof(ProductItem.ProductSearchValue),
-            FilteredItemsPropertyName = nameof(ProductItem.FilteredProducts),
-            ShowDropdownPropertyName = nameof(ProductItem.ShowProductDropdown),
-            SelectedIndexPropertyName = nameof(ProductItem.ProductSelectedIndex),
+            Tooltip = L["Tooltip.PurchaseItemSearch"].ToString(),
+            Placeholder = L["Placeholder.PurchaseItemSearch"].ToString(),
+            SearchValuePropertyName = nameof(ItemItem.ItemSearchValue),
+            FilteredItemsPropertyName = nameof(ItemItem.FilteredItems),
+            ShowDropdownPropertyName = nameof(ItemItem.ShowItemDropdown),
+            SelectedIndexPropertyName = nameof(ItemItem.ItemSelectedIndex),
             ItemDisplayFormatter = (item) =>
             {
-                var product = (Product)item;
-                var prefix = _supplierKnownProductIds.Contains(product.Id) ? "★ " : "";
+                var product = (Item)item;
+                var prefix = _supplierKnownItemIds.Contains(product.Id) ? "★ " : "";
                 return $"{prefix}[{product.Code}] {product.Name}";
             },
             IsDisabledFunc = item =>
             {
-                var productItem = (ProductItem)item;
+                var productItem = (ItemItem)item;
                 return IsReadOnly || !DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true);
             },
             TooltipFunc = item =>
             {
-                var productItem = (ProductItem)item;
+                var productItem = (ItemItem)item;
                 return !DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true)
-                    ? L["Message.ProductHasReceiving"].ToString() : null;
+                    ? L["Message.ItemHasReceiving"].ToString() : null;
             },
             OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
             {
                 var (item, searchValue) = tuple;
-                OnProductSearchChanged((ProductItem)item, searchValue);
+                OnItemSearchChanged((ItemItem)item, searchValue);
             }),
             OnItemSelected = EventCallback.Factory.Create<(object, object?)>(this, async (tuple) =>
             {
                 var (item, selectedItem) = tuple;
-                await OnProductSelected((ProductItem)item, (Product?)selectedItem);
+                await OnItemSelected((ItemItem)item, (Item?)selectedItem);
             }),
             OnInputFocus = EventCallback.Factory.Create<object>(this, (item) =>
             {
-                var productItem = (ProductItem)item;
-                var availableProducts = GetAvailableProducts();
-                productItem.FilteredProducts = availableProducts.Take(20).ToList();
-                productItem.ShowProductDropdown = true;
-                productItem.ProductSelectedIndex = -1;
+                var productItem = (ItemItem)item;
+                var availableItems = GetAvailableItems();
+                productItem.FilteredItems = availableItems.Take(20).ToList();
+                productItem.ShowItemDropdown = true;
+                productItem.ItemSelectedIndex = -1;
                 StateHasChanged();
             }),
             OnInputBlur = EventCallback.Factory.Create<object>(this, (item) =>
             {
                 Task.Delay(200).ContinueWith(_ =>
                 {
-                    var productItem = (ProductItem)item;
-                    productItem.ShowProductDropdown = false;
+                    var productItem = (ItemItem)item;
+                    productItem.ShowItemDropdown = false;
                     InvokeAsync(StateHasChanged);
                 });
             }),
             EnableKeyboardNavigation = true,
-            GetDropdownItems = (item) => ((ProductItem)item).FilteredProducts,
-            GetSelectedIndex = (item) => ((ProductItem)item).ProductSelectedIndex,
-            SetSelectedIndex = (item, index) => ((ProductItem)item).ProductSelectedIndex = index,
-            GetShowDropdown = (item) => ((ProductItem)item).ShowProductDropdown,
-            SetShowDropdown = (item, show) => ((ProductItem)item).ShowProductDropdown = show,
+            GetDropdownItems = (item) => ((ItemItem)item).FilteredItems,
+            GetSelectedIndex = (item) => ((ItemItem)item).ItemSelectedIndex,
+            SetSelectedIndex = (item, index) => ((ItemItem)item).ItemSelectedIndex = index,
+            GetShowDropdown = (item) => ((ItemItem)item).ShowItemDropdown,
+            SetShowDropdown = (item, show) => ((ItemItem)item).ShowItemDropdown = show,
             MaxDisplayItems = 20
         });
 
@@ -323,18 +322,18 @@ else
             Tooltip = L["Tooltip.PurchaseQuantity"].ToString(),
             IsDisabledFunc = item =>
             {
-                var productItem = (ProductItem)item;
+                var productItem = (ItemItem)item;
                 return !DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true);
             },
             TooltipFunc = item =>
             {
-                var productItem = (ProductItem)item;
+                var productItem = (ItemItem)item;
                 return !DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true)
                     ? L["Message.QuantityHasReceiving"].ToString() : null;
             },
             CustomTemplate = item =>
             {
-                var productItem = (ProductItem)item;
+                var productItem = (ItemItem)item;
                 var isLocked = !DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true);
                 if (isLocked || IsReadOnly)
                 {
@@ -364,7 +363,7 @@ else
             Tooltip = L["Tooltip.ReceivedQuantity"].ToString(),
             DisplayFormatter = item =>
             {
-                if (item is not ProductItem productItem) return "-";
+                if (item is not ItemItem productItem) return "-";
                 return string.IsNullOrEmpty(productItem.UnitName)
                     ? productItem.ReceivedQuantity.ToString()
                     : $"{productItem.ReceivedQuantity} {productItem.UnitName}";
@@ -382,12 +381,12 @@ else
             Tooltip = L["Tooltip.PurchasePrice"].ToString(),
             IsDisabledFunc = item =>
             {
-                var productItem = (ProductItem)item;
+                var productItem = (ItemItem)item;
                 return !DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true);
             },
             CustomTemplate = item =>
             {
-                var productItem = (ProductItem)item;
+                var productItem = (ItemItem)item;
                 var isLocked = !DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true);
                 if (isLocked || IsReadOnly)
                 {
@@ -416,7 +415,7 @@ else
                 Tooltip = L["Tooltip.TaxRatePercent"].ToString(),
                 CustomTemplate = item =>
                 {
-                    var productItem = (ProductItem)item;
+                    var productItem = (ItemItem)item;
                     var isLocked = !DetailLockHelper.CanDeleteItem(productItem, out _, checkReceiving: true);
                     if (isLocked || IsReadOnly)
                     {
@@ -446,7 +445,7 @@ else
             Tooltip = GetSubtotalTooltip(),
             DisplayFormatter = item =>
             {
-                if (item is not ProductItem productItem) return "-";
+                if (item is not ItemItem productItem) return "-";
                 var subtotal = CalculateItemSubtotal(productItem);
                 return subtotal > 0 ? subtotal.ToString("N0") : "-";
             }
@@ -464,7 +463,7 @@ else
             Tooltip = L["Tooltip.ReceivingCompleted"].ToString(),
             CustomTemplate = item =>
             {
-                var productItem = (ProductItem)item;
+                var productItem = (ItemItem)item;
                 var isFullyReceived = productItem.ReceivedQuantity >= productItem.Quantity && productItem.Quantity > 0;
                 var isDisabled = IsReadOnly || isFullyReceived;
                 var tooltip = isFullyReceived ? L["Message.FullyReceived"].ToString() : null;
@@ -479,14 +478,14 @@ else
             },
             TooltipFunc = item =>
             {
-                var productItem = (ProductItem)item;
+                var productItem = (ItemItem)item;
                 var isFullyReceived = productItem.ReceivedQuantity >= productItem.Quantity && productItem.Quantity > 0;
                 return isFullyReceived ? L["Message.FullyReceived"].ToString() : null;
             },
             OnCheckboxChanged = EventCallback.Factory.Create<(object, bool)>(this, async args =>
             {
                 var (item, newValue) = args;
-                await OnIsReceivingCompletedChanged((ProductItem)item, newValue);
+                await OnIsReceivingCompletedChanged((ItemItem)item, newValue);
             })
         });
 
@@ -502,7 +501,7 @@ else
             Tooltip = L["Tooltip.PurchaseRemarks"].ToString(),
             CustomTemplate = item =>
             {
-                var productItem = (ProductItem)item;
+                var productItem = (ItemItem)item;
                 var isFieldReadOnly = IsReadOnly;
 
                 if (isFieldReadOnly)
@@ -522,7 +521,7 @@ else
         return columns;
     }
 
-    private RenderFragment<ProductItem> GetCustomActionsTemplate => item => __builder =>
+    private RenderFragment<ItemItem> GetCustomActionsTemplate => item => __builder =>
     {
         var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
 
@@ -559,7 +558,7 @@ else
         }
     };
 
-    private async Task HandleItemDelete(ProductItem item)
+    private async Task HandleItemDelete(ItemItem item)
     {
         var index = Items.IndexOf(item);
         await RemoveItemAsync(index);
@@ -567,82 +566,82 @@ else
 
     // ===== 品項選擇事件處理 =====
 
-    private void OnProductSearchChanged(ProductItem item, string? searchValue)
+    private void OnItemSearchChanged(ItemItem item, string? searchValue)
     {
-        item.ProductSearchValue = searchValue ?? string.Empty;
+        item.ItemSearchValue = searchValue ?? string.Empty;
 
-        var availableProducts = GetAvailableProducts();
+        var availableItems = GetAvailableItems();
 
         if (string.IsNullOrWhiteSpace(searchValue))
         {
-            item.FilteredProducts = availableProducts.Take(20).ToList();
+            item.FilteredItems = availableItems.Take(20).ToList();
         }
         else
         {
-            item.FilteredProducts = availableProducts
+            item.FilteredItems = availableItems
                 .Where(p => (p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false) ||
                            (p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false))
                 .Take(20)
                 .ToList();
         }
 
-        item.ShowProductDropdown = true;
-        item.ProductSelectedIndex = -1;
+        item.ShowItemDropdown = true;
+        item.ItemSelectedIndex = -1;
         StateHasChanged();
     }
 
-    private async Task OnProductSelected(ProductItem item, Product? selectedProduct)
+    private async Task OnItemSelected(ItemItem item, Item? selectedItem)
     {
-        if (selectedProduct != null)
+        if (selectedItem != null)
         {
-            item.SelectedProduct = selectedProduct;
-            item.SelectedProductId = selectedProduct.Id;
-            item.ProductSearchValue = $"[{selectedProduct.Code}] {selectedProduct.Name}";
+            item.SelectedItem = selectedItem;
+            item.SelectedItemId = selectedItem.Id;
+            item.ItemSearchValue = $"[{selectedItem.Code}] {selectedItem.Name}";
 
-            item.TaxRate = selectedProduct.TaxRate.HasValue
-                ? selectedProduct.TaxRate.Value
+            item.TaxRate = selectedItem.TaxRate.HasValue
+                ? selectedItem.TaxRate.Value
                 : await SystemParameterService.GetTaxRateAsync();
         }
         else
         {
-            item.SelectedProduct = null;
-            item.SelectedProductId = null;
-            item.ProductSearchValue = string.Empty;
+            item.SelectedItem = null;
+            item.SelectedItemId = null;
+            item.ItemSearchValue = string.Empty;
         }
 
-        item.ShowProductDropdown = false;
-        item.ProductSelectedIndex = -1;
+        item.ShowItemDropdown = false;
+        item.ItemSelectedIndex = -1;
 
         await NotifyDetailsChangedAsync();
     }
 
     // ===== 欄位變更事件處理 =====
 
-    private async Task OnQuantityInput(ProductItem item, string? value)
+    private async Task OnQuantityInput(ItemItem item, string? value)
     {
         item.Quantity = (int)InputEventHelper.HandleQuantityInput(value, 0);
         await NotifyDetailsChangedAsync();
     }
 
-    private async Task OnPriceInput(ProductItem item, string? value)
+    private async Task OnPriceInput(ItemItem item, string? value)
     {
         item.Price = InputEventHelper.HandlePriceInput(value, 0);
         await NotifyDetailsChangedAsync();
     }
 
-    private async Task OnTaxRateInput(ProductItem item, string? value)
+    private async Task OnTaxRateInput(ItemItem item, string? value)
     {
         item.TaxRate = InputEventHelper.HandlePercentageInput(value, 0, 100, 0);
         await NotifyDetailsChangedAsync();
     }
 
-    private void OnRemarksInput(ProductItem item, string? value)
+    private void OnRemarksInput(ItemItem item, string? value)
     {
         item.Remarks = InputEventHelper.HandleTextInput(value, string.Empty);
         // 備註不觸發 NotifyDetailsChangedAsync 以避免過於頻繁的轉換
     }
 
-    private async Task OnIsReceivingCompletedChanged(ProductItem item, bool newValue)
+    private async Task OnIsReceivingCompletedChanged(ItemItem item, bool newValue)
     {
         var isFullyReceived = item.ReceivedQuantity >= item.Quantity;
 
@@ -682,20 +681,20 @@ else
 
     // ===== 工具方法 =====
 
-    private List<Product> GetAvailableProducts()
+    private List<Item> GetAvailableItems()
     {
         if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
-            return new List<Product>();
+            return new List<Item>();
 
-        return Products
-            .OrderByDescending(p => _supplierKnownProductIds.Contains(p.Id))
+        return ItemEntities
+            .OrderByDescending(p => _supplierKnownItemIds.Contains(p.Id))
             .ThenBy(p => p.Code)
             .ToList();
     }
 
-    private decimal CalculateItemSubtotal(ProductItem item)
+    private decimal CalculateItemSubtotal(ItemItem item)
     {
-        if (item.SelectedProduct == null || item.Quantity <= 0 || item.Price <= 0)
+        if (item.SelectedItem == null || item.Quantity <= 0 || item.Price <= 0)
             return 0;
 
         var subtotal = CalculationHelper.CalculateSubtotal(
@@ -718,15 +717,15 @@ else
     };
 
     private decimal GetTotalAmount()
-        => Items.Where(item => item.SelectedProduct != null && item.Quantity > 0)
+        => Items.Where(item => item.SelectedItem != null && item.Quantity > 0)
                 .Sum(item => item.Quantity * item.Price);
 
     public async Task<bool> ValidateAsync()
     {
-        var validItemsCount = Items.Count(item => item.SelectedProduct != null);
+        var validItemsCount = Items.Count(item => item.SelectedItem != null);
         if (validItemsCount < 1)
         {
-            await NotificationService.ShowErrorAsync(L["Message.NeedAtLeastOneProduct"]);
+            await NotificationService.ShowErrorAsync(L["Message.NeedAtLeastOneItem"]);
             return false;
         }
         return true;
@@ -737,14 +736,14 @@ else
     private bool CanUseSmartPurchase =>
         SelectedSupplierId.HasValue &&
         SelectedSupplierId.Value > 0 &&
-        !Items.Any(item => item.SelectedProduct != null) &&
+        !Items.Any(item => item.SelectedItem != null) &&
         _hasLastPurchaseRecord;
 
     private string GetSmartPurchaseTooltip()
     {
         if (!SelectedSupplierId.HasValue || SelectedSupplierId.Value <= 0)
             return L["Message.PleaseSelectSupplier"].ToString();
-        if (Items.Any(item => item.SelectedProduct != null))
+        if (Items.Any(item => item.SelectedItem != null))
             return L["Message.AlreadyHasDetails"].ToString();
         if (!_hasLastPurchaseRecord)
             return L["Message.NoHistoryPurchase"].ToString();
@@ -769,7 +768,7 @@ else
                 return;
             }
 
-            var hasExistingData = Items.Any(item => item.SelectedProduct != null);
+            var hasExistingData = Items.Any(item => item.SelectedItem != null);
             if (hasExistingData)
             {
                 await NotificationService.ShowWarningAsync(
@@ -793,12 +792,12 @@ else
 
             foreach (var detail in lastPurchaseDetails)
             {
-                var productItem = new ProductItem
+                var productItem = new ItemItem
                 {
-                    SelectedProduct = detail.Product,
-                    SelectedProductId = detail.Product?.Id,
-                    ProductSearchValue = detail.Product != null
-                        ? $"[{detail.Product.Code}] {detail.Product.Name}"
+                    SelectedItem = detail.Item,
+                    SelectedItemId = detail.Item?.Id,
+                    ItemSearchValue = detail.Item != null
+                        ? $"[{detail.Item.Code}] {detail.Item.Name}"
                         : string.Empty,
                     Quantity = detail.OrderQuantity,
                     Price = detail.UnitPrice,
@@ -829,13 +828,13 @@ else
 
     private async Task ClearAllDetails()
     {
-        if (!Items.Any(item => item.SelectedProduct != null))
+        if (!Items.Any(item => item.SelectedItem != null))
         {
             await NotificationService.ShowWarningAsync(L["Message.NoDetailsToDelete"]);
             return;
         }
 
-        var validItems = Items.Where(item => item.SelectedProduct != null).ToList();
+        var validItems = Items.Where(item => item.SelectedItem != null).ToList();
         var clearableItems = validItems
             .Where(item => DetailLockHelper.CanDeleteItem(item, out _, checkReceiving: true))
             .ToList();
@@ -869,7 +868,7 @@ else
 
     // ===== 相關單據查看 =====
 
-    private async Task ShowRelatedDocuments(ProductItem item)
+    private async Task ShowRelatedDocuments(ItemItem item)
     {
         if (item.ExistingDetailEntity == null || item.ExistingDetailEntity.Id <= 0)
         {
@@ -877,7 +876,7 @@ else
             return;
         }
 
-        selectedProductName = item.SelectedProduct?.Name ?? L["Label.UnknownProduct"].ToString();
+        selectedItemName = item.SelectedItem?.Name ?? L["Label.UnknownItem"].ToString();
         showRelatedDocumentsModal = true;
         isLoadingRelatedDocuments = true;
         relatedDocuments = null;
@@ -916,10 +915,10 @@ else
 
     // ===== UI 列表項目模型 =====
 
-    public class ProductItem
+    public class ItemItem
     {
-        public Product? SelectedProduct { get; set; }
-        public int? SelectedProductId { get; set; }
+        public Item? SelectedItem { get; set; }
+        public int? SelectedItemId { get; set; }
         public int Quantity { get; set; } = 0;
         public int ReceivedQuantity { get; set; } = 0;
         public decimal Price { get; set; } = 0;
@@ -934,12 +933,12 @@ else
         public bool? HasUsageRecordCache { get; set; } = null;
 
         // SearchableSelect 支援屬性
-        public string ProductSearchValue { get; set; } = string.Empty;
-        public List<Product> FilteredProducts { get; set; } = new();
-        public bool ShowProductDropdown { get; set; } = false;
-        public int ProductSelectedIndex { get; set; } = -1;
+        public string ItemSearchValue { get; set; } = string.Empty;
+        public List<Item> FilteredItems { get; set; } = new();
+        public bool ShowItemDropdown { get; set; } = false;
+        public int ItemSelectedIndex { get; set; } = -1;
 
         // 計算屬性
-        public string UnitName => SelectedProduct?.Unit?.Name ?? string.Empty;
+        public string UnitName => SelectedItem?.Unit?.Name ?? string.Empty;
     }
 }

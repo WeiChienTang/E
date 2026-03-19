@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ERPCore2.Models.Enums;
 
@@ -21,8 +21,8 @@ namespace ERPCore2.Data.Entities
         /// 組成品項 ID
         /// </summary>
         [Display(Name = "組成品項")]
-        [ForeignKey(nameof(ComponentProduct))]
-        public int ComponentProductId { get; set; }
+        [ForeignKey(nameof(ComponentItem))]
+        public int ComponentItemId { get; set; }
         
         /// <summary>
         /// 組成數量
@@ -47,7 +47,7 @@ namespace ERPCore2.Data.Entities
         
         // Navigation Properties
         public virtual SalesOrderDetail SalesOrderDetail { get; set; } = null!;
-        public virtual Product ComponentProduct { get; set; } = null!;
+        public virtual Item ComponentItem { get; set; } = null!;
         public virtual Unit? Unit { get; set; }
     }
 }

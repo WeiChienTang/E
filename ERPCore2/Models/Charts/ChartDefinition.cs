@@ -1,4 +1,4 @@
-using ApexCharts;
+﻿using ApexCharts;
 using ERPCore2.Components.Shared.Table;
 
 namespace ERPCore2.Models.Charts;
@@ -32,10 +32,15 @@ public static class ChartCategory
     public const string Customer  = "Customer";
     public const string Supplier  = "Supplier";
     public const string Employee  = "Employee";
-    public const string Product   = "Product";
-    public const string Sales     = "Sales";
-    public const string Purchase  = "Purchase";
-    public const string Inventory = "Inventory";
+    public const string Item               = "Item";
+    public const string Sales              = "Sales";
+    public const string Purchase           = "Purchase";
+    public const string Inventory          = "Inventory";
+    public const string ProductionManagement = "ProductionManagement";
+    public const string FinancialManagement  = "FinancialManagement";
+    public const string Payroll              = "Payroll";
+    public const string ScaleManagement      = "ScaleManagement";
+    public const string VehicleManagement    = "VehicleManagement";
 }
 
 /// <summary>SeriesType 中文名稱與 Bootstrap Icon 對照表</summary>

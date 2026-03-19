@@ -1,4 +1,4 @@
-@* 生產完工登錄 Modal - 登錄生產完成數量並處理入庫 *@
+﻿@* 生產完工登錄 Modal - 登錄生產完成數量並處理入庫 *@
 @using ERPCore2.Components.Shared.UI.Button
 @using ERPCore2.Data.Entities
 @using ERPCore2.Models.Enums
@@ -173,9 +173,9 @@
 
     private string GetModalTitle()
     {
-        if (scheduleItem?.Product != null)
+        if (scheduleItem?.Item != null)
         {
-            return string.Format(L["Production.CompletionTitle"], scheduleItem.Product.Name);
+            return string.Format(L["Production.CompletionTitle"], scheduleItem.Item.Name);
         }
         return L["Production.CompletionRecord"];
     }
@@ -210,10 +210,10 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <h6 class="mb-2">
-                                    <i class="bi bi-box me-2"></i>@(scheduleItem.Product?.Name ?? "-")
+                                    <i class="bi bi-box me-2"></i>@(scheduleItem.Item?.Name ?? "-")
                                 </h6>
                                 <div class="small text-muted">
-                                    @(scheduleItem.Product?.Code ?? "-")
+                                    @(scheduleItem.Item?.Code ?? "-")
                                 </div>
                             </div>
                             <div class="col-md-3 text-center">
@@ -330,7 +330,7 @@
                                 <table class="table table-sm table-striped mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>@L["Column.ComponentProduct"]</th>
+                                            <th>@L["Column.ComponentItem"]</th>
                                             <th class="text-end">@L["Column.UnitUsage"]</th>
                                             <th class="text-end">@L["Column.CurrentConsumption"]</th>
                                         </tr>
@@ -338,7 +338,7 @@
                                     <tbody>
                                         @foreach (var detail in scheduleDetails)
                                         {
-                                            var componentProduct = detail.ComponentProduct;
+                                            var componentItem = detail.ComponentItem;
                                             var unitQuantity = scheduleItem.ScheduledQuantity > 0 
                                                 ? detail.RequiredQuantity / scheduleItem.ScheduledQuantity 
                                                 : 0;
@@ -346,8 +346,8 @@
                                             
                                             <tr>
                                                 <td>
-                                                    <span class="text-primary">[@(componentProduct?.Code ?? "-")]</span> 
-                                                    @(componentProduct?.Name ?? "-")
+                                                    <span class="text-primary">[@(componentItem?.Code ?? "-")]</span> 
+                                                    @(componentItem?.Name ?? "-")
                                                 </td>
                                                 <td class="text-end">@unitQuantity.ToString("N4")</td>
                                                 <td class="text-end text-danger fw-bold">@consumeQuantity.ToString("N2")</td>
@@ -498,7 +498,7 @@
             
             // 呼叫庫存服務增加庫存
             var result = await InventoryStockService.AddStockAsync(
-                scheduleItem.ProductId,
+                scheduleItem.ItemId,
                 warehouseId.Value,
                 intQuantity,
                 InventoryTransactionTypeEnum.ProductionCompletion,

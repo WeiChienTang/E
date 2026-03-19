@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
 
@@ -10,7 +10,7 @@ namespace ERPCore2.Services
     public interface IInventoryReservationService : IGenericManagementService<InventoryReservation>
     {
         // 基本查詢
-        Task<List<InventoryReservation>> GetByProductIdAsync(int productId);
+        Task<List<InventoryReservation>> GetByItemIdAsync(int productId);
         Task<List<InventoryReservation>> GetByWarehouseIdAsync(int warehouseId);
         Task<List<InventoryReservation>> GetByReferenceNumberAsync(string referenceNumber);
         Task<List<InventoryReservation>> GetByTypeAsync(InventoryReservationType reservationType);
@@ -18,7 +18,7 @@ namespace ERPCore2.Services
         Task<List<InventoryReservation>> GetExpiredReservationsAsync();
         
         // 特定查詢
-        Task<List<InventoryReservation>> GetActiveByProductAsync(int productId, int? warehouseId = null);
+        Task<List<InventoryReservation>> GetActiveByItemAsync(int productId, int? warehouseId = null);
         Task<List<InventoryReservation>> GetActiveByWarehouseAsync(int warehouseId);
         Task<InventoryReservation?> GetByIdWithDetailsAsync(int id);
         Task<List<InventoryReservation>> GetExpiringReservationsAsync(DateTime beforeDate);

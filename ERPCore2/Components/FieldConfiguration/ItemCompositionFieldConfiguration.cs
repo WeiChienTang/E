@@ -1,4 +1,4 @@
-using ERPCore2.Components.Shared.UI.Form;
+﻿using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
@@ -11,14 +11,14 @@ namespace ERPCore2.FieldConfiguration
     /// <summary>
     /// 品項合成欄位配置
     /// </summary>
-    public class ProductCompositionFieldConfiguration : BaseFieldConfiguration<ProductComposition>
+    public class ItemCompositionFieldConfiguration : BaseFieldConfiguration<ItemComposition>
     {
-        private readonly List<Product> _products;
+        private readonly List<Item> _products;
         private readonly List<CompositionCategory> _compositionCategories;
         private readonly INotificationService? _notificationService;
         
-        public ProductCompositionFieldConfiguration(
-            List<Product> products,
+        public ItemCompositionFieldConfiguration(
+            List<Item> products,
             List<CompositionCategory> compositionCategories,
             INotificationService? notificationService = null)
         {
@@ -27,43 +27,43 @@ namespace ERPCore2.FieldConfiguration
             _notificationService = notificationService;
         }
         
-        public override Dictionary<string, FieldDefinition<ProductComposition>> GetFieldDefinitions()
+        public override Dictionary<string, FieldDefinition<ItemComposition>> GetFieldDefinitions()
         {
             try
             {
-                return new Dictionary<string, FieldDefinition<ProductComposition>>
+                return new Dictionary<string, FieldDefinition<ItemComposition>>
                 {
                     {
-                        nameof(ProductComposition.Code),
-                        new FieldDefinition<ProductComposition>
+                        nameof(ItemComposition.Code),
+                        new FieldDefinition<ItemComposition>
                         {
-                            PropertyName = nameof(ProductComposition.Code),
+                            PropertyName = nameof(ItemComposition.Code),
                             DisplayName = Dn("Field.CompositionCode", "配方編號"),
                             FilterPlaceholder = Fp("Field.CompositionCode", "輸入配方編號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(ProductComposition.Code), pc => pc.Code)
+                                model, query, nameof(ItemComposition.Code), pc => pc.Code)
                         }
                     },
                     {
-                        nameof(ProductComposition.Name),
-                        new FieldDefinition<ProductComposition>
+                        nameof(ItemComposition.Name),
+                        new FieldDefinition<ItemComposition>
                         {
-                            PropertyName = nameof(ProductComposition.Name),
+                            PropertyName = nameof(ItemComposition.Name),
                             DisplayName = Dn("Field.CompositionName", "清單名稱"),
                             FilterPlaceholder = Fp("Field.CompositionName", "輸入清單名稱搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(ProductComposition.Name), pc => pc.Name)
+                                model, query, nameof(ItemComposition.Name), pc => pc.Name)
                         }
                     },
                     {
-                        nameof(ProductComposition.ParentProductId),
-                        new FieldDefinition<ProductComposition>
+                        nameof(ItemComposition.ParentItemId),
+                        new FieldDefinition<ItemComposition>
                         {
-                            PropertyName = "ParentProduct.Name",
-                            FilterPropertyName = nameof(ProductComposition.ParentProductId),
-                            DisplayName = Dn("Field.Product", "品項"),
+                            PropertyName = "ParentItem.Name",
+                            FilterPropertyName = nameof(ItemComposition.ParentItemId),
+                            DisplayName = Dn("Field.Item", "品項"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
                             Options = _products.Select(p => new SelectOption 
@@ -72,19 +72,19 @@ namespace ERPCore2.FieldConfiguration
                                 Value = p.Id.ToString() 
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
-                                model, query, nameof(ProductComposition.ParentProductId), pc => pc.ParentProductId ?? 0),
+                                model, query, nameof(ItemComposition.ParentItemId), pc => pc.ParentItemId ?? 0),
                             CustomTemplate = item => builder =>
                             {
-                                var composition = (ProductComposition)item;
-                                if (composition.ParentProduct != null)
+                                var composition = (ItemComposition)item;
+                                if (composition.ParentItem != null)
                                 {
                                     builder.OpenElement(0, "div");
-                                    builder.AddContent(1, composition.ParentProduct.Name);
-                                    if (!string.IsNullOrWhiteSpace(composition.ParentProduct.Code))
+                                    builder.AddContent(1, composition.ParentItem.Name);
+                                    if (!string.IsNullOrWhiteSpace(composition.ParentItem.Code))
                                     {
                                         builder.OpenElement(2, "small");
                                         builder.AddAttribute(3, "class", "text-muted ms-1");
-                                        builder.AddContent(4, $"({composition.ParentProduct.Code})");
+                                        builder.AddContent(4, $"({composition.ParentItem.Code})");
                                         builder.CloseElement();
                                     }
                                     builder.CloseElement();
@@ -93,23 +93,23 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(ProductComposition.Specification),
-                        new FieldDefinition<ProductComposition>
+                        nameof(ItemComposition.Specification),
+                        new FieldDefinition<ItemComposition>
                         {
-                            PropertyName = nameof(ProductComposition.Specification),
+                            PropertyName = nameof(ItemComposition.Specification),
                             DisplayName = Dn("Field.Spec", "規格"),
                             FilterPlaceholder = Fp("Field.Spec", "輸入規格搜尋"),
                             TableOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(ProductComposition.Specification), pc => pc.Specification)
+                                model, query, nameof(ItemComposition.Specification), pc => pc.Specification)
                         }
                     },
                     {
-                        nameof(ProductComposition.CompositionCategoryId),
-                        new FieldDefinition<ProductComposition>
+                        nameof(ItemComposition.CompositionCategoryId),
+                        new FieldDefinition<ItemComposition>
                         {
                             PropertyName = "CompositionCategory.Name",
-                            FilterPropertyName = nameof(ProductComposition.CompositionCategoryId),
+                            FilterPropertyName = nameof(ItemComposition.CompositionCategoryId),
                             DisplayName = Dn("Field.CompositionType", "配方類型"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
@@ -120,7 +120,7 @@ namespace ERPCore2.FieldConfiguration
                             }).ToList(),
                             FilterFunction = (model, query) =>
                             {
-                                var filterValue = model.GetFilterValue(nameof(ProductComposition.CompositionCategoryId));
+                                var filterValue = model.GetFilterValue(nameof(ItemComposition.CompositionCategoryId));
                                 if (!string.IsNullOrWhiteSpace(filterValue?.ToString()))
                                 {
                                     if (int.TryParse(filterValue.ToString(), out int categoryId))
@@ -132,7 +132,7 @@ namespace ERPCore2.FieldConfiguration
                             },
                             CustomTemplate = item => builder =>
                             {
-                                var composition = (ProductComposition)item;
+                                var composition = (ItemComposition)item;
                                 if (composition.CompositionCategory != null)
                                 {
                                     var badgeClass = GetBadgeClassByName(composition.CompositionCategory.Name);
@@ -146,7 +146,7 @@ namespace ERPCore2.FieldConfiguration
                     },
                     {
                         "ComponentCount",
-                        new FieldDefinition<ProductComposition>
+                        new FieldDefinition<ItemComposition>
                         {
                             PropertyName = "ComponentCount",
                             DisplayName = Dn("Field.ComponentCount", "組件數"),
@@ -154,7 +154,7 @@ namespace ERPCore2.FieldConfiguration
                             TableOrder = 6,
                             CustomTemplate = item => builder =>
                             {
-                                var composition = (ProductComposition)item;
+                                var composition = (ItemComposition)item;
                                 builder.OpenElement(0, "div");
                                 builder.AddAttribute(1, "class", "text-center");
                                 builder.OpenElement(2, "span");
@@ -185,7 +185,7 @@ namespace ERPCore2.FieldConfiguration
                 }
 
                 // 回傳空的配置，讓頁面使用預設行為
-                return new Dictionary<string, FieldDefinition<ProductComposition>>();
+                return new Dictionary<string, FieldDefinition<ItemComposition>>();
             }
         }
 

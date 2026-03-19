@@ -47,6 +47,12 @@ namespace ERPCore2.Models.Enums
         /// 已終止 - 強制結案，不再繼續生產（可能有部分完工）
         /// </summary>
         [Description("已終止")]
-        Aborted = 6
+        Aborted = 6,
+
+        /// <summary>
+        /// 已結案 - 生產任務已結案歸檔
+        /// </summary>
+        [Description("已結案")]
+        Closed = 7
     }
 }

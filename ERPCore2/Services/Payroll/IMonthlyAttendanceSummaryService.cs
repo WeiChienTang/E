@@ -25,5 +25,13 @@ namespace ERPCore2.Services.Payroll
 
         /// <summary>取得所有已有出勤記錄的年月組合</summary>
         Task<List<(int Year, int Month)>> GetAvailablePeriodsAsync();
+
+        /// <summary>
+        /// 從逐日出勤記錄重新彙總，更新（或建立）MonthlyAttendanceSummary
+        /// 月薪員工：彙總出勤天數、加班時數
+        /// 時薪員工：另外加總 TotalWorkHours
+        /// </summary>
+        Task<ServiceResult<MonthlyAttendanceSummary>> RebuildFromDailyAsync(
+            int employeeId, int year, int month, string? updatedBy = null);
     }
 }

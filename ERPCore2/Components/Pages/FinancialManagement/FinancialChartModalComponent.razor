@@ -1,0 +1,25 @@
+@using ERPCore2.Models.Charts
+@using ERPCore2.Services.FinancialManagement
+@inject IFinancialChartService ChartService
+@inject IStringLocalizer<SharedResource> L
+
+<GenericChartModalComponent IsVisible="@IsVisible"
+                            IsVisibleChanged="@IsVisibleChanged"
+                            Category="@ChartCategory.FinancialManagement"
+                            Title="@L["Financial.ChartTitle"]"
+                            Icon="bi bi-journal-text"
+                            OnDataLoading="@LoadSummaryAsync">
+</GenericChartModalComponent>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    private FinancialChartSummary? _summary;
+
+    private async Task LoadSummaryAsync()
+    {
+        _summary = await ChartService.GetSummaryAsync();
+        StateHasChanged();
+    }
+}

@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
@@ -18,7 +18,7 @@ namespace ERPCore2.Services.Reports
     {
         private readonly ISalesOrderService _salesOrderService;
         private readonly ICustomerService _customerService;
-        private readonly IProductService _productService;
+        private readonly IItemService _productService;
         private readonly ICompanyService _companyService;
         private readonly IEmployeeService _employeeService;
         private readonly IUnitService _unitService;
@@ -28,7 +28,7 @@ namespace ERPCore2.Services.Reports
         public SalesOrderReportService(
             ISalesOrderService salesOrderService,
             ICustomerService customerService,
-            IProductService productService,
+            IItemService productService,
             ICompanyService companyService,
             IEmployeeService employeeService,
             IUnitService unitService,
@@ -81,8 +81,8 @@ namespace ERPCore2.Services.Reports
 
             Company? company = await _companyService.GetPrimaryCompanyAsync();
 
-            var allProducts = await _productService.GetAllAsync();
-            var productDict = allProducts.ToDictionary(p => p.Id, p => p);
+            var allItems = await _productService.GetAllAsync();
+            var productDict = allItems.ToDictionary(p => p.Id, p => p);
 
             var allUnits = await _unitService.GetAllAsync();
             var unitDict = allUnits.ToDictionary(u => u.Id, u => u);
@@ -196,7 +196,7 @@ namespace ERPCore2.Services.Reports
             Employee? employee,
             Employee? salesperson,
             Company? company,
-            Dictionary<int, Product> productDict,
+            Dictionary<int, Item> productDict,
             Dictionary<int, Unit> unitDict)
         {
             var doc = new FormattedDocument()
@@ -273,7 +273,7 @@ namespace ERPCore2.Services.Reports
                 int rowNum = 1;
                 foreach (var detail in orderDetails)
                 {
-                    var product = productDict.GetValueOrDefault(detail.ProductId);
+                    var product = productDict.GetValueOrDefault(detail.ItemId);
                     var unit = detail.UnitId.HasValue ? unitDict.GetValueOrDefault(detail.UnitId.Value) : null;
                     
                     // 組合品項名稱與規格說明

@@ -1,6 +1,6 @@
 ﻿@* 沖款單編輯組件 *@
 @inject ISetoffDocumentService SetoffDocumentService
-@inject ISetoffProductDetailService SetoffProductDetailService
+@inject ISetoffItemDetailService SetoffItemDetailService
 @inject ISetoffPaymentService SetoffPaymentService
 @inject ISetoffPrepaymentService SetoffPrepaymentService
 @inject ISetoffPrepaymentUsageService SetoffPrepaymentUsageService
@@ -109,9 +109,9 @@
     private AutoCompleteConfig? autoCompleteConfig;
     
     // 品項明細相關
-    private List<SetoffProductDetail> setoffProductDetails = new();
+    private List<SetoffItemDetail> setoffItemDetails = new();
     private bool IsReadOnly => editModalComponent?.Entity?.IsJournalized == true; // 已傳票化的沖款單為唯讀
-    private SetoffProductTable? setoffProductDetailManager;
+    private SetoffItemTable? setoffItemDetailManager;
     
     // 收款記錄相關
     private List<SetoffPayment> setoffPayments = new();
@@ -179,7 +179,7 @@
     private async Task LoadSetoffDocumentDetails(int setoffDocumentId)
     {
         // 1. 載入品項明細
-        setoffProductDetails = await SetoffProductDetailService.GetBySetoffDocumentIdAsync(setoffDocumentId);
+        setoffItemDetails = await SetoffItemDetailService.GetBySetoffDocumentIdAsync(setoffDocumentId);
         
         // 2. 載入收款記錄
         setoffPayments = await SetoffPaymentService.GetBySetoffDocumentIdAsync(setoffDocumentId);
@@ -266,7 +266,7 @@
             }
 
             // ===== 驗證三個明細表至少有一個包含資料 =====
-            var hasProductDetails = setoffProductDetails?.Any(d => 
+            var hasItemDetails = setoffItemDetails?.Any(d => 
                 d.CurrentSetoffAmount > 0 || d.CurrentAllowanceAmount > 0) ?? false;
             
             var hasPaymentDetails = setoffPayments?.Any(p => 
@@ -275,7 +275,7 @@
             var hasPrepaymentDetails = setoffPrepayments?.Any(p => 
                 p.Amount > 0 || p.UsedAmount > 0) ?? false;
             
-            if (!hasProductDetails && !hasPaymentDetails && !hasPrepaymentDetails)
+            if (!hasItemDetails && !hasPaymentDetails && !hasPrepaymentDetails)
             {
                 await NotificationService.ShowErrorAsync("品項明細、收款記錄和預收付款項不可都為空白。");
                 return false;
@@ -284,7 +284,7 @@
             // ===== 儲存前驗證金額 =====
             var receivedFromPayments = setoffPaymentTable?.GetTotalReceivedAmount() ?? 0;
             var allowanceFromPayments = setoffPaymentTable?.GetTotalAllowanceAmount() ?? 0;
-            var hasProductSetoff = setoffProductDetails?.Any(d => 
+            var hasItemSetoff = setoffItemDetails?.Any(d => 
                 d.CurrentSetoffAmount > 0 || d.CurrentAllowanceAmount > 0) ?? false;
             
             // 取得預收付款項類型資訊
@@ -422,9 +422,9 @@
             
             // ===== 驗證品項明細的本次沖款是否超過未結清餘額 =====
             // 使用 Service 層的統一驗證邏輯，避免邏輯重複
-            if (hasProductSetoff && SetoffProductDetailService != null && setoffProductDetails != null)
+            if (hasItemSetoff && SetoffItemDetailService != null && setoffItemDetails != null)
             {
-                var validDetails = setoffProductDetails
+                var validDetails = setoffItemDetails
                     .Where(d => d.CurrentSetoffAmount > 0 || d.CurrentAllowanceAmount > 0)
                     .ToList();
                 
@@ -434,7 +434,7 @@
                     foreach (var detail in validDetails)
                     {
                         // 如果是編輯模式，傳入 detail.Id 以排除原本的沖銷金額
-                        var validation = await SetoffProductDetailService.ValidateSetoffAmountAsync(
+                        var validation = await SetoffItemDetailService.ValidateSetoffAmountAsync(
                             detail.SourceDetailId,
                             detail.SourceDetailType,
                             detail.CurrentSetoffAmount,
@@ -474,7 +474,7 @@
             }
 
             // 儲存品項明細（過濾掉本次沖款和折讓都為 0 的項目）
-            var validDetails = setoffProductDetails
+            var validDetails = setoffItemDetails
                 .Where(d => d.CurrentSetoffAmount > 0 || d.CurrentAllowanceAmount > 0)
                 .ToList();
                 
@@ -486,7 +486,7 @@
                     detail.SetoffDocumentId = entity.Id;
                 }
 
-                var detailResult = await SetoffProductDetailService.CreateBatchWithValidationAsync(validDetails);
+                var detailResult = await SetoffItemDetailService.CreateBatchWithValidationAsync(validDetails);
                 if (!detailResult.IsSuccess)
                 {
                     await NotificationService.ShowErrorAsync($"品項明細儲存失敗：{detailResult.ErrorMessage}");
@@ -678,28 +678,28 @@
     /// - 本期已收 (TotalCollectionAmount): 實際收到的款項
     /// - 本期折讓 (TotalAllowanceAmount): 本次折讓的總額（單獨顯示，不計入本期沖銷）
     /// </remarks>
-    private void HandleProductDetailsChanged(List<SetoffProductDetail> details)
+    private void HandleItemDetailsChanged(List<SetoffItemDetail> details)
     {
         editModalComponent?.MarkDirty();
-        setoffProductDetails = details;
+        setoffItemDetails = details;
 
         // 更新總金額
         if (editModalComponent?.Entity != null)
         {
             // 【本期應收】= 被選入的來源明細的原始應收/付總金額
-            // 這個值應該從 SetoffProductTable 取得來源明細的總金額
+            // 這個值應該從 SetoffItemTable 取得來源明細的總金額
             // 只在明細被選入時計算，不會因為輸入本次沖款金額而改變
             // 退貨單據會以負數計算（例如：銷貨600 + 銷貨退回-300 = 300）
-            if (setoffProductDetailManager != null)
+            if (setoffItemDetailManager != null)
             {
-                editModalComponent.Entity.TotalSetoffAmount = setoffProductDetailManager.GetSourceTotalAmount();
+                editModalComponent.Entity.TotalSetoffAmount = setoffItemDetailManager.GetSourceTotalAmount();
             }
             
             // 【本期沖銷】= 本次沖款（不包含折讓）
             // 退貨單據會以負數計算（例如：銷貨沖款100 + 銷貨退回沖款-50 = 50）
-            if (setoffProductDetailManager != null)
+            if (setoffItemDetailManager != null)
             {
-                editModalComponent.Entity.CurrentSetoffAmount = setoffProductDetailManager.GetCurrentSetoffTotal();
+                editModalComponent.Entity.CurrentSetoffAmount = setoffItemDetailManager.GetCurrentSetoffTotal();
             }
             else
             {
@@ -709,9 +709,9 @@
             // 【本期已收】不在此更新，由收款記錄（HandlePaymentsChanged）和預收付款項（HandlePrepaymentsChanged）決定
             // 【本期折讓】= 本次折讓的總額（單獨顯示，不計入本期沖銷）
             // 退貨單據會以負數計算
-            if (setoffProductDetailManager != null)
+            if (setoffItemDetailManager != null)
             {
-                editModalComponent.Entity.TotalAllowanceAmount = setoffProductDetailManager.GetCurrentAllowanceTotal();
+                editModalComponent.Entity.TotalAllowanceAmount = setoffItemDetailManager.GetCurrentAllowanceTotal();
             }
             else
             {
@@ -863,7 +863,7 @@
                 }
                 
                 // 新增模式：清空品項明細、收款記錄和預收付款項
-                setoffProductDetails = new List<SetoffProductDetail>();
+                setoffItemDetails = new List<SetoffItemDetail>();
                 setoffPayments = new List<SetoffPayment>();
                 setoffPrepayments = new List<SetoffPrepayment>(); 
             }
@@ -873,7 +873,7 @@
                 setoffDocument = await SetoffDocumentService.GetByIdAsync(SetoffDocumentId.Value);
                 
                 // 載入品項明細
-                setoffProductDetails = await SetoffProductDetailService.GetBySetoffDocumentIdAsync(SetoffDocumentId.Value);
+                setoffItemDetails = await SetoffItemDetailService.GetBySetoffDocumentIdAsync(SetoffDocumentId.Value);
                 
                 // 載入收款記錄
                 setoffPayments = await SetoffPaymentService.GetBySetoffDocumentIdAsync(SetoffDocumentId.Value);
@@ -1352,7 +1352,7 @@
                 new GenericEditModalComponent<SetoffDocument, ISetoffDocumentService>.CustomModule
                 {
                     Title = "",
-                    Content = CreateSetoffProductDetailManagerContent(),
+                    Content = CreateSetoffItemDetailManagerContent(),
                     Order = 1
                 },
                 new GenericEditModalComponent<SetoffDocument, ISetoffDocumentService>.CustomModule
@@ -1384,13 +1384,13 @@
     /// <summary>
     /// 創建沖銷品項明細管理器內容的 RenderFragment
     /// </summary>
-    private RenderFragment CreateSetoffProductDetailManagerContent() => __builder =>
+    private RenderFragment CreateSetoffItemDetailManagerContent() => __builder =>
     {
         <DetailSectionWrapper IsEntityReady="@(editModalComponent?.Entity != null)"
                               EntityLoadingVariant="DetailSectionWrapper.LoadingVariant.Silent"
                               IsPreconditionMet="@(editModalComponent?.Entity?.RelatedPartyId > 0)"
                               PreconditionMessage="@($"請先選擇{(editModalComponent?.Entity?.SetoffType == SetoffType.AccountsReceivable ? "客戶" : "廠商")}以載入品項明細")">
-            <SetoffProductTable @ref="setoffProductDetailManager"
+            <SetoffItemTable @ref="setoffItemDetailManager"
                                 SetoffDocumentId="@SetoffDocumentId"
                                 SetoffType="@editModalComponent!.Entity.SetoffType"
                                 RelatedPartyId="@editModalComponent.Entity.RelatedPartyId"
@@ -1398,8 +1398,8 @@
                                 RelatedPartyName="@GetRelatedPartyName()"
                                 StartDate="@filterStartDate"
                                 EndDate="@filterEndDate"
-                                ExistingDetails="@setoffProductDetails"
-                                OnDetailsChanged="@HandleProductDetailsChanged"
+                                ExistingDetails="@setoffItemDetails"
+                                OnDetailsChanged="@HandleItemDetailsChanged"
                                 IsReadOnly="@IsReadOnly"
                                 DataVersion="@_productDetailsDataVersion"
                                 IsParentLoading="@(editModalComponent?.IsLoading ?? false)" />
@@ -1546,12 +1546,12 @@
                 autoLoadAction: async () =>
                 {
                     shouldAutoLoadFromReceiving = false;
-                    if (setoffProductDetailManager != null)
+                    if (setoffItemDetailManager != null)
                     {
-                        await setoffProductDetailManager.LoadDetailsFromPurchaseReceiving(purchaseReceivingId);
+                        await setoffItemDetailManager.LoadDetailsFromPurchaseReceiving(purchaseReceivingId);
                     }
                 },
-                detailManagerReady: () => setoffProductDetailManager != null,
+                detailManagerReady: () => setoffItemDetailManager != null,
                 shouldAutoLoad: () => shouldAutoLoadFromReceiving,
                 stateHasChangedAction: StateHasChanged,
                 invokeAsync: InvokeAsync
@@ -1593,12 +1593,12 @@
                 autoLoadAction: async () =>
                 {
                     shouldAutoLoadFromPurchaseReturn = false;
-                    if (setoffProductDetailManager != null)
+                    if (setoffItemDetailManager != null)
                     {
-                        await setoffProductDetailManager.LoadDetailsFromPurchaseReturn(purchaseReturnId);
+                        await setoffItemDetailManager.LoadDetailsFromPurchaseReturn(purchaseReturnId);
                     }
                 },
-                detailManagerReady: () => setoffProductDetailManager != null,
+                detailManagerReady: () => setoffItemDetailManager != null,
                 shouldAutoLoad: () => shouldAutoLoadFromPurchaseReturn,
                 stateHasChangedAction: StateHasChanged,
                 invokeAsync: InvokeAsync
@@ -1640,12 +1640,12 @@
                 autoLoadAction: async () =>
                 {
                     shouldAutoLoadFromDelivery = false;
-                    if (setoffProductDetailManager != null)
+                    if (setoffItemDetailManager != null)
                     {
-                        await setoffProductDetailManager.LoadDetailsFromSalesDelivery(salesDeliveryId);
+                        await setoffItemDetailManager.LoadDetailsFromSalesDelivery(salesDeliveryId);
                     }
                 },
-                detailManagerReady: () => setoffProductDetailManager != null,
+                detailManagerReady: () => setoffItemDetailManager != null,
                 shouldAutoLoad: () => shouldAutoLoadFromDelivery,
                 stateHasChangedAction: StateHasChanged,
                 invokeAsync: InvokeAsync
@@ -1687,12 +1687,12 @@
                 autoLoadAction: async () =>
                 {
                     shouldAutoLoadFromSalesReturn = false;
-                    if (setoffProductDetailManager != null)
+                    if (setoffItemDetailManager != null)
                     {
-                        await setoffProductDetailManager.LoadDetailsFromSalesReturn(salesReturnId);
+                        await setoffItemDetailManager.LoadDetailsFromSalesReturn(salesReturnId);
                     }
                 },
-                detailManagerReady: () => setoffProductDetailManager != null,
+                detailManagerReady: () => setoffItemDetailManager != null,
                 shouldAutoLoad: () => shouldAutoLoadFromSalesReturn,
                 stateHasChangedAction: StateHasChanged,
                 invokeAsync: InvokeAsync

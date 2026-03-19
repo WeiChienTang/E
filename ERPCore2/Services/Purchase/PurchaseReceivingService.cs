@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -98,7 +98,7 @@ namespace ERPCore2.Services
                 .Include(pr => pr.Supplier)
                 .Include(pr => pr.ApprovedByUser)
                 .Include(pr => pr.PurchaseReceivingDetails)
-                    .ThenInclude(prd => prd.Product)
+                    .ThenInclude(prd => prd.Item)
                 .Include(pr => pr.PurchaseReceivingDetails)
                     .ThenInclude(prd => prd.Warehouse)
                 .OrderByDescending(pr => pr.ReceiptDate)
@@ -127,11 +127,11 @@ namespace ERPCore2.Services
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.ApprovedByUser)
                     .Include(pr => pr.PurchaseReceivingDetails)
-                        .ThenInclude(prd => prd.Product)
+                        .ThenInclude(prd => prd.Item)
                             .ThenInclude(p => p.Unit)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.PurchaseOrderDetail)
-                            .ThenInclude(pod => pod!.Product)
+                            .ThenInclude(pod => pod!.Item)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.PurchaseOrderDetail)
                             .ThenInclude(pod => pod!.PurchaseOrder)
@@ -177,7 +177,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseReceivings
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceivingDetails)
-                        .ThenInclude(prd => prd.Product)
+                        .ThenInclude(prd => prd.Item)
                     .Where(pr => (pr.Code != null && pr.Code.Contains(searchTerm)) ||
                          (pr.Supplier != null && pr.Supplier.CompanyName!.Contains(searchTerm)))
                     .OrderByDescending(pr => pr.ReceiptDate)
@@ -310,14 +310,14 @@ namespace ERPCore2.Services
                             .Where(td => td.InventoryTransaction != null && 
                                         td.InventoryTransaction.TransactionNumber == entity.Code &&
                                         td.OperationType == InventoryOperationTypeEnum.Delete)
-                            .Select(td => new { td.ProductId, td.SourceDetailId })
+                            .Select(td => new { td.ItemId, td.SourceDetailId })
                             .ToListAsync();
                         
                         foreach (var detail in eligibleDetails)
                         {
                             // 檢查此明細是否已經被處理過（有對應的刪除記錄）
                             var alreadyProcessed = existingDelDetails.Any(d => 
-                                d.ProductId == detail.ProductId && 
+                                d.ItemId == detail.ItemId && 
                                 (d.SourceDetailId == detail.Id || d.SourceDetailId == null));
                             
                             if (alreadyProcessed)
@@ -326,7 +326,7 @@ namespace ERPCore2.Services
                             }
                             
                             var reduceResult = await _inventoryStockService.ReduceStockAsync(
-                                detail.ProductId,
+                                detail.ItemId,
                                 detail.WarehouseId,
                                 detail.ReceivedQuantity,
                                 InventoryTransactionTypeEnum.Return,
@@ -447,7 +447,7 @@ namespace ERPCore2.Services
                 
                 var loadedEntity = await context.PurchaseReceivings
                     .Include(pr => pr.PurchaseReceivingDetails)
-                        .ThenInclude(prd => prd.Product)
+                        .ThenInclude(prd => prd.Item)
                     .FirstOrDefaultAsync(pr => pr.Id == entity.Id);
 
                 if (loadedEntity == null)
@@ -472,7 +472,7 @@ namespace ERPCore2.Services
 
                         if (returnedQty > 0)
                         {
-                            var productName = detail.Product?.Name ?? "未知品項";
+                            var productName = detail.Item?.Name ?? "未知品項";
                             return ServiceResult.Failure(
                                 $"無法刪除此進貨單，因為品項「{productName}」已有退貨記錄（已退貨 {returnedQty} 個）"
                             );
@@ -482,7 +482,7 @@ namespace ERPCore2.Services
                     // 3.2 檢查沖款記錄
                     if (detail.TotalPaidAmount > 0)
                     {
-                        var productName = detail.Product?.Name ?? "未知品項";
+                        var productName = detail.Item?.Name ?? "未知品項";
                         return ServiceResult.Failure(
                             $"無法刪除此進貨單，因為品項「{productName}」已有沖款記錄（已沖款 {detail.TotalPaidAmount:N0} 元）"
                         );
@@ -644,7 +644,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseReceivings
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceivingDetails)
-                        .ThenInclude(prd => prd.Product)
+                        .ThenInclude(prd => prd.Item)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Warehouse)
                     .Where(pr => pr.ReceiptDate >= startDate && pr.ReceiptDate <= endDate)
@@ -689,7 +689,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseReceivings
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceivingDetails)
-                        .ThenInclude(prd => prd.Product)
+                        .ThenInclude(prd => prd.Item)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Warehouse)
                     .Where(pr => receivingIds.Contains(pr.Id))
@@ -766,7 +766,7 @@ namespace ERPCore2.Services
                         if (_inventoryStockService != null)
                         {
                             var addStockResult = await _inventoryStockService.AddStockAsync(
-                                detail.ProductId,
+                                detail.ItemId,
                                 detail.WarehouseId,
                                 detail.ReceivedQuantity,
                                 InventoryTransactionTypeEnum.Purchase,
@@ -914,38 +914,38 @@ namespace ERPCore2.Services
                                                           d.OperationType != InventoryOperationTypeEnum.Delete).ToList()
                         : allTransactionDetails.Where(d => d.OperationType != InventoryOperationTypeEnum.Delete).ToList();
 
-                    // 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
-                    var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, decimal NetProcessedQuantity, decimal? UnitPrice)>();
+                    // 建立已處理過庫存的明細字典（ItemId + WarehouseId + LocationId -> 已處理庫存淨值）
+                    var processedInventory = new Dictionary<string, (int ItemId, int WarehouseId, int? LocationId, decimal NetProcessedQuantity, decimal? UnitPrice)>();
                     
                     foreach (var detail in existingDetails)
                     {
                         var detailWarehouseId = detail.InventoryStockDetail?.WarehouseId ?? detail.InventoryTransaction.WarehouseId;
-                        var key = $"{detail.ProductId}_{detailWarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
+                        var key = $"{detail.ItemId}_{detailWarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
                         if (!processedInventory.ContainsKey(key))
                         {
-                            processedInventory[key] = (detail.ProductId, detailWarehouseId, detail.WarehouseLocationId, 0m, detail.UnitCost);
+                            processedInventory[key] = (detail.ItemId, detailWarehouseId, detail.WarehouseLocationId, 0m, detail.UnitCost);
                         }
                         // 累加所有交易的淨值（Quantity已經包含正負號）
                         var oldQty = processedInventory[key].NetProcessedQuantity;
                         var newQty = oldQty + detail.Quantity;
-                        processedInventory[key] = (processedInventory[key].ProductId, processedInventory[key].WarehouseId, 
+                        processedInventory[key] = (processedInventory[key].ItemId, processedInventory[key].WarehouseId, 
                                                   processedInventory[key].LocationId, newQty, 
                                                   detail.UnitCost);
                     }
                     
                     // 建立當前明細字典
-                    var currentInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, decimal CurrentQuantity, decimal UnitPrice)>();
+                    var currentInventory = new Dictionary<string, (int ItemId, int WarehouseId, int? LocationId, decimal CurrentQuantity, decimal UnitPrice)>();
                     
                     foreach (var detail in currentReceiving.PurchaseReceivingDetails)
                     {
-                        var key = $"{detail.ProductId}_{detail.WarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
+                        var key = $"{detail.ItemId}_{detail.WarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
                         if (!currentInventory.ContainsKey(key))
                         {
-                            currentInventory[key] = (detail.ProductId, detail.WarehouseId, detail.WarehouseLocationId, 0, detail.UnitPrice);
+                            currentInventory[key] = (detail.ItemId, detail.WarehouseId, detail.WarehouseLocationId, 0, detail.UnitPrice);
                         }
                         var oldQty = currentInventory[key].CurrentQuantity;
                         var newQty = oldQty + detail.ReceivedQuantity;
-                        currentInventory[key] = (currentInventory[key].ProductId, currentInventory[key].WarehouseId, 
+                        currentInventory[key] = (currentInventory[key].ItemId, currentInventory[key].WarehouseId, 
                                                currentInventory[key].LocationId, newQty, 
                                                detail.UnitPrice);
                     }
@@ -975,7 +975,7 @@ namespace ERPCore2.Services
                         // 只有數量有變化，或者價格有變化時才需要處理
                         if (adjustmentNeeded != 0 || (priceChanged && targetQuantity > 0))
                         {
-                            var productId = hasCurrent ? currentInventory[key].ProductId : processedInventory[key].ProductId;
+                            var productId = hasCurrent ? currentInventory[key].ItemId : processedInventory[key].ItemId;
                             var warehouseId = hasCurrent ? currentInventory[key].WarehouseId : processedInventory[key].WarehouseId;
                             var locationId = hasCurrent ? currentInventory[key].LocationId : processedInventory[key].LocationId;
                             
@@ -1126,7 +1126,7 @@ namespace ERPCore2.Services
                 
                 var lastDetail = await context.PurchaseReceivingDetails
                     .Include(prd => prd.PurchaseReceiving)
-                    .Where(prd => prd.ProductId == productId)
+                    .Where(prd => prd.ItemId == productId)
                     .OrderByDescending(prd => prd.PurchaseReceiving.ReceiptDate)
                     .ThenByDescending(prd => prd.CreatedAt)
                     .FirstOrDefaultAsync();
@@ -1141,7 +1141,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLastReceivingLocationAsync), GetType(), _logger, new { 
                     Method = nameof(GetLastReceivingLocationAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId 
+                    ItemId = productId 
                 });
                 return (null, null);
             }
@@ -1168,7 +1168,7 @@ namespace ERPCore2.Services
                 
                 return await context.PurchaseReceivingDetails
                     .Include(prd => prd.PurchaseReceiving)
-                    .Include(prd => prd.Product)
+                    .Include(prd => prd.Item)
                     .Include(prd => prd.Warehouse)
                     .Include(prd => prd.WarehouseLocation)
                     .Where(prd => 
@@ -1181,7 +1181,7 @@ namespace ERPCore2.Services
                     )
                     .OrderBy(prd => prd.PurchaseReceiving.ReceiptDate)
                     .ThenBy(prd => prd.PurchaseReceiving.Code)
-                    .ThenBy(prd => prd.Product.Code)
+                    .ThenBy(prd => prd.Item.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -1208,7 +1208,7 @@ namespace ERPCore2.Services
                 IQueryable<PurchaseReceiving> query = context.PurchaseReceivings
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReceivingDetails)
-                        .ThenInclude(prd => prd.Product)
+                        .ThenInclude(prd => prd.Item)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Warehouse)
                     .Include(pr => pr.PurchaseReceivingDetails)

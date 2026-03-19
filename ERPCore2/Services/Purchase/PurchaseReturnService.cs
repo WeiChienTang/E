@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -60,7 +60,7 @@ namespace ERPCore2.Services
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.ApprovedByUser)
                     .Include(pr => pr.PurchaseReturnDetails)
-                        .ThenInclude(prd => prd.Product)
+                        .ThenInclude(prd => prd.Item)
                             .ThenInclude(p => p.Unit)
                     .Include(pr => pr.PurchaseReturnDetails)
                         .ThenInclude(prd => prd.Unit)
@@ -72,7 +72,7 @@ namespace ERPCore2.Services
                                 .ThenInclude(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReturnDetails)
                         .ThenInclude(prd => prd.PurchaseReceivingDetail)
-                            .ThenInclude(prd => prd!.Product)
+                            .ThenInclude(prd => prd!.Item)
                                 .ThenInclude(p => p.Unit)
                     .Include(pr => pr.PurchaseReturnDetails)
                         .ThenInclude(prd => prd.PurchaseReceivingDetail)
@@ -190,7 +190,7 @@ namespace ERPCore2.Services
                 IQueryable<PurchaseReturn> query = context.PurchaseReturns
                     .Include(pr => pr.Supplier)
                     .Include(pr => pr.PurchaseReturnDetails)
-                        .ThenInclude(prd => prd.Product)
+                        .ThenInclude(prd => prd.Item)
                     .AsQueryable();
 
                 // 日期範圍篩選
@@ -738,9 +738,9 @@ namespace ERPCore2.Services
                             if (quantityDiff > 0)
                             {
                                 // 退貨數量增加，需要減少庫存
-                                operationDescription = $"採購退貨增量 - {savedEntity.Code} (品項ID: {detail.ProductId})";
+                                operationDescription = $"採購退貨增量 - {savedEntity.Code} (品項ID: {detail.ItemId})";
                                 stockResult = await _inventoryStockService.ReduceStockAsync(
-                                    detail.ProductId,
+                                    detail.ItemId,
                                     warehouseId.Value,
                                     quantityDiff,
                                     InventoryTransactionTypeEnum.Return,
@@ -756,9 +756,9 @@ namespace ERPCore2.Services
                             else
                             {
                                 // 退貨數量減少，需要增加庫存 (撤銷部分退貨)
-                                operationDescription = $"採購退貨撤銷 - {savedEntity.Code} (品項ID: {detail.ProductId})";
+                                operationDescription = $"採購退貨撤銷 - {savedEntity.Code} (品項ID: {detail.ItemId})";
                                 stockResult = await _inventoryStockService.AddStockAsync(
-                                    detail.ProductId,
+                                    detail.ItemId,
                                     warehouseId.Value,
                                     Math.Abs(quantityDiff),
                                     InventoryTransactionTypeEnum.Return,
@@ -839,7 +839,7 @@ namespace ERPCore2.Services
                         if (existingDetail != null)
                         {
                             // 檢查是否有品項變更（關鍵修正點）
-                            bool productChanged = existingDetail.ProductId != detail.ProductId || 
+                            bool productChanged = existingDetail.ItemId != detail.ItemId || 
                                                  existingDetail.PurchaseReceivingDetailId != detail.PurchaseReceivingDetailId;
                             
                             if (productChanged)
@@ -848,17 +848,17 @@ namespace ERPCore2.Services
                                 // 1. 創建原品項的庫存回滾記錄（使用原始資料）
                                 if (existingDetail.ReturnQuantity > 0)
                                 {
-                                    var originalProductDetail = new PurchaseReturnDetail
+                                    var originalItemDetail = new PurchaseReturnDetail
                                     {
                                         Id = existingDetail.Id,
-                                        ProductId = existingDetail.ProductId, // 保持原品項ID
+                                        ItemId = existingDetail.ItemId, // 保持原品項ID
                                         PurchaseReceivingDetailId = existingDetail.PurchaseReceivingDetailId, // 保持原進貨明細ID
                                         WarehouseLocationId = existingDetail.WarehouseLocationId,
                                         ReturnQuantity = existingDetail.ReturnQuantity,
                                         OriginalUnitPrice = existingDetail.OriginalUnitPrice
                                     };
                                     
-                                    quantityChanges.Add((originalProductDetail, -existingDetail.ReturnQuantity));
+                                    quantityChanges.Add((originalItemDetail, -existingDetail.ReturnQuantity));
                                 }
                                 
                                 // 2. 扣減新品項的庫存（減少新的退回數量）
@@ -1003,7 +1003,7 @@ namespace ERPCore2.Services
                 
                 var loadedEntity = await context.PurchaseReturns
                     .Include(pr => pr.PurchaseReturnDetails)
-                        .ThenInclude(prd => prd.Product)
+                        .ThenInclude(prd => prd.Item)
                     .FirstOrDefaultAsync(pr => pr.Id == entity.Id);
 
                 if (loadedEntity == null)
@@ -1023,7 +1023,7 @@ namespace ERPCore2.Services
                     // 檢查收款記錄
                     if (detail.TotalReceivedAmount > 0)
                     {
-                        var productName = detail.Product?.Name ?? "未知品項";
+                        var productName = detail.Item?.Name ?? "未知品項";
                         return ServiceResult.Failure(
                             $"無法刪除此退貨單，因為品項「{productName}」已有收款記錄（已收款 {detail.TotalReceivedAmount:N0} 元）"
                         );
@@ -1106,7 +1106,7 @@ namespace ERPCore2.Services
                                 if (warehouseId.HasValue)
                                 {
                                     var addResult = await _inventoryStockService.AddStockAsync(
-                                        detail.ProductId,
+                                        detail.ItemId,
                                         warehouseId.Value,
                                         detail.ReturnQuantity,
                                         InventoryTransactionTypeEnum.Return,
@@ -1235,7 +1235,7 @@ namespace ERPCore2.Services
                             if (_inventoryStockService != null)
                             {
                                 var reduceStockResult = await _inventoryStockService.ReduceStockAsync(
-                                    detail.ProductId,
+                                    detail.ItemId,
                                     warehouseId.Value,
                                     detail.ReturnQuantity,
                                     InventoryTransactionTypeEnum.Return,

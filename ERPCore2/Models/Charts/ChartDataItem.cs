@@ -1,4 +1,4 @@
-namespace ERPCore2.Models.Charts;
+﻿namespace ERPCore2.Models.Charts;
 
 public class ChartDataItem
 {
@@ -66,10 +66,55 @@ public class SalesChartSummary
 
 public class InventoryChartSummary
 {
-    public int TotalProductsWithStock { get; set; }
+    public int TotalItemsWithStock { get; set; }
     public decimal TotalStockValue { get; set; }
     public int LowStockCount { get; set; }
     public int ExpiringStockCount { get; set; }
     public int WarehouseCount { get; set; }
     public int TransactionsLast30Days { get; set; }
+}
+
+public class ProductionChartSummary
+{
+    public int TotalOrdersThisMonth { get; set; }
+    public int PendingOrders { get; set; }
+    public int InProgressOrders { get; set; }
+    public int CompletedThisMonth { get; set; }
+    public int OverdueOrders { get; set; }
+}
+
+public class FinancialChartSummary
+{
+    public int TotalSetoffDocumentsThisMonth { get; set; }
+    public decimal TotalARSetoffAmount { get; set; }
+    public decimal TotalAPSetoffAmount { get; set; }
+    public int TotalJournalEntriesThisMonth { get; set; }
+    public int DraftJournalEntries { get; set; }
+}
+
+public class PayrollChartSummary
+{
+    public int TotalRecordsThisMonth { get; set; }
+    public decimal TotalGrossIncomeThisMonth { get; set; }
+    public decimal TotalNetPayThisMonth { get; set; }
+    public int ApprovedRecordsCount { get; set; }
+    public int DraftRecordsCount { get; set; }
+}
+
+public class ScaleChartSummary
+{
+    public int TotalRecordsThisMonth { get; set; }
+    public decimal TotalNetWeightThisMonth { get; set; }
+    public decimal TotalNetAmountThisMonth { get; set; }
+    public int UniqueCustomersThisMonth { get; set; }
+    public int UniqueItemsThisMonth { get; set; }
+}
+
+public class VehicleChartSummary
+{
+    public int TotalVehicles { get; set; }
+    public int MaintenancesThisMonth { get; set; }
+    public decimal TotalMaintenanceCostThisMonth { get; set; }
+    public int VehiclesInsuranceExpiringSoon { get; set; }
+    public int VehiclesInspectionExpiringSoon { get; set; }
 }

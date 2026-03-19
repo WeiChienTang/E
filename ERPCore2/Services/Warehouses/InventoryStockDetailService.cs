@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Services;
@@ -28,10 +28,10 @@ namespace ERPCore2.Services
         {
             return context.InventoryStockDetails
                 .Include(d => d.InventoryStock)
-                    .ThenInclude(s => s.Product)
+                    .ThenInclude(s => s.Item)
                 .Include(d => d.Warehouse)
                 .Include(d => d.WarehouseLocation)
-                .OrderBy(d => d.InventoryStock.Product!.Code)
+                .OrderBy(d => d.InventoryStock.Item!.Code)
                 .ThenBy(d => d.Warehouse.Code)
                 .ThenBy(d => d.WarehouseLocation!.Code);
         }
@@ -43,7 +43,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStockDetails
                     .Include(d => d.InventoryStock)
-                        .ThenInclude(s => s.Product)
+                        .ThenInclude(s => s.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Include(d => d.InventoryTransactions)
@@ -73,18 +73,18 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStockDetails
                     .Include(d => d.InventoryStock)
-                        .ThenInclude(s => s.Product)
+                        .ThenInclude(s => s.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => 
-                        (d.InventoryStock.Product!.Code != null && d.InventoryStock.Product.Code.ToLower().Contains(term)) ||
-                        (d.InventoryStock.Product!.Name != null && d.InventoryStock.Product.Name.ToLower().Contains(term)) ||
+                        (d.InventoryStock.Item!.Code != null && d.InventoryStock.Item.Code.ToLower().Contains(term)) ||
+                        (d.InventoryStock.Item!.Name != null && d.InventoryStock.Item.Name.ToLower().Contains(term)) ||
                         (d.Warehouse.Code != null && d.Warehouse.Code.ToLower().Contains(term)) ||
                         (d.Warehouse.Name != null && d.Warehouse.Name.ToLower().Contains(term)) ||
                         (d.WarehouseLocation != null && d.WarehouseLocation.Code != null && d.WarehouseLocation.Code.ToLower().Contains(term)) ||
                         (d.WarehouseLocation != null && d.WarehouseLocation.Name != null && d.WarehouseLocation.Name.ToLower().Contains(term)) ||
                         (d.BatchNumber != null && d.BatchNumber.ToLower().Contains(term)))
-                    .OrderBy(d => d.InventoryStock.Product!.Code)
+                    .OrderBy(d => d.InventoryStock.Item!.Code)
                     .ThenBy(d => d.Warehouse.Code)
                     .ToListAsync();
             }
@@ -237,7 +237,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStockDetails
                     .Include(d => d.InventoryStock)
-                        .ThenInclude(s => s.Product)
+                        .ThenInclude(s => s.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => d.InventoryStockId == inventoryStockId)
@@ -263,11 +263,11 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStockDetails
                     .Include(d => d.InventoryStock)
-                        .ThenInclude(s => s.Product)
+                        .ThenInclude(s => s.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => d.WarehouseId == warehouseId)
-                    .OrderBy(d => d.InventoryStock.Product!.Code)
+                    .OrderBy(d => d.InventoryStock.Item!.Code)
                     .ThenBy(d => d.WarehouseLocation!.Code)
                     .ToListAsync();
             }
@@ -289,11 +289,11 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStockDetails
                     .Include(d => d.InventoryStock)
-                        .ThenInclude(s => s.Product)
+                        .ThenInclude(s => s.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => d.WarehouseLocationId == warehouseLocationId)
-                    .OrderBy(d => d.InventoryStock.Product!.Code)
+                    .OrderBy(d => d.InventoryStock.Item!.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -314,7 +314,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryStockDetails
                     .Include(d => d.InventoryStock)
-                        .ThenInclude(s => s.Product)
+                        .ThenInclude(s => s.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .FirstOrDefaultAsync(d => 

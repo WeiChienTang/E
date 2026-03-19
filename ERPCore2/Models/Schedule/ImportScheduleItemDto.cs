@@ -1,4 +1,4 @@
-namespace ERPCore2.Models.Schedule
+﻿namespace ERPCore2.Models.Schedule
 {
     /// <summary>
     /// 匯入排程項目 DTO - 用於庫存匯入排程 Modal
@@ -28,17 +28,17 @@ namespace ERPCore2.Models.Schedule
         /// <summary>
         /// 品項 ID
         /// </summary>
-        public int ProductId { get; set; }
+        public int ItemId { get; set; }
         
         /// <summary>
         /// 品項編號
         /// </summary>
-        public string ProductCode { get; set; } = string.Empty;
+        public string ItemCode { get; set; } = string.Empty;
         
         /// <summary>
         /// 品項名稱
         /// </summary>
-        public string ProductName { get; set; } = string.Empty;
+        public string ItemName { get; set; } = string.Empty;
         
         /// <summary>
         /// 倉庫 ID（使用者選擇）

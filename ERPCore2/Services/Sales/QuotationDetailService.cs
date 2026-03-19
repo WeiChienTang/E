@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models;
 using ERPCore2.Services;
@@ -42,7 +42,7 @@ namespace ERPCore2.Services
         {
             return context.QuotationDetails
                 .Include(qd => qd.Quotation)
-                .Include(qd => qd.Product)
+                .Include(qd => qd.Item)
                 .Include(qd => qd.Unit)
                 .OrderBy(qd => qd.QuotationId)
                 .ThenBy(qd => qd.Id);
@@ -55,7 +55,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.QuotationDetails
                     .Include(qd => qd.Quotation)
-                    .Include(qd => qd.Product)
+                    .Include(qd => qd.Item)
                     .Include(qd => qd.Unit)
                     .FirstOrDefaultAsync(qd => qd.Id == id);
             }
@@ -82,11 +82,11 @@ namespace ERPCore2.Services
 
                 return await context.QuotationDetails
                     .Include(qd => qd.Quotation)
-                    .Include(qd => qd.Product)
+                    .Include(qd => qd.Item)
                     .Include(qd => qd.Unit)
                     .Where(qd => (
-                        qd.Product!.Name!.ToLower().Contains(lowerSearchTerm) ||
-                        (qd.Product.Code != null && qd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
+                        qd.Item!.Name!.ToLower().Contains(lowerSearchTerm) ||
+                        (qd.Item.Code != null && qd.Item.Code.ToLower().Contains(lowerSearchTerm)) ||
                         (qd.Quotation.Code != null && qd.Quotation.Code.ToLower().Contains(lowerSearchTerm))
                     ))
                     .OrderBy(qd => qd.QuotationId)
@@ -113,7 +113,7 @@ namespace ERPCore2.Services
                 if (entity.QuotationId <= 0)
                     errors.Add("報價單為必選項目");
 
-                if (entity.ProductId <= 0)
+                if (entity.ItemId <= 0)
                     errors.Add("品項為必選項目");
 
                 // 數量和單價可以為 0，只檢查負數
@@ -153,7 +153,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.QuotationDetails
-                    .Include(qd => qd.Product)
+                    .Include(qd => qd.Item)
                     .Include(qd => qd.Unit)
                     .Where(qd => qd.QuotationId == quotationId)
                     .OrderBy(qd => qd.Id)
@@ -198,25 +198,25 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<QuotationDetail>> GetByProductIdAsync(int productId)
+        public async Task<List<QuotationDetail>> GetByItemIdAsync(int productId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.QuotationDetails
                     .Include(qd => qd.Quotation)
-                    .Include(qd => qd.Product)
+                    .Include(qd => qd.Item)
                     .Include(qd => qd.Unit)
-                    .Where(qd => qd.ProductId == productId)
+                    .Where(qd => qd.ItemId == productId)
                     .OrderByDescending(qd => qd.Quotation.QuotationDate)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAsync), GetType(), _logger, new {
-                    Method = nameof(GetByProductIdAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemIdAsync), GetType(), _logger, new {
+                    Method = nameof(GetByItemIdAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId
+                    ItemId = productId
                 });
                 return new List<QuotationDetail>();
             }
@@ -237,7 +237,7 @@ namespace ERPCore2.Services
                 // 建立查詢
                 var query = context.Quotations
                     .Include(q => q.QuotationDetails)
-                        .ThenInclude(qd => qd.Product)
+                        .ThenInclude(qd => qd.Item)
                     .Include(q => q.QuotationDetails)
                         .ThenInclude(qd => qd.Unit)
                     .Where(q => q.CustomerId == customerId 
@@ -261,7 +261,7 @@ namespace ERPCore2.Services
                 
                 // 返回該報價單的所有明細
                 return lastQuotation.QuotationDetails
-                    .Where(qd => qd.Product != null)
+                    .Where(qd => qd.Item != null)
                     .OrderBy(qd => qd.Id)
                     .ToList();
             }
@@ -293,7 +293,7 @@ namespace ERPCore2.Services
                 // 建立查詢：取得該客戶的報價單明細
                 var query = context.QuotationDetails
                     .Include(qd => qd.Quotation)
-                    .Include(qd => qd.Product)
+                    .Include(qd => qd.Item)
                     .Include(qd => qd.Unit)
                     .Where(qd => qd.Quotation.CustomerId == customerId);
                 

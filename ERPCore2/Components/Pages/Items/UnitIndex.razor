@@ -18,7 +18,7 @@
                           ServerDataLoader="@ServerLoadUnitsAsync"
                           GetEntityDisplayName="@(unit => unit.Name)"
                           RequiredPermission="@PermissionRegistry.Unit.Read"
-                          RequiredModule="Products"
+                          RequiredModule="Items"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           DebugPageName="UnitIndex"

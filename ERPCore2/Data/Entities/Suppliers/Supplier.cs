@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ERPCore2.Data.Entities.Suppliers;
 using Microsoft.EntityFrameworkCore;
@@ -81,6 +81,10 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "發票抬頭")]
         public string? InvoiceTitle { get; set; }
 
+        [Display(Name = "付款天數")]
+        [Range(0, 365, ErrorMessage = "付款天數必須介於0到365天之間")]
+        public int PaymentDays { get; set; } = 30;
+
         [Display(Name = "目前應付餘額")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal CurrentPayable { get; set; } = 0;
@@ -103,7 +107,7 @@ namespace ERPCore2.Data.Entities
         /// <summary>
         /// 供應品項列表（品項-供應商綁定）
         /// </summary>
-        public ICollection<ProductSupplier> ProductSuppliers { get; set; } = new List<ProductSupplier>();
+        public ICollection<ItemSupplier> ItemSuppliers { get; set; } = new List<ItemSupplier>();
 
         /// <summary>
         /// 所屬車輛列表

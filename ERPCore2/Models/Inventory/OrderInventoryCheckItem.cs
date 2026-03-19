@@ -1,4 +1,4 @@
-namespace ERPCore2.Models.Inventory
+﻿namespace ERPCore2.Models.Inventory
 {
     /// <summary>
     /// 訂單庫存檢查項目
@@ -23,22 +23,22 @@ namespace ERPCore2.Models.Inventory
         /// <summary>
         /// 產品ID
         /// </summary>
-        public int ProductId { get; set; }
+        public int ItemId { get; set; }
 
         /// <summary>
         /// 產品編號
         /// </summary>
-        public string ProductCode { get; set; } = string.Empty;
+        public string ItemCode { get; set; } = string.Empty;
 
         /// <summary>
         /// 產品名稱
         /// </summary>
-        public string ProductName { get; set; } = string.Empty;
+        public string ItemName { get; set; } = string.Empty;
 
         /// <summary>
         /// 產品規格
         /// </summary>
-        public string? ProductSpecification { get; set; }
+        public string? ItemSpecification { get; set; }
 
         /// <summary>
         /// 單位名稱

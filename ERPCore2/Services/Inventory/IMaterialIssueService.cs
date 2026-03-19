@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 
 namespace ERPCore2.Services
 {
@@ -70,7 +70,7 @@ namespace ERPCore2.Services
         /// </summary>
         /// <param name="productId">品項ID</param>
         /// <returns>(WarehouseId, WarehouseLocationId) 或 null（無歷史記錄）</returns>
-        Task<(int WarehouseId, int? WarehouseLocationId)?> GetLastIssuedLocationForProductAsync(int productId);
+        Task<(int WarehouseId, int? WarehouseLocationId)?> GetLastIssuedLocationForItemAsync(int productId);
 
         /// <summary>
         /// 伺服器端分頁查詢（僅取列表所需欄位）。

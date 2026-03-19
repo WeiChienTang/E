@@ -10,27 +10,30 @@
 @inject IStringLocalizer<SharedResource> L
 @inject IEmployeeDetailReportService EmployeeDetailReportService
 
-<GenericIndexPageComponent TEntity="Employee" 
-                        TService="IEmployeeService"
-                        Service="@EmployeeService"
-                        EntityBasePath="/employees"                          
-                        PageTitle="@L["Page.EmployeeTitle"]"
-                        PageSubtitle="@L["Page.EmployeeSubtitle"]"
-                        BreadcrumbItems="@breadcrumbItems"
-                        FilterDefinitions="@filterDefinitions"
-                        ColumnDefinitions="@columnDefinitions"
-                        ServerDataLoader="@ServerLoadEmployeesAsync"
-                        EntityName="@L["Entity.Employee"]"
-                        GetEntityDisplayName="@(employee => employee.Name?.Trim() ?? "")"
-                        RequiredPermission="@PermissionRegistry.Employee.Read"
-                        RequiredModule="Employees"
-                        ShowDraftTab="true"
-                        OnAddClick="@modalHandler.ShowAddModalAsync"
-                        OnRowClick="@modalHandler.ShowEditModalAsync"
-                        DebugPageName="EmployeeIndex"
-                        RowPrintService="@EmployeeDetailReportService"
-                        RowPrintReportId="@ReportIds.EmployeeDetail"
-                        @ref="indexComponent" />
+@if (isInitialized)
+{
+    <GenericIndexPageComponent TEntity="Employee"
+                            TService="IEmployeeService"
+                            Service="@EmployeeService"
+                            EntityBasePath="/employees"
+                            PageTitle="@L["Page.EmployeeTitle"]"
+                            PageSubtitle="@L["Page.EmployeeSubtitle"]"
+                            BreadcrumbItems="@breadcrumbItems"
+                            FilterDefinitions="@filterDefinitions"
+                            ColumnDefinitions="@columnDefinitions"
+                            ServerDataLoader="@ServerLoadEmployeesAsync"
+                            EntityName="@L["Entity.Employee"]"
+                            GetEntityDisplayName="@(employee => employee.Name?.Trim() ?? "")"
+                            RequiredPermission="@PermissionRegistry.Employee.Read"
+                            RequiredModule="Employees"
+                            ShowDraftTab="true"
+                            OnAddClick="@modalHandler.ShowAddModalAsync"
+                            OnRowClick="@modalHandler.ShowEditModalAsync"
+                            DebugPageName="EmployeeIndex"
+                            RowPrintService="@EmployeeDetailReportService"
+                            RowPrintReportId="@ReportIds.EmployeeDetail"
+                            @ref="indexComponent" />
+}
 
 @* 員工編輯 Modal *@
 <EmployeeEditModalComponent IsVisible="@showEditModal"
@@ -78,6 +81,9 @@
     
     // 當前使用者是否為 SuperAdmin
     private bool isCurrentUserSuperAdmin = false;
+
+    // 初始化完成旗標（避免子元件在 isCurrentUserSuperAdmin 設定前就載入資料）
+    private bool isInitialized = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -139,6 +145,10 @@
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化員工頁面失敗");
             await NotificationService.ShowErrorAsync("初始化員工頁面失敗");
+        }
+        finally
+        {
+            isInitialized = true;
         }
     }
 

@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -29,7 +29,7 @@ namespace ERPCore2.Services
         protected override IQueryable<Size> BuildGetAllQuery(AppDbContext context)
         {
             return context.Sizes
-                .Include(s => s.Products)
+                .Include(s => s.Items)
                 .OrderBy(s => s.Name);
         }
 
@@ -39,7 +39,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Sizes
-                    .Include(s => s.Products)
+                    .Include(s => s.Items)
                     .FirstOrDefaultAsync(s => s.Id == id);
             }
             catch (Exception ex)
@@ -60,7 +60,7 @@ namespace ERPCore2.Services
                 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Sizes
-                    .Include(s => s.Products)
+                    .Include(s => s.Items)
                     .Where(s => ((s.Code != null && s.Code.ToLower().Contains(lowerSearchTerm)) ||
                          (s.Name != null && s.Name.ToLower().Contains(lowerSearchTerm))))
                     .OrderBy(s => s.Name)
@@ -132,7 +132,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Sizes
-                    .Include(s => s.Products)
+                    .Include(s => s.Items)
                     .FirstOrDefaultAsync(s => s.Code == sizeCode);
             }
             catch (Exception ex)
@@ -275,7 +275,7 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.Sizes
-                    .Include(s => s.Products)
+                    .Include(s => s.Items)
                     .Where(s => s.Name != null && s.Name.Contains(sizeName))
                     .OrderBy(s => s.Name)
                     .ToListAsync();

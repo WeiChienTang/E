@@ -1,4 +1,4 @@
-using ERPCore2.Data;
+﻿using ERPCore2.Data;
 using ERPCore2.Helpers;
 using Microsoft.AspNetCore.Components;
 
@@ -15,7 +15,7 @@ namespace ERPCore2.Components.Shared.Table;
 /// </summary>
 /// <typeparam name="TMainEntity">主單實體（如 PurchaseOrder）</typeparam>
 /// <typeparam name="TDetailEntity">明細實體（如 PurchaseOrderDetail）</typeparam>
-/// <typeparam name="TItem">UI 列表項目模型（如 ProductItem）</typeparam>
+/// <typeparam name="TItem">UI 列表項目模型（如 ItemItem）</typeparam>
 public abstract class BaseDetailTableComponent<TMainEntity, TDetailEntity, TItem> : ComponentBase
     where TMainEntity : BaseEntity
     where TDetailEntity : BaseEntity, new()
@@ -100,7 +100,7 @@ public abstract class BaseDetailTableComponent<TMainEntity, TDetailEntity, TItem
     {
         // 偵測 tableComponent 從 null → 非 null 的轉換（例如 @if 條件成立後首次渲染）
         // 必須加上 _hasLoadCompleted 守衛：
-        //   若在 OnInitializedAsync 中途（await LoadProductsAsync() 等）產生中間渲染，
+        //   若在 OnInitializedAsync 中途（await LoadItemsAsync() 等）產生中間渲染，
         //   tableComponent 會在 InvokeLoadWithCompletionAsync() 執行前就被賦值。
         //   此時若提早呼叫 RefreshEmptyRow()，會污染 GenericInteractiveTableComponent
         //   的 _previousDataLoadCompleted = true，導致後續真正的 false→true 轉換

@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Models.Schedule;
@@ -64,7 +64,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 IQueryable<ProductionScheduleItem> query = context.ProductionScheduleItems
                     .Include(psi => psi.ProductionSchedule)
-                    .Include(psi => psi.Product)
+                    .Include(psi => psi.Item)
                     .Include(psi => psi.SalesOrderDetail)
                         .ThenInclude(sod => sod!.SalesOrder)
                     .Include(psi => psi.Warehouse)
@@ -94,7 +94,7 @@ namespace ERPCore2.Services
         {
             return context.ProductionScheduleItems
                 .Include(psi => psi.ProductionSchedule)
-                .Include(psi => psi.Product)
+                .Include(psi => psi.Item)
                 .Include(psi => psi.SalesOrderDetail)
                     .ThenInclude(sod => sod!.SalesOrder)
                 .Include(psi => psi.Warehouse)
@@ -111,8 +111,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleItems
                     .Include(psi => psi.ProductionSchedule)
-                    .Include(psi => psi.Product)
-                        .ThenInclude(p => p.ProductCategory)
+                    .Include(psi => psi.Item)
+                        .ThenInclude(p => p.ItemCategory)
                     .Include(psi => psi.SalesOrderDetail)
                         .ThenInclude(sod => sod!.SalesOrder)
                     .Include(psi => psi.Warehouse)
@@ -142,7 +142,7 @@ namespace ERPCore2.Services
                 if (entity.ProductionScheduleId <= 0)
                     errors.Add("生產排程主檔為必填");
 
-                if (entity.ProductId <= 0)
+                if (entity.ItemId <= 0)
                     errors.Add("品項為必填");
 
                 if (entity.ScheduledQuantity <= 0)
@@ -163,8 +163,8 @@ namespace ERPCore2.Services
                     errors.Add("生產排程不存在");
 
                 // 檢查品項是否存在
-                var productExists = await context.Products
-                    .AnyAsync(p => p.Id == entity.ProductId);
+                var productExists = await context.Items
+                    .AnyAsync(p => p.Id == entity.ItemId);
 
                 if (!productExists)
                     errors.Add("品項不存在");
@@ -182,7 +182,7 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
                     ScheduleId = entity.ProductionScheduleId,
-                    ProductId = entity.ProductId
+                    ItemId = entity.ItemId
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -199,11 +199,11 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleItems
                     .Include(psi => psi.ProductionSchedule)
-                    .Include(psi => psi.Product)
+                    .Include(psi => psi.Item)
                     .Include(psi => psi.SalesOrderDetail)
                         .ThenInclude(sod => sod!.SalesOrder)
-                    .Where(psi => psi.Product!.Name!.Contains(searchTerm) ||
-                                 (psi.Product.Code != null && psi.Product.Code.Contains(searchTerm)) ||
+                    .Where(psi => psi.Item!.Name!.Contains(searchTerm) ||
+                                 (psi.Item.Code != null && psi.Item.Code.Contains(searchTerm)) ||
                                  (psi.ProductionSchedule.Code != null && psi.ProductionSchedule.Code.Contains(searchTerm)))
                     .OrderByDescending(psi => psi.ProductionSchedule.ScheduleDate)
                     .ToListAsync();
@@ -228,13 +228,13 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleItems
-                    .Include(psi => psi.Product)
-                        .ThenInclude(p => p.ProductCategory)
+                    .Include(psi => psi.Item)
+                        .ThenInclude(p => p.ItemCategory)
                     .Include(psi => psi.SalesOrderDetail)
                         .ThenInclude(sod => sod!.SalesOrder)
                     .Include(psi => psi.Warehouse)
                     .Include(psi => psi.ScheduleDetails)
-                        .ThenInclude(psd => psd.ComponentProduct)
+                        .ThenInclude(psd => psd.ComponentItem)
                     .Where(psi => psi.ProductionScheduleId == scheduleId)
                     .OrderBy(psi => psi.Priority)
                     .ThenBy(psi => psi.Id)
@@ -252,26 +252,26 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<ProductionScheduleItem>> GetByProductIdAsync(int productId)
+        public async Task<List<ProductionScheduleItem>> GetByItemIdAsync(int productId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleItems
                     .Include(psi => psi.ProductionSchedule)
-                    .Include(psi => psi.Product)
+                    .Include(psi => psi.Item)
                     .Include(psi => psi.SalesOrderDetail)
-                    .Where(psi => psi.ProductId == productId)
+                    .Where(psi => psi.ItemId == productId)
                     .OrderByDescending(psi => psi.ProductionSchedule.ScheduleDate)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemIdAsync), GetType(), _logger, new
                 {
-                    Method = nameof(GetByProductIdAsync),
+                    Method = nameof(GetByItemIdAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId
+                    ItemId = productId
                 });
                 return new List<ProductionScheduleItem>();
             }
@@ -284,7 +284,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleItems
                     .Include(psi => psi.ProductionSchedule)
-                    .Include(psi => psi.Product)
+                    .Include(psi => psi.Item)
                     .Where(psi => psi.SalesOrderDetailId == salesOrderDetailId)
                     .OrderByDescending(psi => psi.ProductionSchedule.ScheduleDate)
                     .ToListAsync();
@@ -308,7 +308,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleItems
                     .Include(psi => psi.ProductionSchedule)
-                    .Include(psi => psi.Product)
+                    .Include(psi => psi.Item)
                     .Include(psi => psi.SalesOrderDetail)
                         .ThenInclude(sod => sod!.SalesOrder)
                             .ThenInclude(so => so.Customer)
@@ -346,15 +346,15 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleItems
                     .Include(psi => psi.ProductionSchedule)
-                    .Include(psi => psi.Product)
-                        .ThenInclude(p => p.ProductCategory)
+                    .Include(psi => psi.Item)
+                        .ThenInclude(p => p.ItemCategory)
                     .Include(psi => psi.SalesOrderDetail)
                         .ThenInclude(sod => sod!.SalesOrder)
                             .ThenInclude(so => so.Customer)
                     .Include(psi => psi.Warehouse)
                     .Include(psi => psi.WarehouseLocation)
                     .Include(psi => psi.ScheduleDetails)
-                        .ThenInclude(psd => psd.ComponentProduct)
+                        .ThenInclude(psd => psd.ComponentItem)
                     .Include(psi => psi.ScheduleDetails)
                         .ThenInclude(psd => psd.Warehouse)
                     .Include(psi => psi.Completions)
@@ -484,7 +484,7 @@ namespace ERPCore2.Services
                 if (effectiveWarehouseId.HasValue)
                 {
                     var stockResult = await _inventoryStockService.AddStockAsync(
-                        item.ProductId,
+                        item.ItemId,
                         effectiveWarehouseId.Value,
                         completedQuantity,
                         InventoryTransactionTypeEnum.ProductionCompletion,
@@ -553,7 +553,7 @@ namespace ERPCore2.Services
                             if (settlement.ReturnQty > 0 && settlement.ReturnWarehouseId.HasValue)
                             {
                                 var returnResult = await _inventoryStockService.AddStockAsync(
-                                    bomDetail.ComponentProductId,
+                                    bomDetail.ComponentItemId,
                                     settlement.ReturnWarehouseId.Value,
                                     settlement.ReturnQty ?? 0,
                                     InventoryTransactionTypeEnum.MaterialReturn,
@@ -695,7 +695,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleItems
                     .Include(psi => psi.ProductionSchedule)
-                    .Include(psi => psi.Product)
+                    .Include(psi => psi.Item)
                     .Include(psi => psi.SalesOrderDetail)
                         .ThenInclude(sod => sod!.SalesOrder)
                             .ThenInclude(so => so!.Customer)
@@ -721,7 +721,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleItems
                     .Include(psi => psi.ProductionSchedule)
-                    .Include(psi => psi.Product)
+                    .Include(psi => psi.Item)
                     .Include(psi => psi.SalesOrderDetail)
                         .ThenInclude(sod => sod!.SalesOrder)
                             .ThenInclude(so => so!.Customer)
@@ -905,7 +905,7 @@ namespace ERPCore2.Services
                 var lastCompletion = await context.ProductionScheduleCompletions
                     .Include(c => c.ProductionScheduleItem)
                     .Where(c =>
-                        c.ProductionScheduleItem.ProductId == productId &&
+                        c.ProductionScheduleItem.ItemId == productId &&
                         c.WarehouseId.HasValue &&
                         c.Status == EntityStatus.Active)
                     .OrderByDescending(c => c.CompletionDate)
@@ -1023,7 +1023,7 @@ namespace ERPCore2.Services
                         if (settlement.ReturnQty > 0 && settlement.ReturnWarehouseId.HasValue)
                         {
                             var returnResult = await _inventoryStockService.AddStockAsync(
-                                bomDetail.ComponentProductId,
+                                bomDetail.ComponentItemId,
                                 settlement.ReturnWarehouseId.Value,
                                 settlement.ReturnQty ?? 0,
                                 InventoryTransactionTypeEnum.MaterialReturn,

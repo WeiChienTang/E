@@ -35,7 +35,7 @@
 @* ===== 年底結帳 Modal ===== *@
 <BaseModalComponent IsVisible="@showYearEndModal"
                    IsVisibleChanged="@((bool v) => { showYearEndModal = v; if (!v) ResetYearEndModal(); })"
-                   Title="年底結帳"
+                   Title="@L["YearEnd.ModalTitle"]"
                    Icon="bi-calendar-check"
                    Size="BaseModalComponent.ModalSize.Large"
                    HeaderColor="BaseModalComponent.HeaderVariant.Warning"
@@ -47,7 +47,7 @@
         @if (preCheck != null && preCheck.CanClose && !isClosingInProgress && !closingDone)
         {
             <GenericButtonComponent Variant="ButtonVariant.Red"
-                                    Text="確認執行結帳"
+                                    Text="@L["YearEnd.ConfirmExecute"]"
                                     Icon="bi-lock-fill"
                                     OnClick="ExecuteYearEndClosingAsync" />
         }
@@ -58,13 +58,13 @@
         {
             <div class="row g-3 align-items-end mb-3">
                 <div class="col-auto">
-                    <label class="form-label fw-semibold">選擇結帳年度</label>
+                    <label class="form-label fw-semibold">@L["YearEnd.SelectYear"]</label>
                     <input type="number" class="form-control" style="width:120px"
                            @bind="selectedYear" min="2000" max="2099" />
                 </div>
                 <div class="col-auto">
                     <GenericButtonComponent Variant="ButtonVariant.Blue"
-                                            Text="前置檢查"
+                                            Text="@L["YearEnd.PreCheck"]"
                                             Icon="bi-search"
                                             OnClick="RunPreCheckAsync" />
                 </div>
@@ -75,25 +75,25 @@
         @if (preCheck != null && !isClosingInProgress && !closingDone)
         {
             <div class="mb-3">
-                <h6 class="fw-bold">@selectedYear 年度結帳前置檢查</h6>
+                <h6 class="fw-bold">@string.Format(L["YearEnd.PreCheckTitle"], selectedYear)</h6>
 
                 @* 已結帳 *@
                 @if (preCheck.AlreadyClosed)
                 {
                     <div class="alert alert-warning d-flex align-items-center">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        <span>@selectedYear 年度已執行過年底結帳，無法重複執行。</span>
+                        <span>@string.Format(L["YearEnd.AlreadyClosed"], selectedYear)</span>
                     </div>
                 }
                 else
                 {
                     @* 期間狀態 *@
                     <div class="mb-2">
-                        <span class="badge bg-secondary me-1">期間數：@preCheck.TotalPeriods / 12</span>
-                        <span class="badge bg-success me-1">已關帳：@preCheck.ClosedOrLockedPeriods</span>
+                        <span class="badge bg-secondary me-1">@string.Format(L["YearEnd.PeriodCount"], preCheck.TotalPeriods)</span>
+                        <span class="badge bg-success me-1">@string.Format(L["YearEnd.ClosedPeriods"], preCheck.ClosedOrLockedPeriods)</span>
                         @if (preCheck.OpenPeriodNumbers.Any())
                         {
-                            <span class="badge bg-danger">仍開放：@string.Join("、", preCheck.OpenPeriodNumbers.Select(n => $"{n}月"))</span>
+                            <span class="badge bg-danger">@string.Format(L["YearEnd.OpenPeriods"], string.Join("、", preCheck.OpenPeriodNumbers.Select(n => $"{n}月")))</span>
                         }
                     </div>
 
@@ -101,11 +101,11 @@
                     <div class="mb-2">
                         @if (preCheck.EstimatedNetIncome >= 0)
                         {
-                            <span class="badge bg-success fs-6">預估本期損益：盈利 @preCheck.EstimatedNetIncome.ToString("N0") 元</span>
+                            <span class="badge bg-success fs-6">@string.Format(L["YearEnd.EstimatedProfit"], preCheck.EstimatedNetIncome.ToString("N0"))</span>
                         }
                         else
                         {
-                            <span class="badge bg-danger fs-6">預估本期損益：虧損 @((-preCheck.EstimatedNetIncome).ToString("N0")) 元</span>
+                            <span class="badge bg-danger fs-6">@string.Format(L["YearEnd.EstimatedLoss"], (-preCheck.EstimatedNetIncome).ToString("N0"))</span>
                         }
                     </div>
 
@@ -113,7 +113,7 @@
                     @if (preCheck.Errors.Any())
                     {
                         <div class="alert alert-danger py-2">
-                            <div class="fw-bold mb-1"><i class="bi bi-x-circle-fill me-1"></i>無法執行結帳</div>
+                            <div class="fw-bold mb-1"><i class="bi bi-x-circle-fill me-1"></i>@L["YearEnd.CannotClose"]</div>
                             <ul class="mb-0 ps-3">
                                 @foreach (var err in preCheck.Errors)
                                 {
@@ -127,7 +127,7 @@
                     @if (preCheck.Warnings.Any())
                     {
                         <div class="alert alert-warning py-2">
-                            <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>注意事項</div>
+                            <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>@L["YearEnd.Warnings"]</div>
                             <ul class="mb-0 ps-3">
                                 @foreach (var warn in preCheck.Warnings)
                                 {
@@ -142,8 +142,7 @@
                     {
                         <div class="alert alert-danger py-2">
                             <i class="bi bi-exclamation-octagon-fill me-2"></i>
-                            <strong>執行後將鎖定 @selectedYear 年所有期間，無法再修改該年度任何傳票。</strong><br />
-                            確認所有傳票已完成審核後，點擊右上角「確認執行結帳」。
+                            <strong>@string.Format(L["YearEnd.ConfirmWarning"], selectedYear)</strong>
                         </div>
                     }
                 }
@@ -151,7 +150,7 @@
 
             <div class="d-flex gap-2">
                 <GenericButtonComponent Variant="ButtonVariant.Gray"
-                                        Text="重新選擇年度"
+                                        Text="@L["YearEnd.ReSelectYear"]"
                                         Icon="bi-arrow-left"
                                         OnClick="@(() => { preCheck = null; StateHasChanged(); })" />
             </div>
@@ -162,8 +161,8 @@
         {
             <div class="text-center py-4">
                 <div class="spinner-border text-warning mb-3" role="status"></div>
-                <p class="fw-bold">@selectedYear 年度結帳執行中，請稍候⋯</p>
-                <small class="text-muted">正在產生結帳傳票並鎖定期間，請勿關閉此視窗</small>
+                <p class="fw-bold">@string.Format(L["YearEnd.InProgress"], selectedYear)</p>
+                <small class="text-muted">@L["YearEnd.InProgressNote"]</small>
             </div>
         }
 
@@ -174,13 +173,13 @@
                 @if (string.IsNullOrEmpty(closingError))
                 {
                     <i class="bi bi-check-circle-fill text-success fs-1 mb-3 d-block"></i>
-                    <p class="fw-bold text-success fs-5">@selectedYear 年度結帳完成！</p>
-                    <p class="text-muted">已產生結帳傳票、鎖定年度期間，並初始化 @(selectedYear + 1) 年度期間。</p>
+                    <p class="fw-bold text-success fs-5">@string.Format(L["YearEnd.Success"], selectedYear)</p>
+                    <p class="text-muted">@string.Format(L["YearEnd.SuccessNote"], selectedYear + 1)</p>
                 }
                 else
                 {
                     <i class="bi bi-x-circle-fill text-danger fs-1 mb-3 d-block"></i>
-                    <p class="fw-bold text-danger fs-5">年底結帳失敗</p>
+                    <p class="fw-bold text-danger fs-5">@L["YearEnd.Failed"]</p>
                     <p class="text-muted">@closingError</p>
                 }
             </div>
@@ -202,7 +201,7 @@
     private RenderFragment yearEndButton => __builder =>
     {
         <GenericButtonComponent Variant="ButtonVariant.Yellow"
-                                Text="年度結帳"
+                                Text="@L["YearEnd.OpenButton"]"
                                 Icon="bi-calendar-check"
                                 OnClick="OpenYearEndModalAsync" />;
     };
@@ -286,7 +285,7 @@
             var company = await CompanyService.GetPrimaryCompanyAsync();
             if (company == null)
             {
-                await NotificationService.ShowErrorAsync("找不到預設公司資料");
+                await NotificationService.ShowErrorAsync(L["YearEnd.NoCompany"].ToString());
                 return;
             }
 
@@ -296,7 +295,7 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(RunPreCheckAsync), GetType());
-            await NotificationService.ShowErrorAsync("前置檢查失敗，請稍後再試");
+            await NotificationService.ShowErrorAsync(L["Message.LoadFailed"].ToString());
         }
     }
 
@@ -307,7 +306,7 @@
             var company = await CompanyService.GetPrimaryCompanyAsync();
             if (company == null)
             {
-                await NotificationService.ShowErrorAsync("找不到預設公司資料");
+                await NotificationService.ShowErrorAsync(L["YearEnd.NoCompany"].ToString());
                 return;
             }
 
@@ -326,12 +325,12 @@
 
             if (success)
             {
-                await NotificationService.ShowSuccessAsync($"{selectedYear} 年度結帳完成");
+                await NotificationService.ShowSuccessAsync(string.Format(L["YearEnd.Completed"], selectedYear));
                 await indexComponent.Refresh();
             }
             else
             {
-                await NotificationService.ShowErrorAsync($"年底結帳失敗：{error}");
+                await NotificationService.ShowErrorAsync(string.Format(L["YearEnd.ExecuteFailed"], error));
             }
         }
         catch (Exception ex)

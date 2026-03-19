@@ -7,13 +7,13 @@
 @inject IPurchaseOrderService PurchaseOrderService
 @inject ISupplierService SupplierService
 @inject ICompanyService CompanyService
-@inject IProductService ProductService
+@inject IItemService ItemService
 @inject INotificationService NotificationService
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
 @inject ISystemParameterService SystemParameterService
 @inject ITextMessageTemplateService TextMessageTemplateService
 @inject IPurchaseOrderReportService PurchaseOrderReportService
-@inject IProductSupplierService ProductSupplierService
+@inject IItemSupplierService ItemSupplierService
 @inject NavigationManager NavigationManager
 @inject ActionButtonHelper ActionButtonHelper
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -119,7 +119,7 @@
     // 原始資料集合（用於 AutoComplete）
     private List<Supplier> availableSuppliers = new();
     private List<Company> availableCompanies = new();
-    private List<Product> availableProducts = new();
+    private List<Item> availableItems = new();
     
     // 採購訂單明細
     private List<PurchaseOrderDetail> purchaseOrderDetails = new();
@@ -159,7 +159,7 @@
     
     // ===== 預填資料（從低庫存警戒開啟採購單時使用） =====
     private int? prefilledSupplierId = null;
-    private int? prefilledProductId = null;
+    private int? prefilledItemId = null;
     private decimal? prefilledUnitPrice = null;
     
     // ===== 複製訊息狀態 =====
@@ -250,15 +250,15 @@
                 }
                 
                 // 如果有預填的品項 ID，直接添加明細（在 LoadPurchaseOrderData 中處理，確保 UI 渲染時就有資料）
-                if (prefilledProductId.HasValue && prefilledProductId.Value > 0)
+                if (prefilledItemId.HasValue && prefilledItemId.Value > 0)
                 {
-                    var product = availableProducts.FirstOrDefault(p => p.Id == prefilledProductId.Value);
+                    var product = availableItems.FirstOrDefault(p => p.Id == prefilledItemId.Value);
                     if (product != null)
                     {
-                        // 只設定 ProductId，不設定 Product 導航屬性，避免 EF Core 追蹤錯誤
+                        // 只設定 ItemId，不設定 Item 導航屬性，避免 EF Core 追蹤錯誤
                         var newDetail = new PurchaseOrderDetail
                         {
-                            ProductId = product.Id,
+                            ItemId = product.Id,
                             OrderQuantity = 1,
                             UnitPrice = prefilledUnitPrice ?? 0,
                             ReceivedQuantity = 0,
@@ -323,7 +323,7 @@
             // 載入廠商、公司、品項資料（用於 AutoComplete）
             availableSuppliers = await SupplierService.GetAllAsync();
             availableCompanies = await CompanyService.GetAllAsync();
-            availableProducts = await ProductService.GetAllAsync();
+            availableItems = await ItemService.GetAllAsync();
             
             //  一次性載入系統稅率（避免每次計算都查詢資料庫）
             currentTaxRate = await TaxCalculationHelper.LoadTaxRateAsync(SystemParameterService);
@@ -347,7 +347,7 @@
             
             // 設定安全的預設值
             taxCalculationMethodOptions = new List<SelectOption>();
-            availableProducts = new List<Product>();
+            availableItems = new List<Item>();
         }
     }
 
@@ -542,7 +542,7 @@
             // 將採購明細表格嵌入第一個 Tab（採購單資料）的 ExtraContent
             if (tabDefinitions != null && tabDefinitions.Count > 0)
             {
-                tabDefinitions[0].ExtraContent = CreateProductManagerContent();
+                tabDefinitions[0].ExtraContent = CreateItemManagerContent();
             }
         }
         catch (Exception ex)
@@ -572,14 +572,14 @@
     /// <summary>
     /// 創建品項管理器內容的 RenderFragment
     /// </summary>
-    private RenderFragment CreateProductManagerContent() => __builder =>
+    private RenderFragment CreateItemManagerContent() => __builder =>
     {
         try
         {
             @if (editModalComponent?.Entity != null)
             {
                 // 檢查是否有可用的品項資料
-                @if (availableProducts != null && availableProducts.Any())
+                @if (availableItems != null && availableItems.Any())
                 {
                     // 修正：使用 CSS 隱藏而非條件卸載，避免元件重建
                     // 當 SupplierId <= 0 時隱藏 Table，但不卸載元件
@@ -593,7 +593,7 @@
 
                     <div style="@(editModalComponent.Entity.SupplierId.HasValue && editModalComponent.Entity.SupplierId.Value > 0 ? "" : "display:none")">
                         <PurchaseOrderTable @ref="purchaseOrderDetailManager"
-                                                   Products="@availableProducts"
+                                                   ItemEntities="@availableItems"
                                                    SelectedSupplierId="@editModalComponent.Entity.SupplierId"
                                                    MainEntity="@editModalComponent.Entity"
                                                    ExistingDetails="@purchaseOrderDetails"
@@ -649,7 +649,7 @@
                 new GenericEditModalComponent<PurchaseOrder, IPurchaseOrderService>.CustomModule
                 {
                     Title = "",
-                    Content = CreateProductManagerContent(),
+                    Content = CreateItemManagerContent(),
                     Order = 1
                 }
             };
@@ -848,7 +848,7 @@
         try
         {
             // 檢查是否有有效的明細（至少選擇了品項）
-            var validDetails = purchaseOrderDetails.Where(d => d.ProductId > 0).ToList();
+            var validDetails = purchaseOrderDetails.Where(d => d.ItemId > 0).ToList();
             
             if (!validDetails.Any())
             {
@@ -875,7 +875,7 @@
         // 草稿模式跳過明細驗證
         if (!purchaseOrder.IsDraft)
         {
-            var validDetails = purchaseOrderDetails.Where(d => d.ProductId > 0).ToList();
+            var validDetails = purchaseOrderDetails.Where(d => d.ItemId > 0).ToList();
             if (!validDetails.Any())
             {
                 editModalComponent!.PendingSaveError = "採購單必須至少包含一筆明細資料";
@@ -949,7 +949,7 @@
 
             // 自動同步供應商品項目錄（方案C：從採購歷史自動維護）
             if (purchaseOrder.SupplierId.HasValue && purchaseOrder.SupplierId.Value > 0)
-                await SyncProductSuppliersAsync(purchaseOrder.SupplierId.Value, purchaseOrder.OrderDate);
+                await SyncItemSuppliersAsync(purchaseOrder.SupplierId.Value, purchaseOrder.OrderDate);
 
             // 自動審核：草稿不自動審核；若為系統自動審核模式且尚未審核，儲存後自動核准（ApprovedBy=null 表示系統自動審核）
             if (!purchaseOrder.IsDraft && !isManualApproval && !result.Data.IsApproved)
@@ -992,7 +992,7 @@
             var existingDetails = await PurchaseOrderService.GetOrderDetailsAsync(purchaseOrderId);
             
             // 處理新增和更新的明細
-            foreach (var detail in purchaseOrderDetails.Where(d => d.ProductId > 0))
+            foreach (var detail in purchaseOrderDetails.Where(d => d.ItemId > 0))
             {
                 if (detail.Id == 0)
                 {
@@ -1031,23 +1031,23 @@
     /// - 若品項不在目錄中：自動新增綁定記錄
     /// 為非關鍵操作，失敗時只顯示警告，不影響採購單儲存結果
     /// </summary>
-    private async Task SyncProductSuppliersAsync(int supplierId, DateTime orderDate)
+    private async Task SyncItemSuppliersAsync(int supplierId, DateTime orderDate)
     {
         try
         {
             var validDetails = purchaseOrderDetails
-                .Where(d => d.ProductId > 0)
+                .Where(d => d.ItemId > 0)
                 .ToList();
 
             foreach (var detail in validDetails)
             {
-                bool exists = await ProductSupplierService.IsBindingExistsAsync(detail.ProductId, supplierId);
+                bool exists = await ItemSupplierService.IsBindingExistsAsync(detail.ItemId, supplierId);
 
                 if (!exists)
                 {
-                    await ProductSupplierService.CreateAsync(new ProductSupplier
+                    await ItemSupplierService.CreateAsync(new ItemSupplier
                     {
-                        ProductId = detail.ProductId,
+                        ItemId = detail.ItemId,
                         SupplierId = supplierId,
                         LastPurchasePrice = detail.UnitPrice > 0 ? detail.UnitPrice : null,
                         LastPurchaseDate = orderDate,
@@ -1057,8 +1057,8 @@
                 }
                 else if (detail.UnitPrice > 0)
                 {
-                    await ProductSupplierService.UpdateLastPurchaseInfoAsync(
-                        detail.ProductId, supplierId, detail.UnitPrice, orderDate);
+                    await ItemSupplierService.UpdateLastPurchaseInfoAsync(
+                        detail.ItemId, supplierId, detail.UnitPrice, orderDate);
                 }
             }
         }
@@ -1395,7 +1395,7 @@
             
             // 設定預填資訊（LoadPurchaseOrderData 會讀取這些值）
             prefilledSupplierId = supplierId;
-            prefilledProductId = productId;
+            prefilledItemId = productId;
             prefilledUnitPrice = suggestedUnitPrice;
             
             // 開啟 Modal（會自動觸發 LoadPurchaseOrderData，並在其中設定供應商和明細）
@@ -1406,13 +1406,13 @@
 
             // 清除預填資訊（避免影響下次開啟）
             prefilledSupplierId = null;
-            prefilledProductId = null;
+            prefilledItemId = null;
             prefilledUnitPrice = null;
         }
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledData), GetType(),
-                additionalData: $"開啟預填採購單Modal失敗 - SupplierId: {supplierId}, ProductId: {productId}");
+                additionalData: $"開啟預填採購單Modal失敗 - SupplierId: {supplierId}, ItemId: {productId}");
             await NotificationService.ShowErrorAsync("開啟採購單時發生錯誤");
         }
     }
@@ -1482,10 +1482,10 @@
                 purchaseOrderDetails,
                 formatConfig,
                 (detail, index, config) => TextTemplateHelper.FormatDetailLine(
-                    detail.Product?.Code,
-                    detail.Product?.Name,
+                    detail.Item?.Code,
+                    detail.Item?.Name,
                     detail.OrderQuantity,
-                    detail.Product?.Unit?.Name,
+                    detail.Item?.Unit?.Name,
                     detail.UnitPrice,
                     detail.SubtotalAmount,
                     null, // PurchaseOrderDetail 沒有 Remark 欄位

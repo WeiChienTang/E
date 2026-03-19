@@ -515,6 +515,19 @@ public partial class GenericIndexPageComponent<TEntity, TService>
         return filters;
     }
 
+    // ===== 批次刪除欄位 =====
+
+    /// <summary>
+    /// 取得有效的批次刪除欄位定義。
+    /// 若頁面已設定 BatchDeleteColumnDefinitions 則直接使用；
+    /// 否則（SuperAdmin 預設）提供含 Id 的最小欄位集。
+    /// </summary>
+    private List<InteractiveColumnDefinition> GetEffectiveBatchDeleteColumns() =>
+        BatchDeleteColumnDefinitions ?? new List<InteractiveColumnDefinition>
+        {
+            new() { Title = "ID", PropertyName = nameof(BaseEntity.Id), Width = "80px" }
+        };
+
     // ===== 智能文字產生 =====
 
     private string GetAddButtonText()      => !string.IsNullOrWhiteSpace(AddButtonText)      ? AddButtonText      : string.Format(L["Button.AddEntity"],     EntityName);

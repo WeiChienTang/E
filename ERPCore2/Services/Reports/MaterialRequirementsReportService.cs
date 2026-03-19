@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models;
 using ERPCore2.Models.Enums;
@@ -93,9 +93,9 @@ namespace ERPCore2.Services.Reports
                              && d.ProductionScheduleItem.PlannedStartDate >= startDate
                              && d.ProductionScheduleItem.PlannedStartDate < endDate);
 
-                if (criteria.ProductIds.Any())
+                if (criteria.ItemIds.Any())
                     baseQuery = baseQuery.Where(d =>
-                        criteria.ProductIds.Contains(d.ProductionScheduleItem.ProductId));
+                        criteria.ItemIds.Contains(d.ProductionScheduleItem.ItemId));
 
                 if (criteria.ExcludeCompleted)
                     baseQuery = baseQuery.Where(d =>
@@ -107,11 +107,11 @@ namespace ERPCore2.Services.Reports
                     {
                         d.Id,
                         d.ProductionScheduleItemId,
-                        d.ComponentProductId,
+                        d.ComponentItemId,
                         d.RequiredQuantity,
                         d.IssuedQuantity,
-                        ComponentCode = d.ComponentProduct != null ? d.ComponentProduct.Code : null,
-                        ComponentName = d.ComponentProduct != null ? d.ComponentProduct.Name : null
+                        ComponentCode = d.ComponentItem != null ? d.ComponentItem.Code : null,
+                        ComponentName = d.ComponentItem != null ? d.ComponentItem.Name : null
                     })
                     .ToListAsync();
 
@@ -119,19 +119,19 @@ namespace ERPCore2.Services.Reports
                     return new List<MaterialRequirementRow>();
 
                 // 取得所有相關組件的庫存資料
-                var componentIds = rawDetails.Select(d => d.ComponentProductId).Distinct().ToList();
+                var componentIds = rawDetails.Select(d => d.ComponentItemId).Distinct().ToList();
                 var stocks = await context.InventoryStocks
                     .Include(s => s.InventoryStockDetails)
-                    .Where(s => s.ProductId.HasValue && componentIds.Contains(s.ProductId.Value))
+                    .Where(s => s.ItemId.HasValue && componentIds.Contains(s.ItemId.Value))
                     .ToListAsync();
 
-                var stockByProductId = stocks
-                    .Where(s => s.ProductId.HasValue)
-                    .ToDictionary(s => s.ProductId!.Value, s => s.TotalCurrentStock);
+                var stockByItemId = stocks
+                    .Where(s => s.ItemId.HasValue)
+                    .ToDictionary(s => s.ItemId!.Value, s => s.TotalCurrentStock);
 
                 // 依組件品號彙總
                 var rows = rawDetails
-                    .GroupBy(d => d.ComponentProductId)
+                    .GroupBy(d => d.ComponentItemId)
                     .Select(g =>
                     {
                         var first = g.First();
@@ -139,11 +139,11 @@ namespace ERPCore2.Services.Reports
                         var totalIssued = g.Sum(d => d.IssuedQuantity);
                         var pending = Math.Max(0, totalRequired - totalIssued);
 
-                        stockByProductId.TryGetValue(g.Key, out var currentStock);
+                        stockByItemId.TryGetValue(g.Key, out var currentStock);
 
                         return new MaterialRequirementRow
                         {
-                            ComponentProductId = g.Key,
+                            ComponentItemId = g.Key,
                             ComponentCode = first.ComponentCode ?? "",
                             ComponentName = first.ComponentName ?? "（未知組件）",
                             ScheduleItemCount = g.Select(d => d.ProductionScheduleItemId).Distinct().Count(),
@@ -279,7 +279,7 @@ namespace ERPCore2.Services.Reports
 
         private class MaterialRequirementRow
         {
-            public int ComponentProductId { get; set; }
+            public int ComponentItemId { get; set; }
             public string ComponentCode { get; set; } = "";
             public string ComponentName { get; set; } = "";
             public int ScheduleItemCount { get; set; }

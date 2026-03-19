@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
@@ -41,9 +41,9 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesOrderDetails
                     .Include(sod => sod.SalesOrder)
-                    .Include(sod => sod.Product)
+                    .Include(sod => sod.Item)
                     .Include(sod => sod.Unit)
-                    .Where(sod => (sod.Product!.Name!.Contains(searchTerm) ||
+                    .Where(sod => (sod.Item!.Name!.Contains(searchTerm) ||
                                   (sod.SalesOrder.Code != null && sod.SalesOrder.Code.Contains(searchTerm)) ||
                                   (!string.IsNullOrEmpty(sod.Remarks) && sod.Remarks.Contains(searchTerm))))
                     .OrderBy(sod => sod.SalesOrder.OrderDate)
@@ -74,7 +74,7 @@ namespace ERPCore2.Services
                 }
 
                 // 驗證品項
-                if (entity.ProductId <= 0)
+                if (entity.ItemId <= 0)
                 {
                     errors.Add("品項為必填");
                 }
@@ -98,11 +98,11 @@ namespace ERPCore2.Services
                 }
 
                 // 檢查品項在同一訂單中是否重複
-                if (entity.SalesOrderId > 0 && entity.ProductId > 0)
+                if (entity.SalesOrderId > 0 && entity.ItemId > 0)
                 {
-                    var isDuplicate = await IsProductExistsInOrderAsync(
+                    var isDuplicate = await IsItemExistsInOrderAsync(
                         entity.SalesOrderId, 
-                        entity.ProductId, 
+                        entity.ItemId, 
                         entity.Id > 0 ? entity.Id : null);
                     
                     if (isDuplicate)
@@ -122,7 +122,7 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
                     SalesOrderId = entity.SalesOrderId,
-                    ProductId = entity.ProductId
+                    ItemId = entity.ItemId
                 });
                 return ServiceResult.Failure("驗證銷貨訂單明細時發生錯誤");
             }
@@ -136,7 +136,7 @@ namespace ERPCore2.Services
         {
             return context.SalesOrderDetails
                 .Include(sod => sod.SalesOrder)
-                .Include(sod => sod.Product)
+                .Include(sod => sod.Item)
                 .Include(sod => sod.Unit)
                 .OrderBy(sod => sod.SalesOrder.OrderDate)
                 .ThenBy(sod => sod.Id);
@@ -149,7 +149,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesOrderDetails
                     .Include(sod => sod.SalesOrder)
-                    .Include(sod => sod.Product)
+                    .Include(sod => sod.Item)
                     .Include(sod => sod.Unit)
                     .FirstOrDefaultAsync(sod => sod.Id == id);
             }
@@ -177,7 +177,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesOrderDetails
-                    .Include(sod => sod.Product)
+                    .Include(sod => sod.Item)
                     .Include(sod => sod.Unit)
                     .Include(sod => sod.Warehouse)
                     .Where(sod => sod.SalesOrderId == salesOrderId)
@@ -198,7 +198,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據品項ID取得銷貨訂單明細
         /// </summary>
-        public async Task<List<SalesOrderDetail>> GetByProductIdAsync(int productId)
+        public async Task<List<SalesOrderDetail>> GetByItemIdAsync(int productId)
         {
             try
             {
@@ -206,16 +206,16 @@ namespace ERPCore2.Services
                 return await context.SalesOrderDetails
                     .Include(sod => sod.SalesOrder)
                     .Include(sod => sod.Unit)
-                    .Where(sod => sod.ProductId == productId)
+                    .Where(sod => sod.ItemId == productId)
                     .OrderByDescending(sod => sod.SalesOrder.OrderDate)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAsync), GetType(), _logger, new {
-                    Method = nameof(GetByProductIdAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemIdAsync), GetType(), _logger, new {
+                    Method = nameof(GetByItemIdAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId
+                    ItemId = productId
                 });
                 return new List<SalesOrderDetail>();
             }
@@ -266,7 +266,7 @@ namespace ERPCore2.Services
                 foreach (var detail in details)
                 {
                     // 只處理有效的明細（已選擇品項的）
-                    if (detail.ProductId > 0)
+                    if (detail.ItemId > 0)
                     {
                         // SubtotalAmount 現在是計算屬性，由 OrderQuantity * UnitPrice 自動計算
                         detail.UpdatedAt = DateTime.UtcNow;
@@ -324,14 +324,14 @@ namespace ERPCore2.Services
         /// <summary>
         /// 檢查品項在訂單中是否已存在
         /// </summary>
-        public async Task<bool> IsProductExistsInOrderAsync(int salesOrderId, int productId, int? excludeDetailId = null)
+        public async Task<bool> IsItemExistsInOrderAsync(int salesOrderId, int productId, int? excludeDetailId = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.SalesOrderDetails
                     .Where(sod => sod.SalesOrderId == salesOrderId && 
-                                  sod.ProductId == productId);
+                                  sod.ItemId == productId);
 
                 if (excludeDetailId.HasValue)
                 {
@@ -342,11 +342,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsProductExistsInOrderAsync), GetType(), _logger, new {
-                    Method = nameof(IsProductExistsInOrderAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsItemExistsInOrderAsync), GetType(), _logger, new {
+                    Method = nameof(IsItemExistsInOrderAsync),
                     ServiceType = GetType().Name,
                     SalesOrderId = salesOrderId,
-                    ProductId = productId,
+                    ItemId = productId,
                     ExcludeDetailId = excludeDetailId
                 });
                 return false;
@@ -364,7 +364,7 @@ namespace ERPCore2.Services
                 return await context.SalesOrderDetails
                     .Include(sod => sod.SalesOrder)
                         .ThenInclude(so => so.Customer)
-                    .Include(sod => sod.Product)
+                    .Include(sod => sod.Item)
                     .Include(sod => sod.Unit)
                     .FirstOrDefaultAsync(sod => sod.Id == detailId);
             }
@@ -388,7 +388,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesOrderDetails
-                    .Include(sod => sod.Product)
+                    .Include(sod => sod.Item)
                     .Include(sod => sod.Unit)
                     .Where(sod => sod.SalesOrderId == salesOrderId)
                     .OrderBy(sod => sod.Id)
@@ -417,7 +417,7 @@ namespace ERPCore2.Services
                 return await context.SalesOrderDetails
                     .Include(sod => sod.SalesOrder)
                         .ThenInclude(so => so.Customer)
-                    .Include(sod => sod.Product)
+                    .Include(sod => sod.Item)
                     .Include(sod => sod.Unit)
                     .Include(sod => sod.Warehouse)
                     .Where(sod => 
@@ -427,7 +427,7 @@ namespace ERPCore2.Services
                     )
                     .OrderBy(sod => sod.SalesOrder.OrderDate)
                     .ThenBy(sod => sod.SalesOrder.Code)
-                    .ThenBy(sod => sod.Product.Code)
+                    .ThenBy(sod => sod.Item.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -476,7 +476,7 @@ namespace ERPCore2.Services
                 // 查詢該客戶最近一次的銷貨單
                 var lastSalesOrder = await context.SalesOrders
                     .Include(so => so.SalesOrderDetails)
-                        .ThenInclude(sod => sod.Product)
+                        .ThenInclude(sod => sod.Item)
                     .Include(so => so.SalesOrderDetails)
                         .ThenInclude(sod => sod.Warehouse)
                     .Where(so => so.CustomerId == customerId 
@@ -490,7 +490,7 @@ namespace ERPCore2.Services
 
                 // 返回該銷貨單的所有明細
                 return lastSalesOrder.SalesOrderDetails
-                    .Where(sod => sod.Product != null)
+                    .Where(sod => sod.Item != null)
                     .OrderBy(sod => sod.Id)
                     .ToList();
             }
@@ -582,7 +582,7 @@ namespace ERPCore2.Services
                 return await context.SalesOrderDetails
                     .Include(d => d.SalesOrder)
                         .ThenInclude(so => so.Customer)
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Where(d =>
                         d.Status == EntityStatus.Active &&
                         d.SalesOrder.Status == EntityStatus.Active &&

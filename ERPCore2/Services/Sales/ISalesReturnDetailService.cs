@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 
 namespace ERPCore2.Services
@@ -20,7 +20,7 @@ namespace ERPCore2.Services
         /// </summary>
         /// <param name="productId">品項ID</param>
         /// <returns>明細清單</returns>
-        Task<List<SalesReturnDetail>> GetByProductIdAsync(int productId);
+        Task<List<SalesReturnDetail>> GetByItemIdAsync(int productId);
 
         /// <summary>
         /// 根據銷貨出貨明細ID取得退回明細清單
@@ -75,7 +75,7 @@ namespace ERPCore2.Services
         public int TotalDetails { get; set; }
         public decimal TotalReturnQuantity { get; set; }
         public decimal TotalReturnAmount { get; set; }
-        public int ProductCount { get; set; }
-        public Dictionary<int, decimal> ProductReturnQuantities { get; set; } = new();
+        public int ItemCount { get; set; }
+        public Dictionary<int, decimal> ItemReturnQuantities { get; set; } = new();
     }
 }

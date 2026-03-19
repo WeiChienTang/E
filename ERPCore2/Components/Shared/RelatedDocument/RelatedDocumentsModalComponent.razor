@@ -1,4 +1,4 @@
-@inject INotificationService NotificationService
+﻿@inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 @using ERPCore2.Components.Shared.RelatedDocument.Config
 @using ERPCore2.Components.Shared.RelatedDocument.Components
@@ -6,7 +6,7 @@
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
-                   Title="@(string.Format(L["RelatedDoc.Title"].ToString(), ProductName))"
+                   Title="@(string.Format(L["RelatedDoc.Title"].ToString(), ItemName))"
                    Icon="bi bi-link-45deg"
                    Size="BaseModalComponent.ModalSize.Large"
                    HeaderColor="BaseModalComponent.HeaderVariant.Primary"
@@ -62,7 +62,7 @@
 @code {
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-    [Parameter] public string ProductName { get; set; } = string.Empty;
+    [Parameter] public string ItemName { get; set; } = string.Empty;
     [Parameter] public List<RelatedDocumentInfo>? RelatedDocuments { get; set; }
     [Parameter] public bool IsLoading { get; set; }
     [Parameter] public EventCallback<RelatedDocumentInfo> OnDocumentClick { get; set; }
@@ -95,7 +95,7 @@
                 .OrderBy(t => t)
                 .Select(t => t switch
                 {
-                    RelatedDocumentType.ProductComposition     => "CompositionDetailsTemplate",
+                    RelatedDocumentType.ItemComposition     => "CompositionDetailsTemplate",
                     RelatedDocumentType.SalesOrder             => "SalesOrderDetailsTemplate",
                     RelatedDocumentType.ReceivingDocument      => "ReceivingDetailsTemplate",
                     RelatedDocumentType.ReturnDocument         => "ReturnDetailsTemplate",
@@ -140,7 +140,7 @@
     {
         return type switch
         {
-            RelatedDocumentType.ProductComposition => doc => 
+            RelatedDocumentType.ItemComposition => doc => 
                 @<CompositionDetailsTemplate Document="@doc" />,
             
             RelatedDocumentType.SalesOrder => doc => 

@@ -18,7 +18,7 @@
                           ServerDataLoader="@ServerLoadSizesAsync"
                           GetEntityDisplayName="@(size => size.Name)"
                           RequiredPermission="@PermissionRegistry.Size.Read"
-                          RequiredModule="Products"
+                          RequiredModule="Items"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
                           DebugPageName="SizeIndex"

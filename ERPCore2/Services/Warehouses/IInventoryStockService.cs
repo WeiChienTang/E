@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
 
@@ -10,10 +10,10 @@ namespace ERPCore2.Services
     public interface IInventoryStockService : IGenericManagementService<InventoryStock>
     {
         // 基本查詢
-        Task<List<InventoryStock>> GetByProductIdAsync(int productId);
+        Task<List<InventoryStock>> GetByItemIdAsync(int productId);
         Task<List<InventoryStock>> GetByWarehouseIdAsync(int warehouseId);
-        Task<InventoryStock?> GetByProductWarehouseAsync(int productId, int warehouseId, int? locationId = null);
-        Task<InventoryStock?> GetByProductWarehouseAsync(int productId, int? warehouseId = null, int? locationId = null);
+        Task<InventoryStock?> GetByItemWarehouseAsync(int productId, int warehouseId, int? locationId = null);
+        Task<InventoryStock?> GetByItemWarehouseAsync(int productId, int? warehouseId = null, int? locationId = null);
         Task<List<InventoryStock>> GetLowStockItemsAsync();
         Task<decimal> GetAvailableStockAsync(int productId, int warehouseId, int? locationId = null);
         Task<InventoryStockDetail?> GetStockDetailAsync(int productId, int warehouseId, int? locationId = null);
@@ -93,7 +93,7 @@ namespace ERPCore2.Services
         Task<List<InventoryStockDetail>> GetOverStockDetailsAsync();
         
         // 取得品項的可用倉庫位置清單
-        Task<List<InventoryStockDetail>> GetAvailableWarehouseLocationsByProductAsync(int productId);
+        Task<List<InventoryStockDetail>> GetAvailableWarehouseLocationsByItemAsync(int productId);
 
         #region 伺服器端分頁
 

@@ -1,4 +1,4 @@
-@* 品項會計資訊 Tab — 顯示存貨子科目，並可立即建立 *@
+﻿@* 品項會計資訊 Tab — 顯示存貨子科目，並可立即建立 *@
 @inject ISubAccountService SubAccountService
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthStateProvider
@@ -55,13 +55,13 @@ else
                                OnClick="HandleCreateAsync"
                                IsLoading="@_isCreating"
                                IsDisabled="@_isCreating"
-                               Title="@L["Accounting.CreateProductSubAccountTitle"]" />
+                               Title="@L["Accounting.CreateItemSubAccountTitle"]" />
     }
 }
 
 @code {
     /// <summary>品項 ID（由父元件傳入，用於自動載入資料）</summary>
-    [Parameter] public int? ProductId { get; set; }
+    [Parameter] public int? ItemId { get; set; }
 
     private int _productId;
     private int _lastLoadedId;
@@ -71,7 +71,7 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        var newId = ProductId ?? 0;
+        var newId = ItemId ?? 0;
         if (newId > 0 && newId != _lastLoadedId)
         {
             await LoadAsync(newId);
@@ -105,7 +105,7 @@ else
         _isLoading = true;
         StateHasChanged();
 
-        _subAccount = await SubAccountService.GetSubAccountForProductAsync(_productId);
+        _subAccount = await SubAccountService.GetSubAccountForItemAsync(_productId);
 
         _isLoading = false;
     }
@@ -120,7 +120,7 @@ else
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             var createdBy = authState.User.Identity?.Name ?? "system";
 
-            await SubAccountService.GetOrCreateProductSubAccountAsync(_productId, createdBy);
+            await SubAccountService.GetOrCreateItemSubAccountAsync(_productId, createdBy);
             await RefreshAsync();
         }
         catch (Exception)

@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -128,7 +128,7 @@ namespace ERPCore2.Services
                     .Include(st => st.WarehouseLocation)
                     .Include(st => st.ApprovedByUser)
                     .Include(st => st.StockTakingDetails)
-                        .ThenInclude(std => std.Product)
+                        .ThenInclude(std => std.Item)
                     .Include(st => st.StockTakingDetails)
                         .ThenInclude(std => std.WarehouseLocation)
                     .FirstOrDefaultAsync(st => st.Id == id);
@@ -177,7 +177,7 @@ namespace ERPCore2.Services
         }
 
         public async Task<ServiceResult> GenerateStockTakingListAsync(int warehouseId, int? warehouseLocationId = null, 
-            StockTakingTypeEnum takingType = StockTakingTypeEnum.Full, List<int>? specificProductIds = null)
+            StockTakingTypeEnum takingType = StockTakingTypeEnum.Full, List<int>? specificItemIds = null)
         {
             try
             {
@@ -202,12 +202,12 @@ namespace ERPCore2.Services
                     await context.SaveChangesAsync();
 
                     // 產生盤點明細
-                    var stockItems = await GetStockItemsForTakingAsync(context, warehouseId, warehouseLocationId, takingType, specificProductIds);
+                    var stockItems = await GetStockItemsForTakingAsync(context, warehouseId, warehouseLocationId, takingType, specificItemIds);
                     
                     var takingDetails = stockItems.Select(item => new StockTakingDetail
                     {
                         StockTakingId = stockTaking.Id,
-                        ProductId = item.InventoryStock.ProductId!.Value,
+                        ItemId = item.InventoryStock.ItemId!.Value,
                         WarehouseLocationId = item.WarehouseLocationId,
                         SystemStock = item.CurrentStock,
                         UnitCost = item.AverageCost,
@@ -395,10 +395,10 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.StockTakingDetails
-                    .Include(std => std.Product)
+                    .Include(std => std.Item)
                     .Include(std => std.WarehouseLocation)
                     .Where(std => std.StockTakingId == stockTakingId)
-                    .OrderBy(std => std.Product.Code)
+                    .OrderBy(std => std.Item.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -481,7 +481,7 @@ namespace ERPCore2.Services
                     }
 
                     // 更新統計資訊
-                    savedEntity.TotalItems = details.Count(d => d.ProductId > 0);
+                    savedEntity.TotalItems = details.Count(d => d.ItemId > 0);
                     savedEntity.CompletedItems = details.Count(d => d.ActualStock.HasValue);
                     savedEntity.DifferenceItems = details.Count(d => 
                         d.ActualStock.HasValue && d.ActualStock.Value != d.SystemStock);
@@ -527,7 +527,7 @@ namespace ERPCore2.Services
                 var newDetailsToAdd = new List<StockTakingDetail>();
                 var existingDetailsToKeep = new HashSet<int>();
 
-                foreach (var detail in details.Where(d => d.ProductId > 0))
+                foreach (var detail in details.Where(d => d.ItemId > 0))
                 {
                     detail.StockTakingId = stockTakingId;
                     detail.UpdatedAt = DateTime.UtcNow;
@@ -539,7 +539,7 @@ namespace ERPCore2.Services
                         if (existing != null)
                         {
                             // 更新明細資料
-                            existing.ProductId = detail.ProductId;
+                            existing.ItemId = detail.ItemId;
                             existing.WarehouseLocationId = detail.WarehouseLocationId;
                             existing.SystemStock = detail.SystemStock;
                             existing.ActualStock = detail.ActualStock;
@@ -663,12 +663,12 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.StockTakingDetails
-                    .Include(std => std.Product)
+                    .Include(std => std.Item)
                     .Include(std => std.WarehouseLocation)
                     .Where(std => std.StockTakingId == stockTakingId && 
                                   std.ActualStock.HasValue && 
                                   std.ActualStock.Value != std.SystemStock)
-                    .OrderBy(std => std.Product.Code)
+                    .OrderBy(std => std.Item.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -720,7 +720,7 @@ namespace ERPCore2.Services
                             if (_inventoryStockService != null)
                             {
                                 var result = await _inventoryStockService.AdjustStockAsync(
-                                    item.ProductId,
+                                    item.ItemId,
                                     stockTaking.WarehouseId!.Value,
                                     item.ActualStock.Value,  // 調整後的新數量
                                     adjustmentNumber,
@@ -1088,7 +1088,7 @@ namespace ERPCore2.Services
                     var rollbackNumber = $"RB-{stockTaking.Id}-{rollbackCount + 1:D3}";
                     
                     var result = await _inventoryStockService.AdjustStockAsync(
-                        detail.ProductId,
+                        detail.ItemId,
                         stockTaking.WarehouseId!.Value,
                         detail.SystemStock,  // 還原到盤點前的數量
                         rollbackNumber,
@@ -1100,7 +1100,7 @@ namespace ERPCore2.Services
 
                     if (!result.IsSuccess)
                     {
-                        return ServiceResult.Failure($"回滾庫存失敗（品項ID: {detail.ProductId}）：{result.ErrorMessage}");
+                        return ServiceResult.Failure($"回滾庫存失敗（品項ID: {detail.ItemId}）：{result.ErrorMessage}");
                     }
 
                     rollbackCount++;
@@ -1141,11 +1141,11 @@ namespace ERPCore2.Services
         }
 
         private async Task<List<InventoryStockDetail>> GetStockItemsForTakingAsync(AppDbContext context, int warehouseId, 
-            int? warehouseLocationId, StockTakingTypeEnum takingType, List<int>? specificProductIds)
+            int? warehouseLocationId, StockTakingTypeEnum takingType, List<int>? specificItemIds)
         {
             var query = context.InventoryStockDetails
                 .Include(i => i.InventoryStock)
-                .ThenInclude(s => s.Product)
+                .ThenInclude(s => s.Item)
                 .Where(i => i.WarehouseId == warehouseId);
 
             // 依盤點類型篩選
@@ -1157,8 +1157,8 @@ namespace ERPCore2.Services
                     break;
 
                 case StockTakingTypeEnum.Specific:
-                    if (specificProductIds != null && specificProductIds.Any())
-                        query = query.Where(i => i.InventoryStock.ProductId.HasValue && specificProductIds.Contains(i.InventoryStock.ProductId.Value));
+                    if (specificItemIds != null && specificItemIds.Any())
+                        query = query.Where(i => i.InventoryStock.ItemId.HasValue && specificItemIds.Contains(i.InventoryStock.ItemId.Value));
                     break;
 
                 case StockTakingTypeEnum.Cycle:

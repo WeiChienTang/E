@@ -1,4 +1,4 @@
-namespace ERPCore2.Models.Schedule
+﻿namespace ERPCore2.Models.Schedule
 {
     /// <summary>
     /// 待排程明細 DTO - 用於明細選擇表格（以品項為核心顯示）
@@ -43,17 +43,17 @@ namespace ERPCore2.Models.Schedule
         /// <summary>
         /// 品項 ID
         /// </summary>
-        public int ProductId { get; set; }
+        public int ItemId { get; set; }
         
         /// <summary>
         /// 品項編號
         /// </summary>
-        public string ProductCode { get; set; } = string.Empty;
+        public string ItemCode { get; set; } = string.Empty;
         
         /// <summary>
         /// 品項名稱
         /// </summary>
-        public string ProductName { get; set; } = string.Empty;
+        public string ItemName { get; set; } = string.Empty;
         
         /// <summary>
         /// 訂單數量

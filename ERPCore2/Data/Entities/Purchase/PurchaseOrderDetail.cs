@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Models.Enums;
@@ -8,8 +8,8 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 採購訂單明細實體 - 記錄採購訂單品項明細
     /// </summary>
-    [Index(nameof(PurchaseOrderId), nameof(ProductId))]
-    [Index(nameof(ProductId))]
+    [Index(nameof(PurchaseOrderId), nameof(ItemId))]
+    [Index(nameof(ItemId))]
     public class PurchaseOrderDetail : BaseEntity
     {
         [Required(ErrorMessage = "採購訂單為必填")]
@@ -19,8 +19,8 @@ namespace ERPCore2.Data.Entities
 
         [Required(ErrorMessage = "品項為必填")]
         [Display(Name = "品項")]
-        [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int ItemId { get; set; }
 
         [Required(ErrorMessage = "訂購數量為必填")]
         [Display(Name = "訂購數量")]
@@ -71,7 +71,7 @@ namespace ERPCore2.Data.Entities
 
         // Navigation Properties
         public PurchaseOrder PurchaseOrder { get; set; } = null!;
-        public Product Product { get; set; } = null!;
+        public Item Item { get; set; } = null!;
         public Employee? CompletedByEmployee { get; set; }
         public ICollection<PurchaseReceivingDetail> PurchaseReceivingDetails { get; set; } = new List<PurchaseReceivingDetail>();
     }

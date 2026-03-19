@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 
 namespace ERPCore2.Services
@@ -17,7 +17,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據組件品項ID取得明細列表
         /// </summary>
-        Task<List<ProductionScheduleDetail>> GetByComponentProductIdAsync(int productId);
+        Task<List<ProductionScheduleDetail>> GetByComponentItemIdAsync(int productId);
 
         /// <summary>
         /// 根據倉庫ID取得明細列表

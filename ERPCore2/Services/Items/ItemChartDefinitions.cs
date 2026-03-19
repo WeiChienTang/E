@@ -1,36 +1,36 @@
-using ApexCharts;
+﻿using ApexCharts;
 using ERPCore2.Components.Shared.Table;
 using ERPCore2.Models.Charts;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ERPCore2.Services.Products;
+namespace ERPCore2.Services.Items;
 
-public static class ProductChartDefinitions
+public static class ItemChartDefinitions
 {
     public static void Register(List<ChartDefinition> definitions)
     {
         definitions.Add(new ChartDefinition
         {
-            ChartId            = ChartIds.ProductByCategory,
+            ChartId            = ChartIds.ItemByCategory,
             Title              = "依品類分布",
-            Category           = ChartCategory.Product,
+            Category           = ChartCategory.Item,
             SortOrder          = 1,
             DefaultSeriesType  = SeriesType.Donut,
             AllowedSeriesTypes = new() { SeriesType.Donut, SeriesType.Pie, SeriesType.Bar, SeriesType.Treemap, SeriesType.PolarArea },
-            DataFetcher        = sp => sp.GetRequiredService<IProductChartService>().GetProductsByCategoryAsync(),
-            DetailFetcher      = (sp, label) => sp.GetRequiredService<IProductChartService>().GetProductDetailsByCategoryAsync(label)
+            DataFetcher        = sp => sp.GetRequiredService<IItemChartService>().GetItemsByCategoryAsync(),
+            DetailFetcher      = (sp, label) => sp.GetRequiredService<IItemChartService>().GetItemDetailsByCategoryAsync(label)
         });
 
         definitions.Add(new ChartDefinition
         {
-            ChartId            = ChartIds.ProductTopSalesByQuantity,
+            ChartId            = ChartIds.ItemTopSalesByQuantity,
             Title              = "銷售數量排行 Top 10",
-            Category           = ChartCategory.Product,
+            Category           = ChartCategory.Item,
             SortOrder          = 2,
             DefaultSeriesType  = SeriesType.Bar,
             AllowedSeriesTypes = new() { SeriesType.Bar, SeriesType.Treemap },
-            DataFetcher        = sp => sp.GetRequiredService<IProductChartService>().GetTopProductsBySalesQuantityAsync(),
-            DetailFetcher      = (sp, label) => sp.GetRequiredService<IProductChartService>().GetTopProductSalesQuantityDetailsAsync(label),
+            DataFetcher        = sp => sp.GetRequiredService<IItemChartService>().GetTopItemsBySalesQuantityAsync(),
+            DetailFetcher      = (sp, label) => sp.GetRequiredService<IItemChartService>().GetTopItemSalesQuantityDetailsAsync(label),
             DetailColumns      = new()
             {
                 new() { Title = "出貨日期", PropertyName = "Name",     ColumnType = InteractiveColumnType.Display },
@@ -40,15 +40,15 @@ public static class ProductChartDefinitions
 
         definitions.Add(new ChartDefinition
         {
-            ChartId            = ChartIds.ProductTopSalesByAmount,
+            ChartId            = ChartIds.ItemTopSalesByAmount,
             Title              = "銷售金額排行 Top 10",
-            Category           = ChartCategory.Product,
+            Category           = ChartCategory.Item,
             SortOrder          = 3,
             DefaultSeriesType  = SeriesType.Bar,
             AllowedSeriesTypes = new() { SeriesType.Bar, SeriesType.Treemap },
             IsMoneyChart       = true,
-            DataFetcher        = sp => sp.GetRequiredService<IProductChartService>().GetTopProductsBySalesAmountAsync(),
-            DetailFetcher      = (sp, label) => sp.GetRequiredService<IProductChartService>().GetTopProductSalesAmountDetailsAsync(label),
+            DataFetcher        = sp => sp.GetRequiredService<IItemChartService>().GetTopItemsBySalesAmountAsync(),
+            DetailFetcher      = (sp, label) => sp.GetRequiredService<IItemChartService>().GetTopItemSalesAmountDetailsAsync(label),
             DetailColumns      = new()
             {
                 new() { Title = "出貨日期", PropertyName = "Name",     ColumnType = InteractiveColumnType.Display },
@@ -58,27 +58,27 @@ public static class ProductChartDefinitions
 
         definitions.Add(new ChartDefinition
         {
-            ChartId            = ChartIds.ProductMonthlySalesTrend,
+            ChartId            = ChartIds.ItemMonthlySalesTrend,
             Title              = "每月銷售收入趨勢",
-            Category           = ChartCategory.Product,
+            Category           = ChartCategory.Item,
             SortOrder          = 4,
             DefaultSeriesType  = SeriesType.Area,
             AllowedSeriesTypes = new() { SeriesType.Area, SeriesType.Line },
             IsMoneyChart       = true,
-            DataFetcher        = sp => sp.GetRequiredService<IProductChartService>().GetMonthlySalesTrendAsync()
+            DataFetcher        = sp => sp.GetRequiredService<IItemChartService>().GetMonthlySalesTrendAsync()
             // 月趨勢圖不支援 drill-down
         });
 
         definitions.Add(new ChartDefinition
         {
-            ChartId            = ChartIds.ProductBySupplierCount,
+            ChartId            = ChartIds.ItemBySupplierCount,
             Title              = "依供應商報價品項數",
-            Category           = ChartCategory.Product,
+            Category           = ChartCategory.Item,
             SortOrder          = 5,
             DefaultSeriesType  = SeriesType.Bar,
             AllowedSeriesTypes = new() { SeriesType.Bar, SeriesType.Pie, SeriesType.Donut, SeriesType.Treemap, SeriesType.PolarArea },
-            DataFetcher        = sp => sp.GetRequiredService<IProductChartService>().GetProductsBySupplierCountAsync(),
-            DetailFetcher      = (sp, label) => sp.GetRequiredService<IProductChartService>().GetProductDetailsBySupplierAsync(label),
+            DataFetcher        = sp => sp.GetRequiredService<IItemChartService>().GetItemsBySupplierCountAsync(),
+            DetailFetcher      = (sp, label) => sp.GetRequiredService<IItemChartService>().GetItemDetailsBySupplierAsync(label),
             DetailColumns      = new()
             {
                 new() { Title = "品項名稱", PropertyName = "Name",     ColumnType = InteractiveColumnType.Display },
@@ -88,14 +88,14 @@ public static class ProductChartDefinitions
 
         definitions.Add(new ChartDefinition
         {
-            ChartId            = ChartIds.ProductByStandardCostRange,
+            ChartId            = ChartIds.ItemByStandardCostRange,
             Title              = "依標準成本分段分布",
-            Category           = ChartCategory.Product,
+            Category           = ChartCategory.Item,
             SortOrder          = 6,
             DefaultSeriesType  = SeriesType.Bar,
             AllowedSeriesTypes = new() { SeriesType.Bar, SeriesType.Pie, SeriesType.Donut },
-            DataFetcher        = sp => sp.GetRequiredService<IProductChartService>().GetProductsByStandardCostRangeAsync(),
-            DetailFetcher      = (sp, label) => sp.GetRequiredService<IProductChartService>().GetProductDetailsByStandardCostRangeAsync(label),
+            DataFetcher        = sp => sp.GetRequiredService<IItemChartService>().GetItemsByStandardCostRangeAsync(),
+            DetailFetcher      = (sp, label) => sp.GetRequiredService<IItemChartService>().GetItemDetailsByStandardCostRangeAsync(label),
             DetailColumns      = new()
             {
                 new() { Title = "品項名稱", PropertyName = "Name",     ColumnType = InteractiveColumnType.Display },

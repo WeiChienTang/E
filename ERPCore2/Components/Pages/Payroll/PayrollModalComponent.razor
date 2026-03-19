@@ -272,7 +272,9 @@
             StateHasChanged();
 
             var empResult = await EmployeeService.GetActiveEmployeesAsync();
-            var employees = empResult.IsSuccess ? (empResult.Data ?? new()) : new();
+            var employees = (empResult.IsSuccess ? (empResult.Data ?? new()) : new())
+                .Where(e => !e.IsSuperAdmin)
+                .ToList();
             var records = await CalculationService.GetByPeriodAsync(selectedPeriod.Id);
 
             rowViewModels = employees.Select(emp => new PayrollEmployeeTable.RowViewModel

@@ -1,11 +1,11 @@
-using ERPCore2.Models.Charts;
+﻿using ERPCore2.Models.Charts;
 
 namespace ERPCore2.Services.Purchase;
 
 public interface IPurchaseChartService
 {
     /// <summary>依品項統計進貨金額排行 Top N（含稅）</summary>
-    Task<List<ChartDataItem>> GetTopProductsByReceivingAmountAsync(int top = 10);
+    Task<List<ChartDataItem>> GetTopItemsByReceivingAmountAsync(int top = 10);
 
     /// <summary>取得近 N 個月每月進貨金額趨勢（含稅）</summary>
     Task<List<ChartDataItem>> GetMonthlyReceivingTrendAsync(int months = 12);
@@ -23,7 +23,7 @@ public interface IPurchaseChartService
     Task<PurchaseChartSummary> GetSummaryAsync();
 
     // ===== Drill-down 明細查詢 =====
-    Task<List<ChartDetailItem>> GetReceivingDetailsByProductAsync(string productLabel);
+    Task<List<ChartDetailItem>> GetReceivingDetailsByItemAsync(string productLabel);
     Task<List<ChartDetailItem>> GetOrderDetailsByApprovalStatusAsync(string label);
     Task<List<ChartDetailItem>> GetReturnDetailsByReasonAsync(string reasonLabel);
 }

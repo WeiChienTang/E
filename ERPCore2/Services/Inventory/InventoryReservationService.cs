@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -24,22 +24,22 @@ namespace ERPCore2.Services
 
         #region 基本查詢
 
-        public async Task<List<InventoryReservation>> GetByProductIdAsync(int productId)
+        public async Task<List<InventoryReservation>> GetByItemIdAsync(int productId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryReservations
-                    .Include(r => r.Product)
+                    .Include(r => r.Item)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
-                    .Where(r => r.ProductId == productId)
+                    .Where(r => r.ItemId == productId)
                     .OrderByDescending(r => r.ReservationDate)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAsync), typeof(InventoryReservationService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemIdAsync), typeof(InventoryReservationService), _logger);
                 return new List<InventoryReservation>();
             }
         }
@@ -50,7 +50,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryReservations
-                    .Include(r => r.Product)
+                    .Include(r => r.Item)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
                     .Where(r => r.WarehouseId == warehouseId)
@@ -70,7 +70,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryReservations
-                    .Include(r => r.Product)
+                    .Include(r => r.Item)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
                     .Where(r => r.ReferenceNumber == referenceNumber)
@@ -90,7 +90,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryReservations
-                    .Include(r => r.Product)
+                    .Include(r => r.Item)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
                     .Where(r => r.ReservationType == reservationType)
@@ -110,7 +110,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryReservations
-                    .Include(r => r.Product)
+                    .Include(r => r.Item)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
                     .Where(r => r.ReservationStatus == InventoryReservationStatus.Reserved && 
@@ -131,7 +131,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryReservations
-                    .Include(r => r.Product)
+                    .Include(r => r.Item)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
                     .Where(r => r.ReservationStatus == InventoryReservationStatus.Reserved && 
@@ -151,16 +151,16 @@ namespace ERPCore2.Services
 
         #region 特定查詢
 
-        public async Task<List<InventoryReservation>> GetActiveByProductAsync(int productId, int? warehouseId = null)
+        public async Task<List<InventoryReservation>> GetActiveByItemAsync(int productId, int? warehouseId = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.InventoryReservations
-                    .Include(r => r.Product)
+                    .Include(r => r.Item)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
-                    .Where(r => r.ProductId == productId && 
+                    .Where(r => r.ItemId == productId && 
                                r.ReservationStatus == InventoryReservationStatus.Reserved && 
                                (r.ExpiryDate == null || r.ExpiryDate > DateTime.Now));
 
@@ -173,7 +173,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetActiveByProductAsync), typeof(InventoryReservationService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetActiveByItemAsync), typeof(InventoryReservationService), _logger);
                 return new List<InventoryReservation>();
             }
         }
@@ -184,7 +184,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryReservations
-                    .Include(r => r.Product)
+                    .Include(r => r.Item)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
                     .Where(r => r.WarehouseId == warehouseId && 
@@ -206,7 +206,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryReservations
-                    .Include(r => r.Product)
+                    .Include(r => r.Item)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
                     .FirstOrDefaultAsync(r => r.Id == id);
@@ -224,7 +224,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryReservations
-                    .Include(r => r.Product)
+                    .Include(r => r.Item)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
                     .Where(r => r.ReservationStatus == InventoryReservationStatus.Reserved && 
@@ -249,7 +249,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.InventoryReservations.Where(r => r.ProductId == productId && 
+                var query = context.InventoryReservations.Where(r => r.ItemId == productId && 
                                              r.WarehouseId == warehouseId && 
                                              r.ReservationStatus == InventoryReservationStatus.Reserved && 
                                              (r.ExpiryDate == null || r.ExpiryDate > DateTime.Now));
@@ -274,7 +274,7 @@ namespace ERPCore2.Services
                 // 獲取庫存數量
                 var stockQuery = context.InventoryStockDetails
                     .Include(d => d.InventoryStock)
-                    .Where(s => s.InventoryStock.ProductId == productId && 
+                    .Where(s => s.InventoryStock.ItemId == productId && 
                                s.WarehouseId == warehouseId);
 
                 if (locationId.HasValue)
@@ -338,7 +338,7 @@ namespace ERPCore2.Services
 
                 var reservation = new InventoryReservation
                 {
-                    ProductId = productId,
+                    ItemId = productId,
                     WarehouseId = warehouseId,
                     WarehouseLocationId = locationId,
                     ReservationType = reservationType,
@@ -586,7 +586,7 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
-                if (reservation.ProductId <= 0)
+                if (reservation.ItemId <= 0)
                     errors.Add("品項ID不能為空");
 
                 if (reservation.WarehouseId <= 0)
@@ -610,7 +610,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 // 檢查品項是否存在
-                var productExists = await context.Products.AnyAsync(p => p.Id == reservation.ProductId);
+                var productExists = await context.Items.AnyAsync(p => p.Id == reservation.ItemId);
                 if (!productExists)
                     errors.Add("指定的品項不存在");
 
@@ -720,10 +720,10 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryReservations
-                    .Include(r => r.Product)
+                    .Include(r => r.Item)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
-                    .Where(r => r.ProductId == productId && 
+                    .Where(r => r.ItemId == productId && 
                                r.WarehouseId == warehouseId && 
                                r.ReservationStatus == InventoryReservationStatus.Reserved && 
                                (r.ExpiryDate == null || r.ExpiryDate > DateTime.Now))
@@ -747,7 +747,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryReservations
-                    .Include(r => r.Product)
+                    .Include(r => r.Item)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
                     .AsQueryable()
@@ -767,7 +767,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryReservations
-                    .Include(r => r.Product)
+                    .Include(r => r.Item)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
                     .FirstOrDefaultAsync(r => r.Id == id);
@@ -785,7 +785,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.InventoryReservations
-                    .Include(r => r.Product)
+                    .Include(r => r.Item)
                     .Include(r => r.Warehouse)
                     .Include(r => r.WarehouseLocation)
                     .Where(r => ((r.ReservationNumber != null && r.ReservationNumber.Contains(searchTerm)) ||

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ERPCore2.Models.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -119,7 +119,7 @@ namespace ERPCore2.Data.Entities
         /// <summary>
         /// 關聯的品項明細
         /// </summary>
-        public ICollection<SetoffProductDetail> SetoffProductDetails { get; set; } = new List<SetoffProductDetail>();
+        public ICollection<SetoffItemDetail> SetoffItemDetails { get; set; } = new List<SetoffItemDetail>();
 
         /// <summary>
         /// 關聯的預收付款項記錄（建立的預收付款項）

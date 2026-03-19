@@ -1,4 +1,4 @@
-@using ERPCore2.Models.Schedule
+﻿@using ERPCore2.Models.Schedule
 @using ERPCore2.Models.Enums
 @using ERPCore2.Models.Reports
 @using ERPCore2.Models.Reports.FilterCriteria
@@ -8,7 +8,7 @@
 @inject IProductionScheduleDetailService ScheduleDetailService
 @inject ISalesOrderService SalesOrderService
 @inject ISalesOrderDetailService SalesOrderDetailService
-@inject IProductCompositionService ProductCompositionService
+@inject IItemCompositionService ItemCompositionService
 @inject ISalesOrderCompositionDetailService SalesOrderCompositionDetailService
 @inject IInventoryStockService InventoryStockService
 @inject INotificationService NotificationService
@@ -376,9 +376,9 @@
                 OrderDate            = order.OrderDate,
                 ExpectedDeliveryDate = order.ExpectedDeliveryDate,
                 CustomerName         = order.Customer?.CompanyName ?? string.Empty,
-                ProductId            = detail.ProductId,
-                ProductCode          = detail.Product?.Code ?? string.Empty,
-                ProductName          = detail.Product?.Name ?? string.Empty,
+                ItemId            = detail.ItemId,
+                ItemCode          = detail.Item?.Code ?? string.Empty,
+                ItemName          = detail.Item?.Name ?? string.Empty,
                 OrderQuantity        = detail.OrderQuantity,
                 ScheduledQuantity    = scheduled,
                 IsApproved           = order.IsApproved
@@ -397,9 +397,9 @@
             Id                     = i.Id,
             ProductionScheduleId   = i.ProductionScheduleId,
             ProductionScheduleCode = i.ProductionSchedule?.Code ?? string.Empty,
-            ProductId              = i.ProductId,
-            ProductCode            = i.Product?.Code ?? string.Empty,
-            ProductName            = i.Product?.Name ?? string.Empty,
+            ItemId              = i.ItemId,
+            ItemCode            = i.Item?.Code ?? string.Empty,
+            ItemName            = i.Item?.Name ?? string.Empty,
             ScheduledQuantity      = i.ScheduledQuantity,
             CompletedQuantity      = i.CompletedQuantity,
             ProductionItemStatus   = i.ProductionItemStatus,
@@ -571,7 +571,7 @@
         var item = new ProductionScheduleItem
         {
             ProductionScheduleId  = batchResult.Data!.Id,
-            ProductId             = pending.ProductId,
+            ItemId             = pending.ItemId,
             SalesOrderDetailId    = pending.SalesOrderDetailId > 0 ? pending.SalesOrderDetailId : null,
             ScheduledQuantity     = pending.PendingQuantity,
             CompletedQuantity     = 0,
@@ -600,7 +600,7 @@
         }
 
         // 展開 BOM，建立 ProductionScheduleDetail
-        await ExpandBomAsync(item.Id, pending.ProductId, pending.PendingQuantity, pending.SalesOrderDetailId);
+        await ExpandBomAsync(item.Id, pending.ItemId, pending.PendingQuantity, pending.SalesOrderDetailId);
 
         // 檢查每項 BOM 組件的可用庫存，不足時顯示警告（不阻擋）
         var bomDetails = await ScheduleDetailService.GetByScheduleItemIdAsync(item.Id);
@@ -620,11 +620,11 @@
             var shortItems = new List<string>();
             foreach (var d in bomDetails.Where(d => d.RequiredQuantity > 0))
             {
-                var stocks = await InventoryStockService.GetByProductIdAsync(d.ComponentProductId);
+                var stocks = await InventoryStockService.GetByItemIdAsync(d.ComponentItemId);
                 var available = stocks.Sum(s => s.TotalAvailableStock);
                 if (available < d.RequiredQuantity)
                 {
-                    var productName = d.ComponentProduct?.Name ?? $"ID:{d.ComponentProductId}";
+                    var productName = d.ComponentItem?.Name ?? $"ID:{d.ComponentItemId}";
                     shortItems.Add($"{productName}（需 {NumberFormatHelper.FormatSmart(d.RequiredQuantity)}，現有 {NumberFormatHelper.FormatSmart(available)}）");
                 }
             }
@@ -653,7 +653,7 @@
                     var customDetails = customBom.Select(d => new ProductionScheduleDetail
                     {
                         ProductionScheduleItemId   = itemId,
-                        ComponentProductId         = d.ComponentProductId,
+                        ComponentItemId         = d.ComponentItemId,
                         RequiredQuantity           = d.Quantity * qty,
                         IssuedQuantity             = 0,
                         Status                     = EntityStatus.Active,
@@ -665,19 +665,19 @@
                 }
             }
 
-            // Fallback：使用品項預設 BOM（ProductComposition）
-            var compositions = await ProductCompositionService.GetCompositionsByProductIdAsync(productId);
+            // Fallback：使用品項預設 BOM（ItemComposition）
+            var compositions = await ItemCompositionService.GetCompositionsByItemIdAsync(productId);
             var composition  = compositions.FirstOrDefault();
             if (composition == null) return;
 
-            var full = await ProductCompositionService.GetByIdAsync(composition.Id);
+            var full = await ItemCompositionService.GetByIdAsync(composition.Id);
             if (full?.CompositionDetails == null || !full.CompositionDetails.Any()) return;
 
             var details = full.CompositionDetails.Select(d => new ProductionScheduleDetail
             {
                 ProductionScheduleItemId   = itemId,
-                ComponentProductId         = d.ComponentProductId,
-                ProductCompositionDetailId = d.Id,
+                ComponentItemId         = d.ComponentItemId,
+                ItemCompositionDetailId = d.Id,
                 RequiredQuantity           = d.Quantity * qty,
                 IssuedQuantity             = 0,
                 Status                     = EntityStatus.Active,

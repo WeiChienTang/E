@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +7,7 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 銷貨訂單明細實體 - 記錄銷貨訂單的品項明細
     /// </summary>
-    [Index(nameof(SalesOrderId), nameof(ProductId))]
+    [Index(nameof(SalesOrderId), nameof(ItemId))]
     public class SalesOrderDetail : BaseEntity
     {
         [Required(ErrorMessage = "訂單數量為必填")]
@@ -68,8 +68,8 @@ namespace ERPCore2.Data.Entities
 
         [Required(ErrorMessage = "品項為必填")]
         [Display(Name = "品項")]
-        [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int ItemId { get; set; }
 
         [Display(Name = "單位")]
         [ForeignKey(nameof(Unit))]
@@ -107,7 +107,7 @@ namespace ERPCore2.Data.Entities
         // Navigation Properties
         public SalesOrder SalesOrder { get; set; } = null!;
         public QuotationDetail? QuotationDetail { get; set; }
-        public Product Product { get; set; } = null!;
+        public Item Item { get; set; } = null!;
         public Unit? Unit { get; set; }
         public Warehouse? Warehouse { get; set; }
         public WarehouseLocation? WarehouseLocation { get; set; }

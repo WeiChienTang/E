@@ -1,4 +1,4 @@
-using ERPCore2.Components.Shared.UI.Form;
+﻿using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
@@ -12,16 +12,16 @@ namespace ERPCore2.FieldConfiguration
     /// <summary>
     /// 品項欄位配置
     /// </summary>
-    public class ProductFieldConfiguration : BaseFieldConfiguration<Product>
+    public class ItemFieldConfiguration : BaseFieldConfiguration<Item>
     {
-        private readonly List<ProductCategory> _productCategories;
+        private readonly List<ItemCategory> _productCategories;
         private readonly List<Supplier> _suppliers;
         private readonly List<Unit> _units;
         private readonly List<Size> _sizes;
         private readonly INotificationService? _notificationService;
         
-        public ProductFieldConfiguration(
-            List<ProductCategory> productCategories, 
+        public ItemFieldConfiguration(
+            List<ItemCategory> productCategories, 
             List<Supplier> suppliers,
             List<Unit> units,
             List<Size> sizes,
@@ -34,54 +34,54 @@ namespace ERPCore2.FieldConfiguration
             _notificationService = notificationService;
         }
         
-        public override Dictionary<string, FieldDefinition<Product>> GetFieldDefinitions()
+        public override Dictionary<string, FieldDefinition<Item>> GetFieldDefinitions()
         {
             try
             {
-                return new Dictionary<string, FieldDefinition<Product>>
+                return new Dictionary<string, FieldDefinition<Item>>
                 {
                     {
-                        nameof(Product.Code),
-                        new FieldDefinition<Product>
+                        nameof(Item.Code),
+                        new FieldDefinition<Item>
                         {
-                            PropertyName = nameof(Product.Code),
-                            DisplayName = Dn("Field.ProductCode", "品項編號"),
-                            FilterPlaceholder = Fp("Field.ProductCode", "輸入品項編號搜尋"),
+                            PropertyName = nameof(Item.Code),
+                            DisplayName = Dn("Field.ItemCode", "品項編號"),
+                            FilterPlaceholder = Fp("Field.ItemCode", "輸入品項編號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(Product.Code), p => p.Code)
+                                model, query, nameof(Item.Code), p => p.Code)
                         }
                     },
                     {
-                        nameof(Product.Name),
-                        new FieldDefinition<Product>
+                        nameof(Item.Name),
+                        new FieldDefinition<Item>
                         {
-                            PropertyName = nameof(Product.Name),
-                            DisplayName = Dn("Field.ProductName", "品項名稱"),
-                            FilterPlaceholder = Fp("Field.ProductName", "輸入品項名稱搜尋"),
+                            PropertyName = nameof(Item.Name),
+                            DisplayName = Dn("Field.ItemName", "品項名稱"),
+                            FilterPlaceholder = Fp("Field.ItemName", "輸入品項名稱搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(Product.Name), p => p.Name)
+                                model, query, nameof(Item.Name), p => p.Name)
                         }
                     },
                     {
-                        nameof(Product.Barcode),
-                        new FieldDefinition<Product>
+                        nameof(Item.Barcode),
+                        new FieldDefinition<Item>
                         {
-                            PropertyName = nameof(Product.Barcode),
+                            PropertyName = nameof(Item.Barcode),
                             DisplayName = Dn("Field.Barcode", "條碼編號"),
                             FilterPlaceholder = Fp("Field.Barcode", "輸入條碼編號搜尋"),
                             TableOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(Product.Barcode), p => p.Barcode)
+                                model, query, nameof(Item.Barcode), p => p.Barcode)
                         }
                     },
                     {
-                        nameof(Product.SizeId),
-                        new FieldDefinition<Product>
+                        nameof(Item.SizeId),
+                        new FieldDefinition<Item>
                         {
                             PropertyName = "Size.Name", // 表格顯示用
-                            FilterPropertyName = nameof(Product.SizeId), // 篩選器用
+                            FilterPropertyName = nameof(Item.SizeId), // 篩選器用
                             DisplayName = Dn("Field.Size", "尺寸"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
@@ -91,15 +91,15 @@ namespace ERPCore2.FieldConfiguration
                                 Value = s.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(Product.SizeId), p => p.SizeId)
+                                model, query, nameof(Item.SizeId), p => p.SizeId)
                         }
                     },
                     {
-                        nameof(Product.ProductCategoryId),
-                        new FieldDefinition<Product>
+                        nameof(Item.ItemCategoryId),
+                        new FieldDefinition<Item>
                         {
-                            PropertyName = "ProductCategory.Name", // 表格顯示用
-                            FilterPropertyName = nameof(Product.ProductCategoryId), // 篩選器用
+                            PropertyName = "ItemCategory.Name", // 表格顯示用
+                            FilterPropertyName = nameof(Item.ItemCategoryId), // 篩選器用
                             DisplayName = Dn("Field.CategoryName", "品項分類"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
@@ -109,15 +109,15 @@ namespace ERPCore2.FieldConfiguration
                                 Value = pc.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(Product.ProductCategoryId), p => p.ProductCategoryId)
+                                model, query, nameof(Item.ItemCategoryId), p => p.ItemCategoryId)
                         }
                     },
                     {
-                        nameof(Product.UnitId),
-                        new FieldDefinition<Product>
+                        nameof(Item.UnitId),
+                        new FieldDefinition<Item>
                         {
                             PropertyName = "Unit.Name", // 表格顯示用
-                            FilterPropertyName = nameof(Product.UnitId), // 篩選器用
+                            FilterPropertyName = nameof(Item.UnitId), // 篩選器用
                             DisplayName = Dn("Field.PurchaseUnit", "採購單位"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 6,
@@ -127,15 +127,15 @@ namespace ERPCore2.FieldConfiguration
                                 Value = u.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(Product.UnitId), p => p.UnitId)
+                                model, query, nameof(Item.UnitId), p => p.UnitId)
                         }
                     },
                     {
-                        nameof(Product.ProductionUnitId),
-                        new FieldDefinition<Product>
+                        nameof(Item.ProductionUnitId),
+                        new FieldDefinition<Item>
                         {
                             PropertyName = "ProductionUnit.Name", // 表格顯示用
-                            FilterPropertyName = nameof(Product.ProductionUnitId), // 篩選器用
+                            FilterPropertyName = nameof(Item.ProductionUnitId), // 篩選器用
                             DisplayName = Dn("Field.ProductionUnit", "製程單位"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 7,
@@ -145,7 +145,7 @@ namespace ERPCore2.FieldConfiguration
                                 Value = u.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(Product.ProductionUnitId), p => p.ProductionUnitId)
+                                model, query, nameof(Item.ProductionUnitId), p => p.ProductionUnitId)
                         }
                     },
                 };
@@ -168,7 +168,7 @@ namespace ERPCore2.FieldConfiguration
                 }
                 
                 // 回傳安全的預設配置
-                return new Dictionary<string, FieldDefinition<Product>>();
+                return new Dictionary<string, FieldDefinition<Item>>();
             }
         }
         

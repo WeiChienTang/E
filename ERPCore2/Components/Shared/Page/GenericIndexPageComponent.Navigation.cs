@@ -72,8 +72,8 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     private Task HandleImportScheduleClick() => InvokeIfBound(OnImportScheduleClick);
     private Task HandleBatchDeleteClick()
     {
-        // 若設定了內建 BatchDeleteColumnDefinitions，開啟內建 modal
-        if (BatchDeleteColumnDefinitions != null)
+        // 若設定了內建 BatchDeleteColumnDefinitions 或為 SuperAdmin，開啟內建 modal
+        if (BatchDeleteColumnDefinitions != null || _isSuperAdmin)
         {
             _showInternalBatchDeleteModal = true;
             StateHasChanged();

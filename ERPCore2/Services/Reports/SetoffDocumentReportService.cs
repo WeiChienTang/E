@@ -1,4 +1,4 @@
-#pragma warning disable CS0618 // SetoffDetailType.SalesOrderDetail — 保留舊資料向下相容顯示
+﻿#pragma warning disable CS0618 // SetoffDetailType.SalesOrderDetail — 保留舊資料向下相容顯示
 using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
@@ -19,11 +19,11 @@ namespace ERPCore2.Services.Reports
     {
         private readonly ISetoffDocumentService _setoffDocumentService;
         private readonly ISetoffPaymentService _setoffPaymentService;
-        private readonly ISetoffProductDetailService _setoffProductDetailService;
+        private readonly ISetoffItemDetailService _setoffItemDetailService;
         private readonly ISetoffPrepaymentUsageService _setoffPrepaymentUsageService;
         private readonly ICustomerService _customerService;
         private readonly ISupplierService _supplierService;
-        private readonly IProductService _productService;
+        private readonly IItemService _productService;
         private readonly ICompanyService _companyService;
         private readonly IBankService _bankService;
         private readonly IPaymentMethodService _paymentMethodService;
@@ -33,11 +33,11 @@ namespace ERPCore2.Services.Reports
         public SetoffDocumentReportService(
             ISetoffDocumentService setoffDocumentService,
             ISetoffPaymentService setoffPaymentService,
-            ISetoffProductDetailService setoffProductDetailService,
+            ISetoffItemDetailService setoffItemDetailService,
             ISetoffPrepaymentUsageService setoffPrepaymentUsageService,
             ICustomerService customerService,
             ISupplierService supplierService,
-            IProductService productService,
+            IItemService productService,
             ICompanyService companyService,
             IBankService bankService,
             IPaymentMethodService paymentMethodService,
@@ -46,7 +46,7 @@ namespace ERPCore2.Services.Reports
         {
             _setoffDocumentService = setoffDocumentService;
             _setoffPaymentService = setoffPaymentService;
-            _setoffProductDetailService = setoffProductDetailService;
+            _setoffItemDetailService = setoffItemDetailService;
             _setoffPrepaymentUsageService = setoffPrepaymentUsageService;
             _customerService = customerService;
             _supplierService = supplierService;
@@ -73,7 +73,7 @@ namespace ERPCore2.Services.Reports
             }
 
             // 載入沖銷品項明細
-            var productDetails = await _setoffProductDetailService.GetBySetoffDocumentIdAsync(setoffDocumentId);
+            var productDetails = await _setoffItemDetailService.GetBySetoffDocumentIdAsync(setoffDocumentId);
 
             // 載入收款/付款記錄
             var payments = await _setoffPaymentService.GetBySetoffDocumentIdAsync(setoffDocumentId);
@@ -97,8 +97,8 @@ namespace ERPCore2.Services.Reports
             var company = await _companyService.GetPrimaryCompanyAsync();
 
             // 載入品項字典
-            var allProducts = await _productService.GetAllAsync();
-            var productDict = allProducts.ToDictionary(p => p.Id, p => p);
+            var allItems = await _productService.GetAllAsync();
+            var productDict = allItems.ToDictionary(p => p.Id, p => p);
 
             // 載入銀行字典
             var allBanks = await _bankService.GetAllAsync();
@@ -276,13 +276,13 @@ namespace ERPCore2.Services.Reports
 
         private FormattedDocument BuildFormattedDocument(
             SetoffDocument setoffDocument,
-            List<SetoffProductDetail> productDetails,
+            List<SetoffItemDetail> productDetails,
             List<SetoffPayment> payments,
             List<SetoffPrepaymentUsage> prepaymentUsages,
             Customer? customer,
             Supplier? supplier,
             Company? company,
-            Dictionary<int, Product> productDict,
+            Dictionary<int, Item> productDict,
             Dictionary<int, Bank> bankDict,
             Dictionary<int, PaymentMethod> paymentMethodDict)
         {
@@ -369,7 +369,7 @@ namespace ERPCore2.Services.Reports
                     int rowNum = 1;
                     foreach (var detail in productDetails)
                     {
-                        var product = productDict.GetValueOrDefault(detail.ProductId);
+                        var product = productDict.GetValueOrDefault(detail.ItemId);
                         var sourceTypeText = GetSourceDetailTypeText(detail.SourceDetailType);
 
                         table.AddRow(

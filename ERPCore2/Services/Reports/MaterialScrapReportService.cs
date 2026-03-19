@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
@@ -88,8 +88,8 @@ namespace ERPCore2.Services.Reports
                 // 基礎查詢：有損耗或退料的明細
                 var query = context.ProductionScheduleDetails
                     .Include(psd => psd.ProductionScheduleItem)
-                        .ThenInclude(psi => psi.Product)
-                    .Include(psd => psd.ComponentProduct)
+                        .ThenInclude(psi => psi.Item)
+                    .Include(psd => psd.ComponentItem)
                     .Include(psd => psd.ReturnWarehouse)
                     .Where(psd => psd.ScrapQty > 0 || psd.ReturnQty > 0)
                     .Where(psd => (psd.UpdatedAt ?? psd.CreatedAt) >= startDate
@@ -98,16 +98,16 @@ namespace ERPCore2.Services.Reports
                     .AsQueryable();
 
                 // 成品篩選
-                if (criteria.ProductIds.Any())
+                if (criteria.ItemIds.Any())
                 {
                     query = query.Where(psd =>
-                        criteria.ProductIds.Contains(psd.ProductionScheduleItem.ProductId));
+                        criteria.ItemIds.Contains(psd.ProductionScheduleItem.ItemId));
                 }
 
                 // 組件篩選
-                if (criteria.ComponentProductIds.Any())
+                if (criteria.ComponentItemIds.Any())
                 {
-                    query = query.Where(psd => criteria.ComponentProductIds.Contains(psd.ComponentProductId));
+                    query = query.Where(psd => criteria.ComponentItemIds.Contains(psd.ComponentItemId));
                 }
 
                 // 只顯示有損耗
@@ -124,7 +124,7 @@ namespace ERPCore2.Services.Reports
 
                 var details = await query
                     .OrderBy(psd => psd.ProductionScheduleItemId)
-                    .ThenBy(psd => psd.ComponentProductId)
+                    .ThenBy(psd => psd.ComponentItemId)
                     .ToListAsync();
 
                 // 依生產項目分組
@@ -138,8 +138,8 @@ namespace ERPCore2.Services.Reports
                         {
                             ItemId = item.Id,
                             ItemCode = item.Code ?? "",
-                            FinishedProductName = item.Product?.Name ?? "（未知成品）",
-                            FinishedProductCode = item.Product?.Code ?? "",
+                            FinishedItemName = item.Item?.Name ?? "（未知成品）",
+                            FinishedItemCode = item.Item?.Code ?? "",
                             ScheduledQuantity = item.ScheduledQuantity,
                             CompletedQuantity = item.CompletedQuantity,
                             SettlementDate = g.Max(d => d.UpdatedAt ?? d.CreatedAt),
@@ -203,7 +203,7 @@ namespace ERPCore2.Services.Reports
             foreach (var group in groups)
             {
                 doc.AddKeyValueRow(
-                    ("成品", $"{group.FinishedProductCode}  {group.FinishedProductName}"),
+                    ("成品", $"{group.FinishedItemCode}  {group.FinishedItemName}"),
                     ("結算日期", group.SettlementDate.ToString("yyyy/MM/dd")));
 
                 doc.AddKeyValueRow(
@@ -231,8 +231,8 @@ namespace ERPCore2.Services.Reports
                     foreach (var detail in group.Details)
                     {
                         table.AddRow(
-                            detail.ComponentProduct?.Code ?? "",
-                            detail.ComponentProduct?.Name ?? "",
+                            detail.ComponentItem?.Code ?? "",
+                            detail.ComponentItem?.Name ?? "",
                             detail.RequiredQuantity > 0 ? detail.RequiredQuantity.ToString("N4").TrimEnd('0').TrimEnd('.') : "",
                             detail.IssuedQuantity > 0 ? detail.IssuedQuantity.ToString("N4").TrimEnd('0').TrimEnd('.') : "",
                             detail.ActualUsedQty > 0 ? detail.ActualUsedQty.ToString("N4").TrimEnd('0').TrimEnd('.') : "",
@@ -284,8 +284,8 @@ namespace ERPCore2.Services.Reports
         {
             public int ItemId { get; set; }
             public string ItemCode { get; set; } = "";
-            public string FinishedProductName { get; set; } = "";
-            public string FinishedProductCode { get; set; } = "";
+            public string FinishedItemName { get; set; } = "";
+            public string FinishedItemCode { get; set; } = "";
             public decimal ScheduledQuantity { get; set; }
             public decimal CompletedQuantity { get; set; }
             public DateTime SettlementDate { get; set; }

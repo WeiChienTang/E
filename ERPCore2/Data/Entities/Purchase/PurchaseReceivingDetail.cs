@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Models.Enums;
@@ -8,9 +8,9 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 採購進貨明細實體 - 記錄採購進貨品項明細
     /// </summary>
-    [Index(nameof(PurchaseReceivingId), nameof(ProductId))]
+    [Index(nameof(PurchaseReceivingId), nameof(ItemId))]
     [Index(nameof(PurchaseOrderDetailId))]
-    [Index(nameof(ProductId))]
+    [Index(nameof(ItemId))]
     [Index(nameof(WarehouseId))]
     public class PurchaseReceivingDetail : BaseEntity
     {
@@ -25,8 +25,8 @@ namespace ERPCore2.Data.Entities
 
         [Required(ErrorMessage = "品項為必填")]
         [Display(Name = "品項")]
-        [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int ItemId { get; set; }
 
         [Required(ErrorMessage = "訂購數量為必填")]
         [Display(Name = "訂購數量")]
@@ -89,7 +89,7 @@ namespace ERPCore2.Data.Entities
         // Navigation Properties
         public PurchaseReceiving PurchaseReceiving { get; set; } = null!;
         public PurchaseOrderDetail? PurchaseOrderDetail { get; set; }
-        public Product Product { get; set; } = null!;
+        public Item Item { get; set; } = null!;
         public Warehouse Warehouse { get; set; } = null!;
         public WarehouseLocation? WarehouseLocation { get; set; }
     }

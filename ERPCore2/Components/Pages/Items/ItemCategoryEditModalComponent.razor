@@ -1,51 +1,51 @@
 ﻿@* 可重用的品項類型編輯組件 - 可在任何頁面中嵌入 *@
-@inject IProductCategoryService ProductCategoryService
+@inject IItemCategoryService ItemCategoryService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="ProductCategory"
-                          TService="IProductCategoryService"
+<GenericEditModalComponent TEntity="ItemCategory"
+                          TService="IItemCategoryService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
-                          @bind-Id="@ProductCategoryId"
-                          Service="@ProductCategoryService"
-                          EntityName="@L["Entity.ProductCategory"]"
-                          EntityNamePlural="@L["Entity.ProductCategory"]"
-                          ModalTitle="@(ProductCategoryId.HasValue ? L["Message.EditTitle", L["Entity.ProductCategory"]].ToString() : L["Message.CreateTitle", L["Entity.ProductCategory"]].ToString())"
-                          Size="GenericEditModalComponent<ProductCategory, IProductCategoryService>.ModalSize.Desktop"
+                          @bind-Id="@ItemCategoryId"
+                          Service="@ItemCategoryService"
+                          EntityName="@L["Entity.ItemCategory"]"
+                          EntityNamePlural="@L["Entity.ItemCategory"]"
+                          ModalTitle="@(ItemCategoryId.HasValue ? L["Message.EditTitle", L["Entity.ItemCategory"]].ToString() : L["Message.CreateTitle", L["Entity.ItemCategory"]].ToString())"
+                          Size="GenericEditModalComponent<ItemCategory, IItemCategoryService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
-                          DataLoader="@LoadProductCategoryData"
+                          DataLoader="@LoadItemCategoryData"
                           ShowDraftButton="true"
                           DraftSuccessMessage="品項類型草稿已儲存，請記得補齊必填資料"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(ProductCategoryId.HasValue ? L["Message.UpdateSuccess", L["Entity.ProductCategory"]].ToString() : L["Message.CreateSuccess", L["Entity.ProductCategory"]].ToString())"
-                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.ProductCategory"]]"
-                          RequiredPermission="@PermissionRegistry.ProductCategory.Read"
-                          OnEntitySaved="@OnProductCategorySaved"
+                          SaveSuccessMessage="@(ItemCategoryId.HasValue ? L["Message.UpdateSuccess", L["Entity.ItemCategory"]].ToString() : L["Message.CreateSuccess", L["Entity.ItemCategory"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.ItemCategory"]]"
+                          RequiredPermission="@PermissionRegistry.ItemCategory.Read"
+                          OnEntitySaved="@OnItemCategorySaved"
                           OnCancel="@OnCancel"
-                          ComponentName="ProductCategoryEditModalComponent" />
+                          ComponentName="ItemCategoryEditModalComponent" />
 
 @code {
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-    [Parameter] public int? ProductCategoryId { get; set; }
-    [Parameter] public EventCallback<ProductCategory> OnProductCategorySaved { get; set; }
+    [Parameter] public int? ItemCategoryId { get; set; }
+    [Parameter] public EventCallback<ItemCategory> OnItemCategorySaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
 
     // ===== 內部狀態 =====
-    private GenericEditModalComponent<ProductCategory, IProductCategoryService>? editModalComponent;
+    private GenericEditModalComponent<ItemCategory, IItemCategoryService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
 
     // ===== 必要方法 =====
-    private Task<ProductCategory?> LoadProductCategoryData()
-        => EditDataLoaderHelper.LoadOrCreateAsync<ProductCategory, IProductCategoryService>(
-            ProductCategoryId, ProductCategoryService, NotificationService, "品項類型", "PCAT", PrefilledValues);
+    private Task<ItemCategory?> LoadItemCategoryData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<ItemCategory, IItemCategoryService>(
+            ItemCategoryId, ItemCategoryService, NotificationService, "品項類型", "PCAT", PrefilledValues);
 
     protected override void OnParametersSet()
     {
@@ -61,7 +61,7 @@
         {
             new()
             {
-                PropertyName = nameof(ProductCategory.Code),
+                PropertyName = nameof(ItemCategory.Code),
                 Label = L["Field.CategoryCode"],
                 FieldType = FormFieldType.Text,
                 Placeholder = L["Placeholder.PleaseInput", L["Field.CategoryCode"]],
@@ -71,7 +71,7 @@
             },
             new()
             {
-                PropertyName = nameof(ProductCategory.Name),
+                PropertyName = nameof(ItemCategory.Name),
                 Label = L["Field.CategoryName"],
                 FieldType = FormFieldType.Text,
                 Placeholder = L["Placeholder.PleaseInput", L["Field.CategoryName"]],
@@ -81,17 +81,17 @@
             },
             new FormFieldDefinition()
             {
-                PropertyName = nameof(ProductCategory.IsSaleable),
+                PropertyName = nameof(ItemCategory.IsSaleable),
                 Label = L["Field.ForSale"],
                 FieldType = FormFieldType.Checkbox,
                 IsRequired = false,
                 HelpText = "指示此品項分類下的品項是否可供銷售"
             },
 
-            FormFieldConfigurationHelper.CreateRemarksField<ProductCategory>()
+            FormFieldConfigurationHelper.CreateRemarksField<ItemCategory>()
         };
 
-        formSections = FormSectionHelper<ProductCategory>.Create()
+        formSections = FormSectionHelper<ItemCategory>.Create()
             .AddToSection(FormSectionNames.BasicInfo,
                 pc => pc.Code,
                 pc => pc.Name,

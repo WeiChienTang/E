@@ -1,48 +1,48 @@
-﻿@page "/product-categories"
-@inject IProductCategoryService ProductCategoryService
+﻿@page "/item-categories"
+@inject IItemCategoryService ItemCategoryService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 
-<GenericIndexPageComponent TEntity="ProductCategory" 
-                        TService="IProductCategoryService"
-                        Service="@ProductCategoryService"
-                        EntityBasePath="/product-categories"                          
-                        PageTitle="@L["Page.ProductCategoryTitle"]"
-                        PageSubtitle="@L["Page.ProductCategorySubtitle"]"
+<GenericIndexPageComponent TEntity="ItemCategory" 
+                        TService="IItemCategoryService"
+                        Service="@ItemCategoryService"
+                        EntityBasePath="/item-categories"                          
+                        PageTitle="@L["Page.ItemCategoryTitle"]"
+                        PageSubtitle="@L["Page.ItemCategorySubtitle"]"
                         ShowDraftTab="true"
-                        ServerDataLoader="@ServerLoadProductCategoriesAsync"
+                        ServerDataLoader="@ServerLoadItemCategoriesAsync"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        EntityName="@L["Entity.ProductCategory"]"
+                        EntityName="@L["Entity.ItemCategory"]"
                         GetEntityDisplayName="@(category => category.Name)"
-                        RequiredPermission="@PermissionRegistry.ProductCategory.Read"
-                        RequiredModule="Products"
+                        RequiredPermission="@PermissionRegistry.ItemCategory.Read"
+                        RequiredModule="Items"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
-                        DebugPageName="ProductCategoryIndex"
+                        DebugPageName="ItemCategoryIndex"
                         @ref="indexComponent">
 </GenericIndexPageComponent>
 
-<ProductCategoryEditModalComponent IsVisible="@showEditModal"
+<ItemCategoryEditModalComponent IsVisible="@showEditModal"
                                   IsVisibleChanged="@((bool visible) => showEditModal = visible)"
-                                  ProductCategoryId="@editingProductCategoryId"
-                                  OnProductCategorySaved="@modalHandler.OnEntitySavedAsync"
+                                  ItemCategoryId="@editingItemCategoryId"
+                                  OnItemCategorySaved="@modalHandler.OnEntitySavedAsync"
                                   OnCancel="@modalHandler.OnModalCancelAsync" />
 @code {
     // 組件參考
-    private GenericIndexPageComponent<ProductCategory, IProductCategoryService> indexComponent = default!;
+    private GenericIndexPageComponent<ItemCategory, IItemCategoryService> indexComponent = default!;
     
     // Modal 相關狀態
     private bool showEditModal = false;
-    private int? editingProductCategoryId = null;
+    private int? editingItemCategoryId = null;
     
     // Modal 處理器
-    private ModalHandler<ProductCategory, GenericIndexPageComponent<ProductCategory, IProductCategoryService>> modalHandler = default!;
+    private ModalHandler<ItemCategory, GenericIndexPageComponent<ItemCategory, IItemCategoryService>> modalHandler = default!;
     
     // 欄位配置
-    private ProductCategoryFieldConfiguration fieldConfiguration = default!;
+    private ItemCategoryFieldConfiguration fieldConfiguration = default!;
     
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
@@ -54,8 +54,8 @@
         try
         {
             // 初始化 Modal 處理器
-            modalHandler = ModalHelper.CreateModalHandler<ProductCategory, GenericIndexPageComponent<ProductCategory, IProductCategoryService>>(
-                id => editingProductCategoryId = id,
+            modalHandler = ModalHelper.CreateModalHandler<ItemCategory, GenericIndexPageComponent<ItemCategory, IItemCategoryService>>(
+                id => editingItemCategoryId = id,
                 visible => showEditModal = visible,
                 () => indexComponent,
                 StateHasChanged,
@@ -64,7 +64,7 @@
             await InitializeBreadcrumbsAsync();
             
             // 建立欄位配置（傳遞 NotificationService）
-            fieldConfiguration = new ProductCategoryFieldConfiguration(NotificationService);
+            fieldConfiguration = new ItemCategoryFieldConfiguration(NotificationService);
             fieldConfiguration.SetLocalizer(L);
 
             // 使用欄位配置建立篩選器和表格欄位
@@ -80,15 +80,15 @@
 
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("基礎資料", "品項類型管理", "#", NotificationService, GetType());
 
-    private Task<(List<ProductCategory> Items, int TotalCount)> ServerLoadProductCategoriesAsync(
+    private Task<(List<ItemCategory> Items, int TotalCount)> ServerLoadItemCategoriesAsync(
         SearchFilterModel filter, int page, int pageSize)
     {
-        return ProductCategoryService.GetPagedWithFiltersAsync(
+        return ItemCategoryService.GetPagedWithFiltersAsync(
             q =>
             {
                 q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
                 if (fieldConfiguration != null)
-                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadProductCategoriesAsync), GetType());
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadItemCategoriesAsync), GetType());
                 return q;
             },
             page, pageSize);

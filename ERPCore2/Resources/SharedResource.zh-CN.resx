@@ -437,8 +437,23 @@
   <data name="Nav.InventoryCharts" xml:space="preserve">
     <value>库存图表</value>
   </data>
-  <data name="Nav.ProductCharts" xml:space="preserve">
+  <data name="Nav.ItemCharts" xml:space="preserve">
     <value>品项图表</value>
+  </data>
+  <data name="Nav.ProductionCharts" xml:space="preserve">
+    <value>生产图表</value>
+  </data>
+  <data name="Nav.FinancialCharts" xml:space="preserve">
+    <value>财务图表</value>
+  </data>
+  <data name="Nav.PayrollCharts" xml:space="preserve">
+    <value>薪资图表</value>
+  </data>
+  <data name="Nav.ScaleCharts" xml:space="preserve">
+    <value>磅秤图表</value>
+  </data>
+  <data name="Nav.VehicleCharts" xml:space="preserve">
+    <value>车辆图表</value>
   </data>
   <data name="Nav.CustomerVisitReport" xml:space="preserve">
     <value>拜访报告</value>
@@ -446,13 +461,13 @@
   <data name="Nav.CustomerReportIndex" xml:space="preserve">
     <value>客户报表集</value>
   </data>
-  <data name="Nav.ProductGroup" xml:space="preserve">
+  <data name="Nav.ItemGroup" xml:space="preserve">
     <value>品项</value>
   </data>
-  <data name="Nav.Products" xml:space="preserve">
+  <data name="Nav.Items" xml:space="preserve">
     <value>品项</value>
   </data>
-  <data name="Nav.ProductCategories" xml:space="preserve">
+  <data name="Nav.ItemCategories" xml:space="preserve">
     <value>类型</value>
   </data>
   <data name="Nav.Units" xml:space="preserve">
@@ -461,7 +476,7 @@
   <data name="Nav.Sizes" xml:space="preserve">
     <value>尺寸</value>
   </data>
-  <data name="Nav.ProductCompositions" xml:space="preserve">
+  <data name="Nav.ItemCompositions" xml:space="preserve">
     <value>物料清单</value>
   </data>
   <data name="Nav.CompositionCategories" xml:space="preserve">
@@ -470,7 +485,7 @@
   <data name="Nav.ProductionSchedules" xml:space="preserve">
     <value>生产排程</value>
   </data>
-  <data name="Nav.ProductReportIndex" xml:space="preserve">
+  <data name="Nav.ItemReportIndex" xml:space="preserve">
     <value>品项报表集</value>
   </data>
   <data name="Nav.InventoryGroup" xml:space="preserve">
@@ -646,7 +661,7 @@
   <!-- ===== 報表 ===== -->
   <data name="ReportCategory.Customer" xml:space="preserve"><value>客户报表集</value></data>
   <data name="ReportCategory.Supplier" xml:space="preserve"><value>供应商报表集</value></data>
-  <data name="ReportCategory.Product" xml:space="preserve"><value>产品报表集</value></data>
+  <data name="ReportCategory.Item" xml:space="preserve"><value>产品报表集</value></data>
   <data name="ReportCategory.Inventory" xml:space="preserve"><value>库存报表集</value></data>
   <data name="ReportCategory.Sales" xml:space="preserve"><value>销售报表集</value></data>
   <data name="ReportCategory.Purchase" xml:space="preserve"><value>采购报表集</value></data>
@@ -681,9 +696,9 @@
   <data name="Report.SalesOrder" xml:space="preserve"><value>销货订单</value></data>
   <data name="Report.SalesDelivery" xml:space="preserve"><value>出货单</value></data>
   <data name="Report.SalesReturn" xml:space="preserve"><value>销货退回单</value></data>
-  <data name="Report.ProductList" xml:space="preserve"><value>品项清单表</value></data>
-  <data name="Report.ProductDetail" xml:space="preserve"><value>品项详细资料</value></data>
-  <data name="Report.ProductBarcode" xml:space="preserve"><value>品项条码</value></data>
+  <data name="Report.ItemList" xml:space="preserve"><value>品项清单表</value></data>
+  <data name="Report.ItemDetail" xml:space="preserve"><value>品项详细资料</value></data>
+  <data name="Report.ItemBarcode" xml:space="preserve"><value>品项条码</value></data>
   <data name="Report.BOMReport" xml:space="preserve"><value>物料清单报表</value></data>
   <data name="Report.ProductionSchedule" xml:space="preserve"><value>生产排程表</value></data>
   <data name="Report.MaterialScrapRecord" xml:space="preserve"><value>用料损耗退料记录</value></data>
@@ -707,6 +722,8 @@
   <data name="Report.GeneralLedger" xml:space="preserve"><value>总分类账</value></data>
   <data name="Report.SubsidiaryLedger" xml:space="preserve"><value>明细分类账</value></data>
   <data name="Report.DetailAccountBalance" xml:space="preserve"><value>明细科目余额表</value></data>
+  <data name="Report.ARAgingAnalysis" xml:space="preserve"><value>应收账款账龄分析</value></data>
+  <data name="Report.APAgingAnalysis" xml:space="preserve"><value>应付账款账龄分析</value></data>
   <data name="Label.DocumentPreview" xml:space="preserve"><value>{0}预览</value></data>
   <data name="Message.EditTitle" xml:space="preserve"><value>编辑{0}</value></data>
   <data name="Message.CreateTitle" xml:space="preserve"><value>新建{0}</value></data>
@@ -735,9 +752,9 @@
   <data name="Entity.Supplier" xml:space="preserve"><value>供应商</value></data>
   <data name="Entity.SupplierBankAccount" xml:space="preserve"><value>供应商银行账号</value></data>
   <data name="Entity.CompanyBankAccount" xml:space="preserve"><value>公司银行账号</value></data>
-  <data name="Entity.Product" xml:space="preserve"><value>品项</value></data>
-  <data name="Entity.ProductCategory" xml:space="preserve"><value>品项类型</value></data>
-  <data name="Entity.ProductComposition" xml:space="preserve"><value>物料清单</value></data>
+  <data name="Entity.Item" xml:space="preserve"><value>品项</value></data>
+  <data name="Entity.ItemCategory" xml:space="preserve"><value>品项类型</value></data>
+  <data name="Entity.ItemComposition" xml:space="preserve"><value>物料清单</value></data>
   <data name="Entity.BOM" xml:space="preserve"><value>物料清单</value></data>
   <data name="Entity.CompositionCategory" xml:space="preserve"><value>物料清单类型</value></data>
   <data name="Entity.Unit" xml:space="preserve"><value>单位</value></data>
@@ -872,7 +889,7 @@
   <data name="Field.SalesDeliveryDate" xml:space="preserve"><value>出货日期</value></data>
   <data name="Field.SalesReturnCode" xml:space="preserve"><value>退货单号</value></data>
   <data name="Field.SalesReturnDate" xml:space="preserve"><value>退货日期</value></data>
-  <data name="Column.ProductCodeName" xml:space="preserve"><value>品项编号/名称</value></data>
+  <data name="Column.ItemCodeName" xml:space="preserve"><value>品项编号/名称</value></data>
   <data name="Column.Quantity" xml:space="preserve"><value>数量</value></data>
   <data name="Column.InboundQuantity" xml:space="preserve"><value>已入库</value></data>
   <data name="Column.UnitPrice" xml:space="preserve"><value>单价</value></data>
@@ -1037,7 +1054,7 @@
   <data name="Column.ReceivablePayable" xml:space="preserve"><value>应收/应付</value></data>
   <data name="Column.SourceDocNumber" xml:space="preserve"><value>来源单号</value></data>
   <data name="Column.UnsetoffBalance" xml:space="preserve"><value>未冲抵余额</value></data>
-  <!-- ===== Column - Product keys ===== -->
+  <!-- ===== Column - Item keys ===== -->
   <data name="Column.ProductionUnit" xml:space="preserve"><value>生产单位</value></data>
   <data name="Column.RequiredQuantity" xml:space="preserve"><value>所需用量</value></data>
   <!-- ===== Field - Accounting keys ===== -->
@@ -1116,7 +1133,7 @@
   <data name="Field.FollowUpDate" xml:space="preserve"><value>跟进日期</value></data>
   <data name="Field.ResponsibleEmployee" xml:space="preserve"><value>负责人员</value></data>
   <data name="Column.ComplaintDate" xml:space="preserve"><value>投诉日期</value></data>
-  <data name="ComplaintCategory.ProductQuality" xml:space="preserve"><value>产品质量</value></data>
+  <data name="ComplaintCategory.ItemQuality" xml:space="preserve"><value>产品质量</value></data>
   <data name="ComplaintCategory.DeliveryDelay" xml:space="preserve"><value>交期延误</value></data>
   <data name="ComplaintCategory.ServiceAttitude" xml:space="preserve"><value>服务态度</value></data>
   <data name="ComplaintCategory.PriceDispute" xml:space="preserve"><value>价格争议</value></data>
@@ -1130,7 +1147,7 @@
   <!-- ===== Field - Supplier keys ===== -->
   <data name="Field.SupplierCode" xml:space="preserve"><value>供应商代码</value></data>
   <data name="Field.SupplierName" xml:space="preserve"><value>供应商名称</value></data>
-  <!-- ===== Field - Product keys ===== -->
+  <!-- ===== Field - Item keys ===== -->
   <data name="Field.Barcode" xml:space="preserve"><value>条码</value></data>
   <data name="Field.CategoryCode" xml:space="preserve"><value>类别代码</value></data>
   <data name="Field.CategoryName" xml:space="preserve"><value>类别名称</value></data>
@@ -1138,8 +1155,8 @@
   <data name="Field.CompositionCreator" xml:space="preserve"><value>组成创建人</value></data>
   <data name="Field.CompositionType" xml:space="preserve"><value>组成类型</value></data>
   <data name="Field.ForSale" xml:space="preserve"><value>可销售</value></data>
-  <data name="Field.ProductCode" xml:space="preserve"><value>品项编号</value></data>
-  <data name="Field.ProductName" xml:space="preserve"><value>品项名称</value></data>
+  <data name="Field.ItemCode" xml:space="preserve"><value>品项编号</value></data>
+  <data name="Field.ItemName" xml:space="preserve"><value>品项名称</value></data>
   <data name="Field.ProductionUnit" xml:space="preserve"><value>生产单位</value></data>
   <data name="Field.PurchaseUnit" xml:space="preserve"><value>基本单位</value></data>
   <data name="Field.ScheduleCode" xml:space="preserve"><value>排程单号</value></data>
@@ -1196,7 +1213,7 @@
   <data name="Field.InboundWarehouse" xml:space="preserve"><value>入库仓库</value></data>
   <data name="Field.PurchaseFee" xml:space="preserve"><value>收购费用</value></data>
   <data name="Field.RecordDate" xml:space="preserve"><value>记录日期</value></data>
-  <data name="Field.RelatedProduct" xml:space="preserve"><value>相关产品</value></data>
+  <data name="Field.RelatedItem" xml:space="preserve"><value>相关产品</value></data>
   <data name="Field.TotalWeight" xml:space="preserve"><value>总重量</value></data>
   <data name="Field.WasteRecordCode" xml:space="preserve"><value>磅秤记录单号</value></data>
   <data name="Field.WasteTypeCode" xml:space="preserve"><value>磅秤类型代码</value></data>
@@ -1225,8 +1242,8 @@
   <data name="Field.CustomerReceivableAccount" xml:space="preserve"><value>客户应收账户</value></data>
   <data name="Field.CustomerReturnAccount" xml:space="preserve"><value>客户退货账户</value></data>
   <data name="Field.CustomerSubAccount" xml:space="preserve"><value>客户辅助科目</value></data>
-  <data name="Field.ProductInventoryAccount" xml:space="preserve"><value>品项库存账户</value></data>
-  <data name="Field.ProductSubAccount" xml:space="preserve"><value>品项辅助科目</value></data>
+  <data name="Field.ItemInventoryAccount" xml:space="preserve"><value>品项库存账户</value></data>
+  <data name="Field.ItemSubAccount" xml:space="preserve"><value>品项辅助科目</value></data>
   <data name="Field.SubAccountCodeFormat" xml:space="preserve"><value>辅助科目格式</value></data>
   <data name="Field.SupplierAdvanceAccount" xml:space="preserve"><value>供应商预付账户</value></data>
   <data name="Field.SupplierNoteAccount" xml:space="preserve"><value>供应商票据账户</value></data>
@@ -1434,6 +1451,16 @@
   <data name="Payroll.LaborInsuranceRates" xml:space="preserve"><value>劳保费率</value></data>
   <data name="Payroll.HealthInsuranceRates" xml:space="preserve"><value>健保费率</value></data>
   <data name="Payroll.RetirementAndTaxFree" xml:space="preserve"><value>劳退费率及免税上限</value></data>
+  <data name="Payroll.OvertimeRates" xml:space="preserve"><value>加班费倍率</value></data>
+  <data name="Payroll.OvertimeRatesWarning" xml:space="preserve"><value>以下倍率依劳动基准法规定，调低可能违反劳基法，仅在法规修正后方可调整。</value></data>
+  <data name="Payroll.TimesHourlyRate" xml:space="preserve"><value>倍时薪</value></data>
+  <data name="Payroll.LegalDefault" xml:space="preserve"><value>法定预设</value></data>
+  <data name="Payroll.NationalHolidayRateNote" xml:space="preserve"><value>月薪已含假日薪，此为额外加给倍率</value></data>
+  <data name="Field.OvertimeRate1" xml:space="preserve"><value>平日加班倍率（前2hr）</value></data>
+  <data name="Field.OvertimeRate2" xml:space="preserve"><value>平日加班倍率（后2hr）</value></data>
+  <data name="Field.RestDayRate1" xml:space="preserve"><value>休息日加班倍率（前2hr）</value></data>
+  <data name="Field.RestDayRate2" xml:space="preserve"><value>休息日加班倍率（后2hr+）</value></data>
+  <data name="Field.NationalHolidayRate" xml:space="preserve"><value>国定假日加给倍率</value></data>
   <data name="Payroll.AddGrade" xml:space="preserve"><value>新增分级</value></data>
   <data name="Payroll.EditGrade" xml:space="preserve"><value>编辑分级</value></data>
   <data name="Payroll.AddTaxRow" xml:space="preserve"><value>新增扣缴记录</value></data>
@@ -1460,6 +1487,37 @@
   <data name="Attendance.OT2Note" xml:space="preserve"><value>平日延长工时后2小时（×5/3）</value></data>
   <data name="Attendance.OvertimeTotal" xml:space="preserve"><value>加班总时数</value></data>
   <data name="Attendance.TotalRecords" xml:space="preserve"><value>总笔数</value></data>
+  <data name="Attendance.DailyDetail" xml:space="preserve"><value>逐日出勤明细</value></data>
+  <data name="Attendance.HourlyEmployee" xml:space="preserve"><value>时薪制</value></data>
+  <data name="Attendance.InitModeWorkdays" xml:space="preserve"><value>工作日出勤（月薪固定班）</value></data>
+  <data name="Attendance.InitModeAllRest" xml:space="preserve"><value>全部休息日（时薪自行填入）</value></data>
+  <data name="Attendance.ClearAll" xml:space="preserve"><value>清除全部</value></data>
+  <data name="Attendance.ClearAllHint" xml:space="preserve"><value>清除该员工本月所有逐日记录</value></data>
+  <data name="Attendance.SaveAndRebuild" xml:space="preserve"><value>保存并汇总</value></data>
+  <data name="Attendance.SaveAndRebuildSuccess" xml:space="preserve"><value>逐日记录已保存，月汇总已更新</value></data>
+  <data name="Attendance.Status" xml:space="preserve"><value>出勤状态</value></data>
+  <data name="Attendance.Present" xml:space="preserve"><value>出勤</value></data>
+  <data name="Attendance.Detail" xml:space="preserve"><value>明细</value></data>
+  <data name="Attendance.OpenDailyDetail" xml:space="preserve"><value>开启逐日出勤明细</value></data>
+  <data name="Attendance.TotalWorkHoursHint" xml:space="preserve"><value>时薪员工总工时（可从逐日明细自动汇总）</value></data>
+  <data name="DailyStatus.Present" xml:space="preserve"><value>出勤</value></data>
+  <data name="DailyStatus.MakeUpWork" xml:space="preserve"><value>补班</value></data>
+  <data name="DailyStatus.Absent" xml:space="preserve"><value>旷职</value></data>
+  <data name="DailyStatus.SickLeave" xml:space="preserve"><value>病假</value></data>
+  <data name="DailyStatus.PersonalLeave" xml:space="preserve"><value>事假</value></data>
+  <data name="DailyStatus.AnnualLeave" xml:space="preserve"><value>特休</value></data>
+  <data name="DailyStatus.RestDay" xml:space="preserve"><value>休息日</value></data>
+  <data name="DailyStatus.NationalHoliday" xml:space="preserve"><value>国定假日</value></data>
+  <data name="DailyStatus.PresentShort" xml:space="preserve"><value>出</value></data>
+  <data name="DailyStatus.MakeUpWorkShort" xml:space="preserve"><value>补</value></data>
+  <data name="DailyStatus.AbsentShort" xml:space="preserve"><value>旷</value></data>
+  <data name="DailyStatus.SickLeaveShort" xml:space="preserve"><value>病</value></data>
+  <data name="DailyStatus.PersonalLeaveShort" xml:space="preserve"><value>事</value></data>
+  <data name="DailyStatus.AnnualLeaveShort" xml:space="preserve"><value>休</value></data>
+  <data name="DailyStatus.RestDayShort" xml:space="preserve"><value>假</value></data>
+  <data name="DailyStatus.NationalHolidayShort" xml:space="preserve"><value>国</value></data>
+  <data name="Field.WorkHours" xml:space="preserve"><value>工时</value></data>
+  <data name="Field.TotalWorkHours" xml:space="preserve"><value>总工时</value></data>
   <data name="Field.ScheduledWorkDays" xml:space="preserve"><value>应出勤天数</value></data>
   <data name="Field.ActualWorkDays" xml:space="preserve"><value>实际出勤天数</value></data>
   <data name="Field.AbsentDays" xml:space="preserve"><value>旷工天数</value></data>
@@ -1549,8 +1607,8 @@
   <!-- ===== Tab keys (Modal tabs) ===== -->
   <data name="Tab.SupplierData" xml:space="preserve"><value>供应商资料</value></data>
   <data name="Tab.AccountingInfo" xml:space="preserve"><value>会计信息</value></data>
-  <data name="Tab.SupplierProducts" xml:space="preserve"><value>供应品项</value></data>
-  <data name="Tab.CustomerProducts" xml:space="preserve"><value>客户品项</value></data>
+  <data name="Tab.SupplierItems" xml:space="preserve"><value>供应品项</value></data>
+  <data name="Tab.CustomerItems" xml:space="preserve"><value>客户品项</value></data>
   <data name="Tab.CustomerData" xml:space="preserve"><value>客户资料</value></data>
   <data name="Tab.VisitRecords" xml:space="preserve"><value>拜访记录</value></data>
   <data name="Tab.ComplaintRecords" xml:space="preserve"><value>投诉记录</value></data>
@@ -1592,15 +1650,15 @@
   <data name="EmployeePhoto.Hint" xml:space="preserve"><value>支持 JPG、PNG 格式，上限 2MB</value></data>
   <data name="EmployeePhoto.UploadFailed" xml:space="preserve"><value>上传失败</value></data>
   <data name="EmployeePhoto.DeleteFailed" xml:space="preserve"><value>删除失败</value></data>
-  <data name="Tab.ProductPhotos" xml:space="preserve"><value>品项照片</value></data>
-  <data name="ProductPhoto.SaveFirst" xml:space="preserve"><value>请先保存品项资料后再上传照片</value></data>
-  <data name="ProductPhoto.PhotoList" xml:space="preserve"><value>品项照片</value></data>
-  <data name="ProductPhoto.UploadPhoto" xml:space="preserve"><value>上传照片</value></data>
-  <data name="ProductPhoto.NoPhotos" xml:space="preserve"><value>尚未上传任何品项照片</value></data>
-  <data name="ProductPhoto.Caption" xml:space="preserve"><value>图说</value></data>
-  <data name="ProductPhoto.DeleteTitle" xml:space="preserve"><value>删除照片</value></data>
-  <data name="ProductPhoto.DeleteMessage" xml:space="preserve"><value>确定要删除此照片吗？此操作无法还原。</value></data>
-  <data name="ProductPhoto.DeleteSuccess" xml:space="preserve"><value>照片已删除</value></data>
+  <data name="Tab.ItemPhotos" xml:space="preserve"><value>品项照片</value></data>
+  <data name="ItemPhoto.SaveFirst" xml:space="preserve"><value>请先保存品项资料后再上传照片</value></data>
+  <data name="ItemPhoto.PhotoList" xml:space="preserve"><value>品项照片</value></data>
+  <data name="ItemPhoto.UploadPhoto" xml:space="preserve"><value>上传照片</value></data>
+  <data name="ItemPhoto.NoPhotos" xml:space="preserve"><value>尚未上传任何品项照片</value></data>
+  <data name="ItemPhoto.Caption" xml:space="preserve"><value>图说</value></data>
+  <data name="ItemPhoto.DeleteTitle" xml:space="preserve"><value>删除照片</value></data>
+  <data name="ItemPhoto.DeleteMessage" xml:space="preserve"><value>确定要删除此照片吗？此操作无法还原。</value></data>
+  <data name="ItemPhoto.DeleteSuccess" xml:space="preserve"><value>照片已删除</value></data>
   <data name="Tab.QuotationPhotos" xml:space="preserve"><value>附件照片</value></data>
   <data name="QuotationPhoto.SaveFirst" xml:space="preserve"><value>请先保存报价单资料后再上传照片</value></data>
   <data name="QuotationPhoto.PhotoList" xml:space="preserve"><value>报价单附件照片</value></data>
@@ -1619,7 +1677,7 @@
   <data name="SalesOrderPhoto.DeleteTitle" xml:space="preserve"><value>删除照片</value></data>
   <data name="SalesOrderPhoto.DeleteMessage" xml:space="preserve"><value>确定要删除此照片吗？此操作无法还原。</value></data>
   <data name="SalesOrderPhoto.DeleteSuccess" xml:space="preserve"><value>照片已删除</value></data>
-  <data name="Tab.ProductData" xml:space="preserve"><value>品项资料</value></data>
+  <data name="Tab.ItemData" xml:space="preserve"><value>品项资料</value></data>
   <data name="Tab.OrderData" xml:space="preserve"><value>订单资料</value></data>
   <data name="Tab.OrderDetail" xml:space="preserve"><value>订单明细</value></data>
   <data name="Tab.ReceivingRecords" xml:space="preserve"><value>进货记录</value></data>
@@ -1652,10 +1710,10 @@
   <data name="Supplier.CopyToCustomerMessage" xml:space="preserve"><value>确定要将此供应商的资料复制为新客户吗？</value></data>
   <data name="Supplier.CopyToCustomerSummary" xml:space="preserve"><value>复制后将在客户清单中建立一笔新资料</value></data>
   <data name="Customer.AutoSyncNote" xml:space="preserve"><value>品项清单由销售单自动同步，仅可删除</value></data>
-  <data name="Customer.DeleteProductButtonTitle" xml:space="preserve"><value>移除此品项关联</value></data>
-  <data name="Customer.NoProducts" xml:space="preserve"><value>此客户暂无销售品项记录</value></data>
-  <data name="Customer.RemoveProduct" xml:space="preserve"><value>移除品项关联</value></data>
-  <data name="Customer.ConfirmRemoveProduct" xml:space="preserve"><value>确定要移除「{0}」与此客户的关联吗？</value></data>
+  <data name="Customer.DeleteItemButtonTitle" xml:space="preserve"><value>移除此品项关联</value></data>
+  <data name="Customer.NoItems" xml:space="preserve"><value>此客户暂无销售品项记录</value></data>
+  <data name="Customer.RemoveItem" xml:space="preserve"><value>移除品项关联</value></data>
+  <data name="Customer.ConfirmRemoveItem" xml:space="preserve"><value>确定要移除「{0}」与此客户的关联吗？</value></data>
   <data name="Customer.RemovedFromCatalog" xml:space="preserve"><value>已成功移除客户品项关联</value></data>
   <!-- ===== Enum value display keys ===== -->
   <data name="CustomerStatus.Active" xml:space="preserve"><value>正常往来</value></data>
@@ -1744,7 +1802,7 @@
   <!-- ===== Field keys - Inventory ===== -->
   <data name="Field.CurrentStock" xml:space="preserve"><value>现有库存</value></data>
   <data name="Field.AverageCost" xml:space="preserve"><value>平均成本</value></data>
-  <data name="Field.ProductUnit" xml:space="preserve"><value>品项单位</value></data>
+  <data name="Field.ItemUnit" xml:space="preserve"><value>品项单位</value></data>
   <data name="Field.ProductionUnitConversion" xml:space="preserve"><value>制程换算</value></data>
   <data name="Field.ProductionUnitStock" xml:space="preserve"><value>制程库存</value></data>
 
@@ -1866,7 +1924,7 @@
   <data name="Label.DetailColumns" xml:space="preserve"><value>品项明细（第二段）</value></data>
   <data name="Label.MessagePreview" xml:space="preserve"><value>消息预览</value></data>
   <data name="Label.SupportedVariables" xml:space="preserve"><value>支持变量：</value></data>
-  <data name="Label.ProductName" xml:space="preserve"><value>品名</value></data>
+  <data name="Label.ItemName" xml:space="preserve"><value>品名</value></data>
   <data name="Label.Quantity" xml:space="preserve"><value>数量</value></data>
   <data name="Label.Unit" xml:space="preserve"><value>单位</value></data>
   <data name="Label.UnitPrice" xml:space="preserve"><value>单价</value></data>
@@ -1885,7 +1943,7 @@
   <data name="Error.FieldChangeFailed" xml:space="preserve"><value>处理字段变更时发生错误：{0}</value></data>
   <data name="Error.LoadDefaultTemplateFailed" xml:space="preserve"><value>加载默认模板时发生错误：{0}</value></data>
   <!-- ===== FieldConfiguration 补充 keys ===== -->
-  <data name="Field.ProductCategory" xml:space="preserve"><value>品项类型</value></data>
+  <data name="Field.ItemCategory" xml:space="preserve"><value>品项类型</value></data>
   <data name="Field.LocationPosition" xml:space="preserve"><value>位号</value></data>
   <!-- ===== DynamicFilterTemplate keys ===== -->
   <data name="Filter.BasicFilter" xml:space="preserve"><value>基本筛选</value></data>
@@ -1897,13 +1955,13 @@
   <data name="Placeholder.Search" xml:space="preserve"><value>搜索...</value></data>
   <data name="Label.LoadingFilterOptions" xml:space="preserve"><value>载入筛选选项中...</value></data>
   <data name="Error.LoadFieldDataFailed" xml:space="preserve"><value>载入「{0}」数据失败</value></data>
-  <!-- ===== ProductBarcodeBatchFilterTemplate keys ===== -->
+  <!-- ===== ItemBarcodeBatchFilterTemplate keys ===== -->
   <data name="Report.BarcodeSettings" xml:space="preserve"><value>条码打印设置</value></data>
   <data name="Button.DeselectAll" xml:space="preserve"><value>取消全选</value></data>
-  <data name="Message.NoBarcodeProducts" xml:space="preserve"><value>目前没有可打印的品项条码</value></data>
-  <data name="Label.ShowProductName" xml:space="preserve"><value>显示品项名称</value></data>
-  <data name="Label.ShowProductCode" xml:space="preserve"><value>显示品项编号</value></data>
-  <data name="Message.LoadProductsFailed" xml:space="preserve"><value>载入品项数据失败</value></data>
+  <data name="Message.NoBarcodeItems" xml:space="preserve"><value>目前没有可打印的品项条码</value></data>
+  <data name="Label.ShowItemName" xml:space="preserve"><value>显示品项名称</value></data>
+  <data name="Label.ShowItemCode" xml:space="preserve"><value>显示品项编号</value></data>
+  <data name="Message.LoadItemsFailed" xml:space="preserve"><value>载入品项数据失败</value></data>
   <!-- ===== Report Description keys ===== -->
   <data name="Report.CustomerStatementDesc" xml:space="preserve"><value>生成指定期间客户对账单，含出货、退货、收款明细及期初期末余额</value></data>
   <data name="Report.CustomerSalesAnalysisDesc" xml:space="preserve"><value>按销售额由高至低排列，分析客户销售金额占比与排名</value></data>
@@ -1923,9 +1981,9 @@
   <data name="Report.SalesOrderDesc" xml:space="preserve"><value>打印销货订单（含客户资讯、品项明细、金额统计）</value></data>
   <data name="Report.SalesDeliveryDesc" xml:space="preserve"><value>打印出货单（含客户资讯、品项明细、金额统计）</value></data>
   <data name="Report.SalesReturnDesc" xml:space="preserve"><value>打印销货退回单（含退货原因、退货明细）</value></data>
-  <data name="Report.ProductListDesc" xml:space="preserve"><value>打印品项基本资料清单（含品号、品名、规格、条码、分类、单位）</value></data>
-  <data name="Report.ProductDetailDesc" xml:space="preserve"><value>打印品项完整详细资料，含规格、条码、分类、单位、采购类型、成本定价等，每项品项各占一区块</value></data>
-  <data name="Report.ProductBarcodeDesc" xml:space="preserve"><value>打印品项条码</value></data>
+  <data name="Report.ItemListDesc" xml:space="preserve"><value>打印品项基本资料清单（含品号、品名、规格、条码、分类、单位）</value></data>
+  <data name="Report.ItemDetailDesc" xml:space="preserve"><value>打印品项完整详细资料，含规格、条码、分类、单位、采购类型、成本定价等，每项品项各占一区块</value></data>
+  <data name="Report.ItemBarcodeDesc" xml:space="preserve"><value>打印品项条码</value></data>
   <data name="Report.BOMReportDesc" xml:space="preserve"><value>打印品项BOM物料清单，依配方分组显示组件品号、品名、数量、单位、成本</value></data>
   <data name="Report.ProductionScheduleDesc" xml:space="preserve"><value>查询生产排程，含排程项目、数量、状态、预计日期等明细</value></data>
   <data name="Report.InventoryStatusDesc" xml:space="preserve"><value>查询各仓库品项库存现况，含现有库存、预留库存、可用库存及库存金额</value></data>
@@ -1945,6 +2003,8 @@
   <data name="Report.GeneralLedgerDesc" xml:space="preserve"><value>显示所有科目的账户卡片，依科目大类分组，每个科目列出所有已过账传票明细（含期初余额、逐笔流水余额、期末余额）</value></data>
   <data name="Report.SubsidiaryLedgerDesc" xml:space="preserve"><value>依科目代码/名称关键字查询特定科目的账户卡片，显示已过账传票明细与流水余额，适合查看应收账款按客户、应付账款按厂商等明细</value></data>
   <data name="Report.DetailAccountBalanceDesc" xml:space="preserve"><value>汇总各科目的期初余额、本期借方发生额、本期贷方发生额及期末余额，无逐笔明细，适合快速掌握各科目余额变动</value></data>
+  <data name="Report.ARAgingAnalysisDesc" xml:space="preserve"><value>依出货日 + 客户付款天数计算到期日，汇总各账龄区间（未到期/逾期1-30/31-60/61-90/91-120/121+天）的未收金额，依客户分组显示</value></data>
+  <data name="Report.APAgingAnalysisDesc" xml:space="preserve"><value>依收货日 + 供应商付款天数计算到期日，汇总各账龄区间（未到期/逾期1-30/31-60/61-90/91-120/121+天）的未付金额，依供应商分组显示</value></data>
   <data name="Column.TaxRate" xml:space="preserve"><value>税率</value></data>
   <data name="Column.IsReceivingCompleted" xml:space="preserve"><value>已收完</value></data>
   <data name="Placeholder.SelectWarehouseFirst" xml:space="preserve"><value>请先选择仓库</value></data>
@@ -2235,8 +2295,13 @@
   <data name="Sales.ChartTitle" xml:space="preserve"><value>销货分析图表</value></data>
   <!-- ===== Inventory 库存模块 ===== -->
   <data name="Inventory.ChartTitle" xml:space="preserve"><value>库存分析图表</value></data>
-  <!-- ===== Product 品项模块 ===== -->
-  <data name="Product.ChartTitle" xml:space="preserve"><value>品项分析图表</value></data>
+  <!-- ===== Item 品项模块 ===== -->
+  <data name="Item.ChartTitle" xml:space="preserve"><value>品项分析图表</value></data>
+  <data name="Production.ChartTitle" xml:space="preserve"><value>生产分析图表</value></data>
+  <data name="Financial.ChartTitle" xml:space="preserve"><value>财务分析图表</value></data>
+  <data name="Payroll.ChartTitle" xml:space="preserve"><value>薪资分析图表</value></data>
+  <data name="Scale.ChartTitle" xml:space="preserve"><value>磅秤分析图表</value></data>
+  <data name="Vehicle.ChartTitle" xml:space="preserve"><value>车辆分析图表</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>没有相关交易记录</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>暂无拜访记录</value></data>
   <data name="Customer.NoComplaints" xml:space="preserve"><value>暂无投诉记录</value></data>
@@ -2273,17 +2338,17 @@
   <data name="Column.VisitPurpose" xml:space="preserve"><value>拜访目的</value></data>
   <data name="Column.VisitResult" xml:space="preserve"><value>结果摘要</value></data>
   <data name="Column.NextFollowUp" xml:space="preserve"><value>下次跟进</value></data>
-  <data name="Column.ProductCode" xml:space="preserve"><value>品项编号</value></data>
-  <data name="Column.ProductName" xml:space="preserve"><value>品项名称</value></data>
-  <data name="Column.SupplierProductCode" xml:space="preserve"><value>供应商料号</value></data>
+  <data name="Column.ItemCode" xml:space="preserve"><value>品项编号</value></data>
+  <data name="Column.ItemName" xml:space="preserve"><value>品项名称</value></data>
+  <data name="Column.SupplierItemCode" xml:space="preserve"><value>供应商料号</value></data>
   <data name="Column.LastPurchasePrice" xml:space="preserve"><value>最近采购价</value></data>
   <data name="Column.LastPurchaseDate" xml:space="preserve"><value>最近采购日</value></data>
-  <data name="Column.CustomerProductCode" xml:space="preserve"><value>客户料号</value></data>
+  <data name="Column.CustomerItemCode" xml:space="preserve"><value>客户料号</value></data>
   <data name="Column.CustomerPrice" xml:space="preserve"><value>客户售价</value></data>
   <data name="Column.LastSalePrice" xml:space="preserve"><value>最近销售价</value></data>
   <data name="Column.LastSaleDate" xml:space="preserve"><value>最近销售日</value></data>
   <data name="Column.IsPreferred" xml:space="preserve"><value>常用</value></data>
-  <data name="Column.Product" xml:space="preserve"><value>品项</value></data>
+  <data name="Column.Item" xml:space="preserve"><value>品项</value></data>
   <data name="Column.Select" xml:space="preserve"><value>选择</value></data>
   <data name="Column.PermissionName" xml:space="preserve"><value>权限名称</value></data>
   <data name="Column.PermissionCode" xml:space="preserve"><value>权限编号</value></data>
@@ -2347,10 +2412,10 @@
 
   <!-- ===== Supplier 供应商模块（新增） ===== -->
   <data name="Supplier.AutoSyncNote" xml:space="preserve"><value>采购单保存时自动同步，★ 表示常用供应商</value></data>
-  <data name="Supplier.NoProducts" xml:space="preserve"><value>暂无供应品项，采购单保存后将自动建立</value></data>
-  <data name="Supplier.NoProductsDefault" xml:space="preserve"><value>尚未设置供应品项</value></data>
-  <data name="Supplier.RemoveProduct" xml:space="preserve"><value>移除供应品项</value></data>
-  <data name="Supplier.ConfirmRemoveProduct" xml:space="preserve"><value>确定要将「{0}」从供应商目录中移除吗？</value></data>
+  <data name="Supplier.NoItems" xml:space="preserve"><value>暂无供应品项，采购单保存后将自动建立</value></data>
+  <data name="Supplier.NoItemsDefault" xml:space="preserve"><value>尚未设置供应品项</value></data>
+  <data name="Supplier.RemoveItem" xml:space="preserve"><value>移除供应品项</value></data>
+  <data name="Supplier.ConfirmRemoveItem" xml:space="preserve"><value>确定要将「{0}」从供应商目录中移除吗？</value></data>
   <data name="Supplier.RemovedFromCatalog" xml:space="preserve"><value>已从供应目录中移除</value></data>
   <data name="Supplier.DeleteButtonTitle" xml:space="preserve"><value>从供应目录移除</value></data>
   <data name="Supplier.AlreadyBound" xml:space="preserve"><value>品项「{0}」已绑定此供应商</value></data>
@@ -2449,7 +2514,7 @@
   <data name="Composition.BatchSelect" xml:space="preserve"><value>批量选择</value></data>
   <data name="Composition.BatchAddedCount" xml:space="preserve"><value>已新增 {0} 笔组件</value></data>
   <data name="Composition.SelectBOM" xml:space="preserve"><value>选择 BOM 配方</value></data>
-  <data name="Composition.SelectBOMWithProduct" xml:space="preserve"><value>选择 BOM 配方 - {0}</value></data>
+  <data name="Composition.SelectBOMWithItem" xml:space="preserve"><value>选择 BOM 配方 - {0}</value></data>
   <data name="Composition.SearchPlaceholder" xml:space="preserve"><value>搜索配方编号、规格、客户或类型...</value></data>
   <data name="Composition.NoMatch" xml:space="preserve"><value>找不到符合条件的配方</value></data>
   <data name="Composition.CurrentCustomer" xml:space="preserve"><value>当前客户</value></data>
@@ -2463,14 +2528,13 @@
   <data name="Composition.CustomModeDesc" xml:space="preserve"><value>不使用现有配方，自行挑选组件并设定数量</value></data>
   <data name="Composition.NoBOMInfo" xml:space="preserve"><value>此品项尚未创建 BOM 配方，请选择「自定义」模式手动创建组成。</value></data>
   <data name="Composition.EditBOM" xml:space="preserve"><value>编辑 BOM 组成</value></data>
-  <data name="Composition.EditBOMWithProduct" xml:space="preserve"><value>编辑 BOM 组成 - {0}</value></data>
+  <data name="Composition.EditBOMWithItem" xml:space="preserve"><value>编辑 BOM 组成 - {0}</value></data>
   <data name="Composition.CustomModeSelectTitle" xml:space="preserve"><value>自定义模式 - 选择组件</value></data>
   <data name="Composition.CustomModeSelectDesc" xml:space="preserve"><value>请从下方选择要加入的组件，勾选后可在下方表格编辑数量与单位。</value></data>
   <data name="Composition.SearchComponentPlaceholder" xml:space="preserve"><value>搜索组件编号或名称...</value></data>
   <data name="Composition.NoMatchComponent" xml:space="preserve"><value>找不到符合条件的组件</value></data>
   <data name="Composition.PendingCount" xml:space="preserve"><value>已勾选 {0} 个组件（尚未加载）</value></data>
   <data name="Composition.AddedCount" xml:space="preserve"><value>已加入 {0} 个组件</value></data>
-  <data name="Column.ComponentItem" xml:space="preserve"><value>品项</value></data>
   <data name="Label.NoRemarks" xml:space="preserve"><value>无备注</value></data>
   <data name="Composition.EmptyMsgCustom" xml:space="preserve"><value>请点击上方「添加组件」按钮选择要加入的组件</value></data>
   <data name="Composition.EmptyMsg" xml:space="preserve"><value>尚未添加组件</value></data>
@@ -2549,12 +2613,12 @@
   <data name="Production.SelectScheduleDetails" xml:space="preserve"><value>选择排程明细</value></data>
   <data name="Production.SelectScheduleDetailsTitle" xml:space="preserve"><value>选择排程明细 - {0}</value></data>
   <data name="Production.PendingDetails" xml:space="preserve"><value>待排程明细</value></data>
-  <!-- ===== Product ===== -->
-  <data name="Product.BarcodePrint" xml:space="preserve"><value>品项条码打印</value></data>
-  <data name="Product.NoBarcodeItems" xml:space="preserve"><value>目前没有可打印的品项条码</value></data>
-  <data name="Product.NoPrintableProducts" xml:space="preserve"><value>没有可打印的品项</value></data>
-  <data name="Product.A4BarcodeHint" xml:space="preserve"><value>提示：一张 A4 可以印 24 张条码</value></data>
-  <data name="Product.SelectList" xml:space="preserve"><value>选择清单</value></data>
+  <!-- ===== Item ===== -->
+  <data name="Item.BarcodePrint" xml:space="preserve"><value>品项条码打印</value></data>
+  <data name="Item.NoBarcodeItems" xml:space="preserve"><value>目前没有可打印的品项条码</value></data>
+  <data name="Item.NoPrintableItems" xml:space="preserve"><value>没有可打印的品项</value></data>
+  <data name="Item.A4BarcodeHint" xml:space="preserve"><value>提示：一张 A4 可以印 24 张条码</value></data>
+  <data name="Item.SelectList" xml:space="preserve"><value>选择清单</value></data>
   <!-- ===== Setoff ===== -->
   <data name="Setoff.NoPaymentRecords" xml:space="preserve"><value>尚未新增收款记录</value></data>
   <data name="Setoff.NoPrepaymentRecords" xml:space="preserve"><value>尚未新增预收付款项记录</value></data>
@@ -2610,6 +2674,26 @@
   <data name="Journal.Debit" xml:space="preserve"><value>借（Debit）</value></data>
   <data name="Journal.Credit" xml:space="preserve"><value>贷（Credit）</value></data>
   <data name="Journal.Description" xml:space="preserve"><value>说明</value></data>
+  <data name="Journal.MaterialIssue" xml:space="preserve"><value>材料领用</value></data>
+  <data name="Journal.MaterialIssueHint" xml:space="preserve"><value>借：在制品/物料费用 / 贷：品项存货</value></data>
+  <data name="Journal.NoPendingMaterialIssue" xml:space="preserve"><value>无待转传票的已确认领料单</value></data>
+  <data name="Journal.IssueDate" xml:space="preserve"><value>领料日期</value></data>
+  <data name="Journal.IssueType" xml:space="preserve"><value>用途</value></data>
+  <data name="Journal.EstimatedCost" xml:space="preserve"><value>预估成本</value></data>
+  <data name="Journal.NoCostData" xml:space="preserve"><value>⚠ 无成本资料</value></data>
+  <data name="Journal.NoCostDataTooltip" xml:space="preserve"><value>明细单位成本未设定，转传票将失败</value></data>
+  <data name="Journal.ProductionCompletion" xml:space="preserve"><value>生产完工</value></data>
+  <data name="Journal.ProductionCompletionHint" xml:space="preserve"><value>借：制成品存货 / 贷：在制品</value></data>
+  <data name="Journal.NoPendingProductionCompletion" xml:space="preserve"><value>无待转传票的生产完工记录（需已建立库存异动记录）</value></data>
+  <data name="Journal.CompletionDate" xml:space="preserve"><value>完工日期</value></data>
+  <data name="Journal.ItemName" xml:space="preserve"><value>品项</value></data>
+  <data name="Journal.CompletedQuantity" xml:space="preserve"><value>完工数量</value></data>
+  <data name="Journal.CostAmount" xml:space="preserve"><value>成本金额</value></data>
+  <data name="Journal.ZeroAmount" xml:space="preserve"><value>⚠ 金额为零</value></data>
+  <data name="Journal.ZeroAmountTooltip" xml:space="preserve"><value>库存异动金额为零</value></data>
+  <data name="MaterialIssueType.Production" xml:space="preserve"><value>生产用料</value></data>
+  <data name="MaterialIssueType.GeneralConsumption" xml:space="preserve"><value>一般消耗</value></data>
+  <data name="MaterialIssueType.Sample" xml:space="preserve"><value>样品</value></data>
   <!-- ===== Report ===== -->
   <data name="Report.AccountsReceivableTitle" xml:space="preserve"><value>应收账款报表打印条件</value></data>
   <data name="Report.StatisticsDate" xml:space="preserve"><value>统计日期</value></data>
@@ -2619,9 +2703,9 @@
   <data name="Report.ARNoCustomerSelected" xml:space="preserve"><value>尚未选择客户，留空表示打印所有客户的应收账款</value></data>
   <!-- ===== Accounting additions ===== -->
   <data name="Accounting.Inventory" xml:space="preserve"><value>存货</value></data>
-  <data name="Accounting.CreateProductSubAccountTitle" xml:space="preserve"><value>为此品项建立存货子科目</value></data>
+  <data name="Accounting.CreateItemSubAccountTitle" xml:space="preserve"><value>为此品项建立存货子科目</value></data>
   <!-- ===== Column additions ===== -->
-  <data name="Column.ComponentProduct" xml:space="preserve"><value>组件品项</value></data>
+  <data name="Column.ComponentItem" xml:space="preserve"><value>组件品项</value></data>
   <data name="Column.RequiredQty" xml:space="preserve"><value>需求数量</value></data>
   <data name="Column.IssuedQty" xml:space="preserve"><value>已领数量</value></data>
   <data name="Column.PendingIssueQty" xml:space="preserve"><value>待领数量</value></data>
@@ -2631,7 +2715,6 @@
   <data name="Column.Barcode" xml:space="preserve"><value>条码号码</value></data>
   <data name="Column.PrintQty" xml:space="preserve"><value>打印数量</value></data>
   <data name="Column.Supplier" xml:space="preserve"><value>供应商</value></data>
-  <data name="Column.SupplierItemCode" xml:space="preserve"><value>供应商品项编号</value></data>
   <data name="Column.Price" xml:space="preserve"><value>报价</value></data>
   <data name="Column.LeadTimeDays" xml:space="preserve"><value>交期(天)</value></data>
   <data name="Column.MinOrderQty" xml:space="preserve"><value>最小订购量</value></data>
@@ -2707,9 +2790,9 @@
   <data name="Message.NoScheduleItemInfo" xml:space="preserve"><value>无法加载排程项目信息</value></data>
   <data name="Message.EnterIssueQty" xml:space="preserve"><value>请输入领料数量</value></data>
   <data name="Message.StockInsufficientFor" xml:space="preserve"><value>以下组件库存不足：{0}</value></data>
-  <data name="Message.SelectAtLeastOneProduct" xml:space="preserve"><value>请至少选择一项品项</value></data>
+  <data name="Message.SelectAtLeastOneItem" xml:space="preserve"><value>请至少选择一项品项</value></data>
   <data name="Message.BarcodePrintWindowOpened" xml:space="preserve"><value>已开启条码打印窗口 (共 {0} 张)</value></data>
-  <data name="Message.NoMatchingProducts" xml:space="preserve"><value>无符合条件的品项</value></data>
+  <data name="Message.NoMatchingItems" xml:space="preserve"><value>无符合条件的品项</value></data>
   <data name="Message.SupplierAlreadyExists" xml:space="preserve"><value>此供应商已存在，请选择其他供应商</value></data>
   <data name="Message.NeedAtLeastOneSupplier" xml:space="preserve"><value>至少需要一个供应商</value></data>
   <data name="Message.DuplicateSupplier" xml:space="preserve"><value>存在重复的供应商</value></data>
@@ -2739,7 +2822,7 @@
   <data name="Message.LoadCustomerFailed" xml:space="preserve"><value>加载客户数据失败</value></data>
   <data name="Message.GenerateReportFailed" xml:space="preserve"><value>生成报表失败</value></data>
   <!-- ===== Placeholder additions ===== -->
-  <data name="Placeholder.SearchProductNameCode" xml:space="preserve"><value>搜寻品项名称/编号...</value></data>
+  <data name="Placeholder.SearchItemNameCode" xml:space="preserve"><value>搜寻品项名称/编号...</value></data>
   <data name="Placeholder.FilterBySpec" xml:space="preserve"><value>规格筛选...</value></data>
   <data name="Placeholder.SelectSupplier" xml:space="preserve"><value>请选择供应商</value></data>
   <data name="Placeholder.EnterCode" xml:space="preserve"><value>请输入编号</value></data>
@@ -2751,7 +2834,7 @@
   <data name="Placeholder.SelectType" xml:space="preserve"><value>请选择类型..</value></data>
   <data name="Placeholder.SelectPrepayment" xml:space="preserve"><value>请选择预收付款项..</value></data>
   <data name="Placeholder.SearchCodeNameStatus" xml:space="preserve"><value>搜寻编号/产品名/状态...</value></data>
-  <data name="Placeholder.SearchProductOrderCustomer" xml:space="preserve"><value>搜寻品项/订单/客户...</value></data>
+  <data name="Placeholder.SearchItemOrderCustomer" xml:space="preserve"><value>搜寻品项/订单/客户...</value></data>
   <data name="Placeholder.SelectDefault" xml:space="preserve"><value>请选择..</value></data>
   <!-- ===== Setoff additional ===== -->
   <data name="Setoff.UnknownSource" xml:space="preserve"><value>未知来源</value></data>
@@ -2941,7 +3024,7 @@
   <data name="RelatedDoc.NoDocuments" xml:space="preserve"><value>暂无相关单据</value></data>
   <data name="RelatedDoc.LoadingMessage" xml:space="preserve"><value>正在加载相关单据...</value></data>
   <data name="RelatedDoc.NoRelated" xml:space="preserve"><value>暂无关联记录</value></data>
-  <data name="RelatedDoc.Product" xml:space="preserve"><value>品项：</value></data>
+  <data name="RelatedDoc.Item" xml:space="preserve"><value>品项：</value></data>
   <data name="RelatedDoc.TransactionCount" xml:space="preserve"><value>共 {0} 笔异动记录</value></data>
   <data name="RelatedDoc.TransactionHistory" xml:space="preserve"><value>库存异动历史</value></data>
   <data name="RelatedDoc.TransactionHistoryTitle" xml:space="preserve"><value>异动历史 - {0}</value></data>
@@ -3102,7 +3185,7 @@
   <data name="Pagination.GoToLast" xml:space="preserve"><value>前往最后一页</value></data>
   <data name="Pagination.NoData" xml:space="preserve"><value>没有找到数据</value></data>
 
-  <!-- ===== Products Module (MaterialIssue / Completion / ScheduleItem / Picker / Supplier / Barcode) ===== -->
+  <!-- ===== Items Module (MaterialIssue / Completion / ScheduleItem / Picker / Supplier / Barcode) ===== -->
   <data name="Message.LoadFailed" xml:space="preserve"><value>加载失败：{0}</value></data>
   <data name="Message.ReduceStockFailed" xml:space="preserve"><value>扣减库存失败：{0} - {1}</value></data>
   <data name="Message.IssueSuccess" xml:space="preserve"><value>成功领料 {0} 项组件，单号：{1}</value></data>
@@ -3114,11 +3197,11 @@
   <data name="Message.UpdateFailed" xml:space="preserve"><value>更新失败：{0}</value></data>
   <data name="Message.PrintValidationError" xml:space="preserve"><value>打印条件错误：{0}</value></data>
   <data name="Message.PrintFailed" xml:space="preserve"><value>打印失败：{0}</value></data>
-  <data name="Message.LoadProductDataFailed" xml:space="preserve"><value>加载品项数据失败：{0}</value></data>
-  <data name="Label.UnknownProduct" xml:space="preserve"><value>未知品项</value></data>
+  <data name="Message.LoadItemDataFailed" xml:space="preserve"><value>加载品项数据失败：{0}</value></data>
+  <data name="Label.UnknownItem" xml:space="preserve"><value>未知品项</value></data>
   <data name="Label.UnknownSupplier" xml:space="preserve"><value>未知供应商</value></data>
   <data name="Placeholder.SelectOption" xml:space="preserve"><value>-- 请选择 --</value></data>
-  <data name="Tooltip.SelectSupplierProduct" xml:space="preserve"><value>选择供应此品项的供应商</value></data>
+  <data name="Tooltip.SelectSupplierItem" xml:space="preserve"><value>选择供应此品项的供应商</value></data>
   <data name="Tooltip.EnterSupplierCode" xml:space="preserve"><value>输入供应商对此品项的品项编号或料号</value></data>
   <data name="Tooltip.EnterSupplierPrice" xml:space="preserve"><value>输入供应商对此品项的报价金额</value></data>
   <data name="Tooltip.EnterLeadTime" xml:space="preserve"><value>输入供应商的交货时间（以天为单位）</value></data>
@@ -3144,11 +3227,11 @@
 
   <!-- ===== PurchaseOrderTable ===== -->
   <data name="Message.SelectSupplierFirst" xml:space="preserve"><value>选择供应商后即可查看该供应商的未完成进货品项</value></data>
-  <data name="Message.NoProducts" xml:space="preserve"><value>尚未添加品项</value></data>
+  <data name="Message.NoItems" xml:space="preserve"><value>尚未添加品项</value></data>
   <data name="Button.SmartPurchase" xml:space="preserve"><value>智能下单</value></data>
-  <data name="Tooltip.PurchaseProductSearch" xml:space="preserve"><value>搜索并选择品项（输入编号或名称）。有进货记录的品项将无法更改</value></data>
-  <data name="Placeholder.PurchaseProductSearch" xml:space="preserve"><value>请输入品项编号或名称</value></data>
-  <data name="Message.ProductHasReceiving" xml:space="preserve"><value>此品项已有进货记录，无法修改品项选择</value></data>
+  <data name="Tooltip.PurchaseItemSearch" xml:space="preserve"><value>搜索并选择品项（输入编号或名称）。有进货记录的品项将无法更改</value></data>
+  <data name="Placeholder.PurchaseItemSearch" xml:space="preserve"><value>请输入品项编号或名称</value></data>
+  <data name="Message.ItemHasReceiving" xml:space="preserve"><value>此品项已有进货记录，无法修改品项选择</value></data>
   <data name="Tooltip.PurchaseQuantity" xml:space="preserve"><value>采购的品项数量。有进货记录的品项将无法修改数量</value></data>
   <data name="Message.QuantityHasReceiving" xml:space="preserve"><value>此品项已有进货记录，无法修改数量</value></data>
   <data name="Tooltip.ReceivedQuantity" xml:space="preserve"><value>已完成入库的数量（从入库单自动更新）</value></data>
@@ -3159,7 +3242,7 @@
   <data name="Tooltip.PurchaseRemarks" xml:space="preserve"><value>选填。可记录采购相关的备注信息（核准后仍可编辑）</value></data>
   <data name="Tooltip.ViewRelatedDocuments" xml:space="preserve"><value>查看相关单据</value></data>
   <data name="Message.FullyReceivedCannotUndo" xml:space="preserve"><value>此品项已全数入库，无法取消完成状态</value></data>
-  <data name="Message.NeedAtLeastOneProduct" xml:space="preserve"><value>至少需要一个品项</value></data>
+  <data name="Message.NeedAtLeastOneItem" xml:space="preserve"><value>至少需要一个品项</value></data>
   <data name="Message.PleaseSelectSupplier" xml:space="preserve"><value>请先选择供应商</value></data>
   <data name="Message.AlreadyHasDetails" xml:space="preserve"><value>目前已有明细数据，无法使用智能下单</value></data>
   <data name="Message.NoHistoryPurchase" xml:space="preserve"><value>此供应商没有历史采购记录</value></data>
@@ -3182,6 +3265,32 @@
   <data name="Tooltip.SubtotalTaxInclusive" xml:space="preserve"><value>含税：数量 × 单价（单价已含税）</value></data>
   <data name="Tooltip.SubtotalNoTax" xml:space="preserve"><value>免税：数量 × 单价</value></data>
   <data name="Tooltip.SubtotalDefault" xml:space="preserve"><value>数量 × 单价</value></data>
+
+  <!-- ===== Year-End Closing ===== -->
+  <data name="YearEnd.ModalTitle" xml:space="preserve"><value>年底结账</value></data>
+  <data name="YearEnd.OpenButton" xml:space="preserve"><value>年度结账</value></data>
+  <data name="YearEnd.ConfirmExecute" xml:space="preserve"><value>确认执行结账</value></data>
+  <data name="YearEnd.SelectYear" xml:space="preserve"><value>选择结账年度</value></data>
+  <data name="YearEnd.PreCheck" xml:space="preserve"><value>前置检查</value></data>
+  <data name="YearEnd.ReSelectYear" xml:space="preserve"><value>重新选择年度</value></data>
+  <data name="YearEnd.PreCheckTitle" xml:space="preserve"><value>{0} 年度结账前置检查</value></data>
+  <data name="YearEnd.AlreadyClosed" xml:space="preserve"><value>{0} 年度已执行过年底结账，无法重复执行。</value></data>
+  <data name="YearEnd.PeriodCount" xml:space="preserve"><value>期间数：{0} / 12</value></data>
+  <data name="YearEnd.ClosedPeriods" xml:space="preserve"><value>已结账：{0}</value></data>
+  <data name="YearEnd.OpenPeriods" xml:space="preserve"><value>仍开放：{0}</value></data>
+  <data name="YearEnd.EstimatedProfit" xml:space="preserve"><value>预估本期损益：盈利 {0} 元</value></data>
+  <data name="YearEnd.EstimatedLoss" xml:space="preserve"><value>预估本期损益：亏损 {0} 元</value></data>
+  <data name="YearEnd.CannotClose" xml:space="preserve"><value>无法执行结账</value></data>
+  <data name="YearEnd.Warnings" xml:space="preserve"><value>注意事项</value></data>
+  <data name="YearEnd.ConfirmWarning" xml:space="preserve"><value>执行后将锁定 {0} 年所有期间，无法再修改该年度任何传票。确认所有传票已完成审核后，点击右上角「确认执行结账」。</value></data>
+  <data name="YearEnd.InProgress" xml:space="preserve"><value>{0} 年度结账执行中，请稍候⋯</value></data>
+  <data name="YearEnd.InProgressNote" xml:space="preserve"><value>正在产生结账传票并锁定期间，请勿关闭此窗口</value></data>
+  <data name="YearEnd.Success" xml:space="preserve"><value>{0} 年度结账完成！</value></data>
+  <data name="YearEnd.SuccessNote" xml:space="preserve"><value>已产生结账传票、锁定年度期间，并初始化 {0} 年度期间。</value></data>
+  <data name="YearEnd.Failed" xml:space="preserve"><value>年底结账失败</value></data>
+  <data name="YearEnd.NoCompany" xml:space="preserve"><value>找不到预设公司资料</value></data>
+  <data name="YearEnd.Completed" xml:space="preserve"><value>{0} 年度结账完成</value></data>
+  <data name="YearEnd.ExecuteFailed" xml:space="preserve"><value>年底结账失败：{0}</value></data>
 
   <data name="Page.AccountItemTitle" xml:space="preserve"><value>会计科目管理</value></data>
   <data name="Page.AccountItemSubtitle" xml:space="preserve"><value>管理标准会计科目表（Chart of Accounts）</value></data>
@@ -3221,12 +3330,12 @@
   <data name="Page.CompositionCategorySubtitle" xml:space="preserve"><value>设置品项物料清单的类型分类</value></data>
   <data name="Page.MaterialTitle" xml:space="preserve"><value>材质</value></data>
   <data name="Page.MaterialSubtitle" xml:space="preserve"><value>管理所有材质资料与属性设置</value></data>
-  <data name="Page.ProductCategoryTitle" xml:space="preserve"><value>品项类型</value></data>
-  <data name="Page.ProductCategorySubtitle" xml:space="preserve"><value>管理所有品项类型资料与层次结构</value></data>
-  <data name="Page.ProductCompositionTitle" xml:space="preserve"><value>物料清单</value></data>
-  <data name="Page.ProductCompositionSubtitle" xml:space="preserve"><value>管理品项配方与组件</value></data>
-  <data name="Page.ProductTitle" xml:space="preserve"><value>品项维护</value></data>
-  <data name="Page.ProductSubtitle" xml:space="preserve"><value>管理所有品项资料与库存信息</value></data>
+  <data name="Page.ItemCategoryTitle" xml:space="preserve"><value>品项类型</value></data>
+  <data name="Page.ItemCategorySubtitle" xml:space="preserve"><value>管理所有品项类型资料与层次结构</value></data>
+  <data name="Page.ItemCompositionTitle" xml:space="preserve"><value>物料清单</value></data>
+  <data name="Page.ItemCompositionSubtitle" xml:space="preserve"><value>管理品项配方与组件</value></data>
+  <data name="Page.ItemTitle" xml:space="preserve"><value>品项维护</value></data>
+  <data name="Page.ItemSubtitle" xml:space="preserve"><value>管理所有品项资料与库存信息</value></data>
   <data name="Page.ProductionScheduleTitle" xml:space="preserve"><value>生产排程管理</value></data>
   <data name="Page.ProductionScheduleSubtitle" xml:space="preserve"><value>管理生产排程计划与执行</value></data>
   <data name="Page.SizeTitle" xml:space="preserve"><value>尺寸维护</value></data>
@@ -3318,10 +3427,10 @@
   <data name="SubAccount.BatchCreateDesc" xml:space="preserve"><value>为现有客户、供应商、品项补建子科目（已有子科目者略过）。执行前请先确认上方统制科目代码设置正确并已保存。</value></data>
   <data name="SubAccount.CreateCustomer" xml:space="preserve"><value>补建客户</value></data>
   <data name="SubAccount.CreateSupplier" xml:space="preserve"><value>补建供应商</value></data>
-  <data name="SubAccount.CreateProduct" xml:space="preserve"><value>补建品项</value></data>
+  <data name="SubAccount.CreateItem" xml:space="preserve"><value>补建品项</value></data>
   <data name="SubAccount.CreateCustomerTitle" xml:space="preserve"><value>为所有现有客户补建子科目</value></data>
   <data name="SubAccount.CreateSupplierTitle" xml:space="preserve"><value>为所有现有供应商补建子科目</value></data>
-  <data name="SubAccount.CreateProductTitle" xml:space="preserve"><value>为所有现有品项补建子科目</value></data>
+  <data name="SubAccount.CreateItemTitle" xml:space="preserve"><value>为所有现有品项补建子科目</value></data>
   <data name="SubAccount.CreateResult" xml:space="preserve"><value>{0}子科目补建完成：建立 {1} 笔，略过 {2} 笔</value></data>
   <data name="SubAccount.CreateResultWithErrors" xml:space="preserve"><value>{0}子科目补建完成：建立 {1} 笔，略过 {2} 笔，错误 {3} 笔（{4}{5}）</value></data>
   <data name="SubAccount.CreateError" xml:space="preserve"><value>批量补建{0}子科目时发生错误：{1}</value></data>

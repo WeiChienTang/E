@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
@@ -28,7 +28,7 @@ namespace ERPCore2.Services
         {
             return context.ProductionScheduleCompletions
                 .Include(psc => psc.ProductionScheduleItem)
-                    .ThenInclude(psi => psi.Product)
+                    .ThenInclude(psi => psi.Item)
                 .Include(psc => psc.ProductionScheduleItem)
                     .ThenInclude(psi => psi.ProductionSchedule)
                 .Include(psc => psc.Warehouse)
@@ -45,7 +45,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleCompletions
                     .Include(psc => psc.ProductionScheduleItem)
-                        .ThenInclude(psi => psi.Product)
+                        .ThenInclude(psi => psi.Item)
                     .Include(psc => psc.ProductionScheduleItem)
                         .ThenInclude(psi => psi.ProductionSchedule)
                     .Include(psc => psc.Warehouse)
@@ -129,11 +129,11 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleCompletions
                     .Include(psc => psc.ProductionScheduleItem)
-                        .ThenInclude(psi => psi.Product)
+                        .ThenInclude(psi => psi.Item)
                     .Include(psc => psc.Warehouse)
-                    .Where(psc => psc.ProductionScheduleItem!.Product!.Name!.Contains(searchTerm) ||
-                                 (psc.ProductionScheduleItem.Product.Code != null && 
-                                  psc.ProductionScheduleItem.Product.Code.Contains(searchTerm)) ||
+                    .Where(psc => psc.ProductionScheduleItem!.Item!.Name!.Contains(searchTerm) ||
+                                 (psc.ProductionScheduleItem.Item.Code != null && 
+                                  psc.ProductionScheduleItem.Item.Code.Contains(searchTerm)) ||
                                  (psc.BatchNumber != null && psc.BatchNumber.Contains(searchTerm)))
                     .OrderByDescending(psc => psc.CompletionDate)
                     .ToListAsync();
@@ -184,7 +184,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleCompletions
                     .Include(psc => psc.ProductionScheduleItem)
-                        .ThenInclude(psi => psi.Product)
+                        .ThenInclude(psi => psi.Item)
                     .Include(psc => psc.Warehouse)
                     .Where(psc => psc.CompletionDate >= startDate && psc.CompletionDate <= endDate)
                     .OrderByDescending(psc => psc.CompletionDate)
@@ -210,7 +210,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleCompletions
                     .Include(psc => psc.ProductionScheduleItem)
-                        .ThenInclude(psi => psi.Product)
+                        .ThenInclude(psi => psi.Item)
                     .Include(psc => psc.Warehouse)
                     .Where(psc => psc.WarehouseId == warehouseId)
                     .OrderByDescending(psc => psc.CompletionDate)

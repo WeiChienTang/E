@@ -63,6 +63,34 @@ namespace ERPCore2.Data.Entities.Payroll
         [Display(Name = "交通費免稅上限")]
         public decimal TransportTaxFreeLimit { get; set; }
 
+        // ── 加班費倍率（勞基法定義，有效期間可隨法規修訂調整）──────────────
+        // 計算引擎讀取時若欄位值為 0，自動使用法定預設值（備援常數）
+
+        /// <summary>平日加班前2小時倍率（勞基法第24條第1項第1款：法定4/3≈1.3333）</summary>
+        [Column(TypeName = "decimal(6,4)")]
+        [Display(Name = "平日加班倍率（前2hr）")]
+        public decimal OvertimeRate1 { get; set; } = 1.3333m;
+
+        /// <summary>平日加班後2小時倍率（勞基法第24條第1項第2款：法定5/3≈1.6667）</summary>
+        [Column(TypeName = "decimal(6,4)")]
+        [Display(Name = "平日加班倍率（後2hr）")]
+        public decimal OvertimeRate2 { get; set; } = 1.6667m;
+
+        /// <summary>休息日加班前2小時倍率（勞基法第24條第2項：法定4/3≈1.3333）</summary>
+        [Column(TypeName = "decimal(6,4)")]
+        [Display(Name = "休息日加班倍率（前2hr）")]
+        public decimal RestDayRate1 { get; set; } = 1.3333m;
+
+        /// <summary>休息日加班超過2小時倍率（勞基法第24條第2項：法定5/3≈1.6667）</summary>
+        [Column(TypeName = "decimal(6,4)")]
+        [Display(Name = "休息日加班倍率（後2hr+）")]
+        public decimal RestDayRate2 { get; set; } = 1.6667m;
+
+        /// <summary>國定假日額外加給倍率（勞基法第39條：月薪已含假日薪，加給1倍，法定1.0）</summary>
+        [Column(TypeName = "decimal(6,4)")]
+        [Display(Name = "國定假日加給倍率")]
+        public decimal NationalHolidayRate { get; set; } = 1.0000m;
+
         [MaxLength(200)]
         [Display(Name = "備註")]
         public string? Remarks { get; set; }

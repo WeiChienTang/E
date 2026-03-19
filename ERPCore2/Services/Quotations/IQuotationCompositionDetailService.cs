@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 
 namespace ERPCore2.Services
 {
@@ -20,7 +20,7 @@ namespace ERPCore2.Services
         /// <param name="quotationDetailId">報價單明細 ID</param>
         /// <param name="productId">品項 ID</param>
         /// <returns>複製的組合明細列表</returns>
-        Task<List<QuotationCompositionDetail>> CopyFromProductCompositionAsync(int quotationDetailId, int productId);
+        Task<List<QuotationCompositionDetail>> CopyFromItemCompositionAsync(int quotationDetailId, int productId);
         
         /// <summary>
         /// 從指定的品項配方複製 BOM 到報價單明細
@@ -34,10 +34,10 @@ namespace ERPCore2.Services
         /// 檢查組件是否已存在於報價單明細的組合中
         /// </summary>
         /// <param name="quotationDetailId">報價單明細 ID</param>
-        /// <param name="componentProductId">組件品項 ID</param>
+        /// <param name="componentItemId">組件品項 ID</param>
         /// <param name="excludeId">排除的組合明細 ID</param>
         /// <returns>是否存在</returns>
-        Task<bool> IsComponentExistsAsync(int quotationDetailId, int componentProductId, int? excludeId = null);
+        Task<bool> IsComponentExistsAsync(int quotationDetailId, int componentItemId, int? excludeId = null);
 
         /// <summary>
         /// 批次儲存報價單組合明細

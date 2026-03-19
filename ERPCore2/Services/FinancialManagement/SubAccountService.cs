@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -66,12 +66,12 @@ namespace ERPCore2.Services
                 .ToListAsync();
         }
 
-        public async Task<AccountItem?> GetSubAccountForProductAsync(int productId)
+        public async Task<AccountItem?> GetSubAccountForItemAsync(int productId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.AccountItems
                 .AsNoTracking()
-                .FirstOrDefaultAsync(a => a.LinkedProductId == productId);
+                .FirstOrDefaultAsync(a => a.LinkedItemId == productId);
         }
 
         // ===== 建立（若已存在則直接回傳）=====
@@ -166,32 +166,32 @@ namespace ERPCore2.Services
             return apAccount;
         }
 
-        public async Task<AccountItem?> GetOrCreateProductSubAccountAsync(int productId, string createdBy)
+        public async Task<AccountItem?> GetOrCreateItemSubAccountAsync(int productId, string createdBy)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
 
                 var existing = await context.AccountItems
-                    .FirstOrDefaultAsync(a => a.LinkedProductId == productId);
+                    .FirstOrDefaultAsync(a => a.LinkedItemId == productId);
                 if (existing != null) return existing;
 
                 var param = await _systemParameterService.GetSystemParameterAsync();
-                if (param?.AutoCreateProductSubAccount != true) return null;
+                if (param?.AutoCreateItemSubAccount != true) return null;
 
-                return await CreateProductSubAccountCoreAsync(context, productId, createdBy, param);
+                return await CreateItemSubAccountCoreAsync(context, productId, createdBy, param);
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "建立品項子科目時發生錯誤（ProductId={ProductId}）", productId);
+                _logger?.LogError(ex, "建立品項子科目時發生錯誤（ItemId={ItemId}）", productId);
                 return null;
             }
         }
 
         /// <summary>品項子科目建立核心邏輯（不檢查 AutoCreate 開關，供批次補建直接呼叫）</summary>
-        private async Task<AccountItem?> CreateProductSubAccountCoreAsync(AppDbContext context, int productId, string createdBy, Data.Entities.SystemParameter param)
+        private async Task<AccountItem?> CreateItemSubAccountCoreAsync(AppDbContext context, int productId, string createdBy, Data.Entities.SystemParameter param)
         {
-            var parentCode = param.ProductSubAccountParentCode;
+            var parentCode = param.ItemSubAccountParentCode;
             var parent = await context.AccountItems
                 .FirstOrDefaultAsync(a => a.Code == parentCode);
             if (parent == null)
@@ -200,19 +200,19 @@ namespace ERPCore2.Services
                 return null;
             }
 
-            var product = await context.Products.FindAsync(productId);
+            var product = await context.Items.FindAsync(productId);
             if (product == null) return null;
 
             var productName = product.Name ?? $"品項{productId}";
             var code = await GenerateSubAccountCodeAsync(context, parent, param.SubAccountCodeFormat, product.Code);
             var subAccount = BuildSubAccount(code, $"{parent.Name} - {productName}", parent, createdBy);
             subAccount.Description = productName;
-            subAccount.LinkedProductId = productId;
+            subAccount.LinkedItemId = productId;
 
             context.AccountItems.Add(subAccount);
             await context.SaveChangesAsync();
 
-            _logger?.LogInformation("已建立品項子科目 {Code} 對應品項 {ProductId}", code, productId);
+            _logger?.LogInformation("已建立品項子科目 {Code} 對應品項 {ItemId}", code, productId);
             return subAccount;
         }
 
@@ -325,14 +325,14 @@ namespace ERPCore2.Services
             return (created, skipped, errors);
         }
 
-        public async Task<(int Created, int Skipped, List<string> Errors)> BatchCreateForAllProductsAsync(string createdBy)
+        public async Task<(int Created, int Skipped, List<string> Errors)> BatchCreateForAllItemsAsync(string createdBy)
         {
             int created = 0, skipped = 0;
             var errors = new List<string>();
 
             try
             {
-                // 批次補建不檢查 AutoCreateProductSubAccount 開關
+                // 批次補建不檢查 AutoCreateItemSubAccount 開關
                 var param = await _systemParameterService.GetSystemParameterAsync();
                 if (param == null)
                 {
@@ -341,7 +341,7 @@ namespace ERPCore2.Services
                 }
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var productIds = await context.Products
+                var productIds = await context.Items
                     .Where(p => p.Status == EntityStatus.Active)
                     .Select(p => p.Id)
                     .ToListAsync();
@@ -351,7 +351,7 @@ namespace ERPCore2.Services
                     try
                     {
                         var existing = await context.AccountItems
-                            .AnyAsync(a => a.LinkedProductId == id);
+                            .AnyAsync(a => a.LinkedItemId == id);
                         if (existing)
                         {
                             skipped++;
@@ -359,7 +359,7 @@ namespace ERPCore2.Services
                         }
 
                         // 直接呼叫核心邏輯，不經過 AutoCreate 開關檢查
-                        var result = await CreateProductSubAccountCoreAsync(context, id, createdBy, param);
+                        var result = await CreateItemSubAccountCoreAsync(context, id, createdBy, param);
                         if (result != null) created++;
                         else skipped++;
                     }

@@ -1,4 +1,4 @@
-using ERPCore2.Helpers;
+﻿using ERPCore2.Helpers;
 using ERPCore2.Models;
 
 namespace ERPCore2.Data.Navigation;
@@ -311,41 +311,41 @@ public static class NavigationConfig
             new NavigationItem
             {
                 Name = "品項",
-                NameKey = "Nav.ProductGroup",
+                NameKey = "Nav.ItemGroup",
                 Description = "品項相關功能管理",
                 Route = "#",
                 IconClass = "bi bi-box-seam-fill",
                 Category = "品項管理",
                 IsParent = true,
                 MenuKey = "product_management",
-                ModuleKey = "Products",
+                ModuleKey = "Items",
                 SearchKeywords = new List<string> { "品項", "product", "item", "产品", "物品", "品項管理", "品目", "アイテム" },
                 Children = new List<NavigationItem>
                 {
                     new NavigationItem
                     {
                         Name = "品項",
-                        NameKey = "Nav.Products",
+                        NameKey = "Nav.Items",
                         Description = "管理品項資料和品項目錄",
-                        Route = "/products",
+                        Route = "/items",
                         IconClass = "bi bi-caret-right-fill",
                         Category = "品項管理",
-                        RequiredPermission = PermissionRegistry.Product.Read,
+                        RequiredPermission = PermissionRegistry.Item.Read,
                         SearchKeywords = new List<string> { "品項管理", "品項資料", "品項目錄", "品項", "條碼", "SKU", "品项编码", "産品管理", "品番", "barcode" },
-                        QuickActionId = "NewProduct",
+                        QuickActionId = "NewItem",
                         QuickActionName = "新增品項"
                     },
                     new NavigationItem
                     {
                         Name = "類型",
-                        NameKey = "Nav.ProductCategories",
+                        NameKey = "Nav.ItemCategories",
                         Description = "管理品項類型分類",
-                        Route = "/product-categories",
+                        Route = "/item-categories",
                         IconClass = "",
                         Category = "品項管理",
-                        RequiredPermission = PermissionRegistry.ProductCategory.Read,
+                        RequiredPermission = PermissionRegistry.ItemCategory.Read,
                         SearchKeywords = new List<string> { "品項類型", "品項分類", "category", "品项类型", "産品分類", "品目カテゴリ" },
-                        QuickActionId = "NewProductCategory",
+                        QuickActionId = "NewItemCategory",
                         QuickActionName = "新增品項類型"
                     },
                     new NavigationItem
@@ -378,14 +378,14 @@ public static class NavigationConfig
                     new NavigationItem
                     {
                         Name = "物料清單",
-                        NameKey = "Nav.ProductCompositions",
+                        NameKey = "Nav.ItemCompositions",
                         Description = "管理品項的配方和組件結構",
-                        Route = "/product-compositions",
+                        Route = "/item-compositions",
                         IconClass = "bi bi-caret-right-fill",
                         Category = "品項管理",
-                        RequiredPermission = PermissionRegistry.ProductComposition.Read,
+                        RequiredPermission = PermissionRegistry.ItemComposition.Read,
                         SearchKeywords = new List<string> { "品項合成", "BOM", "物料清單", "Bill of Materials", "物料清单", "配方", "部品表", "構成部品", "配合表" },
-                        QuickActionId = "NewProductComposition",
+                        QuickActionId = "NewItemComposition",
                         QuickActionName = "新增物料清單"
                     },
                     new NavigationItem
@@ -401,6 +401,12 @@ public static class NavigationConfig
                         QuickActionId = "NewCompositionCategory",
                         QuickActionName = "新增物料清單類型"
                     },
+
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+
                     NavigationActionHelper.CreateActionItem(
                         name: "生產排程",
                         description: "管理生產排程的詳細資料",
@@ -422,6 +428,7 @@ public static class NavigationConfig
                         RequiredPermission = PermissionRegistry.ProductionSchedule.Read,
                         SearchKeywords = new List<string> { "製令單", "manufacturing order", "工单", "製造命令", "製造指示" }
                     },
+
                     // 分隔線 - 區分資料維護與報表
                     new NavigationItem
                     {
@@ -432,24 +439,44 @@ public static class NavigationConfig
                         name: "品項報表集",
                         description: "查看和列印所有品項相關報表",
                         iconClass: "bi bi-printer-fill",
-                        actionId: "OpenProductReportIndex",
+                        actionId: "OpenItemReportIndex",
                         category: "品項管理",
-                        requiredPermission: "Product.Read",
+                        requiredPermission: "Item.Read",
                         searchKeywords: new List<string> { "品項報表", "品項報表集", "product report", "產品報表", "品项报表", "産品レポート" },
-                        nameKey: "Nav.ProductReportIndex"
+                        nameKey: "Nav.ItemReportIndex"
                     ),
+
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+
                     new NavigationItem
                     {
                         Name = "品項圖表",
-                        NameKey = "Nav.ProductCharts",
+                        NameKey = "Nav.ItemCharts",
                         Description = "依多維度查看品項銷售與成本統計分析圖表",
                         IconClass = "bi bi-bar-chart-fill",
                         ItemType = NavigationItemType.Action,
-                        ActionId = "OpenProductCharts",
+                        ActionId = "OpenItemCharts",
                         Category = "品項管理",
                         ModuleKey = "Charts",
-                        RequiredPermission = PermissionRegistry.Product.ChartRead,
+                        RequiredPermission = PermissionRegistry.Item.ChartRead,
                         SearchKeywords = new List<string> { "品項圖表", "品項分析", "統計分析", "product chart", "item analytics", "品项图表", "品目分析" },
+                        IsChartWidget = true
+                    },
+                    new NavigationItem
+                    {
+                        Name = "生產圖表",
+                        NameKey = "Nav.ProductionCharts",
+                        Description = "依多維度查看生產排程與製令統計分析圖表",
+                        IconClass = "bi bi-bar-chart-fill",
+                        ItemType = NavigationItemType.Action,
+                        ActionId = "OpenProductionCharts",
+                        Category = "品項管理",
+                        ModuleKey = "Charts",
+                        RequiredPermission = PermissionRegistry.ProductionSchedule.ChartRead,
+                        SearchKeywords = new List<string> { "生產圖表", "製令分析", "生產統計", "production chart", "manufacturing analytics", "生产图表", "生産チャート" },
                         IsChartWidget = true
                     },
                 }
@@ -775,6 +802,11 @@ public static class NavigationConfig
                         QuickActionId = "NewSalesReturnReason",
                         QuickActionName = "新增銷貨退回原因"
                     },
+
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
                     new NavigationItem
                     {
                         Name = "業績目標",
@@ -899,6 +931,20 @@ public static class NavigationConfig
                         searchKeywords: new List<string> { "車輛報表", "車輛報表集", "vehicle report", "保養報表", "车辆报表", "車両レポート" },
                         nameKey: "Nav.VehicleReportIndex"
                     ),
+                    new NavigationItem
+                    {
+                        Name = "車輛圖表",
+                        NameKey = "Nav.VehicleCharts",
+                        Description = "依多維度查看車輛保養費用與狀態統計分析圖表",
+                        IconClass = "bi bi-bar-chart-fill",
+                        ItemType = NavigationItemType.Action,
+                        ActionId = "OpenVehicleCharts",
+                        Category = "車輛管理",
+                        ModuleKey = "Charts",
+                        RequiredPermission = PermissionRegistry.Vehicle.ChartRead,
+                        SearchKeywords = new List<string> { "車輛圖表", "保養分析", "車輛統計", "vehicle chart", "vehicle analytics", "车辆图表", "車両チャート" },
+                        IsChartWidget = true
+                    },
                 }
             },
 
@@ -946,6 +992,25 @@ public static class NavigationConfig
                         searchKeywords: new List<string> { "磅秤報表", "磅秤報表集", "scale report", "磅秤报表", "計量レポート" },
                         nameKey: "Nav.WasteReportIndex"
                     ),
+
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+                    new NavigationItem
+                    {
+                        Name = "磅秤圖表",
+                        NameKey = "Nav.ScaleCharts",
+                        Description = "依多維度查看過磅重量與收益統計分析圖表",
+                        IconClass = "bi bi-bar-chart-fill",
+                        ItemType = NavigationItemType.Action,
+                        ActionId = "OpenScaleCharts",
+                        Category = "磅秤管理",
+                        ModuleKey = "Charts",
+                        RequiredPermission = PermissionRegistry.ScaleRecord.ChartRead,
+                        SearchKeywords = new List<string> { "磅秤圖表", "過磅分析", "磅秤統計", "scale chart", "weighing analytics", "磅秤图表", "計量チャート" },
+                        IsChartWidget = true
+                    },
                 }
             },
 
@@ -1046,6 +1111,24 @@ public static class NavigationConfig
                         searchKeywords: new List<string> { "財務報表", "財務報表集", "financial report", "沖款單報表", "應收沖款", "應付沖款", "财务报表", "経理レポート", "帳款報表" },
                         nameKey: "Nav.FinancialReportIndex"
                     ),
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+                    new NavigationItem
+                    {
+                        Name = "財務圖表",
+                        NameKey = "Nav.FinancialCharts",
+                        Description = "依多維度查看沖款與傳票統計分析圖表",
+                        IconClass = "bi bi-bar-chart-fill",
+                        ItemType = NavigationItemType.Action,
+                        ActionId = "OpenFinancialCharts",
+                        Category = "財務管理",
+                        ModuleKey = "Charts",
+                        RequiredPermission = PermissionRegistry.SetoffDocument.ChartRead,
+                        SearchKeywords = new List<string> { "財務圖表", "沖款分析", "財務統計", "financial chart", "financial analytics", "财务图表", "財務チャート" },
+                        IsChartWidget = true
+                    },
 
                 }
             },
@@ -1182,6 +1265,24 @@ public static class NavigationConfig
                         Category = "薪資管理",
                         RequiredPermission = PermissionRegistry.Payroll.RateTable,
                         SearchKeywords = new List<string> { "薪資項目", "薪資科目", "payroll item", "薪资项目", "給与項目", "加給", "扣除項目", "薪資明細" }
+                    },
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+                    new NavigationItem
+                    {
+                        Name = "薪資圖表",
+                        NameKey = "Nav.PayrollCharts",
+                        Description = "依多維度查看薪資支出與部門分布統計分析圖表",
+                        IconClass = "bi bi-bar-chart-fill",
+                        ItemType = NavigationItemType.Action,
+                        ActionId = "OpenPayrollCharts",
+                        Category = "薪資管理",
+                        ModuleKey = "Charts",
+                        RequiredPermission = PermissionRegistry.Payroll.ChartRead,
+                        SearchKeywords = new List<string> { "薪資圖表", "薪資分析", "薪資統計", "payroll chart", "salary analytics", "薪资图表", "給与チャート" },
+                        IsChartWidget = true
                     },
                 }
             },

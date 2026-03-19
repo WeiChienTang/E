@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -42,7 +42,7 @@ namespace ERPCore2.Services
                 .Include(sr => sr.ReturnReason)
                 .Include(sr => sr.ApprovedByUser)
                 .Include(sr => sr.SalesReturnDetails)
-                    .ThenInclude(srd => srd.Product)
+                    .ThenInclude(srd => srd.Item)
                 .OrderByDescending(sr => sr.ReturnDate)
                 .ThenBy(sr => sr.Code);
         }
@@ -58,7 +58,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.ReturnReason)
                     .Include(sr => sr.ApprovedByUser)
                     .Include(sr => sr.SalesReturnDetails)
-                        .ThenInclude(srd => srd.Product)
+                        .ThenInclude(srd => srd.Item)
                     .Include(sr => sr.SalesReturnDetails)
                         .ThenInclude(srd => srd.SalesDeliveryDetail)
                     .FirstOrDefaultAsync(sr => sr.Id == id);
@@ -178,7 +178,7 @@ namespace ERPCore2.Services
                     using var context = await _contextFactory.CreateDbContextAsync();
                     var entityWithDetails = await context.SalesReturns
                         .Include(sr => sr.SalesReturnDetails)
-                            .ThenInclude(srd => srd.Product)
+                            .ThenInclude(srd => srd.Item)
                         .FirstOrDefaultAsync(sr => sr.Id == entity.Id);
 
                     if (entityWithDetails == null)
@@ -192,7 +192,7 @@ namespace ERPCore2.Services
                 // 3. 檢查每個明細是否被鎖定
                 foreach (var detail in entity.SalesReturnDetails)
                 {
-                    var productName = detail.Product?.Name ?? $"品項ID:{detail.ProductId}";
+                    var productName = detail.Item?.Name ?? $"品項ID:{detail.ItemId}";
                     
                     // 檢查是否有沖款記錄（TotalPaidAmount > 0 表示已有沖款）
                     if (detail.TotalPaidAmount > 0)
@@ -454,7 +454,7 @@ namespace ERPCore2.Services
                     .Include(sr => sr.Employee)
                     .Include(sr => sr.ReturnReason)
                     .Include(sr => sr.SalesReturnDetails.AsQueryable())
-                        .ThenInclude(srd => srd.Product)
+                        .ThenInclude(srd => srd.Item)
                     .AsQueryable();
 
                 // 篩選條件 1: 日期範圍（退回日期）
@@ -666,7 +666,7 @@ namespace ERPCore2.Services
                 var updatedDetailsToUpdate = new List<(SalesReturnDetail existing, SalesReturnDetail updated)>();
                 var existingDetailsToKeep = new List<int>();
 
-                foreach (var detail in details.Where(d => d.ProductId > 0 && d.ReturnQuantity > 0))
+                foreach (var detail in details.Where(d => d.ItemId > 0 && d.ReturnQuantity > 0))
                 {
                     detail.SalesReturnId = salesReturnId;
                     detail.UpdatedAt = DateTime.UtcNow;
@@ -690,7 +690,7 @@ namespace ERPCore2.Services
                                     var originalDetail = new SalesReturnDetail
                                     {
                                         Id = existing.Id,
-                                        ProductId = existing.ProductId,
+                                        ItemId = existing.ItemId,
                                         SalesDeliveryDetailId = existing.SalesDeliveryDetailId,
                                         ReturnQuantity = existing.ReturnQuantity
                                     };
@@ -866,7 +866,7 @@ namespace ERPCore2.Services
                     // 1. 先取得主記錄（含明細資料，包含關聯的銷售訂單明細）
                     var entity = await context.SalesReturns
                         .Include(sr => sr.SalesReturnDetails.AsQueryable())
-                            .ThenInclude(srd => srd.Product)
+                            .ThenInclude(srd => srd.Item)
                         .Include(sr => sr.SalesReturnDetails.AsQueryable())
                             .ThenInclude(srd => srd.SalesDeliveryDetail)
                                 .ThenInclude(sdd => sdd != null ? sdd.SalesDelivery : null)
@@ -906,7 +906,7 @@ namespace ERPCore2.Services
                                 if (warehouseId.HasValue)
                                 {
                                     var reduceResult = await _inventoryStockService.ReduceStockAsync(
-                                        detail.ProductId,
+                                        detail.ItemId,
                                         warehouseId.Value,
                                         detail.ReturnQuantity,
                                         InventoryTransactionTypeEnum.SalesReturn,
@@ -1000,7 +1000,7 @@ namespace ERPCore2.Services
                     // 1. 查詢退回單及其明細（包含倉庫、庫位等完整資訊）
                     var currentReturn = await context.SalesReturns
                         .Include(sr => sr.SalesReturnDetails)
-                            .ThenInclude(srd => srd.Product)
+                            .ThenInclude(srd => srd.Item)
                         .FirstOrDefaultAsync(sr => sr.Id == id);
 
                     if (currentReturn == null)
@@ -1030,26 +1030,26 @@ namespace ERPCore2.Services
                                                           d.OperationType != InventoryOperationTypeEnum.Delete).ToList()
                         : allTransactionDetails.Where(d => d.OperationType != InventoryOperationTypeEnum.Delete).ToList();
 
-                    // 3. 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
-                    var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, decimal NetProcessedQuantity)>();
+                    // 3. 建立已處理過庫存的明細字典（ItemId + WarehouseId + LocationId -> 已處理庫存淨值）
+                    var processedInventory = new Dictionary<string, (int ItemId, int WarehouseId, int? LocationId, decimal NetProcessedQuantity)>();
                     
                     foreach (var detail in existingDetails)
                     {
                         var detailWarehouseId = detail.InventoryStockDetail?.WarehouseId ?? detail.InventoryTransaction.WarehouseId;
-                        var key = $"{detail.ProductId}_{detailWarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
+                        var key = $"{detail.ItemId}_{detailWarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
                         if (!processedInventory.ContainsKey(key))
                         {
-                            processedInventory[key] = (detail.ProductId, detailWarehouseId, detail.WarehouseLocationId, 0m);
+                            processedInventory[key] = (detail.ItemId, detailWarehouseId, detail.WarehouseLocationId, 0m);
                         }
                         // 累加所有交易的淨值（退貨的 Quantity 是正數）
                         var oldQty = processedInventory[key].NetProcessedQuantity;
                         var newQty = oldQty + detail.Quantity;
-                        processedInventory[key] = (processedInventory[key].ProductId, processedInventory[key].WarehouseId, 
+                        processedInventory[key] = (processedInventory[key].ItemId, processedInventory[key].WarehouseId, 
                                                   processedInventory[key].LocationId, newQty);
                     }
                     
                     // 4. 建立當前明細字典
-                    var currentInventory = new Dictionary<string, (int ProductId, int? WarehouseId, int? LocationId, decimal CurrentQuantity)>();
+                    var currentInventory = new Dictionary<string, (int ItemId, int? WarehouseId, int? LocationId, decimal CurrentQuantity)>();
                     
                     foreach (var detail in currentReturn.SalesReturnDetails)
                     {
@@ -1071,14 +1071,14 @@ namespace ERPCore2.Services
                             continue;
                         }
                         
-                        var key = $"{detail.ProductId}_{warehouseId}_{locationId?.ToString() ?? "null"}";
+                        var key = $"{detail.ItemId}_{warehouseId}_{locationId?.ToString() ?? "null"}";
                         if (!currentInventory.ContainsKey(key))
                         {
-                            currentInventory[key] = (detail.ProductId, warehouseId, locationId, 0);
+                            currentInventory[key] = (detail.ItemId, warehouseId, locationId, 0);
                         }
                         var oldQty = currentInventory[key].CurrentQuantity;
                         var newQty = oldQty + detail.ReturnQuantity;
-                        currentInventory[key] = (currentInventory[key].ProductId, currentInventory[key].WarehouseId, 
+                        currentInventory[key] = (currentInventory[key].ItemId, currentInventory[key].WarehouseId, 
                                                currentInventory[key].LocationId, newQty);
                     }
                     
@@ -1101,7 +1101,7 @@ namespace ERPCore2.Services
                         
                         if (adjustmentNeeded != 0)
                         {
-                            var productId = hasCurrent ? currentInventory[key].ProductId : processedInventory[key].ProductId;
+                            var productId = hasCurrent ? currentInventory[key].ItemId : processedInventory[key].ItemId;
                             var warehouseId = hasCurrent ? currentInventory[key].WarehouseId : processedInventory[key].WarehouseId;
                             var locationId = hasCurrent ? currentInventory[key].LocationId : processedInventory[key].LocationId;
 
@@ -1114,7 +1114,7 @@ namespace ERPCore2.Services
                                 // 查詢當前平均成本，供 COGS 沖回分錄使用（JournalizeSalesReturnAsync 從 TotalAmount 讀取）
                                 var stockDetail = await context.InventoryStockDetails
                                     .Include(d => d.InventoryStock)
-                                    .FirstOrDefaultAsync(d => d.InventoryStock.ProductId == productId &&
+                                    .FirstOrDefaultAsync(d => d.InventoryStock.ItemId == productId &&
                                                               d.WarehouseId == warehouseId.Value &&
                                                               d.WarehouseLocationId == locationId);
                                 var returnUnitCost = stockDetail?.AverageCost;
@@ -1246,7 +1246,7 @@ namespace ERPCore2.Services
                             if (_inventoryStockService != null)
                             {
                                 var addStockResult = await _inventoryStockService.AddStockAsync(
-                                    detail.ProductId,
+                                    detail.ItemId,
                                     warehouseId.Value,
                                     detail.ReturnQuantity,
                                     InventoryTransactionTypeEnum.SalesReturn,

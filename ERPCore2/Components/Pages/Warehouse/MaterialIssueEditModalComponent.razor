@@ -232,7 +232,7 @@
                 {
                     details.Add(new MaterialIssueDetail
                     {
-                        ProductId = sd.ComponentProductId,
+                        ItemId = sd.ComponentItemId,
                         IssueQuantity = sd.PendingIssueQuantity,
                         ProductionScheduleDetailId = sd.Id,
                         Status = EntityStatus.Active
@@ -270,7 +270,7 @@
 
             materialIssueDetails = pending.Select(sd => new MaterialIssueDetail
             {
-                ProductId = sd.ComponentProductId,
+                ItemId = sd.ComponentItemId,
                 IssueQuantity = sd.PendingIssueQuantity,
                 ProductionScheduleDetailId = sd.Id,
                 Status = EntityStatus.Active
@@ -471,7 +471,7 @@
                 else
                 {
                     var invalidDetails = materialIssueDetails.Where(d =>
-                        d.ProductId <= 0 || d.WarehouseId <= 0 || d.IssueQuantity <= 0).ToList();
+                        d.ItemId <= 0 || d.WarehouseId <= 0 || d.IssueQuantity <= 0).ToList();
                     if (invalidDetails.Any())
                         validationErrors.Add("存在無效的明細資料，請檢查品項、倉庫和數量是否都已填寫");
                 }
@@ -563,7 +563,7 @@
 
             // 驗證明細資料完整性
             var invalidDetails = materialIssueDetails.Where(d => 
-                d.ProductId <= 0 || 
+                d.ItemId <= 0 || 
                 d.WarehouseId <= 0 || 
                 d.IssueQuantity <= 0
             ).ToList();

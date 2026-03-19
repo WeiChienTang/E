@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +7,7 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 銷貨退回明細實體 - 記錄銷貨退回的品項明細
     /// </summary>
-    [Index(nameof(SalesReturnId), nameof(ProductId))]
+    [Index(nameof(SalesReturnId), nameof(ItemId))]
     public class SalesReturnDetail : BaseEntity
     {
         [Required(ErrorMessage = "退回數量為必填")]
@@ -49,8 +49,8 @@ namespace ERPCore2.Data.Entities
 
         [Required(ErrorMessage = "品項為必填")]
         [Display(Name = "品項")]
-        [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int ItemId { get; set; }
 
         [Display(Name = "原始銷貨/出貨明細")]
         [ForeignKey(nameof(SalesDeliveryDetail))]
@@ -59,7 +59,7 @@ namespace ERPCore2.Data.Entities
 
         // Navigation Properties
         public SalesReturn SalesReturn { get; set; } = null!;
-        public Product Product { get; set; } = null!;
+        public Item Item { get; set; } = null!;
         public SalesDeliveryDetail? SalesDeliveryDetail { get; set; }
     }
 }

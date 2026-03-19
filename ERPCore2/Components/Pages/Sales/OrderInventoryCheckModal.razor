@@ -1,4 +1,4 @@
-@* 訂單庫存檢視 Modal *@
+﻿@* 訂單庫存檢視 Modal *@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Models
 @using ERPCore2.Helpers
@@ -104,11 +104,11 @@
                             @* 品項資訊 *@
                             <div class="flex-grow-1 min-width-0">
                                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                                    <span class="fw-bold text-primary">@item.ProductCode</span>
-                                    <span class="text-truncate">@item.ProductName</span>
-                                    @if (!string.IsNullOrEmpty(item.ProductSpecification))
+                                    <span class="fw-bold text-primary">@item.ItemCode</span>
+                                    <span class="text-truncate">@item.ItemName</span>
+                                    @if (!string.IsNullOrEmpty(item.ItemSpecification))
                                     {
-                                        <span class="badge bg-light text-secondary border">@item.ProductSpecification</span>
+                                        <span class="badge bg-light text-secondary border">@item.ItemSpecification</span>
                                     }
                                     @if (item.IsComposition)
                                     {
@@ -165,8 +165,8 @@
                                     <div class="bom-child-row d-flex align-items-center gap-2 py-1 px-2 rounded @GetChildRowClass(child.Status)">
                                         <i class="bi bi-arrow-return-right text-muted"></i>
                                         <i class="bi @GetStatusIcon(child.Status) @GetStatusIconClass(child.Status)"></i>
-                                        <span class="fw-bold text-primary">@child.ProductCode</span>
-                                        <span class="text-truncate flex-grow-1">@child.ProductName</span>
+                                        <span class="fw-bold text-primary">@child.ItemCode</span>
+                                        <span class="text-truncate flex-grow-1">@child.ItemName</span>
                                         @if (child.CompositionMultiplier.HasValue)
                                         {
                                             <span class="badge bg-light text-secondary border">

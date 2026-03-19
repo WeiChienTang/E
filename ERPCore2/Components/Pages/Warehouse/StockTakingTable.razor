@@ -1,9 +1,9 @@
-@* 盤點明細管理組件 - 使用 GenericInteractiveTableComponent 統一UI *@
+﻿@* 盤點明細管理組件 - 使用 GenericInteractiveTableComponent 統一UI *@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Models.Enums
 @using ERPCore2.Helpers
 @using ERPCore2.Services
-@inject IProductService ProductService
+@inject IItemService ItemService
 @inject IWarehouseLocationService WarehouseLocationService
 @inject IInventoryStockService InventoryStockService
 @inject INotificationService NotificationService
@@ -45,7 +45,7 @@ else
                     <div class="btn-group-left">
                         <GenericButtonComponent Text="載入倉庫品項"
                                               Variant="ButtonVariant.DarkBlue"
-                                              OnClick="LoadWarehouseProducts"
+                                              OnClick="LoadWarehouseItems"
                                               IsDisabled="@(!SelectedWarehouseId.HasValue || SelectedWarehouseId.Value <= 0 || HasAdjustedItems())"
                                               Title="@GetLoadButtonTitle()" />
                     </div>
@@ -64,7 +64,7 @@ else
     [Parameter] public bool ShowFooter { get; set; } = true;
     [Parameter] public int? SelectedWarehouseId { get; set; }
     [Parameter] public int? SelectedWarehouseLocationId { get; set; }
-    [Parameter] public List<Product> Products { get; set; } = new();
+    [Parameter] public List<Item> Items { get; set; } = new();
     [Parameter] public List<WarehouseLocation> WarehouseLocations { get; set; } = new();
 
     // ===== 內部狀態 =====
@@ -74,11 +74,11 @@ else
     private int? _previousWarehouseId = null;
     private int? _previousWarehouseLocationId = null;
     private bool _isInitialized = false;
-    private bool _isLoadingProducts = false; // 標記是否正在載入可用品項
-    private int _previousProductsCount = 0; // 追蹤上次 Products 參數的數量，避免重複載入
+    private bool _isLoadingItems = false; // 標記是否正在載入可用品項
+    private int _previousItemsCount = 0; // 追蹤上次 Items 參數的數量，避免重複載入
     
     // 倉庫可用品項清單（根據選定倉庫和庫位過濾後的品項）
-    private List<Product> _availableProducts = new();
+    private List<Item> _availableItems = new();
 
     // ===== 生命週期方法 =====
 
@@ -86,9 +86,9 @@ else
     {
         _previousWarehouseId = SelectedWarehouseId;
         _previousWarehouseLocationId = SelectedWarehouseLocationId;
-        _previousProductsCount = Products?.Count ?? 0;
+        _previousItemsCount = Items?.Count ?? 0;
         
-        await LoadAvailableProductsAsync();
+        await LoadAvailableItemsAsync();
         await LoadExistingDetailsAsync();
         _isInitialized = true;
     }
@@ -100,18 +100,18 @@ else
         if (!_isInitialized) return;
         
         // 防止重複載入：如果正在載入中，直接返回
-        if (_isLoadingProducts) return;
+        if (_isLoadingItems) return;
 
         // 倉庫或庫位變更時重新載入可用品項
         var warehouseChanged = _previousWarehouseId != SelectedWarehouseId;
         var locationChanged = _previousWarehouseLocationId != SelectedWarehouseLocationId;
         
-        // 檢測 Products 參數是否從空變為有資料（只在第一次時觸發）
-        var currentProductsCount = Products?.Count ?? 0;
-        var productsJustLoaded = _previousProductsCount == 0 && currentProductsCount > 0;
+        // 檢測 Items 參數是否從空變為有資料（只在第一次時觸發）
+        var currentItemsCount = Items?.Count ?? 0;
+        var productsJustLoaded = _previousItemsCount == 0 && currentItemsCount > 0;
         
-        // 更新追蹤的 Products 數量
-        _previousProductsCount = currentProductsCount;
+        // 更新追蹤的 Items 數量
+        _previousItemsCount = currentItemsCount;
         
         // 只在真正需要時才載入
         if (warehouseChanged || locationChanged || productsJustLoaded)
@@ -122,7 +122,7 @@ else
             // 關鍵修復：設定 _dataLoadCompleted = false，讓 GenericInteractiveTableComponent 能偵測狀態變化
             _dataLoadCompleted = false;
             
-            await LoadAvailableProductsAsync();
+            await LoadAvailableItemsAsync();
             
             // 只有倉庫變更時才清空明細
             if (warehouseChanged)
@@ -134,7 +134,7 @@ else
             // 關鍵修復：設定 _dataLoadCompleted = true，觸發 GenericInteractiveTableComponent 建立空行
             _dataLoadCompleted = true;
             
-            // 關鍵：載入完成後強制重新渲染，確保 UI 使用最新的 _availableProducts
+            // 關鍵：載入完成後強制重新渲染，確保 UI 使用最新的 _availableItems
             StateHasChanged();
         }
     }
@@ -146,7 +146,7 @@ else
     /// </summary>
     public async Task RefreshDetailsAsync()
     {
-        await LoadAvailableProductsAsync();
+        await LoadAvailableItemsAsync();
         await LoadExistingDetailsAsync();
         tableComponent?.RefreshEmptyRow();
         StateHasChanged();
@@ -155,15 +155,15 @@ else
     /// <summary>
     /// 載入倉庫可用品項清單（根據選定倉庫和庫位過濾）
     /// </summary>
-    private async Task LoadAvailableProductsAsync()
+    private async Task LoadAvailableItemsAsync()
     {
         // 設置載入中狀態
-        _isLoadingProducts = true;
+        _isLoadingItems = true;
         
         if (!SelectedWarehouseId.HasValue || SelectedWarehouseId.Value <= 0)
         {
-            _availableProducts = new List<Product>();
-            _isLoadingProducts = false;
+            _availableItems = new List<Item>();
+            _isLoadingItems = false;
             return;
         }
         
@@ -174,7 +174,7 @@ else
             
             if (!inventoryStocks.Any())
             {
-                _availableProducts = new List<Product>();
+                _availableItems = new List<Item>();
                 return;
             }
             
@@ -198,27 +198,27 @@ else
                 
                 if (warehouseDetails?.Any() == true)
                 {
-                    if (stock.ProductId.HasValue) productIds.Add(stock.ProductId.Value);
+                    if (stock.ItemId.HasValue) productIds.Add(stock.ItemId.Value);
                 }
                 else if (stock.TotalCurrentStock > 0 && !SelectedWarehouseLocationId.HasValue)
                 {
                     // 如果沒有指定庫位且主檔有庫存，也加入
-                    if (stock.ProductId.HasValue) productIds.Add(stock.ProductId.Value);
+                    if (stock.ItemId.HasValue) productIds.Add(stock.ItemId.Value);
                 }
             }
             
-            // 從 Products 參數中篩選出有庫存的品項
-            _availableProducts = (Products ?? new List<Product>()).Where(p => productIds.Contains(p.Id)).ToList();
+            // 從 Items 參數中篩選出有庫存的品項
+            _availableItems = (Items ?? new List<Item>()).Where(p => productIds.Contains(p.Id)).ToList();
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAvailableProductsAsync), GetType());
-            _availableProducts = new List<Product>();
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadAvailableItemsAsync), GetType());
+            _availableItems = new List<Item>();
         }
         finally
         {
             // 清除載入中狀態
-            _isLoadingProducts = false;
+            _isLoadingItems = false;
         }
     }
 
@@ -229,7 +229,7 @@ else
     {
         var errors = new List<string>();
 
-        var validItems = DetailItems.Where(x => x.SelectedProduct != null).ToList();
+        var validItems = DetailItems.Where(x => x.SelectedItem != null).ToList();
 
         if (!validItems.Any())
         {
@@ -268,13 +268,13 @@ else
 
         foreach (var detail in Details)
         {
-            var product = Products.FirstOrDefault(p => p.Id == detail.ProductId);
+            var product = Items.FirstOrDefault(p => p.Id == detail.ItemId);
 
             var item = new StockTakingDetailItem
             {
-                SelectedProductId = detail.ProductId,
-                SelectedProduct = product,
-                ProductSearchValue = product != null ? $"[{product.Code}] {product.Name}" : "",
+                SelectedItemId = detail.ItemId,
+                SelectedItem = product,
+                ItemSearchValue = product != null ? $"[{product.Code}] {product.Name}" : "",
                 SelectedWarehouseLocationId = detail.WarehouseLocationId,
                 SystemStock = detail.SystemStock,
                 ActualStock = detail.ActualStock,
@@ -286,17 +286,17 @@ else
             };
             
             // 載入該品項可用的庫位資訊
-            if (item.SelectedProductId.HasValue && SelectedWarehouseId.HasValue)
+            if (item.SelectedItemId.HasValue && SelectedWarehouseId.HasValue)
             {
                 try
                 {
-                    var inventoryStock = await InventoryStockService.GetByProductWarehouseAsync(
-                        item.SelectedProductId.Value, 
+                    var inventoryStock = await InventoryStockService.GetByItemWarehouseAsync(
+                        item.SelectedItemId.Value, 
                         SelectedWarehouseId.Value,
                         null);
                     if (inventoryStock != null)
                     {
-                        await LoadAvailableLocationsForProduct(item, inventoryStock);
+                        await LoadAvailableLocationsForItem(item, inventoryStock);
                     }
                 }
                 catch
@@ -318,21 +318,21 @@ else
         // 品項選擇欄位
         columns.Add(new()
         {
-            Title = L["Column.ProductCodeName"],
-            PropertyName = "ProductSearchValue",
-            EmptyCheckPropertyName = "SelectedProduct",
+            Title = L["Column.ItemCodeName"],
+            PropertyName = "ItemSearchValue",
+            EmptyCheckPropertyName = "SelectedItem",
             TriggerEmptyRowOnFilled = true,
             ColumnType = InteractiveColumnType.SearchableSelect,
             Width = "250px",
             Tooltip = "搜尋並選擇要盤點的品項",
             Placeholder = "請輸入品項編號或名稱",
-            SearchValuePropertyName = nameof(StockTakingDetailItem.ProductSearchValue),
-            FilteredItemsPropertyName = nameof(StockTakingDetailItem.FilteredProducts),
-            ShowDropdownPropertyName = nameof(StockTakingDetailItem.ShowProductDropdown),
-            SelectedIndexPropertyName = nameof(StockTakingDetailItem.ProductSelectedIndex),
+            SearchValuePropertyName = nameof(StockTakingDetailItem.ItemSearchValue),
+            FilteredItemsPropertyName = nameof(StockTakingDetailItem.FilteredItems),
+            ShowDropdownPropertyName = nameof(StockTakingDetailItem.ShowItemDropdown),
+            SelectedIndexPropertyName = nameof(StockTakingDetailItem.ItemSelectedIndex),
             ItemDisplayFormatter = (item) =>
             {
-                var product = (Product)item;
+                var product = (Item)item;
                 return $"[{product.Code}] {product.Name}";
             },
             IsDisabledFunc = item =>
@@ -344,30 +344,30 @@ else
             OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
             {
                 var (item, searchValue) = tuple;
-                OnProductSearchChanged((StockTakingDetailItem)item, searchValue);
+                OnItemSearchChanged((StockTakingDetailItem)item, searchValue);
             }),
             OnItemSelected = EventCallback.Factory.Create<(object, object?)>(this, async (tuple) =>
             {
                 var (item, selectedItem) = tuple;
-                await OnProductSelected((StockTakingDetailItem)item, (Product?)selectedItem);
+                await OnItemSelected((StockTakingDetailItem)item, (Item?)selectedItem);
             }),
             OnInputFocus = EventCallback.Factory.Create<object>(this, async (item) =>
             {
                 var detailItem = (StockTakingDetailItem)item;
                 
-                // 關鍵修復：如果 _availableProducts 為空但有選擇倉庫，可能是還沒載入完成
+                // 關鍵修復：如果 _availableItems 為空但有選擇倉庫，可能是還沒載入完成
                 // 在這種情況下，嘗試重新載入
-                if ((_availableProducts == null || !_availableProducts.Any()) && 
+                if ((_availableItems == null || !_availableItems.Any()) && 
                     SelectedWarehouseId.HasValue && SelectedWarehouseId.Value > 0 &&
-                    !_isLoadingProducts)
+                    !_isLoadingItems)
                 {
-                    await LoadAvailableProductsAsync();
+                    await LoadAvailableItemsAsync();
                 }
                 
                 // 使用倉庫可用品項清單
-                detailItem.FilteredProducts = (_availableProducts ?? new List<Product>()).Take(20).ToList();
-                detailItem.ShowProductDropdown = true;
-                detailItem.ProductSelectedIndex = -1;
+                detailItem.FilteredItems = (_availableItems ?? new List<Item>()).Take(20).ToList();
+                detailItem.ShowItemDropdown = true;
+                detailItem.ItemSelectedIndex = -1;
                 StateHasChanged();
             }),
             OnInputBlur = EventCallback.Factory.Create<object>(this, (item) =>
@@ -375,16 +375,16 @@ else
                 Task.Delay(200).ContinueWith(_ =>
                 {
                     var detailItem = (StockTakingDetailItem)item;
-                    detailItem.ShowProductDropdown = false;
+                    detailItem.ShowItemDropdown = false;
                     InvokeAsync(StateHasChanged);
                 });
             }),
             EnableKeyboardNavigation = true,
-            GetDropdownItems = (item) => ((StockTakingDetailItem)item).FilteredProducts,
-            GetSelectedIndex = (item) => ((StockTakingDetailItem)item).ProductSelectedIndex,
-            SetSelectedIndex = (item, index) => ((StockTakingDetailItem)item).ProductSelectedIndex = index,
-            GetShowDropdown = (item) => ((StockTakingDetailItem)item).ShowProductDropdown,
-            SetShowDropdown = (item, show) => ((StockTakingDetailItem)item).ShowProductDropdown = show,
+            GetDropdownItems = (item) => ((StockTakingDetailItem)item).FilteredItems,
+            GetSelectedIndex = (item) => ((StockTakingDetailItem)item).ItemSelectedIndex,
+            SetSelectedIndex = (item, index) => ((StockTakingDetailItem)item).ItemSelectedIndex = index,
+            GetShowDropdown = (item) => ((StockTakingDetailItem)item).ShowItemDropdown,
+            SetShowDropdown = (item, show) => ((StockTakingDetailItem)item).ShowItemDropdown = show,
             MaxDisplayItems = 20
         });
 
@@ -404,19 +404,19 @@ else
                 var isDisabled = IsReadOnly || detailItem.IsAdjusted || isLockedByMaster;
                 
                 // 判斷是否已載入品項的庫位資訊（品項已選擇且有任一庫位資訊）
-                var hasProductLocationInfo = detailItem.SelectedProduct != null && 
-                    (detailItem.AvailableLocationsForProduct.Any() || detailItem.HasStockWithoutLocation);
+                var hasItemLocationInfo = detailItem.SelectedItem != null && 
+                    (detailItem.AvailableLocationsForItem.Any() || detailItem.HasStockWithoutLocation);
                 
                 // 根據品項實際有庫存的庫位來顯示選項
                 // 如果尚未選擇品項或未載入庫位資訊，則顯示該倉庫的所有庫位
-                var locations = hasProductLocationInfo
-                    ? detailItem.AvailableLocationsForProduct
+                var locations = hasItemLocationInfo
+                    ? detailItem.AvailableLocationsForItem
                     : GetAvailableLocations();
                 
                 // 判斷是否顯示「無指定」選項
-                var showNoLocationOption = detailItem.SelectedProduct == null || // 尚未選擇品項
+                var showNoLocationOption = detailItem.SelectedItem == null || // 尚未選擇品項
                                           detailItem.HasStockWithoutLocation ||  // 品項在「無指定庫位」有庫存
-                                          !hasProductLocationInfo;               // 尚未載入庫位資訊
+                                          !hasItemLocationInfo;               // 尚未載入庫位資訊
 
                 // 如果被主表鎖定，顯示唯讀樣式
                 if (isLockedByMaster)
@@ -613,74 +613,74 @@ else
 
     // ===== 事件處理方法 =====
 
-    private void OnProductSearchChanged(StockTakingDetailItem item, string? searchValue)
+    private void OnItemSearchChanged(StockTakingDetailItem item, string? searchValue)
     {
-        item.ProductSearchValue = searchValue ?? string.Empty;
+        item.ItemSearchValue = searchValue ?? string.Empty;
 
         // 使用倉庫可用品項清單（確保有預設空清單避免 null 錯誤）
-        var availableList = _availableProducts ?? new List<Product>();
+        var availableList = _availableItems ?? new List<Item>();
         
         if (string.IsNullOrWhiteSpace(searchValue))
         {
-            item.FilteredProducts = availableList.Take(20).ToList();
+            item.FilteredItems = availableList.Take(20).ToList();
         }
         else
         {
             var lowerSearch = searchValue.ToLower();
-            item.FilteredProducts = availableList
+            item.FilteredItems = availableList
                 .Where(p => (p.Code?.ToLower().Contains(lowerSearch) ?? false) ||
                            (p.Name?.ToLower().Contains(lowerSearch) ?? false))
                 .Take(20)
                 .ToList();
         }
 
-        item.ShowProductDropdown = true;
-        item.ProductSelectedIndex = -1;
+        item.ShowItemDropdown = true;
+        item.ItemSelectedIndex = -1;
         StateHasChanged();
     }
 
-    private async Task OnProductSelected(StockTakingDetailItem item, Product? selectedProduct)
+    private async Task OnItemSelected(StockTakingDetailItem item, Item? selectedItem)
     {
-        if (selectedProduct != null)
+        if (selectedItem != null)
         {
-            item.SelectedProductId = selectedProduct.Id;
-            item.SelectedProduct = selectedProduct;
-            item.ProductSearchValue = $"[{selectedProduct.Code}] {selectedProduct.Name}";
+            item.SelectedItemId = selectedItem.Id;
+            item.SelectedItem = selectedItem;
+            item.ItemSearchValue = $"[{selectedItem.Code}] {selectedItem.Name}";
 
             // 自動帶入系統庫存和成本
-            await LoadProductStockInfo(item);
+            await LoadItemStockInfo(item);
         }
         else
         {
-            item.SelectedProductId = null;
-            item.SelectedProduct = null;
-            item.ProductSearchValue = string.Empty;
+            item.SelectedItemId = null;
+            item.SelectedItem = null;
+            item.ItemSearchValue = string.Empty;
             item.SystemStock = 0;
             item.UnitCost = null;
         }
 
-        item.ShowProductDropdown = false;
-        item.ProductSelectedIndex = -1;
+        item.ShowItemDropdown = false;
+        item.ItemSelectedIndex = -1;
 
         await NotifyDetailsChanged();
     }
 
-    private async Task LoadProductStockInfo(StockTakingDetailItem item)
+    private async Task LoadItemStockInfo(StockTakingDetailItem item)
     {
-        if (!item.SelectedProductId.HasValue || !SelectedWarehouseId.HasValue) return;
+        if (!item.SelectedItemId.HasValue || !SelectedWarehouseId.HasValue) return;
 
         try
         {
             // 取得該品項在指定倉庫的庫存資訊（不指定庫位，取得所有庫位的資訊）
-            var inventoryStock = await InventoryStockService.GetByProductWarehouseAsync(
-                item.SelectedProductId.Value, 
+            var inventoryStock = await InventoryStockService.GetByItemWarehouseAsync(
+                item.SelectedItemId.Value, 
                 SelectedWarehouseId.Value,
                 null); // 先不指定庫位，以便取得所有庫位的明細
 
             if (inventoryStock != null)
             {
                 // 載入該品項在此倉庫可用的庫位
-                await LoadAvailableLocationsForProduct(item, inventoryStock);
+                await LoadAvailableLocationsForItem(item, inventoryStock);
                 
                 // 根據選擇的庫位取得對應的庫存數量
                 if (item.SelectedWarehouseLocationId.HasValue)
@@ -714,16 +714,16 @@ else
             {
                 item.SystemStock = 0;
                 item.UnitCost = 0;
-                item.AvailableLocationsForProduct = new List<WarehouseLocation>();
+                item.AvailableLocationsForItem = new List<WarehouseLocation>();
                 item.HasStockWithoutLocation = false;
             }
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadProductStockInfo), GetType());
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadItemStockInfo), GetType());
             item.SystemStock = 0;
             item.UnitCost = 0;
-            item.AvailableLocationsForProduct = new List<WarehouseLocation>();
+            item.AvailableLocationsForItem = new List<WarehouseLocation>();
             item.HasStockWithoutLocation = false;
         }
     }
@@ -731,7 +731,7 @@ else
     /// <summary>
     /// 載入該品項在此倉庫可用的庫位清單
     /// </summary>
-    private Task LoadAvailableLocationsForProduct(StockTakingDetailItem item, InventoryStock inventoryStock)
+    private Task LoadAvailableLocationsForItem(StockTakingDetailItem item, InventoryStock inventoryStock)
     {
         var availableLocationIds = new HashSet<int>();
         var hasStockWithoutLocation = false;
@@ -757,7 +757,7 @@ else
         }
         
         // 從 WarehouseLocations 中篩選出有庫存的庫位
-        item.AvailableLocationsForProduct = WarehouseLocations
+        item.AvailableLocationsForItem = WarehouseLocations
             .Where(l => availableLocationIds.Contains(l.Id))
             .ToList();
         item.HasStockWithoutLocation = hasStockWithoutLocation;
@@ -773,7 +773,7 @@ else
         item.SelectedWarehouseLocationId = newLocationId;
 
         // 重新載入庫存資訊
-        await LoadProductStockInfo(item);
+        await LoadItemStockInfo(item);
         await NotifyDetailsChanged();
         StateHasChanged();
     }
@@ -818,7 +818,7 @@ else
         StateHasChanged();
     }
 
-    private async Task LoadWarehouseProducts()
+    private async Task LoadWarehouseItems()
     {
         if (!SelectedWarehouseId.HasValue) return;
 
@@ -836,13 +836,13 @@ else
             _dataLoadCompleted = false;
 
             // 保留已有明細（包含已調整和未調整的），只新增尚未存在的品項
-            var existingItems = DetailItems.Where(x => x.SelectedProduct != null).ToList();
+            var existingItems = DetailItems.Where(x => x.SelectedItem != null).ToList();
             var newItems = new List<StockTakingDetailItem>();
 
             // 遍歷每個品項的庫存明細（按倉庫+庫位細分）
             foreach (var stock in inventoryStocks)
             {
-                var product = Products.FirstOrDefault(p => p.Id == stock.ProductId);
+                var product = Items.FirstOrDefault(p => p.Id == stock.ItemId);
                 if (product == null) continue;
 
                 // 取得該品項在指定倉庫的明細
@@ -865,9 +865,9 @@ else
                     {
                         var item = new StockTakingDetailItem
                         {
-                            SelectedProductId = stock.ProductId,
-                            SelectedProduct = product,
-                            ProductSearchValue = $"[{product.Code}] {product.Name}",
+                            SelectedItemId = stock.ItemId,
+                            SelectedItem = product,
+                            ItemSearchValue = $"[{product.Code}] {product.Name}",
                             SelectedWarehouseLocationId = SelectedWarehouseLocationId, // 帶入主表庫位
                             SystemStock = stock.TotalCurrentStock,
                             ActualStock = null,
@@ -884,9 +884,9 @@ else
                     {
                         var item = new StockTakingDetailItem
                         {
-                            SelectedProductId = stock.ProductId,
-                            SelectedProduct = product,
-                            ProductSearchValue = $"[{product.Code}] {product.Name}",
+                            SelectedItemId = stock.ItemId,
+                            SelectedItem = product,
+                            ItemSearchValue = $"[{product.Code}] {product.Name}",
                             SelectedWarehouseLocationId = SelectedWarehouseLocationId ?? detail.WarehouseLocationId, // 優先使用主表庫位
                             SystemStock = detail.CurrentStock,
                             ActualStock = null,
@@ -909,7 +909,7 @@ else
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehouseProducts), GetType());
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadWarehouseItems), GetType());
             await NotificationService.ShowErrorAsync("載入倉庫品項失敗");
         }
     }
@@ -924,7 +924,7 @@ else
     {
         var details = new List<StockTakingDetail>();
 
-        foreach (var item in DetailItems.Where(x => x.SelectedProduct != null))
+        foreach (var item in DetailItems.Where(x => x.SelectedItem != null))
         {
             StockTakingDetail detail;
 
@@ -937,7 +937,7 @@ else
                 detail = new StockTakingDetail();
             }
 
-            detail.ProductId = item.SelectedProductId ?? 0;
+            detail.ItemId = item.SelectedItemId ?? 0;
             detail.WarehouseLocationId = item.SelectedWarehouseLocationId;
             detail.SystemStock = item.SystemStock;
             detail.ActualStock = item.ActualStock;
@@ -996,7 +996,7 @@ else
         return "從選定倉庫載入所有品項庫存";
     }
 
-    private int GetValidItemCount() => DetailItems.Count(x => x.SelectedProduct != null);
+    private int GetValidItemCount() => DetailItems.Count(x => x.SelectedItem != null);
 
     private int GetCountedItemCount() => DetailItems.Count(x => x.ActualStock.HasValue);
 
@@ -1005,15 +1005,15 @@ else
     private string GetEmptyMessage()
     {
         // 如果正在載入可用品項，顯示載入中訊息
-        if (_isLoadingProducts)
+        if (_isLoadingItems)
         {
             return "正在載入倉庫品項資料...";
         }
         
         // 檢查倉庫是否有品項
-        var hasProducts = HasWarehouseProducts();
+        var hasItems = HasWarehouseItems();
         
-        if (!hasProducts)
+        if (!hasItems)
         {
             if (SelectedWarehouseLocationId.HasValue)
             {
@@ -1031,14 +1031,14 @@ else
     /// <summary>
     /// 檢查倉庫是否有品項可供盤點
     /// </summary>
-    private bool HasWarehouseProducts()
+    private bool HasWarehouseItems()
     {
         if (!SelectedWarehouseId.HasValue) 
         {
             return false;
         }
         
-        return _availableProducts?.Any() == true;
+        return _availableItems?.Any() == true;
     }
 
     private (string badgeClass, string statusText) GetDetailStatusBadge(StockTakingDetailStatusEnum status)
@@ -1059,12 +1059,12 @@ else
     public class StockTakingDetailItem
     {
         // 品項選擇相關
-        public int? SelectedProductId { get; set; }
-        public Product? SelectedProduct { get; set; }
-        public string ProductSearchValue { get; set; } = string.Empty;
-        public List<Product> FilteredProducts { get; set; } = new();
-        public bool ShowProductDropdown { get; set; } = false;
-        public int ProductSelectedIndex { get; set; } = -1;
+        public int? SelectedItemId { get; set; }
+        public Item? SelectedItem { get; set; }
+        public string ItemSearchValue { get; set; } = string.Empty;
+        public List<Item> FilteredItems { get; set; } = new();
+        public bool ShowItemDropdown { get; set; } = false;
+        public int ItemSelectedIndex { get; set; } = -1;
 
         // 庫位
         public int? SelectedWarehouseLocationId { get; set; }
@@ -1072,7 +1072,7 @@ else
         /// <summary>
         /// 該品項可用的庫位清單（根據實際庫存過濾）
         /// </summary>
-        public List<WarehouseLocation> AvailableLocationsForProduct { get; set; } = new();
+        public List<WarehouseLocation> AvailableLocationsForItem { get; set; } = new();
         
         /// <summary>
         /// 該品項是否在「無指定庫位」有庫存

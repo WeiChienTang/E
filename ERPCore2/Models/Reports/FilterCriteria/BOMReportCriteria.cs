@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models.Reports.FilterAttributes;
 using ERPCore2.Models.Reports.FilterCriteria;
 using ERPCore2.Services;
@@ -13,14 +13,14 @@ public class BOMReportCriteria : IReportFilterCriteria
     /// <summary>
     /// 成品（父品項）ID 清單（空表示所有成品）
     /// </summary>
-    [FilterFK(typeof(IProductCompositionService),
+    [FilterFK(typeof(IItemCompositionService),
         Group = FilterGroup.Basic,
         Label = "指定成品",
         Placeholder = "搜尋成品品號或品名...",
         EmptyMessage = "未選擇成品（查詢全部）",
         DisplayFormat = FilterDisplayFormat.CodeDashName,
         Order = 1)]
-    public List<int> ParentProductIds { get; set; } = new();
+    public List<int> ParentItemIds { get; set; } = new();
 
     /// <summary>
     /// 關鍵字搜尋（配方編號、成品品號、成品品名）
@@ -49,7 +49,7 @@ public class BOMReportCriteria : IReportFilterCriteria
     {
         return new Dictionary<string, object?>
         {
-            ["parentProductIds"] = ParentProductIds.Any() ? ParentProductIds : null,
+            ["parentItemIds"] = ParentItemIds.Any() ? ParentItemIds : null,
             ["keyword"] = string.IsNullOrWhiteSpace(Keyword) ? null : Keyword,
             ["activeOnly"] = ActiveOnly
         };
@@ -62,8 +62,8 @@ public class BOMReportCriteria : IReportFilterCriteria
     {
         var summary = new List<string>();
 
-        if (ParentProductIds.Any())
-            summary.Add($"成品：{ParentProductIds.Count} 個");
+        if (ParentItemIds.Any())
+            summary.Add($"成品：{ParentItemIds.Count} 個");
 
         if (!string.IsNullOrEmpty(Keyword))
             summary.Add($"關鍵字：{Keyword}");

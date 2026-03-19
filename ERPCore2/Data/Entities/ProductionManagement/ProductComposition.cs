@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +7,7 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 品項合成主檔（BOM 主檔）- 定義成品與其組成零件的關係
     /// </summary>
-    public class ProductComposition : BaseEntity
+    public class ItemComposition : BaseEntity
     {
         // 基本資訊
         [MaxLength(100, ErrorMessage = "清單名稱不可超過100個字元")]
@@ -15,8 +15,8 @@ namespace ERPCore2.Data.Entities
         public string? Name { get; set; }
 
         [Display(Name = "成品")]
-        [ForeignKey(nameof(ParentProduct))]
-        public int? ParentProductId { get; set; }
+        [ForeignKey(nameof(ParentItem))]
+        public int? ParentItemId { get; set; }
 
         [Display(Name = "客戶")]
         [ForeignKey(nameof(Customer))]
@@ -39,7 +39,7 @@ namespace ERPCore2.Data.Entities
         /// <summary>
         /// 成品（父品項）
         /// </summary>
-        public Product? ParentProduct { get; set; }
+        public Item? ParentItem { get; set; }
 
         /// <summary>
         /// 客戶
@@ -59,6 +59,6 @@ namespace ERPCore2.Data.Entities
         /// <summary>
         /// 合成明細列表
         /// </summary>
-        public ICollection<ProductCompositionDetail> CompositionDetails { get; set; } = new List<ProductCompositionDetail>();
+        public ICollection<ItemCompositionDetail> CompositionDetails { get; set; } = new List<ItemCompositionDetail>();
     }
 }

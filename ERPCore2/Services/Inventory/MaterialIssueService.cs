@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -90,7 +90,7 @@ namespace ERPCore2.Services
                 foreach (var detail in details)
                 {
                     var reduceResult = await _inventoryStockService.ReduceStockWithFIFOAsync(
-                        detail.ProductId,
+                        detail.ItemId,
                         detail.WarehouseId,
                         detail.IssueQuantity,
                         InventoryTransactionTypeEnum.MaterialIssue,
@@ -264,7 +264,7 @@ namespace ERPCore2.Services
                         {
                             // 使用 AddStockAsync 增加庫存（回沖領料）
                             var addResult = await _inventoryStockService.AddStockAsync(
-                                productId: detail.ProductId,
+                                productId: detail.ItemId,
                                 warehouseId: detail.WarehouseId,
                                 quantity: detail.IssueQuantity,
                                 transactionType: InventoryTransactionTypeEnum.MaterialReturn,
@@ -355,7 +355,7 @@ namespace ERPCore2.Services
                     .Include(mi => mi.Employee)
                     .Include(mi => mi.Department)
                     .Include(mi => mi.MaterialIssueDetails)
-                        .ThenInclude(d => d.Product)
+                        .ThenInclude(d => d.Item)
                     .Include(mi => mi.MaterialIssueDetails)
                         .ThenInclude(d => d.Warehouse)
                     .Include(mi => mi.MaterialIssueDetails)
@@ -514,39 +514,39 @@ namespace ERPCore2.Services
                                                           d.OperationType != InventoryOperationTypeEnum.Delete).ToList()
                         : allTransactionDetails.Where(d => d.OperationType != InventoryOperationTypeEnum.Delete).ToList();
 
-                    // 5. 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
-                    var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, decimal NetProcessedQuantity, decimal UnitCost)>();
+                    // 5. 建立已處理過庫存的明細字典（ItemId + WarehouseId + LocationId -> 已處理庫存淨值）
+                    var processedInventory = new Dictionary<string, (int ItemId, int WarehouseId, int? LocationId, decimal NetProcessedQuantity, decimal UnitCost)>();
 
                     foreach (var detail in existingDetails)
                     {
                         var detailWarehouseId = detail.InventoryStockDetail?.WarehouseId ?? detail.InventoryTransaction.WarehouseId;
-                        var key = $"{detail.ProductId}_{detailWarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
+                        var key = $"{detail.ItemId}_{detailWarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
                         if (!processedInventory.ContainsKey(key))
                         {
-                            processedInventory[key] = (detail.ProductId, detailWarehouseId, detail.WarehouseLocationId, 0m, detail.UnitCost.GetValueOrDefault());
+                            processedInventory[key] = (detail.ItemId, detailWarehouseId, detail.WarehouseLocationId, 0m, detail.UnitCost.GetValueOrDefault());
                         }
                         // 累加所有交易的淨值（Quantity 已經包含正負號）
                         // MaterialIssue 是負數，MaterialReturn 是正數
                         var oldQty = processedInventory[key].NetProcessedQuantity;
                         var newQty = oldQty + detail.Quantity;
-                        processedInventory[key] = (processedInventory[key].ProductId, processedInventory[key].WarehouseId,
+                        processedInventory[key] = (processedInventory[key].ItemId, processedInventory[key].WarehouseId,
                                                   processedInventory[key].LocationId, newQty,
                                                   detail.UnitCost.GetValueOrDefault());
                     }
 
                     // 6. 建立當前明細字典
-                    var currentInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, decimal CurrentQuantity, decimal UnitCost)>();
+                    var currentInventory = new Dictionary<string, (int ItemId, int WarehouseId, int? LocationId, decimal CurrentQuantity, decimal UnitCost)>();
 
                     foreach (var detail in currentMaterialIssue.MaterialIssueDetails)
                     {
-                        var key = $"{detail.ProductId}_{detail.WarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
+                        var key = $"{detail.ItemId}_{detail.WarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
                         if (!currentInventory.ContainsKey(key))
                         {
-                            currentInventory[key] = (detail.ProductId, detail.WarehouseId, detail.WarehouseLocationId, 0, detail.UnitCost.GetValueOrDefault());
+                            currentInventory[key] = (detail.ItemId, detail.WarehouseId, detail.WarehouseLocationId, 0, detail.UnitCost.GetValueOrDefault());
                         }
                         var oldQty = currentInventory[key].CurrentQuantity;
                         var newQty = oldQty + detail.IssueQuantity;
-                        currentInventory[key] = (currentInventory[key].ProductId, currentInventory[key].WarehouseId,
+                        currentInventory[key] = (currentInventory[key].ItemId, currentInventory[key].WarehouseId,
                                                currentInventory[key].LocationId, newQty,
                                                detail.UnitCost.GetValueOrDefault());
                     }
@@ -574,7 +574,7 @@ namespace ERPCore2.Services
                             if (adjustmentNeeded > 0)
                             {
                                 // 需要增加領料（減少庫存）
-                                var productId = hasCurrent ? currentInventory[key].ProductId : processedInventory[key].ProductId;
+                                var productId = hasCurrent ? currentInventory[key].ItemId : processedInventory[key].ItemId;
                                 var warehouseId = hasCurrent ? currentInventory[key].WarehouseId : processedInventory[key].WarehouseId;
                                 var locationId = hasCurrent ? currentInventory[key].LocationId : processedInventory[key].LocationId;
 
@@ -600,7 +600,7 @@ namespace ERPCore2.Services
                             else
                             {
                                 // 需要減少領料（增加庫存）
-                                var productId = hasCurrent ? currentInventory[key].ProductId : processedInventory[key].ProductId;
+                                var productId = hasCurrent ? currentInventory[key].ItemId : processedInventory[key].ItemId;
                                 var warehouseId = hasCurrent ? currentInventory[key].WarehouseId : processedInventory[key].WarehouseId;
                                 var locationId = hasCurrent ? currentInventory[key].LocationId : processedInventory[key].LocationId;
                                 var unitCost = hasCurrent ? currentInventory[key].UnitCost : processedInventory[key].UnitCost;
@@ -735,7 +735,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.MaterialIssueDetails
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => d.MaterialIssueId == materialIssueId)
@@ -833,14 +833,14 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<(int WarehouseId, int? WarehouseLocationId)?> GetLastIssuedLocationForProductAsync(int productId)
+        public async Task<(int WarehouseId, int? WarehouseLocationId)?> GetLastIssuedLocationForItemAsync(int productId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var lastDetail = await context.MaterialIssueDetails
                     .Include(d => d.MaterialIssue)
-                    .Where(d => d.ProductId == productId && d.WarehouseId > 0)
+                    .Where(d => d.ItemId == productId && d.WarehouseId > 0)
                     .OrderByDescending(d => d.MaterialIssue.IssueDate)
                     .ThenByDescending(d => d.Id)
                     .FirstOrDefaultAsync();
@@ -850,11 +850,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLastIssuedLocationForProductAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLastIssuedLocationForItemAsync), GetType(), _logger, new
                 {
-                    Method = nameof(GetLastIssuedLocationForProductAsync),
+                    Method = nameof(GetLastIssuedLocationForItemAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId
+                    ItemId = productId
                 });
                 return null;
             }

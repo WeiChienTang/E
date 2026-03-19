@@ -1,4 +1,4 @@
-@* 可重用的磅秤紀錄編輯組件 *@
+﻿@* 可重用的磅秤紀錄編輯組件 *@
 @using ERPCore2.Models.Reports
 @using ERPCore2.Services.Reports
 @using ERPCore2.Services.Reports.Interfaces
@@ -8,7 +8,7 @@
 @inject ICustomerService CustomerService
 @inject IWarehouseService WarehouseService
 @inject IWarehouseLocationService WarehouseLocationService
-@inject IProductService ProductService
+@inject IItemService ItemService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @inject IStringLocalizer<SharedResource> L
@@ -115,7 +115,7 @@
     private List<Warehouse> availableWarehouses = new();
     private List<WarehouseLocation> availableWarehouseLocations = new();
     private List<WarehouseLocation> filteredWarehouseLocations = new();
-    private List<Product> availableProducts = new();
+    private List<Item> availableItems = new();
 
     // Modal Manager 集合
     private ModalManagerCollection? modalManagers;
@@ -353,7 +353,7 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(ScaleRecord.ProductId),
+                    PropertyName = nameof(ScaleRecord.ItemId),
                     Label = "品項",
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = "請輸入或選擇品項",
@@ -454,7 +454,7 @@
                     sr => sr.RecordDate,
                     sr => sr.VehicleId,
                     sr => sr.CustomerId,
-                    sr => sr.ProductId)
+                    sr => sr.ItemId)
                 .AddToSection("磅秤重量",
                     sr => sr.EntryWeight,
                     sr => sr.EntryTime,
@@ -486,7 +486,7 @@
             availableCustomers = await CustomerService.GetAllAsync();
             availableWarehouses = await WarehouseService.GetAllAsync();
             availableWarehouseLocations = await WarehouseLocationService.GetAllAsync();
-            availableProducts = await ProductService.GetAllAsync();
+            availableItems = await ItemService.GetAllAsync();
 
             var currentWarehouseId = editModalComponent?.Entity?.WarehouseId ?? 0;
             filteredWarehouseLocations = currentWarehouseId > 0
@@ -503,7 +503,7 @@
             availableWarehouses = new List<Warehouse>();
             availableWarehouseLocations = new List<WarehouseLocation>();
             filteredWarehouseLocations = new List<WarehouseLocation>();
-            availableProducts = new List<Product>();
+            availableItems = new List<Item>();
         }
     }
 
@@ -512,7 +512,7 @@
         autoCompleteConfig = new AutoCompleteConfigBuilder<ScaleRecord>()
             .AddField(nameof(ScaleRecord.VehicleId), "LicensePlate", availableVehicles)
             .AddField(nameof(ScaleRecord.CustomerId), "CompanyName", availableCustomers)
-            .AddField(nameof(ScaleRecord.ProductId), "Name", availableProducts)
+            .AddField(nameof(ScaleRecord.ItemId), "Name", availableItems)
             .AddField(nameof(ScaleRecord.WarehouseId), "Name", availableWarehouses)
             .AddField(nameof(ScaleRecord.WarehouseLocationId), "Name", filteredWarehouseLocations)
             .Build();

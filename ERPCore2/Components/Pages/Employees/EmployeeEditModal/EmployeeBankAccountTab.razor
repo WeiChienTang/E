@@ -97,15 +97,27 @@ else
     private EmployeeBankAccountEditModalComponent? editModal;
     private bool isModalVisible = false;
     private int? editingId = null;
+    private int _lastLoadedId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var newId = EmployeeId ?? 0;
+        if (newId > 0 && newId != _lastLoadedId)
+            await LoadAsync(newId);
+        else if (newId <= 0 && _lastLoadedId > 0)
+            Clear();
+    }
 
     public async Task LoadAsync(int employeeId)
     {
+        _lastLoadedId = employeeId;
         accounts = await BankAccountService.GetByEmployeeIdAsync(employeeId);
         StateHasChanged();
     }
 
     public void Clear()
     {
+        _lastLoadedId = 0;
         accounts = new();
         StateHasChanged();
     }

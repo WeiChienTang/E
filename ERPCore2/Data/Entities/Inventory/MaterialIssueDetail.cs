@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,8 +7,8 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 領貨明細實體 - 記錄領貨明細資訊
     /// </summary>
-    [Index(nameof(MaterialIssueId), nameof(ProductId))]
-    [Index(nameof(ProductId))]
+    [Index(nameof(MaterialIssueId), nameof(ItemId))]
+    [Index(nameof(ItemId))]
     [Index(nameof(WarehouseId))]
     public class MaterialIssueDetail : BaseEntity
     {
@@ -19,8 +19,8 @@ namespace ERPCore2.Data.Entities
         
         [Required(ErrorMessage = "品項為必填")]
         [Display(Name = "品項")]
-        [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int ItemId { get; set; }
         
         [Required(ErrorMessage = "倉庫為必填")]
         [Display(Name = "倉庫")]
@@ -55,7 +55,7 @@ namespace ERPCore2.Data.Entities
 
         // Navigation Properties
         public MaterialIssue MaterialIssue { get; set; } = null!;
-        public Product Product { get; set; } = null!;
+        public Item Item { get; set; } = null!;
         public Warehouse Warehouse { get; set; } = null!;
         public WarehouseLocation? WarehouseLocation { get; set; }
         public ProductionScheduleDetail? ProductionScheduleDetail { get; set; }

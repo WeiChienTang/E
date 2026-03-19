@@ -1,4 +1,4 @@
-@* 供應商品項綁定管理組件 - 使用 InteractiveTableComponent *@
+﻿@* 供應商品項綁定管理組件 - 使用 InteractiveTableComponent *@
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
 @inject IStringLocalizer<SharedResource> L
@@ -8,7 +8,7 @@
 <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
         <GenericInteractiveTableComponent @ref="tableComponent"
-                                  TItem="ProductSupplier" 
+                                  TItem="ItemSupplier" 
                                   Items="@Items"
                                   ColumnDefinitions="@GetColumnDefinitions()"
                                   ShowHeader="true"
@@ -33,29 +33,29 @@
             <GenericButtonComponent Text="@L["Button.ClearDetails"]"
                                   Variant="ButtonVariant.Red"
                                   OnClick="ClearAllDetails"
-                                  IsDisabled="@(!HasProductItems)"
-                                  Title="@(!HasProductItems ? L["Supplier.NoClearTooltip"].ToString() : L["Supplier.ClearDetailsTooltip"].ToString())" />
+                                  IsDisabled="@(!HasItemItems)"
+                                  Title="@(!HasItemItems ? L["Supplier.NoClearTooltip"].ToString() : L["Supplier.ClearDetailsTooltip"].ToString())" />
         </div>
     </div>
 </div>
 
 @code {
     // ===== 參數 =====
-    [Parameter] public List<ProductSupplier> Items { get; set; } = new();
-    [Parameter] public EventCallback<List<ProductSupplier>> ItemsChanged { get; set; }
-    [Parameter] public List<Product> AvailableProducts { get; set; } = new();
+    [Parameter] public List<ItemSupplier> Items { get; set; } = new();
+    [Parameter] public EventCallback<List<ItemSupplier>> ItemsChanged { get; set; }
+    [Parameter] public List<Item> AvailableItems { get; set; } = new();
     [Parameter] public int SupplierId { get; set; }
     [Parameter] public bool DataLoadCompleted { get; set; } = true;
     [Parameter] public string EmptyMessage { get; set; } = "尚未設定供應品項";
-    [Parameter] public EventCallback<ProductSupplier> OnItemDeleted { get; set; }
+    [Parameter] public EventCallback<ItemSupplier> OnItemDeleted { get; set; }
     
     // ===== GenericInteractiveTableComponent 參考 =====
-    private GenericInteractiveTableComponent<ProductSupplier>? tableComponent;
+    private GenericInteractiveTableComponent<ItemSupplier>? tableComponent;
     
     /// <summary>
     /// 計算屬性：是否有供應品項項目
     /// </summary>
-    private bool HasProductItems => Items.Any(item => item.Product != null);
+    private bool HasItemItems => Items.Any(item => item.Item != null);
 
     /// <summary>
     /// 建立供應品項管理的欄位定義
@@ -67,54 +67,54 @@
             // 品項選擇（必填，SearchableSelect）
             new InteractiveColumnDefinition
             {
-                Title = L["Column.Product"],
-                PropertyName = nameof(ProductSupplier.SearchText),  //  修正：綁定實際存在的屬性
-                EmptyCheckPropertyName = nameof(ProductSupplier.Product),  //  修正：檢查物件屬性（null = 空行）
+                Title = L["Column.Item"],
+                PropertyName = nameof(ItemSupplier.SearchText),  //  修正：綁定實際存在的屬性
+                EmptyCheckPropertyName = nameof(ItemSupplier.Item),  //  修正：檢查物件屬性（null = 空行）
                 ColumnType = InteractiveColumnType.SearchableSelect,
                 Width = "300px",
                 Placeholder = "請輸入品項編號或名稱",
                 TriggerEmptyRowOnFilled = true,
-                SearchValuePropertyName = nameof(ProductSupplier.SearchText),
-                FilteredItemsPropertyName = "FilteredProducts",
-                ShowDropdownPropertyName = "ShowProductDropdown",
-                SelectedIndexPropertyName = "ProductSelectedIndex",
+                SearchValuePropertyName = nameof(ItemSupplier.SearchText),
+                FilteredItemsPropertyName = "FilteredItems",
+                ShowDropdownPropertyName = "ShowItemDropdown",
+                SelectedIndexPropertyName = "ItemSelectedIndex",
                 ItemDisplayFormatter = (item) =>
                 {
-                    var product = (Product)item;
+                    var product = (Item)item;
                     return $"[{product.Code}] {product.Name}";
                 },
                 EnableKeyboardNavigation = true,
-                GetDropdownItems = (item) => ((ProductSupplier)item).FilteredProducts.Cast<object>().ToList(),
-                GetSelectedIndex = (item) => ((ProductSupplier)item).ProductSelectedIndex,
-                SetSelectedIndex = (item, index) => ((ProductSupplier)item).ProductSelectedIndex = index,
-                GetShowDropdown = (item) => ((ProductSupplier)item).ShowProductDropdown,
-                SetShowDropdown = (item, show) => ((ProductSupplier)item).ShowProductDropdown = show,
+                GetDropdownItems = (item) => ((ItemSupplier)item).FilteredItems.Cast<object>().ToList(),
+                GetSelectedIndex = (item) => ((ItemSupplier)item).ItemSelectedIndex,
+                SetSelectedIndex = (item, index) => ((ItemSupplier)item).ItemSelectedIndex = index,
+                GetShowDropdown = (item) => ((ItemSupplier)item).ShowItemDropdown,
+                SetShowDropdown = (item, show) => ((ItemSupplier)item).ShowItemDropdown = show,
                 MaxDisplayItems = 20,
                 OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
                 {
                     var (item, searchValue) = tuple;
-                    OnProductSearchChanged((ProductSupplier)item, searchValue);
+                    OnItemSearchChanged((ItemSupplier)item, searchValue);
                 }),
                 OnItemSelected = EventCallback.Factory.Create<(object, object?)>(this, async (tuple) =>
                 {
                     var (item, selectedItem) = tuple;
-                    await OnProductSelected((ProductSupplier)item, (Product?)selectedItem);
+                    await OnItemSelected((ItemSupplier)item, (Item?)selectedItem);
                 }),
                 OnInputFocus = EventCallback.Factory.Create<object>(this, (item) =>
                 {
-                    OnProductFocus((ProductSupplier)item);
+                    OnItemFocus((ItemSupplier)item);
                 }),
                 OnInputBlur = EventCallback.Factory.Create<object>(this, (item) =>
                 {
-                    OnProductBlur((ProductSupplier)item);
+                    OnItemBlur((ItemSupplier)item);
                 })
             },
             
             // 供應商料號
             new InteractiveColumnDefinition
             {
-                Title = L["Column.SupplierProductCode"],
-                PropertyName = nameof(ProductSupplier.SupplierProductCode),
+                Title = L["Column.SupplierItemCode"],
+                PropertyName = nameof(ItemSupplier.SupplierItemCode),
                 ColumnType = InteractiveColumnType.Input,
                 Width = "150px",
                 Placeholder = "供應商料號",
@@ -125,7 +125,7 @@
             new InteractiveColumnDefinition
             {
                 Title = L["Label.Remarks"],
-                PropertyName = nameof(ProductSupplier.Remarks),
+                PropertyName = nameof(ItemSupplier.Remarks),
                 ColumnType = InteractiveColumnType.Input,
                 Width = "200px",
                 Placeholder = "採購注意事項"
@@ -134,79 +134,79 @@
     }
 
     /// <summary>
-    /// 創建空的 ProductSupplier
+    /// 創建空的 ItemSupplier
     /// </summary>
-    private ProductSupplier CreateEmptyItem()
+    private ItemSupplier CreateEmptyItem()
     {
-        return new ProductSupplier
+        return new ItemSupplier
         {
             SupplierId = SupplierId,
-            ProductId = 0,
-            Product = null,  //  重要：空行判斷依據（Product = null 表示空行）
+            ItemId = 0,
+            Item = null,  //  重要：空行判斷依據（Item = null 表示空行）
             IsPreferred = false,
             Priority = 999,
             Status = EntityStatus.Active,
             SearchText = "",
-            FilteredProducts = new List<Product>(),
-            ShowProductDropdown = false,
-            ProductSelectedIndex = -1
+            FilteredItems = new List<Item>(),
+            ShowItemDropdown = false,
+            ItemSelectedIndex = -1
         };
     }
 
     /// <summary>
     /// 品項搜尋輸入變更事件
     /// </summary>
-    private void OnProductSearchChanged(ProductSupplier productSupplier, string? searchValue)
+    private void OnItemSearchChanged(ItemSupplier productSupplier, string? searchValue)
     {
         productSupplier.SearchText = searchValue ?? "";
         
         if (string.IsNullOrWhiteSpace(searchValue))
         {
-            productSupplier.FilteredProducts = new List<Product>();
-            productSupplier.ShowProductDropdown = false;
+            productSupplier.FilteredItems = new List<Item>();
+            productSupplier.ShowItemDropdown = false;
         }
         else
         {
             var searchLower = searchValue.Trim().ToLower();
-            productSupplier.FilteredProducts = AvailableProducts
+            productSupplier.FilteredItems = AvailableItems
                 .Where(p => (p.Code?.ToLower().Contains(searchLower) ?? false) || 
                            (p.Name?.ToLower().Contains(searchLower) ?? false))
                 .Take(20)
                 .ToList();
-            productSupplier.ShowProductDropdown = productSupplier.FilteredProducts.Any();
+            productSupplier.ShowItemDropdown = productSupplier.FilteredItems.Any();
         }
         
-        productSupplier.ProductSelectedIndex = -1;
+        productSupplier.ItemSelectedIndex = -1;
         StateHasChanged();
     }
 
     /// <summary>
     /// 品項選擇事件
     /// </summary>
-    private async Task OnProductSelected(ProductSupplier productSupplier, Product? selectedProduct)
+    private async Task OnItemSelected(ItemSupplier productSupplier, Item? selectedItem)
     {
-        if (selectedProduct == null) return;
+        if (selectedItem == null) return;
 
         // 檢查是否已存在相同品項
         var existingBinding = Items.FirstOrDefault(ps => 
             ps != productSupplier && 
-            ps.ProductId == selectedProduct.Id);
+            ps.ItemId == selectedItem.Id);
 
         if (existingBinding != null)
         {
-            await NotificationService.ShowWarningAsync(string.Format(L["Supplier.AlreadyBound"], selectedProduct.Name));
-            productSupplier.ProductId = 0;
+            await NotificationService.ShowWarningAsync(string.Format(L["Supplier.AlreadyBound"], selectedItem.Name));
+            productSupplier.ItemId = 0;
             productSupplier.SearchText = "";
-            productSupplier.FilteredProducts = new List<Product>();
-            productSupplier.ShowProductDropdown = false;
+            productSupplier.FilteredItems = new List<Item>();
+            productSupplier.ShowItemDropdown = false;
             return;
         }
 
-        productSupplier.ProductId = selectedProduct.Id;
-        productSupplier.Product = selectedProduct;
-        productSupplier.SearchText = $"[{selectedProduct.Code}] {selectedProduct.Name}";
-        productSupplier.FilteredProducts = new List<Product>();
-        productSupplier.ShowProductDropdown = false;
+        productSupplier.ItemId = selectedItem.Id;
+        productSupplier.Item = selectedItem;
+        productSupplier.SearchText = $"[{selectedItem.Code}] {selectedItem.Name}";
+        productSupplier.FilteredItems = new List<Item>();
+        productSupplier.ShowItemDropdown = false;
         
         StateHasChanged();
     }
@@ -214,13 +214,13 @@
     /// <summary>
     /// 品項輸入框獲得焦點
     /// </summary>
-    private void OnProductFocus(ProductSupplier productSupplier)
+    private void OnItemFocus(ItemSupplier productSupplier)
     {
-        if (productSupplier.ProductId > 0)
+        if (productSupplier.ItemId > 0)
         {
             // 已選擇品項時，顯示所有品項供重新選擇
-            productSupplier.FilteredProducts = AvailableProducts.Take(20).ToList();
-            productSupplier.ShowProductDropdown = true;
+            productSupplier.FilteredItems = AvailableItems.Take(20).ToList();
+            productSupplier.ShowItemDropdown = true;
         }
         StateHasChanged();
     }
@@ -228,12 +228,12 @@
     /// <summary>
     /// 品項輸入框失去焦點
     /// </summary>
-    private void OnProductBlur(ProductSupplier productSupplier)
+    private void OnItemBlur(ItemSupplier productSupplier)
     {
         // 延遲關閉下拉選單，讓點擊事件能正常觸發
         Task.Delay(200).ContinueWith(_ =>
         {
-            productSupplier.ShowProductDropdown = false;
+            productSupplier.ShowItemDropdown = false;
             InvokeAsync(StateHasChanged);
         });
     }
@@ -241,7 +241,7 @@
     /// <summary>
     /// 刪除供應品項綁定
     /// </summary>
-    private async Task HandleDeleteItem(ProductSupplier item)
+    private async Task HandleDeleteItem(ItemSupplier item)
     {
         Items.Remove(item);
         await ItemsChanged.InvokeAsync(Items);
@@ -255,7 +255,7 @@
     private async Task ClearAllDetails()
     {
         //  關鍵：在清除前，先收集需要刪除的項目（有 Id 的項目需通知父組件以便從資料庫刪除）
-        var itemsToDelete = Items.Where(item => item.Id > 0 && item.Product != null).ToList();
+        var itemsToDelete = Items.Where(item => item.Id > 0 && item.Item != null).ToList();
         
         var cleared = await ItemManagementHelper.ClearAllDetailsAsync(
             Items,

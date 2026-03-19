@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
@@ -18,7 +18,7 @@ namespace ERPCore2.Services.Reports
     {
         private readonly IPurchaseOrderService _purchaseOrderService;
         private readonly ISupplierService _supplierService;
-        private readonly IProductService _productService;
+        private readonly IItemService _productService;
         private readonly ICompanyService _companyService;
         private readonly IFormattedPrintService _formattedPrintService;
         private readonly ILogger<PurchaseOrderReportService>? _logger;
@@ -26,7 +26,7 @@ namespace ERPCore2.Services.Reports
         public PurchaseOrderReportService(
             IPurchaseOrderService purchaseOrderService,
             ISupplierService supplierService,
-            IProductService productService,
+            IItemService productService,
             ICompanyService companyService,
             IFormattedPrintService formattedPrintService,
             ILogger<PurchaseOrderReportService>? logger = null)
@@ -67,8 +67,8 @@ namespace ERPCore2.Services.Reports
                 company = await _companyService.GetByIdAsync(purchaseOrder.CompanyId.Value);
             }
 
-            var allProducts = await _productService.GetAllAsync();
-            var productDict = allProducts.ToDictionary(p => p.Id, p => p);
+            var allItems = await _productService.GetAllAsync();
+            var productDict = allItems.ToDictionary(p => p.Id, p => p);
 
             // 建構格式化文件
             return BuildFormattedDocument(purchaseOrder, orderDetails, supplier, company, productDict);
@@ -177,7 +177,7 @@ namespace ERPCore2.Services.Reports
             List<PurchaseOrderDetail> orderDetails,
             Supplier? supplier,
             Company? company,
-            Dictionary<int, Product> productDict)
+            Dictionary<int, Item> productDict)
         {
             var doc = new FormattedDocument()
                 .SetDocumentName($"採購單-{purchaseOrder.Code}")
@@ -237,7 +237,7 @@ namespace ERPCore2.Services.Reports
                 int rowNum = 1;
                 foreach (var detail in orderDetails)
                 {
-                    var product = productDict.GetValueOrDefault(detail.ProductId);
+                    var product = productDict.GetValueOrDefault(detail.ItemId);
                     table.AddRow(
                         rowNum.ToString(),
                         product?.Name ?? "",

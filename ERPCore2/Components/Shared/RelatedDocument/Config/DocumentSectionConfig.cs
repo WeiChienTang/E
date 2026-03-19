@@ -1,4 +1,4 @@
-using ERPCore2.Models.Documents;
+﻿using ERPCore2.Models.Documents;
 
 namespace ERPCore2.Components.Shared.RelatedDocument.Config;
 
@@ -49,7 +49,7 @@ public class DocumentSectionConfig
     {
         return type switch
         {
-            RelatedDocumentType.ProductComposition => new()
+            RelatedDocumentType.ItemComposition => new()
             {
                 Title = "品項物料清單",
                 Icon = "diagram-3",

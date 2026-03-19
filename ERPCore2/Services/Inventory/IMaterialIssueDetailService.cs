@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 
 namespace ERPCore2.Services
 {
@@ -19,7 +19,7 @@ namespace ERPCore2.Services
         /// </summary>
         /// <param name="productId">品項ID</param>
         /// <returns>領貨明細清單</returns>
-        Task<List<MaterialIssueDetail>> GetByProductIdAsync(int productId);
+        Task<List<MaterialIssueDetail>> GetByItemIdAsync(int productId);
 
         /// <summary>
         /// 根據倉庫ID取得所有領貨明細
@@ -66,7 +66,7 @@ namespace ERPCore2.Services
         /// <param name="warehouseLocationId">庫位ID（可選）</param>
         /// <param name="excludeId">排除的明細ID（編輯時使用）</param>
         /// <returns>是否已存在</returns>
-        Task<bool> IsProductExistsInIssueAsync(int materialIssueId, int productId, int warehouseId, int? warehouseLocationId = null, int? excludeId = null);
+        Task<bool> IsItemExistsInIssueAsync(int materialIssueId, int productId, int warehouseId, int? warehouseLocationId = null, int? excludeId = null);
 
         /// <summary>
         /// 驗證領貨明細的庫存是否充足

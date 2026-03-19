@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
 using ERPCore2.Models.Enums;
@@ -227,7 +227,7 @@ namespace ERPCore2.Services.Reports
             if (!schedules.Any())
                 return new List<ScheduleGroup>();
 
-            // 取得所有排程項目（含 Product、ProductionSchedule 等導航屬性）
+            // 取得所有排程項目（含 Item、ProductionSchedule 等導航屬性）
             var allItems = await _itemService.GetAllAsync();
             allItems = allItems.ExcludeDrafts();
 
@@ -382,8 +382,8 @@ namespace ERPCore2.Services.Reports
 
                         table.AddRow(
                             rowNum.ToString(),
-                            item.Product?.Code ?? "",
-                            item.Product?.Name ?? "",
+                            item.Item?.Code ?? "",
+                            item.Item?.Name ?? "",
                             item.ScheduledQuantity.ToString("N0"),
                             item.CompletedQuantity.ToString("N0"),
                             item.PendingQuantity.ToString("N0"),

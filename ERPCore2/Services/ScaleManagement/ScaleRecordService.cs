@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models.Enums;
@@ -38,7 +38,7 @@ namespace ERPCore2.Services
         {
             return context.ScaleRecords
                 .Include(sr => sr.Vehicle)
-                .Include(sr => sr.Product)
+                .Include(sr => sr.Item)
                 .Include(sr => sr.Customer)
                 .Include(sr => sr.Warehouse)
                 .Include(sr => sr.WarehouseLocation)
@@ -53,7 +53,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ScaleRecords
                     .Include(sr => sr.Vehicle)
-                    .Include(sr => sr.Product)
+                    .Include(sr => sr.Item)
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.Warehouse)
                     .Include(sr => sr.WarehouseLocation)
@@ -78,13 +78,13 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ScaleRecords
                     .Include(sr => sr.Vehicle)
-                    .Include(sr => sr.Product)
+                    .Include(sr => sr.Item)
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.Warehouse)
                     .Include(sr => sr.WarehouseLocation)
                     .Where(sr => (sr.Code != null && sr.Code.ToLower().Contains(lowerSearchTerm)) ||
                                  (sr.Vehicle != null && sr.Vehicle.LicensePlate.ToLower().Contains(lowerSearchTerm)) ||
-                                 (sr.Product != null && sr.Product.Name != null && sr.Product.Name.ToLower().Contains(lowerSearchTerm)) ||
+                                 (sr.Item != null && sr.Item.Name != null && sr.Item.Name.ToLower().Contains(lowerSearchTerm)) ||
                                  (sr.Warehouse != null && sr.Warehouse.Name.ToLower().Contains(lowerSearchTerm)) ||
                                  (sr.Customer != null && sr.Customer.CompanyName != null &&
                                   sr.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)))
@@ -181,7 +181,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ScaleRecords
                     .Include(sr => sr.Vehicle)
-                    .Include(sr => sr.Product)
+                    .Include(sr => sr.Item)
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.Warehouse)
                     .Include(sr => sr.WarehouseLocation)
@@ -204,7 +204,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ScaleRecords
                     .Include(sr => sr.Vehicle)
-                    .Include(sr => sr.Product)
+                    .Include(sr => sr.Item)
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.Warehouse)
                     .Include(sr => sr.WarehouseLocation)
@@ -227,7 +227,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ScaleRecords
                     .Include(sr => sr.Vehicle)
-                    .Include(sr => sr.Product)
+                    .Include(sr => sr.Item)
                     .Include(sr => sr.Customer)
                     .Include(sr => sr.Warehouse)
                     .Include(sr => sr.WarehouseLocation)
@@ -267,7 +267,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到指定的磅秤紀錄");
 
                 // 若無關聯品項，跳過入庫
-                if (!scaleRecord.ProductId.HasValue)
+                if (!scaleRecord.ItemId.HasValue)
                     return ServiceResult.Success();
 
                 var quantity = scaleRecord.NetWeight ?? 0;
@@ -275,7 +275,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Success();
 
                 return await _inventoryStockService.AddStockAsync(
-                    scaleRecord.ProductId.Value,
+                    scaleRecord.ItemId.Value,
                     scaleRecord.WarehouseId!.Value,
                     quantity,
                     InventoryTransactionTypeEnum.WasteReceiving,
@@ -333,7 +333,7 @@ namespace ERPCore2.Services
             if (scaleRecord == null)
                 return ServiceResult.Failure("找不到指定的磅秤紀錄");
 
-            if (!scaleRecord.ProductId.HasValue)
+            if (!scaleRecord.ItemId.HasValue)
                 return ServiceResult.Success();
 
             // 查詢此磅秤紀錄的所有庫存異動明細
@@ -350,13 +350,13 @@ namespace ERPCore2.Services
             var groups = allDetails
                 .GroupBy(d => new
                 {
-                    ProductId = d.ProductId,
+                    ItemId = d.ItemId,
                     WarehouseId = d.InventoryStockDetail != null ? d.InventoryStockDetail.WarehouseId : d.InventoryTransaction.WarehouseId,
                     LocationId = d.WarehouseLocationId
                 })
                 .Select(g => new
                 {
-                    g.Key.ProductId,
+                    g.Key.ItemId,
                     g.Key.WarehouseId,
                     g.Key.LocationId,
                     NetQuantity = g.Sum(d => d.Quantity)
@@ -367,7 +367,7 @@ namespace ERPCore2.Services
             foreach (var group in groups)
             {
                 var result = await _inventoryStockService.ReduceStockAsync(
-                    group.ProductId,
+                    group.ItemId,
                     group.WarehouseId,
                     group.NetQuantity,
                     InventoryTransactionTypeEnum.WasteReceiving,
@@ -422,7 +422,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                IQueryable<ScaleRecord> query = context.ScaleRecords.Include(sr => sr.Product);
+                IQueryable<ScaleRecord> query = context.ScaleRecords.Include(sr => sr.Item);
                 if (filterFunc != null) query = filterFunc(query);
                 var totalCount = await query.CountAsync();
                 var items = await query

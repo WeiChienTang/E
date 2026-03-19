@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -295,7 +295,7 @@ namespace ERPCore2.Helpers
         /// <summary>
         /// 檢查品項是否可以刪除
         /// </summary>
-        public static async Task<DependencyCheckResult> CheckProductDependenciesAsync(IDbContextFactory<AppDbContext> contextFactory, int productId)
+        public static async Task<DependencyCheckResult> CheckItemDependenciesAsync(IDbContextFactory<AppDbContext> contextFactory, int productId)
         {
             try
             {
@@ -304,7 +304,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查採購訂單明細
                 var purchaseOrderDetailCount = await context.PurchaseOrderDetails
-                    .CountAsync(pod => pod.ProductId == productId);
+                    .CountAsync(pod => pod.ItemId == productId);
                     
                 if (purchaseOrderDetailCount > 0)
                 {
@@ -314,7 +314,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查銷貨訂單明細
                 var salesOrderDetailCount = await context.SalesOrderDetails
-                    .CountAsync(sod => sod.ProductId == productId);
+                    .CountAsync(sod => sod.ItemId == productId);
                     
                 if (salesOrderDetailCount > 0)
                 {
@@ -324,7 +324,7 @@ namespace ERPCore2.Helpers
                 
                 // 檢查庫存
                 var inventoryCount = await context.InventoryStocks
-                    .CountAsync(i => i.ProductId == productId);
+                    .CountAsync(i => i.ItemId == productId);
                     
                 if (inventoryCount > 0)
                 {
@@ -449,7 +449,7 @@ namespace ERPCore2.Helpers
                 var result = new DependencyCheckResult { CanDelete = true };
                 
                 // 檢查品項
-                var productCount = await context.Products
+                var productCount = await context.Items
                     .CountAsync(p => p.UnitId == unitId);
                     
                 if (productCount > 0)
@@ -460,8 +460,8 @@ namespace ERPCore2.Helpers
                 
                 // 檢查採購訂單明細
                 var purchaseOrderDetailCount = await context.PurchaseOrderDetails
-                    .Join(context.Products.Where(p => p.UnitId == unitId),
-                          pod => pod.ProductId,
+                    .Join(context.Items.Where(p => p.UnitId == unitId),
+                          pod => pod.ItemId,
                           p => p.Id,
                           (pod, p) => pod)
                     .CountAsync();
@@ -574,7 +574,7 @@ namespace ERPCore2.Helpers
                 var result = new DependencyCheckResult { CanDelete = true };
 
                 // 檢查品項
-                var productCount = await context.Products
+                var productCount = await context.Items
                     .CountAsync(p => p.SizeId == sizeId);
 
                 if (productCount > 0)

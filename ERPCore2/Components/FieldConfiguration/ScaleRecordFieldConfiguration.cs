@@ -1,4 +1,4 @@
-using ERPCore2.Components.Shared.UI.Form;
+﻿using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
@@ -80,16 +80,16 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(ScaleRecord.ProductId),
+                        nameof(ScaleRecord.ItemId),
                         new FieldDefinition<ScaleRecord>
                         {
-                            PropertyName = "Product.Name",
-                            FilterPropertyName = nameof(ScaleRecord.ProductId),
+                            PropertyName = "Item.Name",
+                            FilterPropertyName = nameof(ScaleRecord.ItemId),
                             DisplayName = "品項",
                             FilterPlaceholder = "輸入品項搜尋",
                             TableOrder = 5,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(ScaleRecord.ProductId), sr => sr.ProductId)
+                                model, query, nameof(ScaleRecord.ItemId), sr => sr.ItemId)
                         }
                     },
                     {

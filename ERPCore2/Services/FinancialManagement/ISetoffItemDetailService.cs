@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 
 namespace ERPCore2.Services
@@ -6,12 +6,12 @@ namespace ERPCore2.Services
     /// <summary>
     /// 沖銷品項明細服務介面
     /// </summary>
-    public interface ISetoffProductDetailService : IGenericManagementService<SetoffProductDetail>
+    public interface ISetoffItemDetailService : IGenericManagementService<SetoffItemDetail>
     {
         /// <summary>
         /// 根據沖款單ID取得品項明細
         /// </summary>
-        Task<List<SetoffProductDetail>> GetBySetoffDocumentIdAsync(int setoffDocumentId);
+        Task<List<SetoffItemDetail>> GetBySetoffDocumentIdAsync(int setoffDocumentId);
 
         /// <summary>
         /// 取得特定關聯方的未結清明細（應收帳款）
@@ -47,7 +47,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 批次建立沖銷品項明細
         /// </summary>
-        Task<ServiceResult> CreateBatchWithValidationAsync(List<SetoffProductDetail> details);
+        Task<ServiceResult> CreateBatchWithValidationAsync(List<SetoffItemDetail> details);
 
         /// <summary>
         /// 檢查沖款金額是否超過未結清餘額
@@ -80,13 +80,13 @@ namespace ERPCore2.Services
         public string SourceDocumentNumber { get; set; } = string.Empty;
 
         /// <summary>品項ID</summary>
-        public int ProductId { get; set; }
+        public int ItemId { get; set; }
 
         /// <summary>品項名稱</summary>
-        public string ProductName { get; set; } = string.Empty;
+        public string ItemName { get; set; } = string.Empty;
 
         /// <summary>品項編號</summary>
-        public string ProductCode { get; set; } = string.Empty;
+        public string ItemCode { get; set; } = string.Empty;
 
         /// <summary>應收/應付金額（小計金額）</summary>
         public decimal TotalAmount { get; set; }
@@ -94,10 +94,10 @@ namespace ERPCore2.Services
         /// <summary>已沖款金額（從來源明細表取得）</summary>
         public decimal PaidAmount { get; set; }
 
-        /// <summary>歷史累計沖款金額（從 SetoffProductDetail 表查詢）</summary>
+        /// <summary>歷史累計沖款金額（從 SetoffItemDetail 表查詢）</summary>
         public decimal TotalHistoricalSetoffAmount { get; set; }
 
-        /// <summary>歷史累計折讓金額（從 SetoffProductDetail 表查詢）</summary>
+        /// <summary>歷史累計折讓金額（從 SetoffItemDetail 表查詢）</summary>
         public decimal TotalHistoricalAllowanceAmount { get; set; }
 
         /// <summary>未沖款餘額</summary>

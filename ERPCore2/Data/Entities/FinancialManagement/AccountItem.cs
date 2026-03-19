@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ERPCore2.Models.Enums;
 
@@ -108,8 +108,8 @@ namespace ERPCore2.Data.Entities
         /// 連結品項（存貨子科目使用）
         /// </summary>
         [Display(Name = "連結品項")]
-        public int? LinkedProductId { get; set; }
-        public Product? LinkedProduct { get; set; }
+        public int? LinkedItemId { get; set; }
+        public Item? LinkedItem { get; set; }
 
         /// <summary>
         /// 是否由系統自動產生（透過 SubAccountService 建立）
@@ -124,12 +124,12 @@ namespace ERPCore2.Data.Entities
         public SubAccountLinkType? SubAccountLinkType { get; set; }
 
         /// <summary>
-        /// 連結實體的顯示名稱（不持久化，需 Include LinkedCustomer/LinkedSupplier/LinkedProduct）
+        /// 連結實體的顯示名稱（不持久化，需 Include LinkedCustomer/LinkedSupplier/LinkedItem）
         /// </summary>
         [NotMapped]
         public string? LinkedEntityName =>
             LinkedCustomer?.CompanyName ??
             LinkedSupplier?.CompanyName ??
-            LinkedProduct?.Name;
+            LinkedItem?.Name;
     }
 }

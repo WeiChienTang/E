@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -50,7 +50,7 @@ namespace ERPCore2.Services
                 .Include(po => po.Warehouse)
                 .Include(po => po.ApprovedByUser)
                 .Include(po => po.PurchaseOrderDetails)
-                    .ThenInclude(pod => pod.Product);
+                    .ThenInclude(pod => pod.Item);
             // 不在此處排序 - 排序由 FieldConfiguration 層統一處理
         }
 
@@ -626,7 +626,7 @@ namespace ERPCore2.Services
                 
                 var loadedEntity = await context.PurchaseOrders
                     .Include(po => po.PurchaseOrderDetails)
-                        .ThenInclude(pod => pod.Product)
+                        .ThenInclude(pod => pod.Item)
                     .FirstOrDefaultAsync(po => po.Id == entity.Id);
 
                 if (loadedEntity == null)
@@ -645,7 +645,7 @@ namespace ERPCore2.Services
                 {
                     if (detail.ReceivedQuantity > 0)
                     {
-                        var productName = detail.Product?.Name ?? "未知品項";
+                        var productName = detail.Item?.Name ?? "未知品項";
                         return ServiceResult.Failure(
                             $"無法刪除此採購單，因為品項「{productName}」已有入庫記錄（已入庫 {detail.ReceivedQuantity} 個）"
                         );
@@ -862,7 +862,7 @@ namespace ERPCore2.Services
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(AddOrderDetailAsync), GetType(), _logger, new { 
                     PurchaseOrderId = detail.PurchaseOrderId,
-                    ProductId = detail.ProductId 
+                    ItemId = detail.ItemId 
                 });
                 return ServiceResult.Failure("新增採購單明細時發生錯誤");
             }
@@ -882,7 +882,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateOrderDetailAsync), GetType(), _logger, new { 
                     DetailId = detail.Id,
                     PurchaseOrderId = detail.PurchaseOrderId,
-                    ProductId = detail.ProductId 
+                    ItemId = detail.ItemId 
                 });
                 return ServiceResult.Failure("更新採購單明細時發生錯誤");
             }
@@ -994,7 +994,7 @@ namespace ERPCore2.Services
                         .ThenInclude(po => po.Supplier)
                     .Include(pod => pod.PurchaseOrder)
                         .ThenInclude(po => po.Warehouse)
-                    .Include(pod => pod.Product)
+                    .Include(pod => pod.Item)
                     .Where(pod => pod.PurchaseOrder.SupplierId == supplierId);
 
                 // 根據參數決定是否檢查審核狀態
@@ -1010,7 +1010,7 @@ namespace ERPCore2.Services
                 }
 
                 return await query.OrderBy(pod => pod.PurchaseOrder.Code)
-                                .ThenBy(pod => pod.Product.Name)
+                                .ThenBy(pod => pod.Item.Name)
                                 .ToListAsync();
             }
             catch (Exception ex)
@@ -1042,7 +1042,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Warehouse)
                     .Include(po => po.ApprovedByUser)
                     .Include(po => po.PurchaseOrderDetails)
-                        .ThenInclude(pod => pod.Product)
+                        .ThenInclude(pod => pod.Item)
                     .Where(po => po.SupplierId == supplierId
                                 && po.PurchaseOrderDetails.Any(pod => pod.ReceivedQuantity < pod.OrderQuantity));
                 

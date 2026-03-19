@@ -80,19 +80,19 @@ public static class ReportIds
     // ==================== 品項報表 (PD) ====================
     
     /// <summary>品項清單表</summary>
-    public const string ProductList = "PD001";
+    public const string ItemList = "PD001";
 
     /// <summary>物料清單報表</summary>
     public const string BOMReport = "PD002";
 
     /// <summary>品項條碼標籤</summary>
-    public const string ProductBarcode = "PD003";
+    public const string ItemBarcode = "PD003";
 
     /// <summary>生產排程表</summary>
     public const string ProductionSchedule = "PD004";
 
     /// <summary>品項詳細資料報表</summary>
-    public const string ProductDetail = "PD005";
+    public const string ItemDetail = "PD005";
 
     /// <summary>用料損耗退料記錄</summary>
     public const string MaterialScrapRecord = "PD006";
@@ -161,6 +161,12 @@ public static class ReportIds
 
     /// <summary>明細科目餘額表</summary>
     public const string DetailAccountBalance = "FN011";
+
+    /// <summary>應收帳款帳齡分析</summary>
+    public const string ARAgingAnalysis = "FN012";
+
+    /// <summary>應付帳款帳齡分析</summary>
+    public const string APAgingAnalysis = "FN013";
 
     // ==================== 製令單報表 (MO) ====================
 

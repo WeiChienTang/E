@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace ERPCore2.Models.Enums
@@ -119,7 +119,7 @@ namespace ERPCore2.Models.Enums
     {
         Customer = 1,
         Supplier = 2,
-        Product = 3
+        Item = 3
     }
 
     /// <summary>

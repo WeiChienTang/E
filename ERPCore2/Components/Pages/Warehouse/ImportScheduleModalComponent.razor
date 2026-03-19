@@ -1,4 +1,4 @@
-@*
+﻿@*
     匯入排程 Modal 組件
     用於將生產排程項目匯入到庫存
 *@
@@ -124,7 +124,7 @@
     private List<Warehouse> warehouses = new();
     private List<WarehouseLocation> warehouseLocations = new();
     
-    // 各品項的庫存位置資料（Key: ProductId, Value: 該品項的庫存明細列表）
+    // 各品項的庫存位置資料（Key: ItemId, Value: 該品項的庫存明細列表）
     private Dictionary<int, List<InventoryStockDetail>> productStockDetails = new();
     
     // 追蹤上次的 IsVisible 狀態
@@ -168,13 +168,13 @@
                 .ToList();
             
             // 取得所有需要的品項 ID
-            var productIds = allItems.Select(x => x.ProductId).Distinct().ToList();
+            var productIds = allItems.Select(x => x.ItemId).Distinct().ToList();
             
             // 查詢各品項的庫存位置資料
             productStockDetails.Clear();
             foreach (var productId in productIds)
             {
-                var stockDetails = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(productId);
+                var stockDetails = await InventoryStockService.GetAvailableWarehouseLocationsByItemAsync(productId);
                 productStockDetails[productId] = stockDetails;
             }
             
@@ -187,9 +187,9 @@
                         RowNumber = index + 1,
                         SalesOrderCode = item.SalesOrderDetail?.SalesOrder?.Code ?? "-",
                         CustomerName = item.SalesOrderDetail?.SalesOrder?.Customer?.CompanyName ?? "-",
-                        ProductId = item.ProductId,
-                        ProductCode = item.Product?.Code ?? "-",
-                        ProductName = item.Product?.Name ?? "-",
+                        ItemId = item.ItemId,
+                        ItemCode = item.Item?.Code ?? "-",
+                        ItemName = item.Item?.Name ?? "-",
                         WarehouseId = item.WarehouseId,
                         WarehouseLocationId = item.WarehouseLocationId,
                         ScheduledQuantity = item.ScheduledQuantity,
@@ -225,7 +225,7 @@
     /// </summary>
     private void SetDefaultLocationKey(ImportScheduleItemDto dto)
     {
-        if (!productStockDetails.TryGetValue(dto.ProductId, out var stockDetails) || !stockDetails.Any())
+        if (!productStockDetails.TryGetValue(dto.ItemId, out var stockDetails) || !stockDetails.Any())
         {
             // 沒有庫存資料，預設使用第一個倉庫（無庫位）
             if (warehouses.Any())
@@ -268,15 +268,15 @@
             },
             new()
             {
-                Title = L["Column.ProductCode"].ToString(),
-                PropertyName = nameof(ImportScheduleItemDto.ProductCode),
+                Title = L["Column.ItemCode"].ToString(),
+                PropertyName = nameof(ImportScheduleItemDto.ItemCode),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "90px"
             },
             new()
             {
-                Title = L["Column.ProductName"].ToString(),
-                PropertyName = nameof(ImportScheduleItemDto.ProductName),
+                Title = L["Column.ItemName"].ToString(),
+                PropertyName = nameof(ImportScheduleItemDto.ItemName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px"
             },
@@ -455,7 +455,7 @@
         var otherOptions = new List<LocationOption>();
         
         // 取得該品項的庫存明細
-        var hasStockDetails = productStockDetails.TryGetValue(item.ProductId, out var stockDetails);
+        var hasStockDetails = productStockDetails.TryGetValue(item.ItemId, out var stockDetails);
         var stockLookup = stockDetails?.ToDictionary(
             d => $"{d.WarehouseId}|{d.WarehouseLocationId?.ToString() ?? ""}",
             d => d.CurrentStock
@@ -595,7 +595,7 @@
             var itemsNeedWarehouse = selectedItems.Where(x => x.ImportQuantity > 0 && !x.WarehouseId.HasValue).ToList();
             if (itemsNeedWarehouse.Any())
             {
-                var invalidCodes = string.Join(", ", itemsNeedWarehouse.Take(3).Select(x => x.ProductCode));
+                var invalidCodes = string.Join(", ", itemsNeedWarehouse.Take(3).Select(x => x.ItemCode));
                 var moreCount = itemsNeedWarehouse.Count > 3 ? string.Format(L["Warehouse.MoreItems"].ToString(), itemsNeedWarehouse.Count) : "";
                 await NotificationService.ShowWarningAsync(string.Format(L["Warehouse.NeedSelectWH"].ToString(), invalidCodes, moreCount));
                 return;
@@ -605,7 +605,7 @@
             var invalidQuantityItems = selectedItems.Where(x => x.ImportQuantity <= 0 && !x.IsClosed).ToList();
             if (invalidQuantityItems.Any())
             {
-                var invalidCodes = string.Join(", ", invalidQuantityItems.Take(3).Select(x => x.ProductCode));
+                var invalidCodes = string.Join(", ", invalidQuantityItems.Take(3).Select(x => x.ItemCode));
                 var moreCount = invalidQuantityItems.Count > 3 ? string.Format(L["Warehouse.MoreItems"].ToString(), invalidQuantityItems.Count) : "";
                 await NotificationService.ShowWarningAsync(string.Format(L["Warehouse.QuantityError"].ToString(), invalidCodes, moreCount));
                 return;
@@ -615,7 +615,7 @@
             var closedItems = selectedItems.Where(x => x.IsClosed).ToList();
             if (closedItems.Any())
             {
-                var closedCodes = string.Join("、", closedItems.Take(5).Select(x => x.ProductCode));
+                var closedCodes = string.Join("、", closedItems.Take(5).Select(x => x.ItemCode));
                 var moreText = closedItems.Count > 5 ? string.Format(L["Warehouse.MoreItems"].ToString(), closedItems.Count) : "";
                 var confirmMessage = string.Format(L["Warehouse.ConfirmClose"].ToString(), closedItems.Count, closedCodes, moreText).Replace("\\n", "\n");
 
@@ -659,14 +659,14 @@
                         var completionResult = await ProductionScheduleCompletionService.CreateAsync(completion);
                         if (!completionResult.IsSuccess)
                         {
-                            failedItems.Add($"{item.ProductCode}: {L["Warehouse.ClosedItemBuildFail"]}");
+                            failedItems.Add($"{item.ItemCode}: {L["Warehouse.ClosedItemBuildFail"]}");
                             continue;
                         }
                         
                         // 2. 增加庫存
                         var transactionNumber = $"PC{DateTime.Now:yyyyMMddHHmmss}{item.Id}";
                         var stockResult = await InventoryStockService.AddStockAsync(
-                            item.ProductId,
+                            item.ItemId,
                             item.WarehouseId!.Value,
                             item.ImportQuantity,
                             InventoryTransactionTypeEnum.ProductionCompletion,
@@ -678,7 +678,7 @@
                         
                         if (!stockResult.IsSuccess)
                         {
-                            failedItems.Add($"{item.ProductCode}: {string.Format(L["Warehouse.StockInFail"].ToString(), stockResult.ErrorMessage)}");
+                            failedItems.Add($"{item.ItemCode}: {string.Format(L["Warehouse.StockInFail"].ToString(), stockResult.ErrorMessage)}");
                             continue;
                         }
                     }
@@ -728,7 +728,7 @@
                 }
                 catch (Exception ex)
                 {
-                    failedItems.Add($"{item.ProductCode}: {ex.Message}");
+                    failedItems.Add($"{item.ItemCode}: {ex.Message}");
                 }
             }
             

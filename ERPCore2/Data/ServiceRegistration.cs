@@ -80,7 +80,12 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Purchase.IPurchaseChartService, ERPCore2.Services.Purchase.PurchaseChartService>();
             services.AddScoped<ERPCore2.Services.Sales.ISalesChartService, ERPCore2.Services.Sales.SalesChartService>();
             services.AddScoped<ERPCore2.Services.Inventory.IInventoryChartService, ERPCore2.Services.Inventory.InventoryChartService>();
-            services.AddScoped<ERPCore2.Services.Products.IProductChartService, ERPCore2.Services.Products.ProductChartService>();
+            services.AddScoped<ERPCore2.Services.Items.IItemChartService, ERPCore2.Services.Items.ItemChartService>();
+            services.AddScoped<ERPCore2.Services.ProductionManagement.IProductionChartService, ERPCore2.Services.ProductionManagement.ProductionChartService>();
+            services.AddScoped<ERPCore2.Services.FinancialManagement.IFinancialChartService, ERPCore2.Services.FinancialManagement.FinancialChartService>();
+            services.AddScoped<ERPCore2.Services.Payroll.IPayrollChartService, ERPCore2.Services.Payroll.PayrollChartService>();
+            services.AddScoped<ERPCore2.Services.ScaleManagement.IScaleChartService, ERPCore2.Services.ScaleManagement.ScaleChartService>();
+            services.AddScoped<ERPCore2.Services.Vehicles.IVehicleChartService, ERPCore2.Services.Vehicles.VehicleChartService>();
 
             services.AddScoped<IPaymentMethodService, PaymentMethodService>();
 
@@ -94,7 +99,7 @@ namespace ERPCore2.Data
             services.AddScoped<IJournalEntryAutoGenerationService, JournalEntryAutoGenerationService>();
             services.AddScoped<IFiscalYearClosingService, FiscalYearClosingService>();
             services.AddScoped<ISetoffDocumentService, SetoffDocumentService>();
-            services.AddScoped<ISetoffProductDetailService, SetoffProductDetailService>();
+            services.AddScoped<ISetoffItemDetailService, SetoffItemDetailService>();
             services.AddScoped<ISetoffPaymentService, SetoffPaymentService>();
             services.AddScoped<ISetoffPrepaymentService, SetoffPrepaymentService>();
             services.AddScoped<ISetoffPrepaymentUsageService, SetoffPrepaymentUsageService>();
@@ -109,11 +114,11 @@ namespace ERPCore2.Data
             services.AddScoped<ISupplierBankAccountService, SupplierBankAccountService>();
 
             // 品項相關服務
-            services.AddScoped<IProductService, ProductService>();
-            services.AddScoped<IProductCategoryService, ProductCategoryService>();
-            services.AddScoped<IProductSupplierService, ProductSupplierService>();
-            services.AddScoped<IProductCustomerService, ProductCustomerService>();
-            services.AddScoped<IProductPhotoService, ProductPhotoService>();
+            services.AddScoped<IItemService, ItemService>();
+            services.AddScoped<IItemCategoryService, ItemCategoryService>();
+            services.AddScoped<IItemSupplierService, ItemSupplierService>();
+            services.AddScoped<IItemCustomerService, ItemCustomerService>();
+            services.AddScoped<IItemPhotoService, ItemPhotoService>();
             services.AddScoped<ISizeService, SizeService>();
             
             // 品項價格服務
@@ -173,8 +178,8 @@ namespace ERPCore2.Data
             services.AddScoped<ICompositionCategoryService, CompositionCategoryService>();
             
             // 品項合成（BOM）服務
-            services.AddScoped<IProductCompositionService, ProductCompositionService>();
-            services.AddScoped<IProductCompositionDetailService, ProductCompositionDetailService>();
+            services.AddScoped<IItemCompositionService, ItemCompositionService>();
+            services.AddScoped<IItemCompositionDetailService, ItemCompositionDetailService>();
             
             // 生產排程服務
             services.AddScoped<IProductionScheduleService, ProductionScheduleService>();
@@ -255,7 +260,7 @@ namespace ERPCore2.Data
             {
                 services.AddScoped<ERPCore2.Services.Reports.Interfaces.IFormattedPrintService, FormattedPrintService>();
                 // 品項條碼報表服務（使用 System.Drawing，僅 Windows 平台）
-                services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductBarcodeReportService, ProductBarcodeReportService>();
+                services.AddScoped<ERPCore2.Services.Reports.Interfaces.IItemBarcodeReportService, ItemBarcodeReportService>();
             }
             // Excel 匯出服務（跨平台）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IExcelExportService, ExcelExportService>();
@@ -278,9 +283,9 @@ namespace ERPCore2.Data
             // 沖款單報表服務（應收沖款單 FN003 / 應付沖款單 FN004）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISetoffDocumentReportService, SetoffDocumentReportService>();
             // 品項清單表報表服務（PD001）
-            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductListReportService, ProductListReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IItemListReportService, ItemListReportService>();
             // 品項詳細資料報表服務（PD005）
-            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IProductDetailReportService, ProductDetailReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IItemDetailReportService, ItemDetailReportService>();
             // 物料清單報表服務（PD002）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IBOMReportService, BOMReportService>();
             // 客戶銷售分析報表服務（AR003）
@@ -331,6 +336,8 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IGeneralLedgerReportService, GeneralLedgerReportService>();
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ISubsidiaryLedgerReportService, SubsidiaryLedgerReportService>();
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IDetailAccountBalanceReportService, DetailAccountBalanceReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IARAgingReportService, ARAgingReportService>();
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IAPAgingReportService, APAgingReportService>();
             // 條碼生成服務
             services.AddSingleton<ERPCore2.Services.Reports.Interfaces.IBarcodeGeneratorService, BarcodeGeneratorService>();
 
@@ -357,6 +364,7 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Payroll.IHealthInsuranceGradeService, ERPCore2.Services.Payroll.HealthInsuranceGradeService>();
             services.AddScoped<ERPCore2.Services.Payroll.IWithholdingTaxTableService, ERPCore2.Services.Payroll.WithholdingTaxTableService>();
             services.AddScoped<ERPCore2.Services.Payroll.IMonthlyAttendanceSummaryService, ERPCore2.Services.Payroll.MonthlyAttendanceSummaryService>();
+            services.AddScoped<ERPCore2.Services.Payroll.IAttendanceDailyRecordService, ERPCore2.Services.Payroll.AttendanceDailyRecordService>();
         }
 
         /// <summary>

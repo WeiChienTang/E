@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models.Reports.FilterAttributes;
 using ERPCore2.Models.Reports.FilterCriteria;
 using ERPCore2.Services;
@@ -36,7 +36,7 @@ public class CustomerSalesAnalysisCriteria : IReportFilterCriteria
     /// <summary>
     /// 品項分類 ID 清單（空表示所有分類）
     /// </summary>
-    [FilterFK(typeof(IProductCategoryService),
+    [FilterFK(typeof(IItemCategoryService),
         Group = FilterGroup.Basic,
         Label = "品項分類",
         Placeholder = "搜尋品項分類...",

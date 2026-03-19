@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Models.Charts;
 using ERPCore2.Models.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +15,7 @@ public class SalesChartService : ISalesChartService
     }
 
     /// <summary>依品項統計銷售金額排行 Top N（SalesDeliveryDetails，含稅計算）</summary>
-    public async Task<List<ChartDataItem>> GetTopProductsBySalesAmountAsync(int top = 10)
+    public async Task<List<ChartDataItem>> GetTopItemsBySalesAmountAsync(int top = 10)
     {
         using var context = await _factory.CreateDbContextAsync();
 
@@ -24,17 +24,17 @@ public class SalesChartService : ISalesChartService
             where d.Status != EntityStatus.Deleted
                   && d.SalesDelivery != null
                   && d.SalesDelivery.Status != EntityStatus.Deleted
-            join p in context.Products on d.ProductId equals p.Id
+            join p in context.Items on d.ItemId equals p.Id
             select new
             {
-                ProductName = p.Name ?? "未知品項",
+                ItemName = p.Name ?? "未知品項",
                 SubtotalAmount = d.SubtotalAmount,
                 TaxRate = d.TaxRate ?? 0m
             }
         ).ToListAsync();
 
         var grouped = raw
-            .GroupBy(x => x.ProductName)
+            .GroupBy(x => x.ItemName)
             .Select(g => new ChartDataItem
             {
                 Label = g.Key,
@@ -192,14 +192,14 @@ public class SalesChartService : ISalesChartService
 
     // ===== Drill-down 明細查詢 =====
 
-    public async Task<List<ChartDetailItem>> GetDeliveryDetailsByProductAsync(string productLabel)
+    public async Task<List<ChartDetailItem>> GetDeliveryDetailsByItemAsync(string productLabel)
     {
         using var context = await _factory.CreateDbContextAsync();
 
         var raw = await (
             from d in context.SalesDeliveryDetails
             where d.Status != EntityStatus.Deleted
-            join p in context.Products on d.ProductId equals p.Id
+            join p in context.Items on d.ItemId equals p.Id
             where (p.Name ?? "") == productLabel
             join sd in context.SalesDeliveries on d.SalesDeliveryId equals sd.Id
             where sd.Status != EntityStatus.Deleted

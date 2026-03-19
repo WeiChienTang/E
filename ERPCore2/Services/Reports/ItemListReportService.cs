@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
 using ERPCore2.Models.Enums;
@@ -15,18 +15,18 @@ namespace ERPCore2.Services.Reports
     /// 品項資料表報表服務實作 - 使用 FormattedDocument 進行圖形化渲染
     /// 支援單品列印和清單式批次列印
     /// </summary>
-    public class ProductListReportService : IProductListReportService
+    public class ItemListReportService : IItemListReportService
     {
-        private readonly IProductService _productService;
+        private readonly IItemService _productService;
         private readonly ICompanyService _companyService;
         private readonly IFormattedPrintService _formattedPrintService;
-        private readonly ILogger<ProductListReportService>? _logger;
+        private readonly ILogger<ItemListReportService>? _logger;
 
-        public ProductListReportService(
-            IProductService productService,
+        public ItemListReportService(
+            IItemService productService,
             ICompanyService companyService,
             IFormattedPrintService formattedPrintService,
-            ILogger<ProductListReportService>? logger = null)
+            ILogger<ItemListReportService>? logger = null)
         {
             _productService = productService;
             _companyService = companyService;
@@ -49,7 +49,7 @@ namespace ERPCore2.Services.Reports
 
             var company = await _companyService.GetPrimaryCompanyAsync();
 
-            return BuildProductListDocument(new List<Product> { product }, company, null);
+            return BuildItemListDocument(new List<Item> { product }, company, null);
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace ERPCore2.Services.Reports
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "列印品項資料 {ProductId} 時發生錯誤", productId);
+                _logger?.LogError(ex, "列印品項資料 {ItemId} 時發生錯誤", productId);
                 return ServiceResult.Failure($"列印時發生錯誤: {ex.Message}");
             }
         }
@@ -98,7 +98,7 @@ namespace ERPCore2.Services.Reports
         {
             try
             {
-                var products = await GetProductsByCriteriaAsync(criteria);
+                var products = await GetItemsByCriteriaAsync(criteria);
 
                 if (!products.Any())
                 {
@@ -106,7 +106,7 @@ namespace ERPCore2.Services.Reports
                 }
 
                 var company = await _companyService.GetPrimaryCompanyAsync();
-                var document = BuildProductListDocument(products, company, null);
+                var document = BuildItemListDocument(products, company, null);
                 return await _formattedPrintService.PrintByReportIdAsync(document, reportId, 1);
             }
             catch (Exception ex)
@@ -124,7 +124,7 @@ namespace ERPCore2.Services.Reports
         {
             try
             {
-                var products = await GetProductsByCriteriaAsync(criteria);
+                var products = await GetItemsByCriteriaAsync(criteria);
                 products = products.ExcludeDrafts();
 
                 if (!products.Any())
@@ -133,7 +133,7 @@ namespace ERPCore2.Services.Reports
                 }
 
                 var company = await _companyService.GetPrimaryCompanyAsync();
-                var document = BuildProductListDocument(products, company, criteria.PaperSetting);
+                var document = BuildItemListDocument(products, company, criteria.PaperSetting);
                 var images = criteria.PaperSetting != null
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
@@ -148,15 +148,15 @@ namespace ERPCore2.Services.Reports
         }
 
         /// <summary>
-        /// 批次渲染品項清單報表為圖片（使用 ProductListBatchPrintCriteria）
+        /// 批次渲染品項清單報表為圖片（使用 ItemListBatchPrintCriteria）
         /// 清單式報表：將所有品項以表格形式呈現在同一份報表
         /// </summary>
         [SupportedOSPlatform("windows6.1")]
-        public async Task<BatchPreviewResult> RenderBatchToImagesAsync(ProductListBatchPrintCriteria criteria)
+        public async Task<BatchPreviewResult> RenderBatchToImagesAsync(ItemListBatchPrintCriteria criteria)
         {
             try
             {
-                var products = await GetProductsByTypedCriteriaAsync(criteria);
+                var products = await GetItemsByTypedCriteriaAsync(criteria);
                 products = products.ExcludeDrafts();
 
                 if (!products.Any())
@@ -165,7 +165,7 @@ namespace ERPCore2.Services.Reports
                 }
 
                 var company = await _companyService.GetPrimaryCompanyAsync();
-                var document = BuildProductListDocument(products, company, criteria.PaperSetting);
+                var document = BuildItemListDocument(products, company, criteria.PaperSetting);
                 var images = criteria.PaperSetting != null
                     ? _formattedPrintService.RenderToImages(document, criteria.PaperSetting)
                     : _formattedPrintService.RenderToImages(document);
@@ -186,15 +186,15 @@ namespace ERPCore2.Services.Reports
         /// <summary>
         /// 根據 BatchPrintCriteria 查詢品項
         /// </summary>
-        private async Task<List<Product>> GetProductsByCriteriaAsync(BatchPrintCriteria criteria)
+        private async Task<List<Item>> GetItemsByCriteriaAsync(BatchPrintCriteria criteria)
         {
             var results = await _productService.GetAllAsync();
 
             // 篩選關聯實體（分類 ID）
             if (criteria.RelatedEntityIds.Any())
             {
-                results = results.Where(p => p.ProductCategoryId.HasValue &&
-                    criteria.RelatedEntityIds.Contains(p.ProductCategoryId.Value)).ToList();
+                results = results.Where(p => p.ItemCategoryId.HasValue &&
+                    criteria.RelatedEntityIds.Contains(p.ItemCategoryId.Value)).ToList();
             }
 
             // 單據編號關鍵字搜尋（搜尋品號）
@@ -225,15 +225,15 @@ namespace ERPCore2.Services.Reports
         }
 
         /// <summary>
-        /// 根據 ProductListBatchPrintCriteria 查詢品項
+        /// 根據 ItemListBatchPrintCriteria 查詢品項
         /// </summary>
-        private async Task<List<Product>> GetProductsByTypedCriteriaAsync(ProductListBatchPrintCriteria criteria)
+        private async Task<List<Item>> GetItemsByTypedCriteriaAsync(ItemListBatchPrintCriteria criteria)
         {
-            List<Product> results;
+            List<Item> results;
 
             if (criteria.ActiveOnly)
             {
-                results = await _productService.GetActiveProductsAsync();
+                results = await _productService.GetActiveItemsAsync();
             }
             else
             {
@@ -243,8 +243,8 @@ namespace ERPCore2.Services.Reports
             // 篩選分類
             if (criteria.CategoryIds.Any())
             {
-                results = results.Where(p => p.ProductCategoryId.HasValue &&
-                    criteria.CategoryIds.Contains(p.ProductCategoryId.Value)).ToList();
+                results = results.Where(p => p.ItemCategoryId.HasValue &&
+                    criteria.CategoryIds.Contains(p.ItemCategoryId.Value)).ToList();
             }
 
             // 關鍵字搜尋
@@ -269,8 +269,8 @@ namespace ERPCore2.Services.Reports
         /// <summary>
         /// 建構品項清單報表（清單式：多筆品項在同一份報表）
         /// </summary>
-        private FormattedDocument BuildProductListDocument(
-            List<Product> products,
+        private FormattedDocument BuildItemListDocument(
+            List<Item> products,
             Company? company,
             PaperSetting? paperSetting)
         {
@@ -322,7 +322,7 @@ namespace ERPCore2.Services.Reports
                         product.Name ?? "",
                         product.Specification ?? "",
                         product.Barcode ?? "",
-                        product.ProductCategory?.Name ?? "",
+                        product.ItemCategory?.Name ?? "",
                         product.Unit?.Name ?? ""
                     );
                     rowNum++;
@@ -341,7 +341,7 @@ namespace ERPCore2.Services.Reports
 
                 // 按分類統計
                 var categoryGroups = products
-                    .GroupBy(p => p.ProductCategory?.Name ?? "未分類")
+                    .GroupBy(p => p.ItemCategory?.Name ?? "未分類")
                     .OrderBy(g => g.Key);
 
                 foreach (var group in categoryGroups)

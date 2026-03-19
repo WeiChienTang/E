@@ -1,4 +1,4 @@
-@*
+﻿@*
     品項條碼列印表格元件
     專門用於條碼列印功能的表格顯示
 *@
@@ -6,7 +6,7 @@
 @inject IStringLocalizer<SharedResource> L
 
 <div class="table-responsive">
-    <GenericInteractiveTableComponent TItem="ProductBarcodeItem"
+    <GenericInteractiveTableComponent TItem="ItemBarcodeItem"
                              Items="@Items"
                              ColumnDefinitions="@columnDefinitions"
                              ShowHeader="true"
@@ -22,21 +22,21 @@
                              OnSelectionChanged="@HandleSelectionChanged"
                              GetRowCssClass="@GetRowCssClass"
                              CssClass="barcode-print-table"
-                             EmptyMessage="@L["Product.NoPrintableProducts"]" />
+                             EmptyMessage="@L["Item.NoPrintableItems"]" />
 </div>
 
 @code {
     // ===== 參數定義 =====
     
-    [Parameter] public List<ProductBarcodeItem> Items { get; set; } = new();
-    [Parameter] public HashSet<ProductBarcodeItem>? SelectedItems { get; set; }
-    [Parameter] public EventCallback<HashSet<ProductBarcodeItem>> OnSelectionChanged { get; set; }
-    [Parameter] public Func<ProductBarcodeItem, int, string>? GetRowCssClass { get; set; }
+    [Parameter] public List<ItemBarcodeItem> Items { get; set; } = new();
+    [Parameter] public HashSet<ItemBarcodeItem>? SelectedItems { get; set; }
+    [Parameter] public EventCallback<HashSet<ItemBarcodeItem>> OnSelectionChanged { get; set; }
+    [Parameter] public Func<ItemBarcodeItem, int, string>? GetRowCssClass { get; set; }
     
     /// <summary>
     /// 列印數量變更事件 - 讓父元件處理統計更新
     /// </summary>
-    [Parameter] public EventCallback<(ProductBarcodeItem item, string? value)> OnPrintQuantityChanged { get; set; }
+    [Parameter] public EventCallback<(ItemBarcodeItem item, string? value)> OnPrintQuantityChanged { get; set; }
     
     // ===== 內部狀態 =====
     
@@ -61,8 +61,8 @@
             // 品項編號
             new InteractiveColumnDefinition
             {
-                Title = L["Column.ProductCode"],
-                PropertyName = nameof(ProductBarcodeItem.Code),
+                Title = L["Column.ItemCode"],
+                PropertyName = nameof(ItemBarcodeItem.Code),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "150px"
             },
@@ -70,8 +70,8 @@
             // 品項名稱
             new InteractiveColumnDefinition
             {
-                Title = L["Column.ProductName"],
-                PropertyName = nameof(ProductBarcodeItem.Name),
+                Title = L["Column.ItemName"],
+                PropertyName = nameof(ItemBarcodeItem.Name),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "auto"
             },
@@ -80,7 +80,7 @@
             new InteractiveColumnDefinition
             {
                 Title = L["Column.Barcode"],
-                PropertyName = nameof(ProductBarcodeItem.Barcode),
+                PropertyName = nameof(ItemBarcodeItem.Barcode),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "200px"
             },
@@ -89,7 +89,7 @@
             new InteractiveColumnDefinition
             {
                 Title = L["Column.PrintQty"],
-                PropertyName = nameof(ProductBarcodeItem.PrintQuantity),
+                PropertyName = nameof(ItemBarcodeItem.PrintQuantity),
                 ColumnType = InteractiveColumnType.Number,
                 Width = "120px",
                 MinValue = 1,
@@ -106,7 +106,7 @@
     /// <summary>
     /// 處理選取狀態變更事件
     /// </summary>
-    private async Task HandleSelectionChanged(HashSet<ProductBarcodeItem> selectedItems)
+    private async Task HandleSelectionChanged(HashSet<ItemBarcodeItem> selectedItems)
     {
         if (OnSelectionChanged.HasDelegate)
         {
@@ -119,7 +119,7 @@
     /// </summary>
     private async Task HandlePrintQuantityChanged((object item, string? value) args)
     {
-        var barcodeItem = (ProductBarcodeItem)args.item;
+        var barcodeItem = (ItemBarcodeItem)args.item;
         
         // 先在本地更新數值
         if (int.TryParse(args.value, out int quantity) && quantity > 0)

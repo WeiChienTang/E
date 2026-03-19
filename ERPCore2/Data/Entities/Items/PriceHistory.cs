@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Models.Enums;
@@ -8,15 +8,15 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 價格歷史表 - 記錄所有價格變更歷史
     /// </summary>
-    [Index(nameof(ProductId), nameof(PriceType), nameof(ChangeDate))]
+    [Index(nameof(ItemId), nameof(PriceType), nameof(ChangeDate))]
     [Index(nameof(ChangeDate))]
     public class PriceHistory : BaseEntity
     {
         // 基本資訊
         [Required(ErrorMessage = "品項為必填")]
         [Display(Name = "品項")]
-        [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int ItemId { get; set; }
 
         [Required(ErrorMessage = "價格類型為必填")]
         [Display(Name = "價格類型")]
@@ -73,7 +73,7 @@ namespace ERPCore2.Data.Entities
         public string? ChangeDetails { get; set; }
 
         // Navigation Properties
-        public Product Product { get; set; } = null!;
+        public Item Item { get; set; } = null!;
         public Customer? RelatedCustomer { get; set; }
         public Supplier? RelatedSupplier { get; set; }
     }

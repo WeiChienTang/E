@@ -1,7 +1,7 @@
-@* 沖銷品項明細管理組件 - 支援應收/應付雙模式 *@
+﻿@* 沖銷品項明細管理組件 - 支援應收/應付雙模式 *@
 
-@inject ISetoffProductDetailService SetoffProductDetailService
-@inject IProductService ProductService
+@inject ISetoffItemDetailService SetoffItemDetailService
+@inject IItemService ItemService
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IPurchaseReturnService PurchaseReturnService
 @inject ISalesDeliveryService SalesDeliveryService
@@ -26,7 +26,7 @@ else
     @* 本次沖款明細編輯 - 直接顯示所有未結清明細 *@
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <GenericInteractiveTableComponent TItem="SetoffProductDetailItem"
+            <GenericInteractiveTableComponent TItem="SetoffItemDetailItem"
                                       OnDataChanged="@NotifyDetailsChanged"
                                       Items="@SetoffItems"
                                       ColumnDefinitions="@GetSetoffColumnDefinitions()"
@@ -92,8 +92,8 @@ else
     [Parameter] public DateTime? EndDate { get; set; }
     
     // 資料綁定
-    [Parameter] public List<SetoffProductDetail> ExistingDetails { get; set; } = new();
-    [Parameter] public EventCallback<List<SetoffProductDetail>> OnDetailsChanged { get; set; }
+    [Parameter] public List<SetoffItemDetail> ExistingDetails { get; set; } = new();
+    [Parameter] public EventCallback<List<SetoffItemDetail>> OnDetailsChanged { get; set; }
     
     // 顯示控制
     [Parameter] public bool IsReadOnly { get; set; } = false;
@@ -113,8 +113,8 @@ else
     
     // ===== 內部狀態 =====
     private List<UnsettledDetailDto> UnsettledDetails { get; set; } = new();
-    private List<SetoffProductDetailItem> SetoffItems { get; set; } = new();
-    private List<Product> Products { get; set; } = new();
+    private List<SetoffItemDetailItem> SetoffItems { get; set; } = new();
+    private List<Item> Items { get; set; } = new();
     
     // ===== 載入確認 Modal =====
     private bool _showLoadConfirmModal = false;
@@ -124,7 +124,7 @@ else
     private bool _dataLoaded = false;
 
     // 方案 D：追蹤 ExistingDetails 參數變化
-    private List<SetoffProductDetail>? _previousExistingDetails = null;
+    private List<SetoffItemDetail>? _previousExistingDetails = null;
     
     // 方案 D 改良版：資料版本追蹤
     private int _previousDataVersion = 0;
@@ -141,7 +141,7 @@ else
         _previousDataVersion = DataVersion;
         _previousExistingDetails = ExistingDetails;
         
-        await LoadProductsAsync();
+        await LoadItemsAsync();
         
         // 編輯模式下需要載入未結清明細（用於顯示來源資訊）
         if (IsEditMode())
@@ -214,7 +214,7 @@ else
             // 關聯方變更時清空資料，等待使用者重新載入
             if (!IsEditMode())
             {
-                SetoffItems = new List<SetoffProductDetailItem>();
+                SetoffItems = new List<SetoffItemDetailItem>();
                 UnsettledDetails = new List<UnsettledDetailDto>();
                 _dataLoaded = false;
             }
@@ -246,16 +246,16 @@ else
     }
 
     // ===== 資料載入方法 =====
-    private async Task LoadProductsAsync()
+    private async Task LoadItemsAsync()
     {
         try
         {
-            Products = await ProductService.GetAllAsync();
+            Items = await ItemService.GetAllAsync();
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入品項資料失敗：{ex.Message}");
-            Products = new List<Product>();
+            Items = new List<Item>();
         }
     }
 
@@ -270,8 +270,8 @@ else
         try
         {
             UnsettledDetails = SetoffType == SetoffType.AccountsReceivable
-                ? await SetoffProductDetailService.GetUnsettledReceivableDetailsAsync(RelatedPartyId.Value)
-                : await SetoffProductDetailService.GetUnsettledPayableDetailsAsync(RelatedPartyId.Value);
+                ? await SetoffItemDetailService.GetUnsettledReceivableDetailsAsync(RelatedPartyId.Value)
+                : await SetoffItemDetailService.GetUnsettledPayableDetailsAsync(RelatedPartyId.Value);
         }
         catch (Exception ex)
         {
@@ -295,12 +295,12 @@ else
                     u.SourceDetailType == detail.SourceDetailType && 
                     u.SourceDetailId == detail.SourceDetailId);
                 
-                return new SetoffProductDetailItem
+                return new SetoffItemDetailItem
                 {
                     SourceDetailType = detail.SourceDetailType,
                     SourceDetailId = detail.SourceDetailId,
-                    ProductId = detail.ProductId,
-                    Product = Products.FirstOrDefault(p => p.Id == detail.ProductId),
+                    ItemId = detail.ItemId,
+                    Item = Items.FirstOrDefault(p => p.Id == detail.ItemId),
                     CurrentSetoffAmount = detail.CurrentSetoffAmount,
                     CurrentAllowanceAmount = detail.CurrentAllowanceAmount,
                     Remarks = detail.Remarks,
@@ -319,12 +319,12 @@ else
             SetoffItems = UnsettledDetails
                 .Where(d => !StartDate.HasValue || d.DocumentDate >= StartDate.Value)
                 .Where(d => !EndDate.HasValue || d.DocumentDate <= EndDate.Value)
-                .Select(detail => new SetoffProductDetailItem
+                .Select(detail => new SetoffItemDetailItem
                 {
                     SourceDetailType = detail.SourceDetailType,
                     SourceDetailId = detail.SourceDetailId,
-                    ProductId = detail.ProductId,
-                    Product = Products.FirstOrDefault(p => p.Id == detail.ProductId),
+                    ItemId = detail.ItemId,
+                    Item = Items.FirstOrDefault(p => p.Id == detail.ItemId),
                     CurrentSetoffAmount = 0, // 預設為0
                     CurrentAllowanceAmount = 0, // 預設為0
                     Remarks = null,
@@ -336,7 +336,7 @@ else
         else
         {
             // 編輯模式但沒有任何已儲存的品項明細：顯示空列表
-            SetoffItems = new List<SetoffProductDetailItem>();
+            SetoffItems = new List<SetoffItemDetailItem>();
         }
     }
     
@@ -351,7 +351,7 @@ else
         {
             try
             {
-                var sourceDetail = await SetoffProductDetailService.GetSourceDetailInfoAsync(
+                var sourceDetail = await SetoffItemDetailService.GetSourceDetailInfoAsync(
                     item.SourceDetailType, 
                     item.SourceDetailId);
                 
@@ -452,8 +452,8 @@ else
             
             // 載入未結清明細
             var unsettledDetails = SetoffType == SetoffType.AccountsReceivable
-                ? await SetoffProductDetailService.GetUnsettledReceivableDetailsAsync(RelatedPartyId.Value)
-                : await SetoffProductDetailService.GetUnsettledPayableDetailsAsync(RelatedPartyId.Value);
+                ? await SetoffItemDetailService.GetUnsettledReceivableDetailsAsync(RelatedPartyId.Value)
+                : await SetoffItemDetailService.GetUnsettledPayableDetailsAsync(RelatedPartyId.Value);
             
             // 套用日期篩選
             var filteredDetails = unsettledDetails
@@ -552,21 +552,21 @@ else
                 Width = "150px",
                 CustomTemplate = item =>
                 {
-                    var setoffItem = (SetoffProductDetailItem)item;
+                    var setoffItem = (SetoffItemDetailItem)item;
                     return @<div class="text-start">@setoffItem.UnsettledDetail?.SourceDocumentNumber</div>;
                 }
             },
             new()
             {
-                Title = L["Column.ProductCodeName"],
+                Title = L["Column.ItemCodeName"],
                 Tooltip = "顯示品項的編號與名稱",
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "200px",
                 CustomTemplate = item =>
                 {
-                    var setoffItem = (SetoffProductDetailItem)item;
-                    return @<div>@setoffItem.Product?.Code @setoffItem.Product?.Name</div>;
+                    var setoffItem = (SetoffItemDetailItem)item;
+                    return @<div>@setoffItem.Item?.Code @setoffItem.Item?.Name</div>;
                 }
             },
             new()
@@ -578,7 +578,7 @@ else
                 Width = "150px",
                 CustomTemplate = item =>
                 {
-                    var setoffItem = (SetoffProductDetailItem)item;
+                    var setoffItem = (SetoffItemDetailItem)item;
                     var detail = setoffItem.UnsettledDetail;
                     var cssClass = detail?.IsReturn == true ? "text-danger" : "text-success";
                     var amount = detail?.TotalAmount ?? 0;
@@ -596,7 +596,7 @@ else
                 Width = "150px",
                 CustomTemplate = item =>
                 {
-                    var setoffItem = (SetoffProductDetailItem)item;
+                    var setoffItem = (SetoffItemDetailItem)item;
                     var detail = setoffItem.UnsettledDetail;
                     var baseRemainingAmount = detail?.RemainingAmount ?? 0;
                     
@@ -637,7 +637,7 @@ else
                 Width = ShowAllowance ? "150px" : "200px",
                 CustomTemplate = item =>
                 {
-                    var setoffItem = (SetoffProductDetailItem)item;
+                    var setoffItem = (SetoffItemDetailItem)item;
                     var isReturn = setoffItem.UnsettledDetail?.IsReturn == true;
                     // 使用千分位格式化顯示（退貨顯示負數）
                     var amount = setoffItem.CurrentSetoffAmount;
@@ -666,7 +666,7 @@ else
                 Width = "150px",
                 CustomTemplate = item =>
                 {
-                    var setoffItem = (SetoffProductDetailItem)item;
+                    var setoffItem = (SetoffItemDetailItem)item;
                     var isReturn = setoffItem.UnsettledDetail?.IsReturn == true;
                     // 使用千分位格式化顯示（退貨顯示負數）
                     var amount = setoffItem.CurrentAllowanceAmount;
@@ -693,7 +693,7 @@ else
             Width = "150px",
             CustomTemplate = item =>
             {
-                var setoffItem = (SetoffProductDetailItem)item;
+                var setoffItem = (SetoffItemDetailItem)item;
                 var subtotal = setoffItem.CurrentSetoffAmount + setoffItem.CurrentAllowanceAmount;
                 // 如果是退貨單據，小計需要顯示為負數
                 var isReturn = setoffItem.UnsettledDetail?.IsReturn == true;
@@ -709,14 +709,14 @@ else
         {
             Title = L["Label.Remarks"],
             Tooltip = "備註說明",
-            PropertyName = nameof(SetoffProductDetailItem.Remarks),
+            PropertyName = nameof(SetoffItemDetailItem.Remarks),
             ColumnType = InteractiveColumnType.Input,
             Width = "200px",
             IsRequired = false,
             OnInputChanged = EventCallback.Factory.Create<(object, string?)>(this, async args =>
             {
                 var (itemObj, value) = args;
-                var item = (SetoffProductDetailItem)itemObj;
+                var item = (SetoffItemDetailItem)itemObj;
                 item.Remarks = value;
                 await NotifyDetailsChanged();
             })
@@ -727,7 +727,7 @@ else
 
 
     // ===== 事件處理方法 =====
-    private async Task OnSetoffAmountInput(SetoffProductDetailItem item, string? value)
+    private async Task OnSetoffAmountInput(SetoffItemDetailItem item, string? value)
     {
         var amount = InputEventHelper.HandlePriceInput(value);
         // 將輸入的金額轉為絕對值儲存（無論用戶輸入正數或負數）
@@ -738,7 +738,7 @@ else
     /// <summary>
     /// 雙擊本次沖款輸入框時，自動填入未沖款餘額
     /// </summary>
-    private async Task OnSetoffAmountDoubleClick(SetoffProductDetailItem item)
+    private async Task OnSetoffAmountDoubleClick(SetoffItemDetailItem item)
     {
         // 如果是唯讀模式，不執行任何操作
         if (IsReadOnly) return;
@@ -785,7 +785,7 @@ else
         }
     }
 
-    private async Task OnAllowanceAmountInput(SetoffProductDetailItem item, string? value)
+    private async Task OnAllowanceAmountInput(SetoffItemDetailItem item, string? value)
     {
         var amount = InputEventHelper.HandlePriceInput(value);
         // 將輸入的金額轉為絕對值儲存（無論用戶輸入正數或負數）
@@ -796,7 +796,7 @@ else
     /// <summary>
     /// 雙擊本次折讓輸入框時，自動填入未沖款餘額
     /// </summary>
-    private async Task OnAllowanceAmountDoubleClick(SetoffProductDetailItem item)
+    private async Task OnAllowanceAmountDoubleClick(SetoffItemDetailItem item)
     {
         // 如果是唯讀模式，不執行任何操作
         if (IsReadOnly) return;
@@ -953,11 +953,11 @@ else
                 item.CurrentAllowanceAmount > 0 || 
                 !string.IsNullOrWhiteSpace(item.Remarks) || // 包含有備註的項目
                 item.ExistingDetail != null) // 編輯模式下包含所有已存在的明細
-            .Select(item => new SetoffProductDetail
+            .Select(item => new SetoffItemDetail
             {
                 Id = item.ExistingDetail?.Id ?? 0,
                 SetoffDocumentId = SetoffDocumentId ?? 0,
-                ProductId = item.ProductId,
+                ItemId = item.ItemId,
                 SourceDetailType = item.SourceDetailType,
                 SourceDetailId = item.SourceDetailId,
                 CurrentSetoffAmount = item.CurrentSetoffAmount,
@@ -1007,7 +1007,7 @@ else
     /// <summary>
     /// 處理移除明細項目
     /// </summary>
-    private async Task HandleRemoveItem(SetoffProductDetailItem item)
+    private async Task HandleRemoveItem(SetoffItemDetailItem item)
     {
         // 如果是編輯模式中的已存在明細，將金額清零而不移除項目（保留在列表中以便恢復）
         if (item.ExistingDetail != null)
@@ -1083,9 +1083,9 @@ else
             var purchaseReceivingCode = purchaseReceiving.Code;
             
             // 確保已載入品項資料
-            if (!Products.Any())
+            if (!Items.Any())
             {
-                await LoadProductsAsync();
+                await LoadItemsAsync();
             }
             
             // 載入該廠商的所有未結清明細
@@ -1100,12 +1100,12 @@ else
             
             // 轉換為 SetoffItems，預設本次沖款為未沖款餘額（全額沖款）
             SetoffItems = matchingDetails
-                .Select(detail => new SetoffProductDetailItem
+                .Select(detail => new SetoffItemDetailItem
                 {
                     SourceDetailType = detail.SourceDetailType,
                     SourceDetailId = detail.SourceDetailId,
-                    ProductId = detail.ProductId,
-                    Product = Products.FirstOrDefault(p => p.Id == detail.ProductId),
+                    ItemId = detail.ItemId,
+                    Item = Items.FirstOrDefault(p => p.Id == detail.ItemId),
                     CurrentSetoffAmount = detail.RemainingAmount, // 預設全額沖款
                     CurrentAllowanceAmount = 0,
                     Remarks = null,
@@ -1164,9 +1164,9 @@ else
             var purchaseReturnCode = purchaseReturn.Code;
             
             // 確保已載入品項資料
-            if (!Products.Any())
+            if (!Items.Any())
             {
-                await LoadProductsAsync();
+                await LoadItemsAsync();
             }
             
             // 載入該廠商的所有未結清明細
@@ -1181,12 +1181,12 @@ else
             
             // 轉換為 SetoffItems，預設本次沖款為未沖款餘額（全額沖款）
             SetoffItems = matchingDetails
-                .Select(detail => new SetoffProductDetailItem
+                .Select(detail => new SetoffItemDetailItem
                 {
                     SourceDetailType = detail.SourceDetailType,
                     SourceDetailId = detail.SourceDetailId,
-                    ProductId = detail.ProductId,
-                    Product = Products.FirstOrDefault(p => p.Id == detail.ProductId),
+                    ItemId = detail.ItemId,
+                    Item = Items.FirstOrDefault(p => p.Id == detail.ItemId),
                     CurrentSetoffAmount = detail.RemainingAmount,
                     CurrentAllowanceAmount = 0,
                     Remarks = null,
@@ -1241,9 +1241,9 @@ else
             var salesDeliveryCode = salesDelivery.Code;
             
             // 確保已載入品項資料
-            if (!Products.Any())
+            if (!Items.Any())
             {
-                await LoadProductsAsync();
+                await LoadItemsAsync();
             }
             
             // 載入該客戶的所有未結清明細
@@ -1258,12 +1258,12 @@ else
             
             // 轉換為 SetoffItems，預設本次沖款為未沖款餘額（全額沖款）
             SetoffItems = matchingDetails
-                .Select(detail => new SetoffProductDetailItem
+                .Select(detail => new SetoffItemDetailItem
                 {
                     SourceDetailType = detail.SourceDetailType,
                     SourceDetailId = detail.SourceDetailId,
-                    ProductId = detail.ProductId,
-                    Product = Products.FirstOrDefault(p => p.Id == detail.ProductId),
+                    ItemId = detail.ItemId,
+                    Item = Items.FirstOrDefault(p => p.Id == detail.ItemId),
                     CurrentSetoffAmount = detail.RemainingAmount,
                     CurrentAllowanceAmount = 0,
                     Remarks = null,
@@ -1318,9 +1318,9 @@ else
             var salesReturnCode = salesReturn.Code;
             
             // 確保已載入品項資料
-            if (!Products.Any())
+            if (!Items.Any())
             {
-                await LoadProductsAsync();
+                await LoadItemsAsync();
             }
             
             // 載入該客戶的所有未結清明細
@@ -1335,12 +1335,12 @@ else
             
             // 轉換為 SetoffItems，預設本次沖款為未沖款餘額（全額沖款）
             SetoffItems = matchingDetails
-                .Select(detail => new SetoffProductDetailItem
+                .Select(detail => new SetoffItemDetailItem
                 {
                     SourceDetailType = detail.SourceDetailType,
                     SourceDetailId = detail.SourceDetailId,
-                    ProductId = detail.ProductId,
-                    Product = Products.FirstOrDefault(p => p.Id == detail.ProductId),
+                    ItemId = detail.ItemId,
+                    Item = Items.FirstOrDefault(p => p.Id == detail.ItemId),
                     CurrentSetoffAmount = detail.RemainingAmount,
                     CurrentAllowanceAmount = 0,
                     Remarks = null,
@@ -1379,16 +1379,16 @@ else
     }
 
     // ===== 內部資料類別 =====
-    private class SetoffProductDetailItem
+    private class SetoffItemDetailItem
     {
         public SetoffDetailType SourceDetailType { get; set; }
         public int SourceDetailId { get; set; }
-        public int ProductId { get; set; }
-        public Product? Product { get; set; }
+        public int ItemId { get; set; }
+        public Item? Item { get; set; }
         public decimal CurrentSetoffAmount { get; set; }
         public decimal CurrentAllowanceAmount { get; set; }
         public string? Remarks { get; set; }
-        public SetoffProductDetail? ExistingDetail { get; set; }
+        public SetoffItemDetail? ExistingDetail { get; set; }
         public UnsettledDetailDto? UnsettledDetail { get; set; } // 保留未結清明細資訊
         public bool NeedsSourceDetailLoad { get; set; } // 標記是否需要額外載入來源明細（針對已結清的明細）
         

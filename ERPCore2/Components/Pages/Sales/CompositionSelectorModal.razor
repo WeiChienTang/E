@@ -1,4 +1,4 @@
-@*
+﻿@*
     品項配方選擇對話框
     用於選擇要使用的 BOM 配方或自定義模式
     統一由報價單、銷貨訂單等模組共用
@@ -106,8 +106,8 @@
     // ===== 參數定義 =====
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-    [Parameter] public string ProductName { get; set; } = string.Empty;
-    [Parameter] public List<ProductComposition> Compositions { get; set; } = new();
+    [Parameter] public string ItemName { get; set; } = string.Empty;
+    [Parameter] public List<ItemComposition> Compositions { get; set; } = new();
     [Parameter] public int? CurrentCustomerId { get; set; }
     [Parameter] public EventCallback<(int? compositionId, bool isCustomMode)> OnSelected { get; set; }
 
@@ -121,7 +121,7 @@
     private string searchTerm = string.Empty;
 
     // ===== 計算屬性 =====
-    private List<ProductComposition> FilteredCompositions
+    private List<ItemComposition> FilteredCompositions
     {
         get
         {
@@ -150,9 +150,9 @@
     // ===== 方法 =====
     private string GetModalTitle()
     {
-        return string.IsNullOrEmpty(ProductName)
+        return string.IsNullOrEmpty(ItemName)
             ? L["Composition.SelectBOM"].ToString()
-            : string.Format(L["Composition.SelectBOMWithProduct"].ToString(), ProductName);
+            : string.Format(L["Composition.SelectBOMWithItem"].ToString(), ItemName);
     }
 
     private async Task SelectComposition(int compositionId)
@@ -179,7 +179,7 @@
         await IsVisibleChanged.InvokeAsync(false);
     }
 
-    private string GetCompositionDisplayInfo(ProductComposition composition)
+    private string GetCompositionDisplayInfo(ItemComposition composition)
     {
         var info = new List<string>();
 

@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
@@ -29,7 +29,7 @@ namespace ERPCore2.Services
         {
             return context.ProductionScheduleAllocations
                 .Include(psa => psa.ProductionScheduleItem)
-                    .ThenInclude(psi => psi.Product)
+                    .ThenInclude(psi => psi.Item)
                 .Include(psa => psa.ProductionScheduleItem)
                     .ThenInclude(psi => psi.ProductionSchedule)
                 .Include(psa => psa.SalesOrderDetail)
@@ -45,7 +45,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleAllocations
                     .Include(psa => psa.ProductionScheduleItem)
-                        .ThenInclude(psi => psi.Product)
+                        .ThenInclude(psi => psi.Item)
                     .Include(psa => psa.ProductionScheduleItem)
                         .ThenInclude(psi => psi.ProductionSchedule)
                     .Include(psa => psa.SalesOrderDetail)
@@ -126,12 +126,12 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleAllocations
                     .Include(psa => psa.ProductionScheduleItem)
-                        .ThenInclude(psi => psi.Product)
+                        .ThenInclude(psi => psi.Item)
                     .Include(psa => psa.SalesOrderDetail)
                         .ThenInclude(sod => sod.SalesOrder)
-                    .Where(psa => psa.ProductionScheduleItem!.Product!.Name!.Contains(searchTerm) ||
-                                 (psa.ProductionScheduleItem.Product.Code != null && 
-                                  psa.ProductionScheduleItem.Product.Code.Contains(searchTerm)) ||
+                    .Where(psa => psa.ProductionScheduleItem!.Item!.Name!.Contains(searchTerm) ||
+                                 (psa.ProductionScheduleItem.Item.Code != null && 
+                                  psa.ProductionScheduleItem.Item.Code.Contains(searchTerm)) ||
                                  (psa.SalesOrderDetail.SalesOrder.Code != null && 
                                   psa.SalesOrderDetail.SalesOrder.Code.Contains(searchTerm)))
                     .OrderByDescending(psa => psa.CreatedAt)
@@ -183,7 +183,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleAllocations
                     .Include(psa => psa.ProductionScheduleItem)
-                        .ThenInclude(psi => psi.Product)
+                        .ThenInclude(psi => psi.Item)
                     .Include(psa => psa.ProductionScheduleItem)
                         .ThenInclude(psi => psi.ProductionSchedule)
                     .Where(psa => psa.SalesOrderDetailId == salesOrderDetailId)

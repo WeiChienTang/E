@@ -1,14 +1,14 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 
 namespace ERPCore2.Services
 {
     /// <summary>
     /// 品項分類服務介面 - 繼承通用管理服務
     /// </summary>
-    public interface IProductCategoryService : IGenericManagementService<ProductCategory>
+    public interface IItemCategoryService : IGenericManagementService<ItemCategory>
     {
-        Task<(List<ProductCategory> Items, int TotalCount)> GetPagedWithFiltersAsync(
-            Func<IQueryable<ProductCategory>, IQueryable<ProductCategory>>? filterFunc,
+        Task<(List<ItemCategory> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<ItemCategory>, IQueryable<ItemCategory>>? filterFunc,
             int pageNumber,
             int pageSize);
 
@@ -22,17 +22,17 @@ namespace ERPCore2.Services
         /// <summary>
         /// 檢查品項分類編號是否存在
         /// </summary>
-        Task<bool> IsProductCategoryCodeExistsAsync(string categoryCode, int? excludeId = null);
+        Task<bool> IsItemCategoryCodeExistsAsync(string categoryCode, int? excludeId = null);
         
         /// <summary>
         /// 根據分類名稱取得品項分類
         /// </summary>
-        Task<ProductCategory?> GetByCategoryNameAsync(string categoryName);
+        Task<ItemCategory?> GetByCategoryNameAsync(string categoryName);
         
         /// <summary>
         /// 根據分類編號取得品項分類
         /// </summary>
-        Task<ProductCategory?> GetByCategoryCodeAsync(string categoryCode);
+        Task<ItemCategory?> GetByCategoryCodeAsync(string categoryCode);
         
         /// <summary>
         /// 檢查是否可以刪除分類（檢查是否有品項使用此分類）

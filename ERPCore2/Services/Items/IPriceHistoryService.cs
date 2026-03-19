@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 
 namespace ERPCore2.Services
@@ -11,12 +11,12 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據品項ID取得價格歷史
         /// </summary>
-        Task<List<PriceHistory>> GetByProductIdAsync(int productId);
+        Task<List<PriceHistory>> GetByItemIdAsync(int productId);
 
         /// <summary>
         /// 根據品項ID和價格類型取得價格歷史
         /// </summary>
-        Task<List<PriceHistory>> GetByProductIdAndPriceTypeAsync(int productId, PriceType priceType);
+        Task<List<PriceHistory>> GetByItemIdAndPriceTypeAsync(int productId, PriceType priceType);
 
         /// <summary>
         /// 根據日期範圍取得價格歷史
@@ -31,7 +31,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得品項的最新價格歷史記錄
         /// </summary>
-        Task<PriceHistory?> GetLatestByProductIdAndPriceTypeAsync(int productId, PriceType priceType);
+        Task<PriceHistory?> GetLatestByItemIdAndPriceTypeAsync(int productId, PriceType priceType);
 
         /// <summary>
         /// 記錄價格變更

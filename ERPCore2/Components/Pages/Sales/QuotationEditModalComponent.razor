@@ -6,7 +6,7 @@
 @inject ICustomerService CustomerService
 @inject ICompanyService CompanyService
 @inject IEmployeeService EmployeeService
-@inject IProductService ProductService
+@inject IItemService ItemService
 @inject IUnitService UnitService
 @inject INotificationService NotificationService
 @inject IReportPrintConfigurationService ReportPrintConfigurationService
@@ -135,7 +135,7 @@
     private List<Customer> availableCustomers = new();
     private List<Company> availableCompanies = new();
     private List<Employee> availableEmployees = new();
-    private List<Product> availableProducts = new();
+    private List<Item> availableItems = new();
     private List<Unit> availableUnits = new();
     
     // 報價單明細
@@ -352,7 +352,7 @@
             }).ToList();
             
             // 載入品項列表（用於明細）
-            availableProducts = await ProductService.GetAllAsync();
+            availableItems = await ItemService.GetAllAsync();
             
             // 載入單位列表（用於明細）
             availableUnits = await UnitService.GetAllAsync();
@@ -373,7 +373,7 @@
             availableCustomers = new List<Customer>();
             availableCompanies = new List<Company>();
             availableEmployees = new List<Employee>();
-            availableProducts = new List<Product>();
+            availableItems = new List<Item>();
             availableUnits = new List<Unit>();
             customers = new List<Customer>();
             employees = new List<Employee>();
@@ -841,7 +841,7 @@
             }
 
             // 處理新增和更新的明細
-            foreach (var detail in quotationDetails.Where(d => d.ProductId > 0))
+            foreach (var detail in quotationDetails.Where(d => d.ItemId > 0))
             {
                 if (detail.Id == 0)
                 {
@@ -992,7 +992,7 @@
     {
         <DetailSectionWrapper IsEntityReady="@(editModalComponent?.Entity != null)"
                               EntityLoadingVariant="DetailSectionWrapper.LoadingVariant.Silent"
-                              IsDataAvailable="@(availableProducts != null && availableProducts.Any())"
+                              IsDataAvailable="@(availableItems != null && availableItems.Any())"
                               DataUnavailableMessage="無可用的品項資料，請聯繫系統管理員"
                               IsPreconditionMet="@(editModalComponent?.Entity?.CustomerId > 0)"
                               PreconditionMessage="請先選擇客戶後再進行報價明細管理">
@@ -1003,7 +1003,7 @@
                                     IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
                                     OnDetailsChanged="@HandleQuotationDetailsChanged"
                                     OnDeletedDetailsChanged="@HandleDeletedDetailsChanged"
-                                    Products="@availableProducts"
+                                    ItemEntities="@availableItems"
                                     Units="@availableUnits"
                                     SelectedCustomerId="@(editModalComponent?.Entity?.CustomerId > 0 ? editModalComponent.Entity.CustomerId : (int?)null)"
                                     SelectedSupplierId="@(editModalComponent?.Entity?.CustomerId > 0 ? editModalComponent.Entity.CustomerId : (int?)null)"

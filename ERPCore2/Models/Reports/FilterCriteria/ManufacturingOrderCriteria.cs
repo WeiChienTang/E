@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Models.Reports.FilterAttributes;
 using ERPCore2.Services;
@@ -24,18 +24,18 @@ public class ManufacturingOrderCriteria : IReportFilterCriteria
     /// <summary>
     /// 指定製令單 ID 清單（從編輯畫面或右鍵列印單筆時使用）
     /// </summary>
-    public List<int> ItemIds { get; set; } = new();
+    public List<int> ManufacturingOrderIds { get; set; } = new();
 
     /// <summary>
     /// 品項篩選
     /// </summary>
-    [FilterFK(typeof(IProductService),
+    [FilterFK(typeof(IItemService),
         Group = FilterGroup.Basic,
         Label = "品項",
         Placeholder = "搜尋品項...",
         EmptyMessage = "未選擇品項（查詢全部）",
         Order = 1)]
-    public List<int> ProductIds { get; set; } = new();
+    public List<int> ItemIds { get; set; } = new();
 
     /// <summary>
     /// 負責人員篩選
@@ -64,7 +64,7 @@ public class ManufacturingOrderCriteria : IReportFilterCriteria
 
     public bool Validate(out string? errorMessage)
     {
-        if (ItemIds.Any())
+        if (ManufacturingOrderIds.Any())
         {
             errorMessage = null;
             return true;
@@ -76,7 +76,7 @@ public class ManufacturingOrderCriteria : IReportFilterCriteria
             return false;
         }
 
-        if (!StartDate.HasValue && !EndDate.HasValue && !ProductIds.Any())
+        if (!StartDate.HasValue && !EndDate.HasValue && !ItemIds.Any())
         {
             errorMessage = "請指定查詢日期範圍或選擇品項";
             return false;
@@ -92,7 +92,7 @@ public class ManufacturingOrderCriteria : IReportFilterCriteria
         {
             ["startDate"] = StartDate,
             ["endDate"] = EndDate,
-            ["productIds"] = ProductIds.Any() ? ProductIds : null,
+            ["productIds"] = ItemIds.Any() ? ItemIds : null,
             ["responsibleEmployeeIds"] = ResponsibleEmployeeIds.Any() ? ResponsibleEmployeeIds : null,
             ["statusFilters"] = StatusFilters.Any() ? StatusFilters : null,
             ["includeClosed"] = IncludeClosed
@@ -110,8 +110,8 @@ public class ManufacturingOrderCriteria : IReportFilterCriteria
         else if (EndDate.HasValue)
             parts.Add($"截至 {EndDate:yyyy/MM/dd}");
 
-        if (ProductIds.Any())
-            parts.Add($"品項：{ProductIds.Count} 個");
+        if (ItemIds.Any())
+            parts.Add($"品項：{ItemIds.Count} 個");
 
         if (ResponsibleEmployeeIds.Any())
             parts.Add($"負責人員：{ResponsibleEmployeeIds.Count} 位");

@@ -1,4 +1,4 @@
-namespace ERPCore2.Models.Barcode
+﻿namespace ERPCore2.Models.Barcode
 {
     /// <summary>
     /// 條碼列印設定模型
@@ -18,12 +18,12 @@ namespace ERPCore2.Models.Barcode
         /// <summary>
         /// 是否顯示品項名稱
         /// </summary>
-        public bool ShowProductName { get; set; } = true;
+        public bool ShowItemName { get; set; } = true;
         
         /// <summary>
         /// 是否顯示品項編號
         /// </summary>
-        public bool ShowProductCode { get; set; } = true;
+        public bool ShowItemCode { get; set; } = true;
         
         /// <summary>
         /// 條碼寬度（像素）

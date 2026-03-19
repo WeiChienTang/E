@@ -11,7 +11,7 @@
 @inject INotificationService NotificationService
 @inject ISupplierService SupplierService
 @inject IEmployeeService EmployeeService
-@inject IProductService ProductService
+@inject IItemService ItemService
 @inject ISystemParameterService SystemParameterService
 @inject IPurchaseReturnService PurchaseReturnService
 @inject IPurchaseReturnDetailService PurchaseReturnDetailService
@@ -92,11 +92,11 @@
 @* 品項編輯 Modal *@
 @if (productModalManager != null)
 {
-    <ProductEditModalComponent @ref="productEditModal"
+    <ItemEditModalComponent @ref="productEditModal"
                               IsVisible="@productModalManager.IsModalVisible"
                               IsVisibleChanged="@productModalManager.HandleModalVisibilityChangedAsync"
-                              ProductId="@productModalManager.SelectedEntityId"
-                              OnProductSaved="@productModalManager.OnSavedAsync"
+                              ItemId="@productModalManager.SelectedEntityId"
+                              OnItemSaved="@productModalManager.OnSavedAsync"
                               OnCancel="@productModalManager.HandleModalCancelAsync" />
 }
 
@@ -161,7 +161,7 @@
     private List<WarehouseLocation> warehouseLocations = new();
     private List<Supplier> suppliers = new();
     private List<Employee> employees = new();
-    private List<Product> products = new();
+    private List<Item> products = new();
     
     // ===== 下拉選單選項 =====
     private List<SelectOption> taxCalculationMethodOptions = new();
@@ -174,7 +174,7 @@
     private int _detailsDataVersion = 0;
     
     // ===== 篩選狀態 =====
-    private int? filterProductId = null;
+    private int? filterItemId = null;
     private int? filterPurchaseOrderId = null;
     
     // ===== 快取狀態 - 避免重複查詢 =====
@@ -193,9 +193,9 @@
     
     // ===== Modal 管理器 =====
     private SupplierEditModalComponent? supplierEditModal;
-    private ProductEditModalComponent? productEditModal;
+    private ItemEditModalComponent? productEditModal;
     private RelatedEntityModalManager<Supplier> supplierModalManager = default!;
-    private RelatedEntityModalManager<Product> productModalManager = default!;
+    private RelatedEntityModalManager<Item> productModalManager = default!;
     private ModalManagerCollection modalManagers = default!;
     
     
@@ -241,10 +241,10 @@
                     LoadAdditionalDataAsync,
                     InitializeFormFieldsAsync)
                 .AddManager<Supplier>(nameof(PurchaseReceiving.SupplierId), "廠商")
-                .AddManager<Product>("FilterProductId", "品項")
+                .AddManager<Item>("FilterItemId", "品項")
                 .Build();
             supplierModalManager = modalManagers.Get<Supplier>(nameof(PurchaseReceiving.SupplierId));
-            productModalManager = modalManagers.Get<Product>("FilterProductId");
+            productModalManager = modalManagers.Get<Item>("FilterItemId");
 
             // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
         }
@@ -522,7 +522,7 @@
                 if (newReceiving.SupplierId > 0)
                 {
                     await UpdatePurchaseOrderOptions(newReceiving.SupplierId);
-                    await UpdateFilterProductOptions(newReceiving.SupplierId);
+                    await UpdateFilterItemOptions(newReceiving.SupplierId);
                 }
                 
                 // 清空明細
@@ -552,7 +552,7 @@
                 if (purchaseReceiving.SupplierId > 0)
                 {
                     await UpdatePurchaseOrderOptions(purchaseReceiving.SupplierId);
-                    await UpdateFilterProductOptions(purchaseReceiving.SupplierId);
+                    await UpdateFilterItemOptions(purchaseReceiving.SupplierId);
                 }
                 
                 // 採購單 FK 已移至篩選條件（FilterPurchaseOrderId），不再從實體載入
@@ -585,7 +585,7 @@
                 LoadWarehouseLocationsAsync(),
                 LoadSuppliersAsync(),
                 LoadEmployeesAsync(),
-                LoadProductsAsync()
+                LoadItemsAsync()
             };
             
             await Task.WhenAll(tasks);
@@ -605,7 +605,7 @@
                 .AddField(nameof(PurchaseReceiving.SupplierId), "CompanyName", suppliers)
                 .AddField("FilterPurchaseOrderId", "Code", new List<PurchaseOrder>())  // 初始為空，等廠商選擇後才載入
                 .AddFieldWithMultipleSearchProperties(
-                    "FilterProductId",  // 虛擬欄位，不是實體屬性
+                    "FilterItemId",  // 虛擬欄位，不是實體屬性
                     "Name",  // 主要顯示欄位
                     products,
                     new[] { "Code", "Name" })  // 可搜尋的欄位
@@ -692,17 +692,17 @@
         }
     }
 
-    private async Task LoadProductsAsync()
+    private async Task LoadItemsAsync()
     {
         try
         {
-            var allProducts = await ProductService.GetActiveProductsAsync();
-            products = allProducts.ToList();
+            var allItems = await ItemService.GetActiveItemsAsync();
+            products = allItems.ToList();
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入品項資料時發生錯誤：{ex.Message}");
-            products = new List<Product>();
+            products = new List<Item>();
         }
     }
 
@@ -869,10 +869,10 @@
                 },
                 new()
                 {
-                    PropertyName = "FilterProductId", // 篩選用的虛擬欄位，不儲存至資料庫
-                    Label = L["Entity.Product"],
+                    PropertyName = "FilterItemId", // 篩選用的虛擬欄位，不儲存至資料庫
+                    Label = L["Entity.Item"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Product"]],
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Item"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇特定品項進行篩選，或留空顯示所有品項（僅外購類型）。此欄位不會儲存。",
@@ -979,7 +979,7 @@
                     pr => pr.Code,
                     pr => pr.SupplierId,
                     pr => pr.ReceiptDate)
-                .AddCustomFields(FormSectionNames.FilterConditions, "FilterPurchaseOrderId", "FilterProductId")  // 虛擬篩選欄位，不存DB
+                .AddCustomFields(FormSectionNames.FilterConditions, "FilterPurchaseOrderId", "FilterItemId")  // 虛擬篩選欄位，不存DB
                 .AddToSection(FormSectionNames.AmountInfo,
                     pr => pr.TaxCalculationMethod,
                     pr => pr.TotalAmount,
@@ -1019,7 +1019,7 @@
     /// 更新品項篩選的 AutoComplete 資料集合
     /// 進貨時顯示所有外購類型品項（不根據廠商篩選，因為可以向任何廠商採購任何外購品項）
     /// </summary>
-    private async Task UpdateFilterProductOptions(int? supplierId = null)
+    private async Task UpdateFilterItemOptions(int? supplierId = null)
     {
         try
         {
@@ -1028,16 +1028,16 @@
             
             // 進貨時始終顯示所有外購品項，不限制廠商
             // 原因：一個外購品項可能向多個廠商採購，不應該限制選擇
-            List<Product> filteredProducts = products;
+            List<Item> filteredItems = products;
             
             // 更新 AutoComplete 的資料集合
-            if (autoCompleteConfig.Collections.ContainsKey("FilterProductId"))
+            if (autoCompleteConfig.Collections.ContainsKey("FilterItemId"))
             {
-                autoCompleteConfig.Collections["FilterProductId"] = filteredProducts;
+                autoCompleteConfig.Collections["FilterItemId"] = filteredItems;
             }
             
             // 清空目前的品項篩選選擇
-            filterProductId = null;
+            filterItemId = null;
         }
         catch (Exception ex)
         {
@@ -1305,7 +1305,7 @@
         bool noSupplier = !(editModalComponent?.Entity?.SupplierId > 0);
         var purchaseOrderFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterPurchaseOrderId");
         if (purchaseOrderFilter != null) purchaseOrderFilter.IsReadOnly = noSupplier || hasUndeletableDetails;
-        var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+        var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterItemId");
         if (productFilter != null) productFilter.IsReadOnly = noSupplier || hasUndeletableDetails;
     }
 
@@ -1352,13 +1352,13 @@
                     await UpdatePurchaseOrderOptions(supplierId);
 
                     // 更新品項篩選的選項清單
-                    await UpdateFilterProductOptions(supplierId);
+                    await UpdateFilterItemOptions(supplierId);
 
                     // 廠商變更時更新篩選欄位停用狀態
                     bool noSupplier = !supplierId.HasValue;
                     var purchaseOrderFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterPurchaseOrderId");
                     if (purchaseOrderFilter != null) purchaseOrderFilter.IsReadOnly = noSupplier || hasUndeletableDetails;
-                    var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+                    var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterItemId");
                     if (productFilter != null) productFilter.IsReadOnly = noSupplier || hasUndeletableDetails;
 
                     needsRerender = true; // 廠商變更需要重新渲染
@@ -1382,20 +1382,20 @@
                 needsRerender = true;
             }
             // 當品項篩選變更時，更新篩選狀態並觸發重新渲染
-            else if (fieldChange.PropertyName == "FilterProductId")
+            else if (fieldChange.PropertyName == "FilterItemId")
             {
                 if (fieldChange.Value != null &&
                     int.TryParse(fieldChange.Value.ToString(), out int productId) &&
                     productId > 0)
                 {
-                    filterProductId = productId;
+                    filterItemId = productId;
                 }
                 else
                 {
-                    filterProductId = null;
+                    filterItemId = null;
                 }
 
-                needsRerender = true; // 需要重新渲染以讓 PurchaseReceivingTable 收到新的 FilterProductId
+                needsRerender = true; // 需要重新渲染以讓 PurchaseReceivingTable 收到新的 FilterItemId
             }
             
             //  只在真正需要時才呼叫一次 StateHasChanged
@@ -1467,7 +1467,7 @@
 
             // 過濾有效的明細（有選擇品項和倉庫的）
             var validDetails = purchaseReceivingDetails
-                .Where(detail => detail.ProductId > 0 && detail.WarehouseId > 0)
+                .Where(detail => detail.ItemId > 0 && detail.WarehouseId > 0)
                 .ToList();
 
             // 修正 Bug-63（進貨版）：儲存前先記錄 DB 中舊有明細的 PurchaseOrderDetailId，
@@ -1706,10 +1706,10 @@
             <PurchaseReceivingTable @ref="purchaseReceivingDetailManager"
                                     SelectedSupplierId="@editModalComponent!.Entity.SupplierId"
                                     SelectedPurchaseOrderId="@filterPurchaseOrderId"
-                                    FilterProductId="@filterProductId"
+                                    FilterItemId="@filterItemId"
                                     SelectedSupplierName="@GetSelectedSupplierName()"
                                     SelectedPurchaseOrderCode="@GetSelectedPurchaseOrderCode()"
-                                    FilterProductName="@GetFilterProductName()"
+                                    FilterItemName="@GetFilterItemName()"
                                     TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
                                     MainEntity="@editModalComponent.Entity"
                                     ExistingDetails="@purchaseReceivingDetails"
@@ -1750,8 +1750,8 @@
     private string? GetSelectedPurchaseOrderCode()
         => EntityDisplayHelper.GetDisplayValue(filterPurchaseOrderId, purchaseOrders, po => po.Code);
 
-    private string? GetFilterProductName()
-        => EntityDisplayHelper.GetDisplayValue(filterProductId, products, p => $"{p.Code} {p.Name}");
+    private string? GetFilterItemName()
+        => EntityDisplayHelper.GetDisplayValue(filterItemId, products, p => $"{p.Code} {p.Name}");
     
     // ===== ActionButton 產生方法 =====    /// <summary>
     /// 產生廠商操作按鈕 - 使用統一 Helper

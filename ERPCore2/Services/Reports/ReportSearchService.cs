@@ -1,4 +1,4 @@
-using ERPCore2.Data;
+﻿using ERPCore2.Data;
 using ERPCore2.Models.Reports;
 using ERPCore2.Services.Reports.Interfaces;
 
@@ -19,7 +19,7 @@ public class ReportSearchService : IReportSearchService
     {
         { ReportCategory.Customer, "客戶報表" },
         { ReportCategory.Supplier, "廠商報表" },
-        { ReportCategory.Product, "品項報表" },
+        { ReportCategory.Item, "品項報表" },
         { ReportCategory.Sales, "銷售報表" },
         { ReportCategory.Purchase, "採購報表" },
         { ReportCategory.Inventory, "庫存報表" },

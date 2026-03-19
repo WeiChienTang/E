@@ -1,4 +1,4 @@
-namespace ERPCore2.Models.Enums
+﻿namespace ERPCore2.Models.Enums
 {
     /// <summary>
     /// 客訴狀態
@@ -21,7 +21,7 @@ namespace ERPCore2.Models.Enums
     public enum ComplaintCategory
     {
         /// <summary>產品品質</summary>
-        ProductQuality = 1,
+        ItemQuality = 1,
         /// <summary>交期延誤</summary>
         DeliveryDelay = 2,
         /// <summary>服務態度</summary>

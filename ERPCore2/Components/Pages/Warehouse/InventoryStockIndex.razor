@@ -1,8 +1,8 @@
 ﻿@page "/inventoryStocks"
 @inject IInventoryStockService InventoryStockService
 @inject IInventoryStatusReportService InventoryStatusReportService
-@inject IProductService ProductService
-@inject IProductCategoryService ProductCategoryService
+@inject IItemService ItemService
+@inject IItemCategoryService ItemCategoryService
 @inject IWarehouseService WarehouseService
 @inject IWarehouseLocationService WarehouseLocationService
 @inject IProductionScheduleItemService ProductionScheduleItemService
@@ -24,7 +24,7 @@
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
                         EntityName="@L["Entity.InventoryStock"]"
-                        GetEntityDisplayName="@(stock => $"{GetProductName(stock.ProductId ?? 0)}")"
+                        GetEntityDisplayName="@(stock => $"{GetItemName(stock.ItemId ?? 0)}")"
                         RequiredPermission="@PermissionRegistry.InventoryStock.Read"
                         RequiredModule="Warehouse"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
@@ -86,8 +86,8 @@
     private List<TableColumnDefinition> columnDefinitions = new();
     
     // 相關資料
-    private List<Product> products = new();
-    private List<ProductCategory> productCategories = new();
+    private List<Item> products = new();
+    private List<ItemCategory> productCategories = new();
     private List<Warehouse> warehouses = new();
     private List<WarehouseLocation> warehouseLocations = new();
     
@@ -138,8 +138,8 @@
         try
         {
             // 載入相關資料
-            products = await ProductService.GetAllAsync();
-            productCategories = await ProductCategoryService.GetAllAsync();
+            products = await ItemService.GetAllAsync();
+            productCategories = await ItemCategoryService.GetAllAsync();
             warehouses = await WarehouseService.GetAllAsync();
             warehouseLocations = await WarehouseLocationService.GetAllAsync();
         }
@@ -148,8 +148,8 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadRelatedDataAsync), GetType(), additionalData: "載入相關資料失敗");
             await NotificationService.ShowErrorAsync("載入相關資料失敗");
             // 設定安全的預設值
-            products = new List<Product>();
-            productCategories = new List<ProductCategory>();
+            products = new List<Item>();
+            productCategories = new List<ItemCategory>();
             warehouses = new List<Warehouse>();
             warehouseLocations = new List<WarehouseLocation>();
         }
@@ -359,7 +359,7 @@
 
     // ===== 輔助方法 =====
 
-    private string GetProductName(int productId)
+    private string GetItemName(int productId)
     {
         try
         {
@@ -369,7 +369,7 @@
         catch (Exception ex)
         {
             // 記錄錯誤但不顯示通知，因為這是輔助方法
-            _ = Task.Run(async () => await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetProductName), GetType(), additionalData: $"取得品項名稱失敗: ProductId={productId}"));
+            _ = Task.Run(async () => await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetItemName), GetType(), additionalData: $"取得品項名稱失敗: ItemId={productId}"));
             return $"品項-{productId}";
         }
     }

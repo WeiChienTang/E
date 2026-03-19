@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 
 namespace ERPCore2.Services
@@ -16,7 +16,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據品項ID取得銷貨訂單明細
         /// </summary>
-        Task<List<SalesOrderDetail>> GetByProductIdAsync(int productId);
+        Task<List<SalesOrderDetail>> GetByItemIdAsync(int productId);
 
         /// <summary>
         /// 計算明細小計
@@ -36,7 +36,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 檢查品項在訂單中是否已存在
         /// </summary>
-        Task<bool> IsProductExistsInOrderAsync(int salesOrderId, int productId, int? excludeDetailId = null);
+        Task<bool> IsItemExistsInOrderAsync(int salesOrderId, int productId, int? excludeDetailId = null);
 
         /// <summary>
         /// 取得銷貨訂單明細包含關聯資料

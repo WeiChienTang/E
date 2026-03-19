@@ -1,4 +1,4 @@
-namespace ERPCore2.Models.Documents
+﻿namespace ERPCore2.Models.Documents
 {
     /// <summary>
     /// 相關單據查詢請求
@@ -18,6 +18,6 @@ namespace ERPCore2.Models.Documents
         /// <summary>
         /// 品項名稱（用於顯示標題）
         /// </summary>
-        public string ProductName { get; set; } = string.Empty;
+        public string ItemName { get; set; } = string.Empty;
     }
 }

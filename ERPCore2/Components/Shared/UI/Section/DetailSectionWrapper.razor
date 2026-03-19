@@ -1,4 +1,4 @@
-@* DetailSectionWrapper.razor - 三態判斷包裝組件 *@
+﻿@* DetailSectionWrapper.razor - 三態判斷包裝組件 *@
 @* 統一處理 Detail 區塊的：Entity 載入中 → 資料載入中 → 資料不足警告 → 前置條件 → 正常顯示 的五態邏輯 *@
 @inject IStringLocalizer<SharedResource> L
 
@@ -59,7 +59,7 @@ else
     /// <summary>非同步明細資料已準備好（isDetailDataReady flag）。預設 true 表示不需要此狀態。</summary>
     [Parameter] public bool IsDetailDataReady { get; set; } = true;
 
-    /// <summary>參考資料可用（availableProducts.Any() 等）。預設 true 表示不需要此狀態。</summary>
+    /// <summary>參考資料可用（availableItems.Any() 等）。預設 true 表示不需要此狀態。</summary>
     [Parameter] public bool IsDataAvailable { get; set; } = true;
 
     /// <summary>前置條件滿足（SupplierId > 0 等）。預設 true 表示不需要此狀態。</summary>

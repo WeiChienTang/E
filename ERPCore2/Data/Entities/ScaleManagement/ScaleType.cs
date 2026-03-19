@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,10 +27,10 @@ namespace ERPCore2.Data.Entities
 
         /// <summary>關聯的品項（用於入庫追蹤，可選）</summary>
         [Display(Name = "關聯品項")]
-        [ForeignKey(nameof(Product))]
-        public int? ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int? ItemId { get; set; }
 
-        public Product? Product { get; set; }
+        public Item? Item { get; set; }
 
     }
 }

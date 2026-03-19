@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
@@ -18,7 +18,7 @@ namespace ERPCore2.Services.Reports
     {
         private readonly IPurchaseReceivingService _purchaseReceivingService;
         private readonly ISupplierService _supplierService;
-        private readonly IProductService _productService;
+        private readonly IItemService _productService;
         private readonly ICompanyService _companyService;
         private readonly IWarehouseService _warehouseService;
         private readonly IFormattedPrintService _formattedPrintService;
@@ -27,7 +27,7 @@ namespace ERPCore2.Services.Reports
         public PurchaseReceivingReportService(
             IPurchaseReceivingService purchaseReceivingService,
             ISupplierService supplierService,
-            IProductService productService,
+            IItemService productService,
             ICompanyService companyService,
             IWarehouseService warehouseService,
             IFormattedPrintService formattedPrintService,
@@ -66,8 +66,8 @@ namespace ERPCore2.Services.Reports
 
             Company? company = await _companyService.GetPrimaryCompanyAsync();
 
-            var allProducts = await _productService.GetAllAsync();
-            var productDict = allProducts.ToDictionary(p => p.Id, p => p);
+            var allItems = await _productService.GetAllAsync();
+            var productDict = allItems.ToDictionary(p => p.Id, p => p);
 
             var allWarehouses = await _warehouseService.GetAllAsync();
             var warehouseDict = allWarehouses.ToDictionary(w => w.Id, w => w);
@@ -179,7 +179,7 @@ namespace ERPCore2.Services.Reports
             List<PurchaseReceivingDetail> receivingDetails,
             Supplier? supplier,
             Company? company,
-            Dictionary<int, Product> productDict,
+            Dictionary<int, Item> productDict,
             Dictionary<int, Warehouse> warehouseDict)
         {
             var doc = new FormattedDocument()
@@ -240,7 +240,7 @@ namespace ERPCore2.Services.Reports
                 int rowNum = 1;
                 foreach (var detail in receivingDetails)
                 {
-                    var product = productDict.GetValueOrDefault(detail.ProductId);
+                    var product = productDict.GetValueOrDefault(detail.ItemId);
                     var warehouse = warehouseDict.GetValueOrDefault(detail.WarehouseId);
                     table.AddRow(
                         rowNum.ToString(),

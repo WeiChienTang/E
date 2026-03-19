@@ -1,28 +1,28 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Models.Charts;
 using ERPCore2.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
-namespace ERPCore2.Services.Products;
+namespace ERPCore2.Services.Items;
 
-public class ProductChartService : IProductChartService
+public class ItemChartService : IItemChartService
 {
     private readonly IDbContextFactory<AppDbContext> _factory;
 
-    public ProductChartService(IDbContextFactory<AppDbContext> factory)
+    public ItemChartService(IDbContextFactory<AppDbContext> factory)
     {
         _factory = factory;
     }
 
     /// <summary>依品項分類統計品項數量（未分類者歸入「未分類」）</summary>
-    public async Task<List<ChartDataItem>> GetProductsByCategoryAsync()
+    public async Task<List<ChartDataItem>> GetItemsByCategoryAsync()
     {
         using var context = await _factory.CreateDbContextAsync();
 
         var result = await (
-            from p in context.Products
+            from p in context.Items
             where p.Status != EntityStatus.Deleted
-            join c in context.ProductCategories on p.ProductCategoryId equals c.Id into cg
+            join c in context.ItemCategories on p.ItemCategoryId equals c.Id into cg
             from cat in cg.DefaultIfEmpty()
             select new { CategoryName = cat != null ? cat.Name : "未分類" }
         )
@@ -35,7 +35,7 @@ public class ProductChartService : IProductChartService
     }
 
     /// <summary>銷售數量排行 Top N（依出貨單明細合計出貨數量）</summary>
-    public async Task<List<ChartDataItem>> GetTopProductsBySalesQuantityAsync(int top = 10)
+    public async Task<List<ChartDataItem>> GetTopItemsBySalesQuantityAsync(int top = 10)
     {
         using var context = await _factory.CreateDbContextAsync();
 
@@ -45,15 +45,15 @@ public class ProductChartService : IProductChartService
             where sdd.Status != EntityStatus.Deleted
             join sd in context.SalesDeliveries on sdd.SalesDeliveryId equals sd.Id
             where sd.Status != EntityStatus.Deleted
-            join p in context.Products on sdd.ProductId equals p.Id
-            select new { p.Id, ProductName = p.Name ?? p.Code ?? $"ID:{p.Id}", sdd.DeliveryQuantity }
+            join p in context.Items on sdd.ItemId equals p.Id
+            select new { p.Id, ItemName = p.Name ?? p.Code ?? $"ID:{p.Id}", sdd.DeliveryQuantity }
         ).ToListAsync();
 
         return rows
-            .GroupBy(x => new { x.Id, x.ProductName })
+            .GroupBy(x => new { x.Id, x.ItemName })
             .Select(g => new ChartDataItem
             {
-                Label = g.Key.ProductName,
+                Label = g.Key.ItemName,
                 Value = g.Sum(x => x.DeliveryQuantity)
             })
             .OrderByDescending(x => x.Value)
@@ -62,7 +62,7 @@ public class ProductChartService : IProductChartService
     }
 
     /// <summary>銷售金額排行 Top N（依出貨單明細合計含稅小計）</summary>
-    public async Task<List<ChartDataItem>> GetTopProductsBySalesAmountAsync(int top = 10)
+    public async Task<List<ChartDataItem>> GetTopItemsBySalesAmountAsync(int top = 10)
     {
         using var context = await _factory.CreateDbContextAsync();
 
@@ -72,11 +72,11 @@ public class ProductChartService : IProductChartService
             where sdd.Status != EntityStatus.Deleted
             join sd in context.SalesDeliveries on sdd.SalesDeliveryId equals sd.Id
             where sd.Status != EntityStatus.Deleted
-            join p in context.Products on sdd.ProductId equals p.Id
+            join p in context.Items on sdd.ItemId equals p.Id
             select new
             {
                 p.Id,
-                ProductName      = p.Name ?? p.Code ?? $"ID:{p.Id}",
+                ItemName      = p.Name ?? p.Code ?? $"ID:{p.Id}",
                 sdd.DeliveryQuantity,
                 sdd.UnitPrice,
                 sdd.DiscountPercentage,
@@ -85,10 +85,10 @@ public class ProductChartService : IProductChartService
         ).ToListAsync();
 
         return rows
-            .GroupBy(x => new { x.Id, x.ProductName })
+            .GroupBy(x => new { x.Id, x.ItemName })
             .Select(g => new ChartDataItem
             {
-                Label = g.Key.ProductName,
+                Label = g.Key.ItemName,
                 Value = g.Sum(x =>
                 {
                     var subtotal = x.DeliveryQuantity * x.UnitPrice * (1 - x.DiscountPercentage / 100);
@@ -150,7 +150,7 @@ public class ProductChartService : IProductChartService
     }
 
     /// <summary>依供應商統計其報價品項數</summary>
-    public async Task<List<ChartDataItem>> GetProductsBySupplierCountAsync()
+    public async Task<List<ChartDataItem>> GetItemsBySupplierCountAsync()
     {
         using var context = await _factory.CreateDbContextAsync();
 
@@ -159,10 +159,10 @@ public class ProductChartService : IProductChartService
             where sp.Status != EntityStatus.Deleted
             join s in context.Suppliers on sp.SupplierId equals s.Id
             where s.Status != EntityStatus.Deleted
-            select new { SupplierName = s.CompanyName ?? s.Code ?? $"ID:{s.Id}", sp.ProductId }
+            select new { SupplierName = s.CompanyName ?? s.Code ?? $"ID:{s.Id}", sp.ItemId }
         )
         .GroupBy(x => x.SupplierName)
-        .Select(g => new { Label = g.Key, Value = (decimal)g.Select(x => x.ProductId).Distinct().Count() })
+        .Select(g => new { Label = g.Key, Value = (decimal)g.Select(x => x.ItemId).Distinct().Count() })
         .OrderByDescending(x => x.Value)
         .ToListAsync();
 
@@ -170,11 +170,11 @@ public class ProductChartService : IProductChartService
     }
 
     /// <summary>依標準成本分段統計品項數量</summary>
-    public async Task<List<ChartDataItem>> GetProductsByStandardCostRangeAsync()
+    public async Task<List<ChartDataItem>> GetItemsByStandardCostRangeAsync()
     {
         using var context = await _factory.CreateDbContextAsync();
 
-        var costs = await context.Products
+        var costs = await context.Items
             .Where(p => p.Status != EntityStatus.Deleted)
             .Select(p => p.StandardCost)
             .ToListAsync();
@@ -205,20 +205,20 @@ public class ProductChartService : IProductChartService
     }
 
     /// <summary>取得品項基本統計摘要</summary>
-    public async Task<ProductChartSummary> GetSummaryAsync()
+    public async Task<ItemChartSummary> GetSummaryAsync()
     {
         using var context = await _factory.CreateDbContextAsync();
 
         var now = DateTime.Now;
         var firstOfMonth = new DateTime(now.Year, now.Month, 1);
 
-        var total = await context.Products.CountAsync(p => p.Status != EntityStatus.Deleted);
-        var totalCategories = await context.ProductCategories.CountAsync(c => c.Status != EntityStatus.Deleted);
-        var addedThisMonth = await context.Products.CountAsync(p => p.Status != EntityStatus.Deleted && p.CreatedAt >= firstOfMonth);
+        var total = await context.Items.CountAsync(p => p.Status != EntityStatus.Deleted);
+        var totalCategories = await context.ItemCategories.CountAsync(c => c.Status != EntityStatus.Deleted);
+        var addedThisMonth = await context.Items.CountAsync(p => p.Status != EntityStatus.Deleted && p.CreatedAt >= firstOfMonth);
 
         var withSuppliers = await context.SupplierPricings
             .Where(sp => sp.Status != EntityStatus.Deleted)
-            .Select(sp => sp.ProductId)
+            .Select(sp => sp.ItemId)
             .Distinct()
             .CountAsync();
 
@@ -226,12 +226,12 @@ public class ProductChartService : IProductChartService
             .Where(s => s.Status != EntityStatus.Deleted && s.TotalCurrentStock > 0)
             .CountAsync();
 
-        return new ProductChartSummary
+        return new ItemChartSummary
         {
-            TotalProducts        = total,
+            TotalItems        = total,
             TotalCategories      = totalCategories,
-            ProductsWithSuppliers = withSuppliers,
-            ProductsWithStock    = withStock,
+            ItemsWithSuppliers = withSuppliers,
+            ItemsWithStock    = withStock,
             AddedThisMonth       = addedThisMonth
         };
     }
@@ -239,21 +239,21 @@ public class ProductChartService : IProductChartService
     // ===== Drill-down 明細查詢 =====
 
     /// <summary>依品項分類 Drill-down：顯示該分類下所有品項（代碼 + 名稱）</summary>
-    public async Task<List<ChartDetailItem>> GetProductDetailsByCategoryAsync(string categoryLabel)
+    public async Task<List<ChartDetailItem>> GetItemDetailsByCategoryAsync(string categoryLabel)
     {
         using var context = await _factory.CreateDbContextAsync();
 
-        IQueryable<ERPCore2.Data.Entities.Product> query;
+        IQueryable<ERPCore2.Data.Entities.Item> query;
         if (categoryLabel == "未分類")
         {
-            query = context.Products
-                .Where(p => p.Status != EntityStatus.Deleted && p.ProductCategoryId == null);
+            query = context.Items
+                .Where(p => p.Status != EntityStatus.Deleted && p.ItemCategoryId == null);
         }
         else
         {
-            query = from p in context.Products
+            query = from p in context.Items
                     where p.Status != EntityStatus.Deleted
-                    join c in context.ProductCategories on p.ProductCategoryId equals c.Id
+                    join c in context.ItemCategories on p.ItemCategoryId equals c.Id
                     where (c.Name ?? "") == categoryLabel
                     select p;
         }
@@ -270,7 +270,7 @@ public class ProductChartService : IProductChartService
     }
 
     /// <summary>銷售數量排行 Drill-down：顯示該品項最近 20 筆出貨明細（出貨日期 + 數量）</summary>
-    public async Task<List<ChartDetailItem>> GetTopProductSalesQuantityDetailsAsync(string productLabel)
+    public async Task<List<ChartDetailItem>> GetTopItemSalesQuantityDetailsAsync(string productLabel)
     {
         using var context = await _factory.CreateDbContextAsync();
 
@@ -279,7 +279,7 @@ public class ProductChartService : IProductChartService
             where sdd.Status != EntityStatus.Deleted
             join sd in context.SalesDeliveries on sdd.SalesDeliveryId equals sd.Id
             where sd.Status != EntityStatus.Deleted
-            join p in context.Products on sdd.ProductId equals p.Id
+            join p in context.Items on sdd.ItemId equals p.Id
             where (p.Name ?? p.Code ?? $"ID:{p.Id}") == productLabel
             orderby sd.DeliveryDate descending
             select new { sd.Id, sd.DeliveryDate, sdd.DeliveryQuantity }
@@ -294,7 +294,7 @@ public class ProductChartService : IProductChartService
     }
 
     /// <summary>銷售金額排行 Drill-down：顯示該品項最近 20 筆出貨明細（出貨日期 + 含稅金額）</summary>
-    public async Task<List<ChartDetailItem>> GetTopProductSalesAmountDetailsAsync(string productLabel)
+    public async Task<List<ChartDetailItem>> GetTopItemSalesAmountDetailsAsync(string productLabel)
     {
         using var context = await _factory.CreateDbContextAsync();
 
@@ -303,7 +303,7 @@ public class ProductChartService : IProductChartService
             where sdd.Status != EntityStatus.Deleted
             join sd in context.SalesDeliveries on sdd.SalesDeliveryId equals sd.Id
             where sd.Status != EntityStatus.Deleted
-            join p in context.Products on sdd.ProductId equals p.Id
+            join p in context.Items on sdd.ItemId equals p.Id
             where (p.Name ?? p.Code ?? $"ID:{p.Id}") == productLabel
             orderby sd.DeliveryDate descending
             select new { sd.Id, sd.DeliveryDate, sdd.DeliveryQuantity, sdd.UnitPrice, sdd.DiscountPercentage, sdd.TaxRate }
@@ -323,7 +323,7 @@ public class ProductChartService : IProductChartService
     }
 
     /// <summary>依供應商 Drill-down：顯示該供應商報價的品項清單（最多 50 筆）</summary>
-    public async Task<List<ChartDetailItem>> GetProductDetailsBySupplierAsync(string supplierLabel)
+    public async Task<List<ChartDetailItem>> GetItemDetailsBySupplierAsync(string supplierLabel)
     {
         using var context = await _factory.CreateDbContextAsync();
 
@@ -333,36 +333,36 @@ public class ProductChartService : IProductChartService
             join s in context.Suppliers on sp.SupplierId equals s.Id
             where s.Status != EntityStatus.Deleted
                   && (s.CompanyName ?? s.Code ?? $"ID:{s.Id}") == supplierLabel
-            join p in context.Products on sp.ProductId equals p.Id
+            join p in context.Items on sp.ItemId equals p.Id
             where p.Status != EntityStatus.Deleted
             orderby p.Code
-            select new { p.Id, ProductName = p.Name ?? p.Code ?? $"ID:{p.Id}", ProductCode = p.Code ?? "", sp.PurchasePrice }
+            select new { p.Id, ItemName = p.Name ?? p.Code ?? $"ID:{p.Id}", ItemCode = p.Code ?? "", sp.PurchasePrice }
         ).Take(50).ToListAsync();
 
         return raw
-            .GroupBy(x => new { x.Id, x.ProductName, x.ProductCode })
+            .GroupBy(x => new { x.Id, x.ItemName, x.ItemCode })
             .Select(g => new ChartDetailItem
             {
                 Id       = g.Key.Id,
-                Name     = g.Key.ProductName,
+                Name     = g.Key.ItemName,
                 SubLabel = $"NT${g.Min(x => x.PurchasePrice):N2}"
             })
             .ToList();
     }
 
     /// <summary>依標準成本分段 Drill-down：顯示該成本區間的品項清單</summary>
-    public async Task<List<ChartDetailItem>> GetProductDetailsByStandardCostRangeAsync(string label)
+    public async Task<List<ChartDetailItem>> GetItemDetailsByStandardCostRangeAsync(string label)
     {
         using var context = await _factory.CreateDbContextAsync();
 
-        IQueryable<ERPCore2.Data.Entities.Product> query = label switch
+        IQueryable<ERPCore2.Data.Entities.Item> query = label switch
         {
-            "未設定"       => context.Products.Where(p => p.Status != EntityStatus.Deleted && (!p.StandardCost.HasValue || p.StandardCost == 0)),
-            "1~100"        => context.Products.Where(p => p.Status != EntityStatus.Deleted && p.StandardCost > 0 && p.StandardCost <= 100),
-            "101~1,000"    => context.Products.Where(p => p.Status != EntityStatus.Deleted && p.StandardCost > 100 && p.StandardCost <= 1_000),
-            "1,001~10,000" => context.Products.Where(p => p.Status != EntityStatus.Deleted && p.StandardCost > 1_000 && p.StandardCost <= 10_000),
-            "10,000以上"   => context.Products.Where(p => p.Status != EntityStatus.Deleted && p.StandardCost > 10_000),
-            _              => context.Products.Where(p => false)
+            "未設定"       => context.Items.Where(p => p.Status != EntityStatus.Deleted && (!p.StandardCost.HasValue || p.StandardCost == 0)),
+            "1~100"        => context.Items.Where(p => p.Status != EntityStatus.Deleted && p.StandardCost > 0 && p.StandardCost <= 100),
+            "101~1,000"    => context.Items.Where(p => p.Status != EntityStatus.Deleted && p.StandardCost > 100 && p.StandardCost <= 1_000),
+            "1,001~10,000" => context.Items.Where(p => p.Status != EntityStatus.Deleted && p.StandardCost > 1_000 && p.StandardCost <= 10_000),
+            "10,000以上"   => context.Items.Where(p => p.Status != EntityStatus.Deleted && p.StandardCost > 10_000),
+            _              => context.Items.Where(p => false)
         };
 
         var raw = await query

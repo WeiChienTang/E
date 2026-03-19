@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 
 namespace ERPCore2.Services
@@ -16,7 +16,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 從品項物料清單複製 BOM 資料到銷貨訂單（使用最新的配方）
         /// </summary>
-        Task<List<SalesOrderCompositionDetail>> CopyFromProductCompositionAsync(
+        Task<List<SalesOrderCompositionDetail>> CopyFromItemCompositionAsync(
             int salesOrderDetailId, 
             int productId);
         

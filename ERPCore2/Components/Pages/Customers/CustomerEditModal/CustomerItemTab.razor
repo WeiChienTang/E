@@ -1,5 +1,5 @@
-@* 客戶銷售品項 Tab - 自包含元件，顯示此客戶的品項銷售記錄 *@
-@inject IProductCustomerService ProductCustomerService
+﻿@* 客戶銷售品項 Tab - 自包含元件，顯示此客戶的品項銷售記錄 *@
+@inject IItemCustomerService ItemCustomerService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 
@@ -20,7 +20,7 @@ else
         </small>
     </div>
 
-    <GenericInteractiveTableComponent TItem="ProductCustomer"
+    <GenericInteractiveTableComponent TItem="ItemCustomer"
                                Items="@_productCustomers"
                                ColumnDefinitions="@GetColumnDefinitions()"
                                ShowHeader="true"
@@ -31,17 +31,17 @@ else
                                ShowBuiltInActions="true"
                                ShowBuiltInDeleteButton="true"
                                DeleteButtonVariant="ButtonVariant.Red"
-                               DeleteButtonTitle="@L["Customer.DeleteProductButtonTitle"]"
+                               DeleteButtonTitle="@L["Customer.DeleteItemButtonTitle"]"
                                OnItemDelete="@HandleDeleteItem"
-                               EmptyMessage="@L["Customer.NoProducts"]" />
+                               EmptyMessage="@L["Customer.NoItems"]" />
 }
 
 @* 刪除確認 Modal *@
 <GenericConfirmModalComponent IsVisible="@_showDeleteModal"
                               IsVisibleChanged="@((bool v) => _showDeleteModal = v)"
-                              Title="@L["Customer.RemoveProduct"]"
+                              Title="@L["Customer.RemoveItem"]"
                               Icon="bi-trash"
-                              Message="@string.Format(L["Customer.ConfirmRemoveProduct"], _deletingItem?.Product?.Name ?? L["Column.Product"])"
+                              Message="@string.Format(L["Customer.ConfirmRemoveItem"], _deletingItem?.Item?.Name ?? L["Column.Item"])"
                               ConfirmButtonText="@L["Button.ConfirmRemove"]"
                               CancelButtonText="@L["Button.Cancel"]"
                               ConfirmButtonVariant="ButtonVariant.Red"
@@ -52,10 +52,10 @@ else
 @code {
     [Parameter] public int? CustomerId { get; set; }
 
-    private List<ProductCustomer> _productCustomers = new();
+    private List<ItemCustomer> _productCustomers = new();
     private bool _isLoading = false;
     private bool _showDeleteModal = false;
-    private ProductCustomer? _deletingItem = null;
+    private ItemCustomer? _deletingItem = null;
     private int? _loadedCustomerId;
 
     // ===== 生命週期 =====
@@ -81,7 +81,7 @@ else
 
         try
         {
-            _productCustomers = await ProductCustomerService.GetByCustomerIdAsync(customerId);
+            _productCustomers = await ItemCustomerService.GetByCustomerIdAsync(customerId);
         }
         catch (Exception ex)
         {
@@ -109,23 +109,23 @@ else
         {
             new()
             {
-                Title = L["Column.ProductCode"],
+                Title = L["Column.ItemCode"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Display,
                 Width = "110px",
-                DisplayFormatter = item => item is ProductCustomer pc0 ? pc0.Product?.Code ?? "-" : "-"
+                DisplayFormatter = item => item is ItemCustomer pc0 ? pc0.Item?.Code ?? "-" : "-"
             },
             new()
             {
-                Title = L["Column.ProductName"],
+                Title = L["Column.ItemName"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Display,
-                DisplayFormatter = item => item is ProductCustomer pc1 ? pc1.Product?.Name ?? "-" : "-"
+                DisplayFormatter = item => item is ItemCustomer pc1 ? pc1.Item?.Name ?? "-" : "-"
             },
             new()
             {
-                Title = L["Column.CustomerProductCode"],
-                PropertyName = nameof(ProductCustomer.CustomerProductCode),
+                Title = L["Column.CustomerItemCode"],
+                PropertyName = nameof(ItemCustomer.CustomerItemCode),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px",
                 NullDisplayText = "-"
@@ -139,7 +139,7 @@ else
                 TextAlign = "right",
                 DisplayFormatter = item =>
                 {
-                    if (item is not ProductCustomer pc) return "-";
+                    if (item is not ItemCustomer pc) return "-";
                     return pc.CustomerPrice.HasValue
                         ? pc.CustomerPrice.Value.ToString("N0")
                         : "-";
@@ -154,7 +154,7 @@ else
                 TextAlign = "right",
                 DisplayFormatter = item =>
                 {
-                    if (item is not ProductCustomer pc) return "-";
+                    if (item is not ItemCustomer pc) return "-";
                     return pc.LastSalePrice.HasValue
                         ? pc.LastSalePrice.Value.ToString("N0")
                         : "-";
@@ -168,7 +168,7 @@ else
                 Width = "110px",
                 DisplayFormatter = item =>
                 {
-                    if (item is not ProductCustomer pc) return "-";
+                    if (item is not ItemCustomer pc) return "-";
                     return pc.LastSaleDate.HasValue
                         ? pc.LastSaleDate.Value.ToString("yyyy/MM/dd")
                         : "-";
@@ -179,7 +179,7 @@ else
 
     // ===== 刪除處理 =====
 
-    private async Task HandleDeleteItem(ProductCustomer item)
+    private async Task HandleDeleteItem(ItemCustomer item)
     {
         _deletingItem = item;
         _showDeleteModal = true;
@@ -193,7 +193,7 @@ else
 
         try
         {
-            var result = await ProductCustomerService.DeleteAsync(_deletingItem.Id);
+            var result = await ItemCustomerService.DeleteAsync(_deletingItem.Id);
             if (result.IsSuccess)
             {
                 _productCustomers.RemoveAll(pc => pc.Id == _deletingItem.Id);

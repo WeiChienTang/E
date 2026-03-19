@@ -1,4 +1,4 @@
-using ERPCore2.Models.Navigation;
+﻿using ERPCore2.Models.Navigation;
 
 namespace ERPCore2.Data.Navigation;
 
@@ -32,7 +32,7 @@ public static class DashboardDefaults
                 "/employees",           // 員工管理
                 "/customers",           // 客戶管理
                 "/suppliers",           // 廠商管理
-                "/products",            // 品項管理
+                "/items",            // 品項管理
                 "/inventoryStocks",     // 庫存查詢
                 "/purchase/orders",     // 採購單管理
                 "/salesOrders",         // 訂單管理
@@ -49,19 +49,7 @@ public static class DashboardDefaults
                 "QuickAction:NewSalesOrder",      // 新增訂單
             }
         },
-        new DefaultPanelDefinition
-        {
-            Title = "會計",
-            SortOrder = 2,
-            IconClass = "bi bi-calculator",
-            ItemKeys = new List<string>
-            {
-                "/account-items",                   // 會計科目
-                "/journal-entries",                  // 傳票管理（含批次轉傳票）
-                "QuickAction:NewAccountItem",        // 新增會計科目
-                "QuickAction:NewJournalEntry",       // 新增傳票
-            }
-        }
+
     };
 
     /// <summary>

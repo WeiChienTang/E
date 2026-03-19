@@ -1,4 +1,4 @@
-using BarcodeStandard;
+﻿using BarcodeStandard;
 using ERPCore2.Models.Barcode;
 using ERPCore2.Services.Reports.Interfaces;
 using SkiaSharp;
@@ -82,8 +82,8 @@ public class BarcodeGeneratorService : IBarcodeGeneratorService
         float infoLineHeight = infoTextSize + 4f * dpiScale;
         
         // 計算標籤區域高度（只有一行品項資訊）
-        bool hasProductInfo = !string.IsNullOrWhiteSpace(productCode) || !string.IsNullOrWhiteSpace(productName);
-        int labelHeight = (int)(hasProductInfo ? infoLineHeight : 0) + (int)(4f * dpiScale);
+        bool hasItemInfo = !string.IsNullOrWhiteSpace(productCode) || !string.IsNullOrWhiteSpace(productName);
+        int labelHeight = (int)(hasItemInfo ? infoLineHeight : 0) + (int)(4f * dpiScale);
         
         // 條碼本身高度（不含標籤）
         int barcodeOnlyHeight = height - labelHeight;
@@ -135,12 +135,12 @@ public class BarcodeGeneratorService : IBarcodeGeneratorService
             };
             
             // 繪製標籤（品項資訊一行，顯示在條碼下方）
-            if (hasProductInfo)
+            if (hasItemInfo)
             {
                 float yOffset = barcodeOnlyHeight + infoLineHeight;
                 
                 // 品項資訊（[編號] [名稱]）
-                string infoText = BuildProductInfoText(productCode, productName, width, infoTextPaint);
+                string infoText = BuildItemInfoText(productCode, productName, width, infoTextPaint);
                 if (!string.IsNullOrWhiteSpace(infoText))
                 {
                     canvas.DrawText(infoText, width / 2f, yOffset, infoTextPaint);
@@ -185,7 +185,7 @@ public class BarcodeGeneratorService : IBarcodeGeneratorService
     /// <summary>
     /// 建立品項資訊文字（[編號] [名稱] 格式），確保不超過條碼寬度
     /// </summary>
-    private static string BuildProductInfoText(string? productCode, string? productName, int maxWidth, SKPaint paint)
+    private static string BuildItemInfoText(string? productCode, string? productName, int maxWidth, SKPaint paint)
     {
         // 組合文字：[編號] [名稱]
         string fullText;

@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
 using ERPCore2.Models.Enums;
@@ -240,7 +240,7 @@ namespace ERPCore2.Services.Reports
 
         private static string GetCategoryText(ComplaintCategory category) => category switch
         {
-            ComplaintCategory.ProductQuality  => "產品品質",
+            ComplaintCategory.ItemQuality  => "產品品質",
             ComplaintCategory.DeliveryDelay   => "交期延誤",
             ComplaintCategory.ServiceAttitude => "服務態度",
             ComplaintCategory.PriceDispute    => "價格爭議",

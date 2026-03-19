@@ -70,6 +70,63 @@
                             <input type="number" class="form-control" @bind="model.TransportTaxFreeLimit" min="0" step="1" />
                         </div>
                     </div>
+                    <h6 class="text-muted mt-3 mb-1">@L["Payroll.OvertimeRates"]</h6>
+                    <div class="alert alert-warning py-2 px-3 mb-2 small">
+                        <i class="bi bi-exclamation-triangle me-1"></i>@L["Payroll.OvertimeRatesWarning"]
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label small">@L["Field.OvertimeRate1"]</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">×</span>
+                                <input type="number" class="form-control" @bind="model.OvertimeRate1"
+                                       min="1" max="5" step="0.0001" />
+                                <span class="input-group-text text-muted">@L["Payroll.TimesHourlyRate"]</span>
+                            </div>
+                            <div class="form-text">@L["Payroll.LegalDefault"]：4/3 ≈ 1.3333</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">@L["Field.OvertimeRate2"]</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">×</span>
+                                <input type="number" class="form-control" @bind="model.OvertimeRate2"
+                                       min="1" max="5" step="0.0001" />
+                                <span class="input-group-text text-muted">@L["Payroll.TimesHourlyRate"]</span>
+                            </div>
+                            <div class="form-text">@L["Payroll.LegalDefault"]：5/3 ≈ 1.6667</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">@L["Field.RestDayRate1"]</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">×</span>
+                                <input type="number" class="form-control" @bind="model.RestDayRate1"
+                                       min="1" max="5" step="0.0001" />
+                                <span class="input-group-text text-muted">@L["Payroll.TimesHourlyRate"]</span>
+                            </div>
+                            <div class="form-text">@L["Payroll.LegalDefault"]：4/3 ≈ 1.3333</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">@L["Field.RestDayRate2"]</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">×</span>
+                                <input type="number" class="form-control" @bind="model.RestDayRate2"
+                                       min="1" max="5" step="0.0001" />
+                                <span class="input-group-text text-muted">@L["Payroll.TimesHourlyRate"]</span>
+                            </div>
+                            <div class="form-text">@L["Payroll.LegalDefault"]：5/3 ≈ 1.6667</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small">@L["Field.NationalHolidayRate"]</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">×</span>
+                                <input type="number" class="form-control" @bind="model.NationalHolidayRate"
+                                       min="0" max="5" step="0.0001" />
+                                <span class="input-group-text text-muted">@L["Payroll.TimesHourlyRate"]</span>
+                            </div>
+                            <div class="form-text">@L["Payroll.LegalDefault"]：1.0000（@L["Payroll.NationalHolidayRateNote"]）</div>
+                        </div>
+                    </div>
+
                     <div class="mb-3 mt-3">
                         <label class="form-label">@L["Label.Remarks"]</label>
                         <input type="text" class="form-control" @bind="model.Remarks" maxlength="200" />
@@ -114,29 +171,39 @@
                 model = new InsuranceRate
                 {
                     EffectiveDate = DateOnly.FromDateTime(DateTime.Today),
-                    LaborInsuranceEmployeeRate = 0.02m,
-                    LaborInsuranceEmployerRate = 0.10m,
+                    LaborInsuranceEmployeeRate  = 0.02m,
+                    LaborInsuranceEmployerRate  = 0.10m,
                     HealthInsuranceEmployeeRate = 0.0235m,
                     HealthInsuranceEmployerRate = 0.0611m,
-                    RetirementEmployerRate = 0.06m,
-                    MealTaxFreeLimit = 3000m,
-                    TransportTaxFreeLimit = 3000m
+                    RetirementEmployerRate      = 0.06m,
+                    MealTaxFreeLimit            = 3000m,
+                    TransportTaxFreeLimit       = 3000m,
+                    OvertimeRate1               = 1.3333m,
+                    OvertimeRate2               = 1.6667m,
+                    RestDayRate1                = 1.3333m,
+                    RestDayRate2                = 1.6667m,
+                    NationalHolidayRate         = 1.0000m
                 };
             }
             else
             {
                 model = new InsuranceRate
                 {
-                    Id = EditingItem!.Id,
-                    EffectiveDate = EditingItem.EffectiveDate,
-                    LaborInsuranceEmployeeRate = EditingItem.LaborInsuranceEmployeeRate,
-                    LaborInsuranceEmployerRate = EditingItem.LaborInsuranceEmployerRate,
+                    Id                          = EditingItem!.Id,
+                    EffectiveDate               = EditingItem.EffectiveDate,
+                    LaborInsuranceEmployeeRate  = EditingItem.LaborInsuranceEmployeeRate,
+                    LaborInsuranceEmployerRate  = EditingItem.LaborInsuranceEmployerRate,
                     HealthInsuranceEmployeeRate = EditingItem.HealthInsuranceEmployeeRate,
                     HealthInsuranceEmployerRate = EditingItem.HealthInsuranceEmployerRate,
-                    RetirementEmployerRate = EditingItem.RetirementEmployerRate,
-                    MealTaxFreeLimit = EditingItem.MealTaxFreeLimit,
-                    TransportTaxFreeLimit = EditingItem.TransportTaxFreeLimit,
-                    Remarks = EditingItem.Remarks
+                    RetirementEmployerRate      = EditingItem.RetirementEmployerRate,
+                    MealTaxFreeLimit            = EditingItem.MealTaxFreeLimit,
+                    TransportTaxFreeLimit       = EditingItem.TransportTaxFreeLimit,
+                    OvertimeRate1               = EditingItem.OvertimeRate1,
+                    OvertimeRate2               = EditingItem.OvertimeRate2,
+                    RestDayRate1                = EditingItem.RestDayRate1,
+                    RestDayRate2                = EditingItem.RestDayRate2,
+                    NationalHolidayRate         = EditingItem.NationalHolidayRate,
+                    Remarks                     = EditingItem.Remarks
                 };
             }
         }

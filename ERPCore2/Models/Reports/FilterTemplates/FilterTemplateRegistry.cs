@@ -381,17 +381,17 @@ public static class FilterTemplateRegistry
         // 品項條碼標籤
         RegisterConfig(new ReportFilterConfig
         {
-            ReportId = ReportIds.ProductBarcode,
-            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.ProductBarcodeBatchFilterTemplate",
-            CriteriaType = typeof(ProductBarcodeBatchPrintCriteria),
-            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IProductBarcodeReportService),
+            ReportId = ReportIds.ItemBarcode,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.ItemBarcodeBatchFilterTemplate",
+            CriteriaType = typeof(ItemBarcodeBatchPrintCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IItemBarcodeReportService),
             PreviewTitle = "品項條碼標籤預覽",
             FilterTitle = "品項條碼列印篩選條件",
             IconClass = "bi-upc-scan",
             GetDocumentName = criteria =>
             {
-                var c = (ProductBarcodeBatchPrintCriteria)criteria;
-                var count = c.ProductIds.Count;
+                var c = (ItemBarcodeBatchPrintCriteria)criteria;
+                var count = c.ItemIds.Count;
                 var total = c.PrintQuantities.Values.Sum();
                 return $"品項條碼-{count}品項-{total}張-{DateTime.Now:yyyyMMddHHmm}";
             }
@@ -402,10 +402,10 @@ public static class FilterTemplateRegistry
         // PD001 - 品項清單表（報表集進入時顯示篩選，清單式報表）
         RegisterConfig(new ReportFilterConfig
         {
-            ReportId = ReportIds.ProductList,
+            ReportId = ReportIds.ItemList,
             FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
-            CriteriaType = typeof(ProductListBatchPrintCriteria),
-            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IProductListReportService),
+            CriteriaType = typeof(ItemListBatchPrintCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IItemListReportService),
             PreviewTitle = "品項清單表預覽",
             FilterTitle = "品項清單表篩選條件",
             IconClass = "bi-box-seam",
@@ -418,10 +418,10 @@ public static class FilterTemplateRegistry
         // PD005 - 品項詳細資料（詳細式報表，每項品項各佔一區塊）
         RegisterConfig(new ReportFilterConfig
         {
-            ReportId = ReportIds.ProductDetail,
+            ReportId = ReportIds.ItemDetail,
             FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
-            CriteriaType = typeof(ProductListBatchPrintCriteria),
-            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IProductDetailReportService),
+            CriteriaType = typeof(ItemListBatchPrintCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IItemDetailReportService),
             PreviewTitle = "品項詳細資料預覽",
             FilterTitle = "品項詳細資料篩選條件",
             IconClass = "bi-box-fill",
@@ -826,6 +826,42 @@ public static class FilterTemplateRegistry
                     ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
                     : DateTime.Now.ToString("yyyyMMdd");
                 return $"明細科目餘額表-{dateRange}";
+            }
+        });
+
+        // FN012 - 應收帳款帳齡分析（依客戶分組，依到期天數分帳齡區間）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.ARAgingAnalysis,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(ARAgingCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IARAgingReportService),
+            PreviewTitle = "應收帳款帳齡分析預覽",
+            FilterTitle = "應收帳款帳齡分析篩選條件",
+            IconClass = "bi-clock-history",
+            GetDocumentName = criteria =>
+            {
+                var c = (ARAgingCriteria)criteria;
+                var date = c.AsOfDate?.ToString("yyyyMMdd") ?? DateTime.Now.ToString("yyyyMMdd");
+                return $"應收帳款帳齡分析-{date}";
+            }
+        });
+
+        // FN013 - 應付帳款帳齡分析（依廠商分組，依到期天數分帳齡區間）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.APAgingAnalysis,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(APAgingCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IAPAgingReportService),
+            PreviewTitle = "應付帳款帳齡分析預覽",
+            FilterTitle = "應付帳款帳齡分析篩選條件",
+            IconClass = "bi-clock-history",
+            GetDocumentName = criteria =>
+            {
+                var c = (APAgingCriteria)criteria;
+                var date = c.AsOfDate?.ToString("yyyyMMdd") ?? DateTime.Now.ToString("yyyyMMdd");
+                return $"應付帳款帳齡分析-{date}";
             }
         });
 

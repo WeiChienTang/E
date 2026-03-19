@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
 using ERPCore2.Models.Enums;
@@ -230,8 +230,8 @@ namespace ERPCore2.Services.Reports
                     var keyword = criteria.Keyword;
                     group.Items = group.Items
                         .Where(i =>
-                            i.ProductCode.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-                            i.ProductName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                            i.ItemCode.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                            i.ItemName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
                             (fullStockTaking.TakingNumber != null && fullStockTaking.TakingNumber.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
                         .ToList();
                 }
@@ -267,11 +267,11 @@ namespace ERPCore2.Services.Reports
                 TakingPersonnel = stockTaking.TakingPersonnel ?? "",
                 SupervisingPersonnel = stockTaking.SupervisingPersonnel ?? "",
                 Items = details
-                    .OrderBy(d => d.Product?.Code)
+                    .OrderBy(d => d.Item?.Code)
                     .Select(d => new DifferenceItem
                     {
-                        ProductCode = d.Product?.Code ?? "",
-                        ProductName = d.Product?.Name ?? "",
+                        ItemCode = d.Item?.Code ?? "",
+                        ItemName = d.Item?.Name ?? "",
                         LocationName = d.WarehouseLocation?.Name ?? "",
                         SystemStock = d.SystemStock,
                         ActualStock = d.ActualStock,
@@ -393,8 +393,8 @@ namespace ERPCore2.Services.Reports
 
                         table.AddRow(
                             rowNum.ToString(),
-                            item.ProductCode,
-                            item.ProductName,
+                            item.ItemCode,
+                            item.ItemName,
                             item.LocationName,
                             item.SystemStock.ToString("N0"),
                             actualStockText,
@@ -476,8 +476,8 @@ namespace ERPCore2.Services.Reports
         /// </summary>
         private class DifferenceItem
         {
-            public string ProductCode { get; set; } = "";
-            public string ProductName { get; set; } = "";
+            public string ItemCode { get; set; } = "";
+            public string ItemName { get; set; } = "";
             public string LocationName { get; set; } = "";
             public decimal SystemStock { get; set; }
             public decimal? ActualStock { get; set; }

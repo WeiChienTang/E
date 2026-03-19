@@ -37,10 +37,10 @@ namespace ERPCore2.Data.Context
       public DbSet<Role> Roles { get; set; }
       public DbSet<Permission> Permissions { get; set; }
       public DbSet<RolePermission> RolePermissions { get; set; }
-      public DbSet<Product> Products { get; set; }
-      public DbSet<ProductCategory> ProductCategories { get; set; }
-      public DbSet<ProductSupplier> ProductSuppliers { get; set; }
-      public DbSet<ProductCustomer> ProductCustomers { get; set; }
+      public DbSet<Item> Items { get; set; }
+      public DbSet<ItemCategory> ItemCategories { get; set; }
+      public DbSet<ItemSupplier> ItemSuppliers { get; set; }
+      public DbSet<ItemCustomer> ItemCustomers { get; set; }
       public DbSet<SupplierPricing> SupplierPricings { get; set; }
       public DbSet<PriceHistory> PriceHistories { get; set; }      
       public DbSet<Supplier> Suppliers { get; set; }
@@ -80,7 +80,7 @@ namespace ERPCore2.Data.Context
       public DbSet<SalesTarget> SalesTargets { get; set; }
       public DbSet<SetoffDocument> SetoffDocuments { get; set; }
       public DbSet<SetoffPayment> SetoffPayments { get; set; }
-      public DbSet<SetoffProductDetail> SetoffProductDetails { get; set; }
+      public DbSet<SetoffItemDetail> SetoffItemDetails { get; set; }
       public DbSet<SetoffPrepayment> SetoffPrepayments { get; set; }
       public DbSet<SetoffPrepaymentUsage> SetoffPrepaymentUsages { get; set; }
       public DbSet<Entities.PrepaymentType> PrepaymentTypes { get; set; }
@@ -90,8 +90,8 @@ namespace ERPCore2.Data.Context
       public DbSet<Color> Colors { get; set; }
       public DbSet<Size> Sizes { get; set; }      
       public DbSet<CompositionCategory> CompositionCategories { get; set; }
-      public DbSet<ProductComposition> ProductCompositions { get; set; }
-      public DbSet<ProductCompositionDetail> ProductCompositionDetails { get; set; }
+      public DbSet<ItemComposition> ItemCompositions { get; set; }
+      public DbSet<ItemCompositionDetail> ItemCompositionDetails { get; set; }
       public DbSet<ProductionSchedule> ProductionSchedules { get; set; }
       public DbSet<ProductionScheduleItem> ProductionScheduleItems { get; set; }
       public DbSet<ProductionScheduleDetail> ProductionScheduleDetails { get; set; }
@@ -123,7 +123,7 @@ namespace ERPCore2.Data.Context
       public DbSet<StickyNote> StickyNotes { get; set; }
       public DbSet<CalendarEvent> CalendarEvents { get; set; }
       public DbSet<BusinessCard> BusinessCards { get; set; }
-      public DbSet<ProductPhoto> ProductPhotos { get; set; }
+      public DbSet<ItemPhoto> ItemPhotos { get; set; }
       public DbSet<QuotationPhoto> QuotationPhotos { get; set; }
       public DbSet<SalesOrderPhoto> SalesOrderPhotos { get; set; }
 
@@ -141,6 +141,7 @@ namespace ERPCore2.Data.Context
       public DbSet<WithholdingTaxTable> WithholdingTaxTables { get; set; }
       public DbSet<InsuranceRate> InsuranceRates { get; set; }
       public DbSet<MonthlyAttendanceSummary> MonthlyAttendanceSummaries { get; set; }
+      public DbSet<AttendanceDailyRecord> AttendanceDailyRecords { get; set; }
       public DbSet<CustomerBankAccount> CustomerBankAccounts { get; set; }
       public DbSet<SupplierBankAccount> SupplierBankAccounts { get; set; }
       public DbSet<CompanyBankAccount> CompanyBankAccounts { get; set; }
@@ -217,18 +218,18 @@ namespace ERPCore2.Data.Context
                   });
                   
                   // 品項相關
-                  modelBuilder.Entity<Product>(entity =>
+                  modelBuilder.Entity<Item>(entity =>
                   {
                         // 欄位對應                        
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                         
                         // 關聯設定
-                        entity.HasOne(e => e.ProductCategory)
-                        .WithMany(pc => pc.Products)
+                        entity.HasOne(e => e.ItemCategory)
+                        .WithMany(pc => pc.Items)
                         .OnDelete(DeleteBehavior.SetNull);
 
                         entity.HasOne(e => e.Unit)
-                        .WithMany(u => u.Products)
+                        .WithMany(u => u.Items)
                         .HasForeignKey(e => e.UnitId)
                         .OnDelete(DeleteBehavior.Restrict);
                         
@@ -240,32 +241,32 @@ namespace ERPCore2.Data.Context
                   });
                   
                   // 品項-供應商關聯表
-                  modelBuilder.Entity<ProductSupplier>(entity =>
+                  modelBuilder.Entity<ItemSupplier>(entity =>
                   {
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                         
-                        // 設定複合唯一索引（ProductId + SupplierId）
-                        entity.HasIndex(e => new { e.ProductId, e.SupplierId })
+                        // 設定複合唯一索引（ItemId + SupplierId）
+                        entity.HasIndex(e => new { e.ItemId, e.SupplierId })
                               .IsUnique()
-                              .HasDatabaseName("UX_ProductSupplier_ProductId_SupplierId");
+                              .HasDatabaseName("UX_ItemSupplier_ItemId_SupplierId");
                         
-                        // 設定查詢索引（ProductId + IsPreferred + Priority）
-                        entity.HasIndex(e => new { e.ProductId, e.IsPreferred, e.Priority })
-                              .HasDatabaseName("IX_ProductSupplier_ProductId_IsPreferred_Priority");
+                        // 設定查詢索引（ItemId + IsPreferred + Priority）
+                        entity.HasIndex(e => new { e.ItemId, e.IsPreferred, e.Priority })
+                              .HasDatabaseName("IX_ItemSupplier_ItemId_IsPreferred_Priority");
                         
                         // 設定供應商查詢索引
                         entity.HasIndex(e => e.SupplierId)
-                              .HasDatabaseName("IX_ProductSupplier_SupplierId");
+                              .HasDatabaseName("IX_ItemSupplier_SupplierId");
                         
                         // 品項關聯
-                        entity.HasOne(ps => ps.Product)
-                              .WithMany(p => p.ProductSuppliers)
-                              .HasForeignKey(ps => ps.ProductId)
+                        entity.HasOne(ps => ps.Item)
+                              .WithMany(p => p.ItemSuppliers)
+                              .HasForeignKey(ps => ps.ItemId)
                               .OnDelete(DeleteBehavior.Cascade);  // 刪除品項時同時刪除綁定
                         
                         // 供應商關聯
                         entity.HasOne(ps => ps.Supplier)
-                              .WithMany(s => s.ProductSuppliers)
+                              .WithMany(s => s.ItemSuppliers)
                               .HasForeignKey(ps => ps.SupplierId)
                               .OnDelete(DeleteBehavior.Cascade);  // 刪除供應商時同時刪除綁定
                   });
@@ -302,9 +303,9 @@ namespace ERPCore2.Data.Context
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                         
                         // 品項關聯
-                        entity.HasOne(invStock => invStock.Product)
+                        entity.HasOne(invStock => invStock.Item)
                         .WithMany(p => p.InventoryStocks)
-                        .HasForeignKey(invStock => invStock.ProductId)
+                        .HasForeignKey(invStock => invStock.ItemId)
                         .OnDelete(DeleteBehavior.Restrict);
 
                         // 庫存明細關聯
@@ -367,9 +368,9 @@ namespace ERPCore2.Data.Context
                   modelBuilder.Entity<InventoryTransactionDetail>(entity =>
                   {
                         // 品項關聯
-                        entity.HasOne(d => d.Product)
+                        entity.HasOne(d => d.Item)
                         .WithMany()
-                        .HasForeignKey(d => d.ProductId)
+                        .HasForeignKey(d => d.ItemId)
                         .OnDelete(DeleteBehavior.Restrict);
                         
                         // 倉庫位置關聯
@@ -451,9 +452,9 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(std => std.StockTakingId)
                         .OnDelete(DeleteBehavior.Cascade);
 
-                        entity.HasOne(std => std.Product)
+                        entity.HasOne(std => std.Item)
                         .WithMany()
-                        .HasForeignKey(std => std.ProductId)
+                        .HasForeignKey(std => std.ItemId)
                         .OnDelete(DeleteBehavior.Restrict);
 
                         entity.HasOne(std => std.WarehouseLocation)
@@ -494,9 +495,9 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(pod => pod.PurchaseOrderId)
                         .OnDelete(DeleteBehavior.Cascade);
 
-                        entity.HasOne(pod => pod.Product)
+                        entity.HasOne(pod => pod.Item)
                         .WithMany()
-                        .HasForeignKey(pod => pod.ProductId)
+                        .HasForeignKey(pod => pod.ItemId)
                         .OnDelete(DeleteBehavior.Restrict);
                   });
 
@@ -520,9 +521,9 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(prd => prd.PurchaseOrderDetailId)
                         .OnDelete(DeleteBehavior.SetNull);
 
-                        entity.HasOne(prd => prd.Product)
+                        entity.HasOne(prd => prd.Item)
                         .WithMany()
-                        .HasForeignKey(prd => prd.ProductId)
+                        .HasForeignKey(prd => prd.ItemId)
                         .OnDelete(DeleteBehavior.Restrict);
 
                         entity.HasOne(prd => prd.Warehouse)
@@ -555,9 +556,9 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(prd => prd.PurchaseReturnId)
                         .OnDelete(DeleteBehavior.Cascade);
 
-                        entity.HasOne(prd => prd.Product)
+                        entity.HasOne(prd => prd.Item)
                         .WithMany()
-                        .HasForeignKey(prd => prd.ProductId)
+                        .HasForeignKey(prd => prd.ItemId)
                         .OnDelete(DeleteBehavior.Restrict);
 
                         entity.HasOne(prd => prd.PurchaseOrderDetail)
@@ -611,9 +612,9 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(sod => sod.SalesOrderId)
                         .OnDelete(DeleteBehavior.Cascade);
 
-                        entity.HasOne(sod => sod.Product)
+                        entity.HasOne(sod => sod.Item)
                         .WithMany()
-                        .HasForeignKey(sod => sod.ProductId)
+                        .HasForeignKey(sod => sod.ItemId)
                         .OnDelete(DeleteBehavior.Restrict);
 
                         entity.HasOne(sod => sod.Unit)
@@ -685,9 +686,9 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(srd => srd.SalesReturnId)
                         .OnDelete(DeleteBehavior.Cascade);
 
-                        entity.HasOne(srd => srd.Product)
+                        entity.HasOne(srd => srd.Item)
                         .WithMany()
-                        .HasForeignKey(srd => srd.ProductId)
+                        .HasForeignKey(srd => srd.ItemId)
                         .OnDelete(DeleteBehavior.Restrict);
 
                         entity.HasOne(srd => srd.SalesDeliveryDetail)
@@ -731,9 +732,9 @@ namespace ERPCore2.Data.Context
                         .HasForeignKey(qd => qd.QuotationId)
                         .OnDelete(DeleteBehavior.Cascade);
 
-                        entity.HasOne(qd => qd.Product)
+                        entity.HasOne(qd => qd.Item)
                         .WithMany()
-                        .HasForeignKey(qd => qd.ProductId)
+                        .HasForeignKey(qd => qd.ItemId)
                         .OnDelete(DeleteBehavior.Restrict);
 
                         entity.HasOne(qd => qd.Unit)
@@ -748,7 +749,7 @@ namespace ERPCore2.Data.Context
                         entity.HasKey(qcd => qcd.Id);
                         
                         // 複合唯一索引：同一報價明細中，同一組成品項只能出現一次
-                        entity.HasIndex(e => new { e.QuotationDetailId, e.ComponentProductId })
+                        entity.HasIndex(e => new { e.QuotationDetailId, e.ComponentItemId })
                               .IsUnique();
 
                         // 與 QuotationDetail 的關聯
@@ -757,10 +758,10 @@ namespace ERPCore2.Data.Context
                               .HasForeignKey(qcd => qcd.QuotationDetailId)
                               .OnDelete(DeleteBehavior.Cascade);
 
-                        // 與 Product 的關聯
-                        entity.HasOne(qcd => qcd.ComponentProduct)
+                        // 與 Item 的關聯
+                        entity.HasOne(qcd => qcd.ComponentItem)
                               .WithMany()
-                              .HasForeignKey(qcd => qcd.ComponentProductId)
+                              .HasForeignKey(qcd => qcd.ComponentItemId)
                               .OnDelete(DeleteBehavior.Restrict);
 
                         // 與 Unit 的關聯
@@ -790,7 +791,7 @@ namespace ERPCore2.Data.Context
                         entity.HasKey(socd => socd.Id);
                         
                         // 複合唯一索引：同一銷貨訂單明細中，同一組成品項只能出現一次
-                        entity.HasIndex(e => new { e.SalesOrderDetailId, e.ComponentProductId })
+                        entity.HasIndex(e => new { e.SalesOrderDetailId, e.ComponentItemId })
                               .IsUnique();
 
                         // 與 SalesOrderDetail 的關聯
@@ -799,10 +800,10 @@ namespace ERPCore2.Data.Context
                               .HasForeignKey(socd => socd.SalesOrderDetailId)
                               .OnDelete(DeleteBehavior.Cascade);
 
-                        // 與 Product 的關聯
-                        entity.HasOne(socd => socd.ComponentProduct)
+                        // 與 Item 的關聯
+                        entity.HasOne(socd => socd.ComponentItem)
                               .WithMany()
-                              .HasForeignKey(socd => socd.ComponentProductId)
+                              .HasForeignKey(socd => socd.ComponentItemId)
                               .OnDelete(DeleteBehavior.Restrict);
 
                         // 與 Unit 的關聯
@@ -876,20 +877,20 @@ namespace ERPCore2.Data.Context
                   });
 
                   // 統一沖款品項明細配置
-                  modelBuilder.Entity<SetoffProductDetail>(entity =>
+                  modelBuilder.Entity<SetoffItemDetail>(entity =>
                   {
                         entity.HasKey(spd => spd.Id);
 
                         // 沖款單關聯
                         entity.HasOne(spd => spd.SetoffDocument)
-                              .WithMany(sd => sd.SetoffProductDetails)
+                              .WithMany(sd => sd.SetoffItemDetails)
                               .HasForeignKey(spd => spd.SetoffDocumentId)
                               .OnDelete(DeleteBehavior.Cascade);
 
                         // 品項關聯
-                        entity.HasOne(spd => spd.Product)
+                        entity.HasOne(spd => spd.Item)
                               .WithMany()
-                              .HasForeignKey(spd => spd.ProductId)
+                              .HasForeignKey(spd => spd.ItemId)
                               .OnDelete(DeleteBehavior.Restrict);
 
                         // decimal 屬性設定
@@ -904,7 +905,7 @@ namespace ERPCore2.Data.Context
 
                         // 設定索引
                         entity.HasIndex(e => e.SetoffDocumentId);
-                        entity.HasIndex(e => e.ProductId);
+                        entity.HasIndex(e => e.ItemId);
                         entity.HasIndex(e => new { e.SourceDetailType, e.SourceDetailId });
                   });
                   
@@ -1059,41 +1060,41 @@ namespace ERPCore2.Data.Context
                         entity.HasIndex(e => e.Name);
                   });
 
-                  // Product Composition (BOM) Management
-                  modelBuilder.Entity<ProductComposition>(entity =>
+                  // Item Composition (BOM) Management
+                  modelBuilder.Entity<ItemComposition>(entity =>
                   {
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
                         // 關聯設定
-                        entity.HasOne(pc => pc.ParentProduct)
-                              .WithMany(p => p.ProductCompositions)
-                              .HasForeignKey(pc => pc.ParentProductId)
+                        entity.HasOne(pc => pc.ParentItem)
+                              .WithMany(p => p.ItemCompositions)
+                              .HasForeignKey(pc => pc.ParentItemId)
                               .OnDelete(DeleteBehavior.Restrict);
 
                         entity.HasOne(pc => pc.CompositionCategory)
-                              .WithMany(cc => cc.ProductCompositions)
+                              .WithMany(cc => cc.ItemCompositions)
                               .HasForeignKey(pc => pc.CompositionCategoryId)
                               .OnDelete(DeleteBehavior.SetNull);
 
                         entity.HasMany(pc => pc.CompositionDetails)
-                              .WithOne(pcd => pcd.ProductComposition)
-                              .HasForeignKey(pcd => pcd.ProductCompositionId)
+                              .WithOne(pcd => pcd.ItemComposition)
+                              .HasForeignKey(pcd => pcd.ItemCompositionId)
                               .OnDelete(DeleteBehavior.Cascade);
                   });
 
-                  modelBuilder.Entity<ProductCompositionDetail>(entity =>
+                  modelBuilder.Entity<ItemCompositionDetail>(entity =>
                   {
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
                         // 關聯設定
-                        entity.HasOne(pcd => pcd.ProductComposition)
+                        entity.HasOne(pcd => pcd.ItemComposition)
                               .WithMany(pc => pc.CompositionDetails)
-                              .HasForeignKey(pcd => pcd.ProductCompositionId)
+                              .HasForeignKey(pcd => pcd.ItemCompositionId)
                               .OnDelete(DeleteBehavior.Cascade);
 
-                        entity.HasOne(pcd => pcd.ComponentProduct)
+                        entity.HasOne(pcd => pcd.ComponentItem)
                               .WithMany(p => p.ComponentInCompositions)
-                              .HasForeignKey(pcd => pcd.ComponentProductId)
+                              .HasForeignKey(pcd => pcd.ComponentItemId)
                               .OnDelete(DeleteBehavior.Restrict);
 
                         entity.HasOne(pcd => pcd.Unit)
@@ -1149,9 +1150,9 @@ namespace ERPCore2.Data.Context
                               .HasForeignKey(psi => psi.ProductionScheduleId)
                               .OnDelete(DeleteBehavior.Cascade);
 
-                        entity.HasOne(psi => psi.Product)
+                        entity.HasOne(psi => psi.Item)
                               .WithMany()
-                              .HasForeignKey(psi => psi.ProductId)
+                              .HasForeignKey(psi => psi.ItemId)
                               .OnDelete(DeleteBehavior.Restrict);
 
                         entity.HasOne(psi => psi.SalesOrderDetail)
@@ -1176,7 +1177,7 @@ namespace ERPCore2.Data.Context
                               .HasPrecision(18, 3);
 
                         // 設定索引
-                        entity.HasIndex(e => new { e.ProductionScheduleId, e.ProductId });
+                        entity.HasIndex(e => new { e.ProductionScheduleId, e.ItemId });
                         entity.HasIndex(e => e.SalesOrderDetailId);
                         entity.HasIndex(e => e.ProductionItemStatus);
                   });
@@ -1257,14 +1258,14 @@ namespace ERPCore2.Data.Context
                               .HasForeignKey(psd => psd.ProductionScheduleItemId)
                               .OnDelete(DeleteBehavior.Cascade);
 
-                        entity.HasOne(psd => psd.ComponentProduct)
+                        entity.HasOne(psd => psd.ComponentItem)
                               .WithMany()
-                              .HasForeignKey(psd => psd.ComponentProductId)
+                              .HasForeignKey(psd => psd.ComponentItemId)
                               .OnDelete(DeleteBehavior.Restrict);
 
-                        entity.HasOne(psd => psd.ProductCompositionDetail)
+                        entity.HasOne(psd => psd.ItemCompositionDetail)
                               .WithMany()
-                              .HasForeignKey(psd => psd.ProductCompositionDetailId)
+                              .HasForeignKey(psd => psd.ItemCompositionDetailId)
                               .OnDelete(DeleteBehavior.SetNull);
 
                         entity.HasOne(psd => psd.Warehouse)
@@ -1283,8 +1284,8 @@ namespace ERPCore2.Data.Context
                               .HasPrecision(18, 2);
 
                         // 設定索引
-                        entity.HasIndex(e => new { e.ProductionScheduleItemId, e.ComponentProductId });
-                        entity.HasIndex(e => e.ComponentProductId);
+                        entity.HasIndex(e => new { e.ProductionScheduleItemId, e.ComponentItemId });
+                        entity.HasIndex(e => e.ComponentItemId);
                   });
 
                   // 員工儀表板面板
@@ -1368,15 +1369,15 @@ namespace ERPCore2.Data.Context
                               .HasForeignKey(a => a.LinkedSupplierId)
                               .OnDelete(DeleteBehavior.SetNull);
 
-                        entity.HasOne(a => a.LinkedProduct)
+                        entity.HasOne(a => a.LinkedItem)
                               .WithMany()
-                              .HasForeignKey(a => a.LinkedProductId)
+                              .HasForeignKey(a => a.LinkedItemId)
                               .OnDelete(DeleteBehavior.SetNull);
 
                         // 子科目連結索引（Filtered：僅非 null 值才建索引）
                         entity.HasIndex(a => a.LinkedCustomerId).HasFilter("[LinkedCustomerId] IS NOT NULL");
                         entity.HasIndex(a => a.LinkedSupplierId).HasFilter("[LinkedSupplierId] IS NOT NULL");
-                        entity.HasIndex(a => a.LinkedProductId).HasFilter("[LinkedProductId] IS NOT NULL");
+                        entity.HasIndex(a => a.LinkedItemId).HasFilter("[LinkedItemId] IS NOT NULL");
                   });
 
                   modelBuilder.Entity<ScaleRecord>(entity =>
@@ -1390,9 +1391,9 @@ namespace ERPCore2.Data.Context
                               .OnDelete(DeleteBehavior.Restrict);
 
                         // 品項關聯（Optional）
-                        entity.HasOne(sr => sr.Product)
+                        entity.HasOne(sr => sr.Item)
                               .WithMany()
-                              .HasForeignKey(sr => sr.ProductId)
+                              .HasForeignKey(sr => sr.ItemId)
                               .OnDelete(DeleteBehavior.SetNull);
 
                         // 客戶關聯（Optional）
@@ -1615,6 +1616,19 @@ namespace ERPCore2.Data.Context
                               .OnDelete(DeleteBehavior.Restrict);
                   });
 
+                  modelBuilder.Entity<AttendanceDailyRecord>(entity =>
+                  {
+                        // 每員工每天只能有一筆逐日記錄
+                        entity.HasIndex(e => new { e.EmployeeId, e.Date })
+                              .IsUnique()
+                              .HasDatabaseName("UX_AttendanceDaily_Employee_Date");
+                        entity.HasIndex(e => e.Date);
+                        entity.HasOne(e => e.Employee)
+                              .WithMany()
+                              .HasForeignKey(e => e.EmployeeId)
+                              .OnDelete(DeleteBehavior.Restrict);
+                  });
+
                   // 便條貼（個人工具）
                   modelBuilder.Entity<StickyNote>(entity =>
                   {
@@ -1642,13 +1656,13 @@ namespace ERPCore2.Data.Context
                         entity.HasIndex(e => new { e.OwnerType, e.OwnerId });
                   });
 
-                  modelBuilder.Entity<ProductPhoto>(entity =>
+                  modelBuilder.Entity<ItemPhoto>(entity =>
                   {
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
-                        entity.HasIndex(e => e.ProductId);
-                        entity.HasOne(e => e.Product)
+                        entity.HasIndex(e => e.ItemId);
+                        entity.HasOne(e => e.Item)
                               .WithMany()
-                              .HasForeignKey(e => e.ProductId)
+                              .HasForeignKey(e => e.ItemId)
                               .OnDelete(DeleteBehavior.Cascade);
                   });
 

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ERPCore2.Data.Entities.Customers;
 using Microsoft.EntityFrameworkCore;
@@ -85,6 +85,10 @@ namespace ERPCore2.Data.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal? CreditLimit { get; set; }
         
+        [Display(Name = "付款天數")]
+        [Range(0, 365, ErrorMessage = "付款天數必須介於0到365天之間")]
+        public int PaymentDays { get; set; } = 30;
+
         [Display(Name = "目前應收餘額")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal CurrentBalance { get; set; } = 0;
@@ -118,7 +122,7 @@ namespace ERPCore2.Data.Entities
         // 銀行帳號請使用 ICustomerBankAccountService 取得
 
         // Navigation Properties
-        public ICollection<ProductCustomer> ProductCustomers { get; set; } = new List<ProductCustomer>();
+        public ICollection<ItemCustomer> ItemCustomers { get; set; } = new List<ItemCustomer>();
         public ICollection<CustomerBankAccount> CustomerBankAccounts { get; set; } = new List<CustomerBankAccount>();
     }
 }

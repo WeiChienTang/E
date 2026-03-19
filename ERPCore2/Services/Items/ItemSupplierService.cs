@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -10,43 +10,43 @@ namespace ERPCore2.Services
     /// <summary>
     /// 品項-供應商關聯服務實作
     /// </summary>
-    public class ProductSupplierService : GenericManagementService<ProductSupplier>, IProductSupplierService
+    public class ItemSupplierService : GenericManagementService<ItemSupplier>, IItemSupplierService
     {
         /// <summary>
         /// 完整建構子 - 使用 ILogger
         /// </summary>
-        public ProductSupplierService(
+        public ItemSupplierService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<ProductSupplier>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<ItemSupplier>> logger) : base(contextFactory, logger)
         {
         }
 
         /// <summary>
         /// 簡易建構子 - 不使用 ILogger
         /// </summary>
-        public ProductSupplierService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        public ItemSupplierService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
         #region 覆寫基底方法
 
-        protected override IQueryable<ProductSupplier> BuildGetAllQuery(AppDbContext context)
+        protected override IQueryable<ItemSupplier> BuildGetAllQuery(AppDbContext context)
         {
-            return context.ProductSuppliers
-                .Include(ps => ps.Product)
+            return context.ItemSuppliers
+                .Include(ps => ps.Item)
                 .Include(ps => ps.Supplier)
-                .OrderBy(ps => ps.ProductId)
+                .OrderBy(ps => ps.ItemId)
                 .ThenBy(ps => ps.Priority);
         }
 
-        public override async Task<ProductSupplier?> GetByIdAsync(int id)
+        public override async Task<ItemSupplier?> GetByIdAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             try
             {
-                return await context.ProductSuppliers
-                    .Include(ps => ps.Product)
+                return await context.ItemSuppliers
+                    .Include(ps => ps.Item)
                     .Include(ps => ps.Supplier)
                     .FirstOrDefaultAsync(ps => ps.Id == id);
             }
@@ -57,14 +57,14 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<ServiceResult> ValidateAsync(ProductSupplier entity)
+        public override async Task<ServiceResult> ValidateAsync(ItemSupplier entity)
         {
             try
             {
                 var errors = new List<string>();
 
                 // 驗證必填欄位
-                if (entity.ProductId <= 0)
+                if (entity.ItemId <= 0)
                 {
                     errors.Add("品項為必填欄位");
                 }
@@ -75,9 +75,9 @@ namespace ERPCore2.Services
                 }
 
                 // 檢查重複綁定
-                if (entity.ProductId > 0 && entity.SupplierId > 0)
+                if (entity.ItemId > 0 && entity.SupplierId > 0)
                 {
-                    var isDuplicate = await IsBindingExistsAsync(entity.ProductId, entity.SupplierId, entity.Id);
+                    var isDuplicate = await IsBindingExistsAsync(entity.ItemId, entity.SupplierId, entity.Id);
                     if (isDuplicate)
                     {
                         errors.Add("此品項與供應商的綁定已存在");
@@ -103,12 +103,12 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, 
-                    new { EntityId = entity.Id, ProductId = entity.ProductId, SupplierId = entity.SupplierId });
+                    new { EntityId = entity.Id, ItemId = entity.ItemId, SupplierId = entity.SupplierId });
                 return ServiceResult.Failure($"驗證品項-供應商綁定時發生錯誤: {ex.Message}");
             }
         }
 
-        public override async Task<List<ProductSupplier>> SearchAsync(string searchTerm)
+        public override async Task<List<ItemSupplier>> SearchAsync(string searchTerm)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
@@ -117,14 +117,14 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await context.ProductSuppliers
-                    .Include(ps => ps.Product)
+                return await context.ItemSuppliers
+                    .Include(ps => ps.Item)
                     .Include(ps => ps.Supplier)
-                    .Where(ps => (ps.Product!.Name != null && ps.Product.Name.Contains(searchTerm)) ||
-                                (ps.Product!.Code != null && ps.Product.Code.Contains(searchTerm)) ||
+                    .Where(ps => (ps.Item!.Name != null && ps.Item.Name.Contains(searchTerm)) ||
+                                (ps.Item!.Code != null && ps.Item.Code.Contains(searchTerm)) ||
                                 (ps.Supplier!.CompanyName != null && ps.Supplier.CompanyName.Contains(searchTerm)) ||
                                 (ps.Supplier!.Code != null && ps.Supplier.Code.Contains(searchTerm)) ||
-                                (ps.SupplierProductCode != null && ps.SupplierProductCode.Contains(searchTerm)))
+                                (ps.SupplierItemCode != null && ps.SupplierItemCode.Contains(searchTerm)))
                     .OrderByDescending(ps => ps.IsPreferred)
                     .ThenBy(ps => ps.Priority)
                     .ToListAsync();
@@ -143,24 +143,24 @@ namespace ERPCore2.Services
         /// <summary>
         /// 依品項ID取得所有綁定的供應商
         /// </summary>
-        public async Task<List<ProductSupplier>> GetByProductIdAsync(int productId)
+        public async Task<List<ItemSupplier>> GetByItemIdAsync(int productId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             try
             {
-                return await context.ProductSuppliers
-                    .Include(ps => ps.Product)
+                return await context.ItemSuppliers
+                    .Include(ps => ps.Item)
                     .Include(ps => ps.Supplier)
-                    .Where(ps => ps.ProductId == productId)
+                    .Where(ps => ps.ItemId == productId)
                     .OrderByDescending(ps => ps.IsPreferred)
                     .ThenBy(ps => ps.Priority)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAsync), GetType(), _logger, 
-                    new { ProductId = productId });
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemIdAsync), GetType(), _logger, 
+                    new { ItemId = productId });
                 throw;
             }
         }
@@ -168,14 +168,14 @@ namespace ERPCore2.Services
         /// <summary>
         /// 依供應商ID取得所有綁定的品項
         /// </summary>
-        public async Task<List<ProductSupplier>> GetBySupplierIdAsync(int supplierId)
+        public async Task<List<ItemSupplier>> GetBySupplierIdAsync(int supplierId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             try
             {
-                return await context.ProductSuppliers
-                    .Include(ps => ps.Product)
+                return await context.ItemSuppliers
+                    .Include(ps => ps.Item)
                     .Include(ps => ps.Supplier)
                     .Where(ps => ps.SupplierId == supplierId)
                     .OrderByDescending(ps => ps.IsPreferred)
@@ -193,23 +193,23 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得指定品項的常用供應商列表（依優先順序排序）
         /// </summary>
-        public async Task<List<ProductSupplier>> GetPreferredSuppliersByProductIdAsync(int productId)
+        public async Task<List<ItemSupplier>> GetPreferredSuppliersByItemIdAsync(int productId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             try
             {
-                return await context.ProductSuppliers
-                    .Include(ps => ps.Product)
+                return await context.ItemSuppliers
+                    .Include(ps => ps.Item)
                     .Include(ps => ps.Supplier)
-                    .Where(ps => ps.ProductId == productId && ps.IsPreferred)
+                    .Where(ps => ps.ItemId == productId && ps.IsPreferred)
                     .OrderBy(ps => ps.Priority)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPreferredSuppliersByProductIdAsync), GetType(), _logger, 
-                    new { ProductId = productId });
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPreferredSuppliersByItemIdAsync), GetType(), _logger, 
+                    new { ItemId = productId });
                 throw;
             }
         }
@@ -223,8 +223,8 @@ namespace ERPCore2.Services
 
             try
             {
-                var query = context.ProductSuppliers
-                    .Where(ps => ps.ProductId == productId && ps.SupplierId == supplierId);
+                var query = context.ItemSuppliers
+                    .Where(ps => ps.ItemId == productId && ps.SupplierId == supplierId);
 
                 if (excludeId.HasValue)
                 {
@@ -236,7 +236,7 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsBindingExistsAsync), GetType(), _logger, 
-                    new { ProductId = productId, SupplierId = supplierId, ExcludeId = excludeId });
+                    new { ItemId = productId, SupplierId = supplierId, ExcludeId = excludeId });
                 throw;
             }
         }
@@ -259,14 +259,14 @@ namespace ERPCore2.Services
                     .Where(po => po.SupplierId == supplierId && po.Status == EntityStatus.Active)
                     .SelectMany(po => po.PurchaseOrderDetails.Select(pod => new
                     {
-                        ProductId = pod.ProductId,
+                        ItemId = pod.ItemId,
                         pod.UnitPrice,
                         po.OrderDate
                     }))
-                    .GroupBy(x => x.ProductId)
+                    .GroupBy(x => x.ItemId)
                     .Select(g => new
                     {
-                        ProductId = g.Key,
+                        ItemId = g.Key,
                         LastPrice = g.OrderByDescending(x => x.OrderDate).First().UnitPrice,
                         LastDate = g.Max(x => x.OrderDate),
                         PurchaseCount = g.Count()
@@ -274,17 +274,17 @@ namespace ERPCore2.Services
                     .ToListAsync();
 
                 // 取得已存在的綁定
-                var existingBindings = await context.ProductSuppliers
+                var existingBindings = await context.ItemSuppliers
                     .Where(ps => ps.SupplierId == supplierId)
-                    .Select(ps => ps.ProductId)
+                    .Select(ps => ps.ItemId)
                     .ToListAsync();
 
                 // 篩選出尚未綁定的品項
                 var newBindings = purchaseData
-                    .Where(pd => !existingBindings.Contains(pd.ProductId))
-                    .Select(pd => new ProductSupplier
+                    .Where(pd => !existingBindings.Contains(pd.ItemId))
+                    .Select(pd => new ItemSupplier
                     {
-                        ProductId = pd.ProductId,
+                        ItemId = pd.ItemId,
                         SupplierId = supplierId,
                         IsPreferred = pd.PurchaseCount >= 3,  // 採購3次以上自動設為常用
                         Priority = pd.PurchaseCount >= 3 ? 100 : 999,
@@ -297,7 +297,7 @@ namespace ERPCore2.Services
 
                 if (newBindings.Any())
                 {
-                    await context.ProductSuppliers.AddRangeAsync(newBindings);
+                    await context.ItemSuppliers.AddRangeAsync(newBindings);
                     await context.SaveChangesAsync();
                 }
 
@@ -320,7 +320,7 @@ namespace ERPCore2.Services
 
             try
             {
-                var query = context.ProductSuppliers.AsQueryable();
+                var query = context.ItemSuppliers.AsQueryable();
 
                 if (supplierId.HasValue)
                 {
@@ -335,7 +335,7 @@ namespace ERPCore2.Services
                     // 查詢最近的採購記錄
                     var lastPurchase = await context.PurchaseOrders
                         .Where(po => po.SupplierId == binding.SupplierId && po.Status == EntityStatus.Active)
-                        .SelectMany(po => po.PurchaseOrderDetails.Where(pod => pod.ProductId == binding.ProductId)
+                        .SelectMany(po => po.PurchaseOrderDetails.Where(pod => pod.ItemId == binding.ItemId)
                             .Select(pod => new
                             {
                                 pod.UnitPrice,
@@ -381,8 +381,8 @@ namespace ERPCore2.Services
 
             try
             {
-                var binding = await context.ProductSuppliers
-                    .FirstOrDefaultAsync(ps => ps.ProductId == productId && ps.SupplierId == supplierId);
+                var binding = await context.ItemSuppliers
+                    .FirstOrDefaultAsync(ps => ps.ItemId == productId && ps.SupplierId == supplierId);
 
                 if (binding != null)
                 {
@@ -396,7 +396,7 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateLastPurchaseInfoAsync), GetType(), _logger, 
-                    new { ProductId = productId, SupplierId = supplierId, Price = price, Date = date });
+                    new { ItemId = productId, SupplierId = supplierId, Price = price, Date = date });
                 // 不拋出例外，避免影響主流程
             }
         }

@@ -297,46 +297,46 @@ public static class ReportRegistry
             // ==================== 品項報表 ====================
             new ReportDefinition
             {
-                Id = ReportIds.ProductList,
+                Id = ReportIds.ItemList,
                 Name = "品項清單表",
-                NameKey = "Report.ProductList",
+                NameKey = "Report.ItemList",
                 Description = "列印品項基本資料清單（含品號、品名、規格、條碼、分類、單位）",
-                DescriptionKey = "Report.ProductListDesc",
+                DescriptionKey = "Report.ItemListDesc",
                 IconClass = "bi bi-box-seam",
-                Category = ReportCategory.Product,
-                ModuleKey = "Products",
-                RequiredPermission = PermissionRegistry.Product.Read,
-                ActionId = "PrintProductList",
+                Category = ReportCategory.Item,
+                ModuleKey = "Items",
+                RequiredPermission = PermissionRegistry.Item.Read,
+                ActionId = "PrintItemList",
                 SortOrder = 1,
                 IsEnabled = true
             },
             new ReportDefinition
             {
-                Id = ReportIds.ProductDetail,
+                Id = ReportIds.ItemDetail,
                 Name = "品項詳細資料",
-                NameKey = "Report.ProductDetail",
+                NameKey = "Report.ItemDetail",
                 Description = "列印品項完整詳細資料，含規格、條碼、分類、單位、採購類型、成本定價等，每項品項各佔一區塊",
-                DescriptionKey = "Report.ProductDetailDesc",
+                DescriptionKey = "Report.ItemDetailDesc",
                 IconClass = "bi bi-box-fill",
-                Category = ReportCategory.Product,
-                ModuleKey = "Products",
-                RequiredPermission = PermissionRegistry.Product.Read,
-                ActionId = "OpenProductDetailReport",
+                Category = ReportCategory.Item,
+                ModuleKey = "Items",
+                RequiredPermission = PermissionRegistry.Item.Read,
+                ActionId = "OpenItemDetailReport",
                 SortOrder = 2,
                 IsEnabled = true
             },
             new ReportDefinition
             {
-                Id = ReportIds.ProductBarcode,
+                Id = ReportIds.ItemBarcode,
                 Name = "品項條碼",
-                NameKey = "Report.ProductBarcode",
+                NameKey = "Report.ItemBarcode",
                 Description = "列印品項條碼",
-                DescriptionKey = "Report.ProductBarcodeDesc",
+                DescriptionKey = "Report.ItemBarcodeDesc",
                 IconClass = "bi bi-upc-scan",
-                Category = ReportCategory.Product,
-                ModuleKey = "Products",
-                RequiredPermission = PermissionRegistry.Product.Read,
-                ActionId = "PrintProductBarcode",
+                Category = ReportCategory.Item,
+                ModuleKey = "Items",
+                RequiredPermission = PermissionRegistry.Item.Read,
+                ActionId = "PrintItemBarcode",
                 SortOrder = 3,
                 IsEnabled = true
             },
@@ -348,9 +348,9 @@ public static class ReportRegistry
                 Description = "列印品項BOM物料清單，依配方分組顯示組件品號、品名、數量、單位、成本",
                 DescriptionKey = "Report.BOMReportDesc",
                 IconClass = "bi bi-diagram-3",
-                Category = ReportCategory.Product,
-                ModuleKey = "Products",
-                RequiredPermission = PermissionRegistry.ProductComposition.Read,
+                Category = ReportCategory.Item,
+                ModuleKey = "Items",
+                RequiredPermission = PermissionRegistry.ItemComposition.Read,
                 ActionId = "OpenBOMReport",
                 SortOrder = 4,
                 IsEnabled = true
@@ -363,8 +363,8 @@ public static class ReportRegistry
                 Description = "列印製令單，含用料清單、完工入庫記錄及簽核區",
                 DescriptionKey = "Report.ManufacturingOrderDesc",
                 IconClass = "bi bi-file-earmark-text",
-                Category = ReportCategory.Product,
-                ModuleKey = "Products",
+                Category = ReportCategory.Item,
+                ModuleKey = "Items",
                 RequiredPermission = PermissionRegistry.ProductionSchedule.Read,
                 ActionId = "OpenManufacturingOrderReport",
                 SortOrder = 4,
@@ -378,8 +378,8 @@ public static class ReportRegistry
                 Description = "查詢生產排程，含排程項目、數量、狀態、預計日期等明細",
                 DescriptionKey = "Report.ProductionScheduleDesc",
                 IconClass = "bi bi-calendar-check",
-                Category = ReportCategory.Product,
-                ModuleKey = "Products",
+                Category = ReportCategory.Item,
+                ModuleKey = "Items",
                 RequiredPermission = PermissionRegistry.ProductionSchedule.Read,
                 ActionId = "OpenProductionScheduleReport",
                 SortOrder = 5,
@@ -393,8 +393,8 @@ public static class ReportRegistry
                 Description = "查詢生產過程中有損耗量或退料量的組件明細，依生產項目分組顯示",
                 DescriptionKey = "Report.MaterialScrapRecordDesc",
                 IconClass = "bi bi-exclamation-triangle",
-                Category = ReportCategory.Product,
-                ModuleKey = "Products",
+                Category = ReportCategory.Item,
+                ModuleKey = "Items",
                 RequiredPermission = PermissionRegistry.ProductionSchedule.Read,
                 ActionId = "OpenMaterialScrapReport",
                 SortOrder = 6,
@@ -408,8 +408,8 @@ public static class ReportRegistry
                 Description = "彙總指定期間內生產排程的物料需求，依組件品號統計需求量、已領量與待領量",
                 DescriptionKey = "Report.MaterialRequirementsDesc",
                 IconClass = "bi bi-list-check",
-                Category = ReportCategory.Product,
-                ModuleKey = "Products",
+                Category = ReportCategory.Item,
+                ModuleKey = "Items",
                 RequiredPermission = PermissionRegistry.ProductionSchedule.Read,
                 ActionId = "OpenMaterialRequirementsReport",
                 SortOrder = 7,
@@ -682,6 +682,36 @@ public static class ReportRegistry
                 SortOrder = 7,
                 IsEnabled = true
             },
+            new ReportDefinition
+            {
+                Id = ReportIds.ARAgingAnalysis,
+                Name = "應收帳款帳齡分析",
+                NameKey = "Report.ARAgingAnalysis",
+                Description = "依出貨日 + 客戶付款天數計算到期日，彙總各帳齡區間（未到期/1-30/31-60/61-90/91-120/121+天）的未收金額",
+                DescriptionKey = "Report.ARAgingAnalysisDesc",
+                IconClass = "bi bi-hourglass-split",
+                Category = ReportCategory.Accounting,
+                ModuleKey = "Accounting",
+                RequiredPermission = PermissionRegistry.JournalEntry.Read,
+                ActionId = "OpenARAgingReport",
+                SortOrder = 8,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = ReportIds.APAgingAnalysis,
+                Name = "應付帳款帳齡分析",
+                NameKey = "Report.APAgingAnalysis",
+                Description = "依收貨日 + 廠商付款天數計算到期日，彙總各帳齡區間（未到期/1-30/31-60/61-90/91-120/121+天）的未付金額",
+                DescriptionKey = "Report.APAgingAnalysisDesc",
+                IconClass = "bi bi-hourglass-split",
+                Category = ReportCategory.Accounting,
+                ModuleKey = "Accounting",
+                RequiredPermission = PermissionRegistry.JournalEntry.Read,
+                ActionId = "OpenAPAgingReport",
+                SortOrder = 9,
+                IsEnabled = true
+            },
         };
     }
     
@@ -755,9 +785,9 @@ public static class ReportRegistry
     /// <summary>
     /// 取得品項相關報表
     /// </summary>
-    public static List<ReportDefinition> GetProductReports()
+    public static List<ReportDefinition> GetItemReports()
     {
-        return GetReportsByCategory(ReportCategory.Product);
+        return GetReportsByCategory(ReportCategory.Item);
     }
 
     /// <summary>

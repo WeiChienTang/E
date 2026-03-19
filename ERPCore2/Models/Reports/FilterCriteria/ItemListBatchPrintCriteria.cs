@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models.Reports.FilterAttributes;
 using ERPCore2.Models.Reports.FilterCriteria;
 using ERPCore2.Services;
@@ -8,12 +8,12 @@ namespace ERPCore2.Models.Reports.FilterCriteria;
 /// <summary>
 /// 品項資料表批次列印篩選條件
 /// </summary>
-public class ProductListBatchPrintCriteria : IReportFilterCriteria
+public class ItemListBatchPrintCriteria : IReportFilterCriteria
 {
     /// <summary>
     /// 品項分類 ID 清單（空表示所有分類）
     /// </summary>
-    [FilterFK(typeof(IProductCategoryService),
+    [FilterFK(typeof(IItemCategoryService),
         Group = FilterGroup.Basic,
         Label = "品項分類",
         Placeholder = "搜尋品項分類...",

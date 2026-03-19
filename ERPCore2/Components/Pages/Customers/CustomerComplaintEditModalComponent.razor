@@ -1,4 +1,4 @@
-@* 可重用的客戶投訴紀錄編輯組件 - 用於客訴 Index 頁面及客戶 EditModal 的 Tab 頁籤中 *@
+﻿@* 可重用的客戶投訴紀錄編輯組件 - 用於客訴 Index 頁面及客戶 EditModal 的 Tab 頁籤中 *@
 @inject ICustomerComplaintService CustomerComplaintService
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
@@ -130,7 +130,7 @@
                 var newComplaint = new CustomerComplaint
                 {
                     ComplaintDate = DateTime.Today,
-                    Category = ComplaintCategory.ProductQuality,
+                    Category = ComplaintCategory.ItemQuality,
                     ComplaintStatus = ComplaintStatus.Open,
                     Status = EntityStatus.Active
                 };
@@ -199,7 +199,7 @@
                         {
                             Text = e switch
                             {
-                                ComplaintCategory.ProductQuality  => L["ComplaintCategory.ProductQuality"],
+                                ComplaintCategory.ItemQuality  => L["ComplaintCategory.ItemQuality"],
                                 ComplaintCategory.DeliveryDelay   => L["ComplaintCategory.DeliveryDelay"],
                                 ComplaintCategory.ServiceAttitude => L["ComplaintCategory.ServiceAttitude"],
                                 ComplaintCategory.PriceDispute    => L["ComplaintCategory.PriceDispute"],

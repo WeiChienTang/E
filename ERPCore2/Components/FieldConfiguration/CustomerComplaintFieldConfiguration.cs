@@ -1,4 +1,4 @@
-using ERPCore2.Components.Shared.UI.Form;
+﻿using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
@@ -82,7 +82,7 @@ namespace ERPCore2.FieldConfiguration
                                 var complaint = item as CustomerComplaint;
                                 var text = complaint?.Category switch
                                 {
-                                    ComplaintCategory.ProductQuality => L?["ComplaintCategory.ProductQuality"].ToString() ?? "產品品質",
+                                    ComplaintCategory.ItemQuality => L?["ComplaintCategory.ItemQuality"].ToString() ?? "產品品質",
                                     ComplaintCategory.DeliveryDelay  => L?["ComplaintCategory.DeliveryDelay"].ToString() ?? "交期延誤",
                                     ComplaintCategory.ServiceAttitude => L?["ComplaintCategory.ServiceAttitude"].ToString() ?? "服務態度",
                                     ComplaintCategory.PriceDispute   => L?["ComplaintCategory.PriceDispute"].ToString() ?? "價格爭議",

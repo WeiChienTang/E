@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -9,30 +9,30 @@ namespace ERPCore2.Services
     /// <summary>
     /// 品項照片服務實作
     /// </summary>
-    public class ProductPhotoService : GenericManagementService<ProductPhoto>, IProductPhotoService
+    public class ItemPhotoService : GenericManagementService<ItemPhoto>, IItemPhotoService
     {
-        public ProductPhotoService(
+        public ItemPhotoService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<ProductPhoto>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<ItemPhoto>> logger) : base(contextFactory, logger)
         {
         }
 
-        public ProductPhotoService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        public ItemPhotoService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
-        protected override IQueryable<ProductPhoto> BuildGetAllQuery(AppDbContext context)
+        protected override IQueryable<ItemPhoto> BuildGetAllQuery(AppDbContext context)
         {
-            return context.ProductPhotos
-                .OrderBy(p => p.ProductId)
+            return context.ItemPhotos
+                .OrderBy(p => p.ItemId)
                 .ThenBy(p => p.SortOrder);
         }
 
-        public override async Task<ServiceResult> ValidateAsync(ProductPhoto entity)
+        public override async Task<ServiceResult> ValidateAsync(ItemPhoto entity)
         {
             try
             {
-                if (entity.ProductId <= 0)
+                if (entity.ItemId <= 0)
                     return ServiceResult.Failure("品項ID無效");
 
                 if (string.IsNullOrWhiteSpace(entity.PhotoPath))
@@ -47,7 +47,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<List<ProductPhoto>> SearchAsync(string searchTerm)
+        public override async Task<List<ItemPhoto>> SearchAsync(string searchTerm)
         {
             try
             {
@@ -55,9 +55,9 @@ namespace ERPCore2.Services
                     return await GetAllAsync();
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductPhotos
+                return await context.ItemPhotos
                     .Where(p => p.Caption != null && p.Caption.Contains(searchTerm))
-                    .OrderBy(p => p.ProductId)
+                    .OrderBy(p => p.ItemId)
                     .ThenBy(p => p.SortOrder)
                     .ToListAsync();
             }
@@ -68,19 +68,19 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<ProductPhoto>> GetByProductAsync(int productId)
+        public async Task<List<ItemPhoto>> GetByItemAsync(int productId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductPhotos
-                    .Where(p => p.ProductId == productId)
+                return await context.ItemPhotos
+                    .Where(p => p.ItemId == productId)
                     .OrderBy(p => p.SortOrder)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductAsync), GetType(), _logger, new { ProductId = productId });
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemAsync), GetType(), _logger, new { ItemId = productId });
                 throw;
             }
         }

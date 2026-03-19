@@ -1,4 +1,4 @@
-@* 領料單訂單來源 Tab - 自包含元件，顯示對應的生產排程訂單來源資訊 *@
+﻿@* 領料單訂單來源 Tab - 自包含元件，顯示對應的生產排程訂單來源資訊 *@
 @inject IProductionScheduleItemService ProductionScheduleItemService
 @inject IProductionScheduleDetailService ProductionScheduleDetailService
 
@@ -19,11 +19,11 @@
                     <tr>
                         <td class="fw-semibold">@row.SalesOrderCode</td>
                         <td>
-                            @if (!string.IsNullOrEmpty(row.ProductCode))
+                            @if (!string.IsNullOrEmpty(row.ItemCode))
                             {
-                                <span class="product-code me-1">[@row.ProductCode]</span>
+                                <span class="product-code me-1">[@row.ItemCode]</span>
                             }
-                            @row.ProductName
+                            @row.ItemName
                         </td>
                         <td class="text-end">@row.ScheduledQuantity.ToString("G")</td>
                     </tr>
@@ -49,8 +49,8 @@
 
     private record OrderSourceItem(
         string SalesOrderCode,
-        string ProductCode,
-        string ProductName,
+        string ItemCode,
+        string ItemName,
         decimal ScheduledQuantity);
 
     private List<OrderSourceItem> _items = new();
@@ -92,8 +92,8 @@
                     .Where(i => i.SalesOrderDetail?.SalesOrder != null)
                     .Select(i => new OrderSourceItem(
                         i.SalesOrderDetail!.SalesOrder!.Code ?? "-",
-                        i.Product?.Code ?? "",
-                        i.Product?.Name ?? "-",
+                        i.Item?.Code ?? "",
+                        i.Item?.Name ?? "-",
                         i.ScheduledQuantity))
                     .ToList();
                 return;
@@ -125,8 +125,8 @@
                 if (item == null) continue;
                 rows.Add(new OrderSourceItem(
                     item.SalesOrderDetail?.SalesOrder?.Code ?? "-",
-                    item.Product?.Code ?? "",
-                    item.Product?.Name ?? "-",
+                    item.Item?.Code ?? "",
+                    item.Item?.Name ?? "-",
                     item.ScheduledQuantity));
             }
             _items = rows;

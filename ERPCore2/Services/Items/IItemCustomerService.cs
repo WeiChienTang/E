@@ -1,28 +1,28 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 
 namespace ERPCore2.Services
 {
     /// <summary>
     /// 品項-客戶關聯服務介面
     /// </summary>
-    public interface IProductCustomerService : IGenericManagementService<ProductCustomer>
+    public interface IItemCustomerService : IGenericManagementService<ItemCustomer>
     {
         #region 查詢方法
 
         /// <summary>
         /// 依品項ID取得所有綁定的客戶
         /// </summary>
-        Task<List<ProductCustomer>> GetByProductIdAsync(int productId);
+        Task<List<ItemCustomer>> GetByItemIdAsync(int productId);
 
         /// <summary>
         /// 依客戶ID取得所有綁定的品項
         /// </summary>
-        Task<List<ProductCustomer>> GetByCustomerIdAsync(int customerId);
+        Task<List<ItemCustomer>> GetByCustomerIdAsync(int customerId);
 
         /// <summary>
         /// 取得指定品項的常用客戶列表（依優先順序排序）
         /// </summary>
-        Task<List<ProductCustomer>> GetPreferredCustomersByProductIdAsync(int productId);
+        Task<List<ItemCustomer>> GetPreferredCustomersByItemIdAsync(int productId);
 
         /// <summary>
         /// 檢查品項-客戶綁定是否存在

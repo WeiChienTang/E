@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
 using ERPCore2.Models.Enums;
@@ -17,7 +17,7 @@ namespace ERPCore2.Services.Reports
     /// </summary>
     public class BOMReportService : IBOMReportService
     {
-        private readonly IProductCompositionService _compositionService;
+        private readonly IItemCompositionService _compositionService;
         private readonly ICompositionCategoryService _compositionCategoryService;
         private readonly IUnitService _unitService;
         private readonly ICompanyService _companyService;
@@ -25,7 +25,7 @@ namespace ERPCore2.Services.Reports
         private readonly ILogger<BOMReportService>? _logger;
 
         public BOMReportService(
-            IProductCompositionService compositionService,
+            IItemCompositionService compositionService,
             ICompositionCategoryService compositionCategoryService,
             IUnitService unitService,
             ICompanyService companyService,
@@ -56,7 +56,7 @@ namespace ERPCore2.Services.Reports
             var company = await _companyService.GetPrimaryCompanyAsync();
             var categoryMap = await GetCategoryMapAsync();
             var unitMap = await GetUnitMapAsync();
-            return BuildBOMDocument(new List<ProductComposition> { composition }, company, null, categoryMap, unitMap);
+            return BuildBOMDocument(new List<ItemComposition> { composition }, company, null, categoryMap, unitMap);
         }
 
         /// <summary>
@@ -224,7 +224,7 @@ namespace ERPCore2.Services.Reports
         /// <summary>
         /// 根據 BatchPrintCriteria 查詢物料清單
         /// </summary>
-        private async Task<List<ProductComposition>> GetCompositionsByCriteriaAsync(BatchPrintCriteria criteria)
+        private async Task<List<ItemComposition>> GetCompositionsByCriteriaAsync(BatchPrintCriteria criteria)
         {
             var results = await _compositionService.GetAllAsync();
 
@@ -234,8 +234,8 @@ namespace ERPCore2.Services.Reports
                 var keyword = criteria.DocumentNumberKeyword;
                 results = results.Where(c =>
                     (c.Code != null && c.Code.Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
-                    (c.ParentProduct?.Code != null && c.ParentProduct.Code.Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
-                    (c.ParentProduct?.Name != null && c.ParentProduct.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
+                    (c.ParentItem?.Code != null && c.ParentItem.Code.Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
+                    (c.ParentItem?.Name != null && c.ParentItem.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
                     .ToList();
             }
 
@@ -245,13 +245,13 @@ namespace ERPCore2.Services.Reports
                 results = results.Where(c => c.Status == EntityStatus.Active).ToList();
             }
 
-            return results.OrderBy(c => c.ParentProduct?.Code).ThenBy(c => c.Code).ToList();
+            return results.OrderBy(c => c.ParentItem?.Code).ThenBy(c => c.Code).ToList();
         }
 
         /// <summary>
         /// 根據 BOMReportCriteria 查詢物料清單
         /// </summary>
-        private async Task<List<ProductComposition>> GetCompositionsByTypedCriteriaAsync(BOMReportCriteria criteria)
+        private async Task<List<ItemComposition>> GetCompositionsByTypedCriteriaAsync(BOMReportCriteria criteria)
         {
             var results = await _compositionService.GetAllAsync();
 
@@ -262,10 +262,10 @@ namespace ERPCore2.Services.Reports
             }
 
             // 篩選成品（父品項）
-            if (criteria.ParentProductIds.Any())
+            if (criteria.ParentItemIds.Any())
             {
                 results = results.Where(c =>
-                    c.ParentProductId.HasValue && criteria.ParentProductIds.Contains(c.ParentProductId.Value)).ToList();
+                    c.ParentItemId.HasValue && criteria.ParentItemIds.Contains(c.ParentItemId.Value)).ToList();
             }
 
             // 關鍵字搜尋
@@ -274,12 +274,12 @@ namespace ERPCore2.Services.Reports
                 var keyword = criteria.Keyword;
                 results = results.Where(c =>
                     (c.Code != null && c.Code.Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
-                    (c.ParentProduct?.Code != null && c.ParentProduct.Code.Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
-                    (c.ParentProduct?.Name != null && c.ParentProduct.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
+                    (c.ParentItem?.Code != null && c.ParentItem.Code.Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
+                    (c.ParentItem?.Name != null && c.ParentItem.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
                     .ToList();
             }
 
-            return results.OrderBy(c => c.ParentProduct?.Code).ThenBy(c => c.Code).ToList();
+            return results.OrderBy(c => c.ParentItem?.Code).ThenBy(c => c.Code).ToList();
         }
 
         #endregion
@@ -290,7 +290,7 @@ namespace ERPCore2.Services.Reports
         /// 建構物料清單報表（依配方分組顯示組件明細）
         /// </summary>
         private FormattedDocument BuildBOMDocument(
-            List<ProductComposition> compositions,
+            List<ItemComposition> compositions,
             Company? company,
             PaperSetting? paperSetting,
             Dictionary<int, string> categoryMap,
@@ -325,8 +325,8 @@ namespace ERPCore2.Services.Reports
             // === 依配方分組顯示 ===
             foreach (var composition in compositions)
             {
-                var productCode = composition.ParentProduct?.Code ?? "";
-                var productName = composition.ParentProduct?.Name ?? "";
+                var productCode = composition.ParentItem?.Code ?? "";
+                var productName = composition.ParentItem?.Name ?? "";
                 var categoryName = composition.CompositionCategoryId.HasValue &&
                     categoryMap.ContainsKey(composition.CompositionCategoryId.Value)
                     ? categoryMap[composition.CompositionCategoryId.Value]
@@ -352,8 +352,8 @@ namespace ERPCore2.Services.Reports
 
                 // 組件明細表格
                 var details = composition.CompositionDetails?
-                    .OrderBy(d => d.ComponentProduct?.Code)
-                    .ToList() ?? new List<ProductCompositionDetail>();
+                    .OrderBy(d => d.ComponentItem?.Code)
+                    .ToList() ?? new List<ItemCompositionDetail>();
 
                 doc.AddTable(table =>
                 {
@@ -382,8 +382,8 @@ namespace ERPCore2.Services.Reports
 
                         table.AddRow(
                             rowNum.ToString(),
-                            detail.ComponentProduct?.Code ?? "",
-                            detail.ComponentProduct?.Name ?? "",
+                            detail.ComponentItem?.Code ?? "",
+                            detail.ComponentItem?.Name ?? "",
                             detail.Quantity.ToString("N2"),
                             unitName,
                             detail.ComponentCost?.ToString("N2") ?? "",
@@ -411,7 +411,7 @@ namespace ERPCore2.Services.Reports
                 footer.AddSpacing(10);
 
                 var grandTotalCost = compositions.Sum(c =>
-                    (c.CompositionDetails ?? new List<ProductCompositionDetail>())
+                    (c.CompositionDetails ?? new List<ItemCompositionDetail>())
                     .Where(d => d.ComponentCost.HasValue)
                     .Sum(d => d.Quantity * d.ComponentCost!.Value));
 

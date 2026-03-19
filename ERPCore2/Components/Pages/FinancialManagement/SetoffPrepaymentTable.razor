@@ -1,4 +1,4 @@
-@* 沖款預收付款項管理組件 - 管理預收付款項的使用記錄 *@
+﻿@* 沖款預收付款項管理組件 - 管理預收付款項的使用記錄 *@
 
 @inject ISetoffPrepaymentService SetoffPrepaymentService
 @inject ISetoffPrepaymentUsageService SetoffPrepaymentUsageService
@@ -29,7 +29,7 @@
 <!-- 相關單據查看 Modal -->
 <RelatedDocumentsModalComponent IsVisible="@showRelatedDocumentsModal"
                                IsVisibleChanged="@((bool visible) => showRelatedDocumentsModal = visible)"
-                               ProductName="@selectedPrepaymentName"
+                               ItemName="@selectedPrepaymentName"
                                RelatedDocuments="@relatedDocuments"
                                IsLoading="@isLoadingRelatedDocuments"
                                OnDocumentClick="@HandleRelatedDocumentClick" />

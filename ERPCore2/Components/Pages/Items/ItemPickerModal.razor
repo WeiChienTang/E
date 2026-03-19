@@ -1,9 +1,9 @@
-@* 品項批量選擇器 Modal - 提供篩選+點擊選取，批量加入材料清單 *@
+﻿@* 品項批量選擇器 Modal - 提供篩選+點擊選取，批量加入材料清單 *@
 @inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                     IsVisibleChanged="@(async (bool visible) => { if (!visible) await Close(); })"
-                    Title="@L["Product.SelectList"]"
+                    Title="@L["Item.SelectList"]"
                     Icon="bi bi-grid-3x3-gap-fill"
                     HeaderColor="BaseModalComponent.HeaderVariant.Primary"
                     ShowCloseButton="true"
@@ -11,14 +11,14 @@
                     CloseOnBackdropClick="false"
                     CloseOnEscape="true"
                     OnClose="Close"
-                    DebugComponentName="ProductPickerModal">
+                    DebugComponentName="ItemPickerModal">
 
     <HeaderButtons>
         <div class="d-flex align-items-center gap-2">
             <div class="flex-grow-1">
                 <div class="input-group input-group-sm">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" class="form-control" placeholder="@L["Placeholder.SearchProductNameCode"]"
+                    <input type="text" class="form-control" placeholder="@L["Placeholder.SearchItemNameCode"]"
                            value="@_searchText"
                            @oninput="e => { _searchText = e.Value?.ToString() ?? string.Empty; ApplyFilters(); }" />
                 </div>
@@ -55,8 +55,8 @@
 
     <BodyContent>
         <div style="max-height: 450px; overflow: auto;">
-            <GenericInteractiveTableComponent TItem="Product"
-                                       Items="@_filteredProducts"
+            <GenericInteractiveTableComponent TItem="Item"
+                                       Items="@_filteredItems"
                                        ColumnDefinitions="@_columnDefinitions"
                                        ShowRowNumbers="false"
                                        IsStriped="false"
@@ -66,9 +66,9 @@
                                        SelectedItems="@_selectedItems"
                                        OnSelectionChanged="HandleSelectionChanged"
                                        GetRowCssClass="@GetRowCssClass"
-                                       EmptyMessage="@L["Message.NoMatchingProducts"]">
+                                       EmptyMessage="@L["Message.NoMatchingItems"]">
                 <EmptyTemplate>
-                    <i class="bi bi-inbox me-2"></i>@L["Message.NoMatchingProducts"]
+                    <i class="bi bi-inbox me-2"></i>@L["Message.NoMatchingItems"]
                 </EmptyTemplate>
             </GenericInteractiveTableComponent>
         </div>
@@ -78,11 +78,11 @@
 @code {
     // ===== 參數 =====
     [Parameter] public bool IsVisible { get; set; }
-    [Parameter] public List<Product> AvailableProducts { get; set; } = new();
-    [Parameter] public List<ProductCategory> AvailableCategories { get; set; } = new();
+    [Parameter] public List<Item> AvailableItems { get; set; } = new();
+    [Parameter] public List<ItemCategory> AvailableCategories { get; set; } = new();
     [Parameter] public List<Unit> AvailableUnits { get; set; } = new();
-    [Parameter] public HashSet<int> AlreadyAddedProductIds { get; set; } = new();
-    [Parameter] public EventCallback<List<Product>> OnConfirmed { get; set; }
+    [Parameter] public HashSet<int> AlreadyAddedItemIds { get; set; } = new();
+    [Parameter] public EventCallback<List<Item>> OnConfirmed { get; set; }
     [Parameter] public EventCallback OnCancelled { get; set; }
 
     // ===== 私有欄位 =====
@@ -90,8 +90,8 @@
     private string _specSearch = string.Empty;
     private int? _selectedCategoryId = null;
     private bool _hideAlreadyAdded = false;
-    private HashSet<Product> _selectedItems = new();
-    private List<Product> _filteredProducts = new();
+    private HashSet<Item> _selectedItems = new();
+    private List<Item> _filteredItems = new();
     private List<InteractiveColumnDefinition>? _columnDefinitions;
     private bool _wasVisible = false;
 
@@ -118,7 +118,7 @@
     // ===== 篩選 =====
     private void ApplyFilters()
     {
-        var query = AvailableProducts.AsEnumerable();
+        var query = AvailableItems.AsEnumerable();
 
         if (!string.IsNullOrWhiteSpace(_searchText))
         {
@@ -135,15 +135,15 @@
 
         if (_selectedCategoryId.HasValue)
         {
-            query = query.Where(p => p.ProductCategoryId == _selectedCategoryId.Value);
+            query = query.Where(p => p.ItemCategoryId == _selectedCategoryId.Value);
         }
 
         if (_hideAlreadyAdded)
         {
-            query = query.Where(p => !AlreadyAddedProductIds.Contains(p.Id));
+            query = query.Where(p => !AlreadyAddedItemIds.Contains(p.Id));
         }
 
-        _filteredProducts = query.ToList();
+        _filteredItems = query.ToList();
         StateHasChanged();
     }
 
@@ -161,25 +161,25 @@
         {
             new()
             {
-                Title = L["Column.ProductCode"],
-                PropertyName = nameof(Product.Code),
+                Title = L["Column.ItemCode"],
+                PropertyName = nameof(Item.Code),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "15%"
             },
             new()
             {
-                Title = L["Column.ProductName"],
-                PropertyName = nameof(Product.Name),
+                Title = L["Column.ItemName"],
+                PropertyName = nameof(Item.Name),
                 ColumnType = InteractiveColumnType.Custom,
                 Width = "30%",
                 CustomTemplate = item => builder =>
                 {
-                    var product = (Product)item;
+                    var product = (Item)item;
                     builder.OpenElement(0, "span");
                     builder.AddContent(1, product.Name);
                     builder.CloseElement();
 
-                    if (AlreadyAddedProductIds.Contains(product.Id))
+                    if (AlreadyAddedItemIds.Contains(product.Id))
                     {
                         builder.AddMarkupContent(2, "&nbsp;");
                         builder.OpenElement(3, "span");
@@ -197,9 +197,9 @@
                 Width = "15%",
                 CustomTemplate = item => builder =>
                 {
-                    var product = (Product)item;
-                    var cat = product.ProductCategoryId.HasValue
-                        ? AvailableCategories.FirstOrDefault(c => c.Id == product.ProductCategoryId.Value)
+                    var product = (Item)item;
+                    var cat = product.ItemCategoryId.HasValue
+                        ? AvailableCategories.FirstOrDefault(c => c.Id == product.ItemCategoryId.Value)
                         : null;
                     builder.OpenElement(0, "span");
                     builder.AddContent(1, cat?.Name ?? string.Empty);
@@ -209,7 +209,7 @@
             new()
             {
                 Title = L["Column.Spec"],
-                PropertyName = nameof(Product.Specification),
+                PropertyName = nameof(Item.Specification),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "25%"
             },
@@ -221,7 +221,7 @@
                 Width = "10%",
                 CustomTemplate = item => builder =>
                 {
-                    var product = (Product)item;
+                    var product = (Item)item;
                     var unit = product.UnitId > 0
                         ? AvailableUnits.FirstOrDefault(u => u.Id == product.UnitId)
                         : null;
@@ -234,17 +234,17 @@
     }
 
     // ===== 事件處理 =====
-    private void HandleSelectionChanged(HashSet<Product> selectedItems)
+    private void HandleSelectionChanged(HashSet<Item> selectedItems)
     {
         // 排除已加入的品項（點擊已加入品項不應加入選取）
-        selectedItems.RemoveWhere(p => AlreadyAddedProductIds.Contains(p.Id));
+        selectedItems.RemoveWhere(p => AlreadyAddedItemIds.Contains(p.Id));
         _selectedItems = selectedItems;
         StateHasChanged();
     }
 
-    private string GetRowCssClass(Product item, int index)
+    private string GetRowCssClass(Item item, int index)
     {
-        if (AlreadyAddedProductIds.Contains(item.Id))
+        if (AlreadyAddedItemIds.Contains(item.Id))
             return "table-secondary text-muted";
         if (_selectedItems.Contains(item))
             return "table-primary";

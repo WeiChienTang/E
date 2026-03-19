@@ -1,11 +1,16 @@
-using ERPCore2.Models.Charts;
+﻿using ERPCore2.Models.Charts;
 using ERPCore2.Services.Customers;
 using ERPCore2.Services.Employees;
+using ERPCore2.Services.FinancialManagement;
 using ERPCore2.Services.Inventory;
-using ERPCore2.Services.Products;
+using ERPCore2.Services.Items;
+using ERPCore2.Services.Payroll;
+using ERPCore2.Services.ProductionManagement;
 using ERPCore2.Services.Purchase;
 using ERPCore2.Services.Sales;
+using ERPCore2.Services.ScaleManagement;
 using ERPCore2.Services.Suppliers;
+using ERPCore2.Services.Vehicles;
 
 namespace ERPCore2.Data.Charts;
 
@@ -35,7 +40,12 @@ public static class ChartRegistry
         PurchaseChartDefinitions.Register(_definitions);
         SalesChartDefinitions.Register(_definitions);
         InventoryChartDefinitions.Register(_definitions);
-        ProductChartDefinitions.Register(_definitions);
+        ItemChartDefinitions.Register(_definitions);
+        ProductionChartDefinitions.Register(_definitions);
+        FinancialChartDefinitions.Register(_definitions);
+        PayrollChartDefinitions.Register(_definitions);
+        ScaleChartDefinitions.Register(_definitions);
+        VehicleChartDefinitions.Register(_definitions);
     }
 
     /// <summary>取得指定分類的圖表定義（依 SortOrder 排序）</summary>

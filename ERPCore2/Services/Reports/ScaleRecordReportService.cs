@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
 using ERPCore2.Models.Enums;
@@ -199,7 +199,7 @@ namespace ERPCore2.Services.Reports
                     (r.Vehicle != null && r.Vehicle.LicensePlate.Contains(kw, StringComparison.OrdinalIgnoreCase))).ToList();
             }
 
-            return results.OrderBy(r => r.Product?.Name).ThenBy(r => r.RecordDate).ToList();
+            return results.OrderBy(r => r.Item?.Name).ThenBy(r => r.RecordDate).ToList();
         }
 
         /// <summary>根據 ScaleRecordCriteria 查詢磅秤紀錄</summary>
@@ -211,7 +211,7 @@ namespace ERPCore2.Services.Reports
                 results = results.Where(r => r.Status == EntityStatus.Active).ToList();
 
             if (criteria.ScaleTypeIds.Any())
-                results = results.Where(r => r.ProductId.HasValue && criteria.ScaleTypeIds.Contains(r.ProductId.Value)).ToList();
+                results = results.Where(r => r.ItemId.HasValue && criteria.ScaleTypeIds.Contains(r.ItemId.Value)).ToList();
 
             if (criteria.VehicleIds.Any())
                 results = results.Where(r => r.VehicleId.HasValue && criteria.VehicleIds.Contains(r.VehicleId.Value)).ToList();
@@ -237,7 +237,7 @@ namespace ERPCore2.Services.Reports
                     (r.Vehicle != null && r.Vehicle.LicensePlate.Contains(kw, StringComparison.OrdinalIgnoreCase))).ToList();
             }
 
-            return results.OrderBy(r => r.Product?.Name).ThenBy(r => r.RecordDate).ToList();
+            return results.OrderBy(r => r.Item?.Name).ThenBy(r => r.RecordDate).ToList();
         }
 
         #endregion
@@ -278,7 +278,7 @@ namespace ERPCore2.Services.Reports
 
             // === 依品項分組顯示 ===
             var typeGroups = records
-                .GroupBy(r => r.Product?.Name ?? "未分類")
+                .GroupBy(r => r.Item?.Name ?? "未分類")
                 .OrderBy(g => g.Key);
 
             foreach (var group in typeGroups)

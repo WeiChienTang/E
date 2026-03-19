@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text;
 using ERPCore2.Models;
 using ERPCore2.Data.Entities;
@@ -855,17 +855,17 @@ namespace ERPCore2.Services.Reports
                     return column.ValueGenerator(detail!);
                 }
                 
-                // 品項名稱特殊處理（從 ProductDict 查詢）
-                if (column.PropertyName == nameof(PurchaseOrderDetail.ProductId) && 
+                // 品項名稱特殊處理（從 ItemDict 查詢）
+                if (column.PropertyName == nameof(PurchaseOrderDetail.ItemId) && 
                     detail is PurchaseOrderDetail orderDetail && 
-                    additionalData.ContainsKey("ProductDict"))
+                    additionalData.ContainsKey("ItemDict"))
                 {
-                    if (additionalData["ProductDict"] is Dictionary<int, Product> productDict &&
-                        productDict.ContainsKey(orderDetail.ProductId))
+                    if (additionalData["ItemDict"] is Dictionary<int, Item> productDict &&
+                        productDict.ContainsKey(orderDetail.ItemId))
                     {
-                        return productDict[orderDetail.ProductId].Name!;
+                        return productDict[orderDetail.ItemId].Name!;
                     }
-                    return $"品項ID: {orderDetail.ProductId}";
+                    return $"品項ID: {orderDetail.ItemId}";
                 }
                 
                 var value = GetPropertyValue(detail!, column.PropertyName);

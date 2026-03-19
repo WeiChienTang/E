@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -34,7 +34,7 @@ namespace ERPCore2.Services
                     .ThenInclude(mi => mi.Employee)
                 .Include(d => d.MaterialIssue)
                     .ThenInclude(mi => mi.Department)
-                .Include(d => d.Product)
+                .Include(d => d.Item)
                 .Include(d => d.Warehouse)
                 .Include(d => d.WarehouseLocation)
                 .OrderByDescending(d => d.CreatedAt)
@@ -54,7 +54,7 @@ namespace ERPCore2.Services
                         .ThenInclude(mi => mi.Employee)
                     .Include(d => d.MaterialIssue)
                         .ThenInclude(mi => mi.Department)
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .FirstOrDefaultAsync(d => d.Id == id);
@@ -86,14 +86,14 @@ namespace ERPCore2.Services
                         .ThenInclude(mi => mi.Employee)
                     .Include(d => d.MaterialIssue)
                         .ThenInclude(mi => mi.Department)
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => (
                         (d.MaterialIssue!.Code != null && d.MaterialIssue.Code.Contains(searchTerm)) ||
-                        d.Product!.Name!.Contains(searchTerm) ||
-                        (d.Product.Code != null && d.Product.Code.Contains(searchTerm)) ||
-                        (d.Product.Barcode != null && d.Product.Barcode.Contains(searchTerm)) ||
+                        d.Item!.Name!.Contains(searchTerm) ||
+                        (d.Item.Code != null && d.Item.Code.Contains(searchTerm)) ||
+                        (d.Item.Barcode != null && d.Item.Barcode.Contains(searchTerm)) ||
                         d.Warehouse.Name.Contains(searchTerm) ||
                         (d.WarehouseLocation != null && d.WarehouseLocation.Name.Contains(searchTerm))
                     ))
@@ -125,7 +125,7 @@ namespace ERPCore2.Services
                 if (entity.MaterialIssueId <= 0)
                     errors.Add("領貨主檔不能為空");
 
-                if (entity.ProductId <= 0)
+                if (entity.ItemId <= 0)
                     errors.Add("品項不能為空");
 
                 if (entity.WarehouseId <= 0)
@@ -139,7 +139,7 @@ namespace ERPCore2.Services
 
                 // 驗證庫存是否充足
                 var (isValid, availableQuantity, errorMessage) = await ValidateStockAvailabilityAsync(
-                    entity.ProductId, 
+                    entity.ItemId, 
                     entity.WarehouseId, 
                     entity.WarehouseLocationId, 
                     entity.IssueQuantity);
@@ -148,9 +148,9 @@ namespace ERPCore2.Services
                     errors.Add(errorMessage);
 
                 // 檢查同一領貨單中同一品項+倉庫+庫位的組合是否重複
-                if (await IsProductExistsInIssueAsync(
+                if (await IsItemExistsInIssueAsync(
                     entity.MaterialIssueId, 
-                    entity.ProductId, 
+                    entity.ItemId, 
                     entity.WarehouseId,
                     entity.WarehouseLocationId,
                     entity.Id == 0 ? null : entity.Id))
@@ -170,7 +170,7 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
                     MaterialIssueId = entity.MaterialIssueId,
-                    ProductId = entity.ProductId 
+                    ItemId = entity.ItemId 
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -189,7 +189,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.MaterialIssueDetails
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => d.MaterialIssueId == materialIssueId)
@@ -210,7 +210,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據品項ID取得所有領貨明細
         /// </summary>
-        public async Task<List<MaterialIssueDetail>> GetByProductIdAsync(int productId)
+        public async Task<List<MaterialIssueDetail>> GetByItemIdAsync(int productId)
         {
             try
             {
@@ -220,19 +220,19 @@ namespace ERPCore2.Services
                         .ThenInclude(mi => mi.Employee)
                     .Include(d => d.MaterialIssue)
                         .ThenInclude(mi => mi.Department)
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
-                    .Where(d => d.ProductId == productId)
+                    .Where(d => d.ItemId == productId)
                     .OrderByDescending(d => d.CreatedAt)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByProductIdAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemIdAsync), GetType(), _logger, new { 
+                    Method = nameof(GetByItemIdAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId 
+                    ItemId = productId 
                 });
                 return new List<MaterialIssueDetail>();
             }
@@ -248,7 +248,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.MaterialIssueDetails
                     .Include(d => d.MaterialIssue)
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => d.WarehouseId == warehouseId)
@@ -276,7 +276,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.MaterialIssueDetails
                     .Include(d => d.MaterialIssue)
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => d.WarehouseLocationId == warehouseLocationId)
@@ -368,7 +368,7 @@ namespace ERPCore2.Services
                     foreach (var detail in details.Where(d => d.IssueQuantity > 0))
                     {
                         // 驗證必要欄位
-                        if (detail.ProductId <= 0 || detail.WarehouseId <= 0 || detail.IssueQuantity <= 0)
+                        if (detail.ItemId <= 0 || detail.WarehouseId <= 0 || detail.IssueQuantity <= 0)
                             continue;
 
                         detail.MaterialIssueId = materialIssueId;
@@ -388,7 +388,7 @@ namespace ERPCore2.Services
                             if (existingDetail != null)
                             {
                                 // 更新現有明細的屬性
-                                existingDetail.ProductId = detail.ProductId;
+                                existingDetail.ItemId = detail.ItemId;
                                 existingDetail.WarehouseId = detail.WarehouseId;
                                 existingDetail.WarehouseLocationId = detail.WarehouseLocationId;
                                 existingDetail.IssueQuantity = detail.IssueQuantity;
@@ -436,7 +436,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 檢查品項在指定領貨單中是否已存在
         /// </summary>
-        public async Task<bool> IsProductExistsInIssueAsync(
+        public async Task<bool> IsItemExistsInIssueAsync(
             int materialIssueId, 
             int productId, 
             int warehouseId, 
@@ -448,7 +448,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.MaterialIssueDetails.Where(d => 
                     d.MaterialIssueId == materialIssueId && 
-                    d.ProductId == productId &&
+                    d.ItemId == productId &&
                     d.WarehouseId == warehouseId &&
                     d.Status != EntityStatus.Deleted);
                 
@@ -465,11 +465,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsProductExistsInIssueAsync), GetType(), _logger, new { 
-                    Method = nameof(IsProductExistsInIssueAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsItemExistsInIssueAsync), GetType(), _logger, new { 
+                    Method = nameof(IsItemExistsInIssueAsync),
                     ServiceType = GetType().Name,
                     MaterialIssueId = materialIssueId,
-                    ProductId = productId,
+                    ItemId = productId,
                     WarehouseId = warehouseId,
                     WarehouseLocationId = warehouseLocationId,
                     ExcludeId = excludeId 
@@ -493,12 +493,12 @@ namespace ERPCore2.Services
                 
                 // 先找到該品項的 InventoryStock
                 var inventoryStock = await context.InventoryStocks
-                    .FirstOrDefaultAsync(s => s.ProductId == productId && s.Status == EntityStatus.Active);
+                    .FirstOrDefaultAsync(s => s.ItemId == productId && s.Status == EntityStatus.Active);
 
                 if (inventoryStock == null)
                 {
                     // 查詢品項名稱以提供更友善的錯誤訊息
-                    var product = await context.Products
+                    var product = await context.Items
                         .FirstOrDefaultAsync(p => p.Id == productId);
                     var productName = product?.Name ?? "未知品項";
                     
@@ -521,7 +521,7 @@ namespace ERPCore2.Services
                 if (stockDetail == null)
                 {
                     // 查詢品項名稱以提供更友善的錯誤訊息
-                    var product = await context.Products
+                    var product = await context.Items
                         .FirstOrDefaultAsync(p => p.Id == productId);
                     var productName = product?.Name ?? "未知品項";
                     
@@ -533,7 +533,7 @@ namespace ERPCore2.Services
 
                 if (availableQuantity < issueQuantity)
                 {
-                    var product = await context.Products
+                    var product = await context.Items
                         .FirstOrDefaultAsync(p => p.Id == productId);
                     var productName = product?.Name ?? "未知品項";
                     
@@ -548,7 +548,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateStockAvailabilityAsync), GetType(), _logger, new { 
                     Method = nameof(ValidateStockAvailabilityAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId,
+                    ItemId = productId,
                     WarehouseId = warehouseId,
                     WarehouseLocationId = warehouseLocationId,
                     IssueQuantity = issueQuantity 

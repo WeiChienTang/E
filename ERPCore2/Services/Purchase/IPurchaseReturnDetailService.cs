@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 
 namespace ERPCore2.Services
@@ -10,7 +10,7 @@ namespace ERPCore2.Services
     {
         // 查詢方法
         Task<List<PurchaseReturnDetail>> GetByPurchaseReturnIdAsync(int purchaseReturnId);
-        Task<List<PurchaseReturnDetail>> GetByProductIdAsync(int productId);
+        Task<List<PurchaseReturnDetail>> GetByItemIdAsync(int productId);
         Task<List<PurchaseReturnDetail>> GetByPurchaseOrderDetailIdAsync(int purchaseOrderDetailId);
         Task<List<PurchaseReturnDetail>> GetByPurchaseReceivingDetailIdAsync(int purchaseReceivingDetailId);
         Task<PurchaseReturnDetail?> GetWithNavigationAsync(int id);
@@ -20,8 +20,8 @@ namespace ERPCore2.Services
         Task<ServiceResult> CalculateSubtotalAsync(int id);
 
         // 統計和報表
-        Task<decimal> GetTotalReturnAmountByProductAsync(int productId, DateTime? startDate = null, DateTime? endDate = null);
-        Task<Dictionary<int, int>> GetReturnQuantityByProductAsync(DateTime? startDate = null, DateTime? endDate = null);
+        Task<decimal> GetTotalReturnAmountByItemAsync(int productId, DateTime? startDate = null, DateTime? endDate = null);
+        Task<Dictionary<int, int>> GetReturnQuantityByItemAsync(DateTime? startDate = null, DateTime? endDate = null);
         Task<List<PurchaseReturnDetail>> GetHighValueReturnsAsync(decimal minAmount);
         
         /// <summary>

@@ -1,0 +1,482 @@
+@* 逐日出勤明細 Modal — 每員工每月的日曆式出勤輸入 *@
+@inject IAttendanceDailyRecordService DailyService
+@inject IMonthlyAttendanceSummaryService SummaryService
+@inject IEmployeeSalaryService SalaryService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+@if (IsVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5)" @onclick="OnBackdropClick">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable" @onclick:stopPropagation="true">
+            <div class="modal-content">
+
+                @* ── 標題列 ── *@
+                <div class="modal-header py-2 bg-primary text-white">
+                    <h6 class="modal-title mb-0">
+                        <i class="bi bi-calendar3 me-2"></i>
+                        @EmployeeName — @Year 年 @Month 月 @L["Attendance.DailyDetail"]
+                        @if (isHourly)
+                        {
+                            <span class="badge bg-info text-dark ms-2">@L["Attendance.HourlyEmployee"]</span>
+                        }
+                    </h6>
+                    <button class="btn-close btn-close-white" @onclick="Close"></button>
+                </div>
+
+                @* ── 工具列 ── *@
+                <div class="modal-body py-2 border-bottom">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        @* 批次初始化下拉 *@
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                                    data-bs-toggle="dropdown" disabled="@isSaving">
+                                <i class="bi bi-calendar-plus me-1"></i>@L["Attendance.BatchInit"]
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <button class="dropdown-item" @onclick="() => BatchInitAsync(AttendanceInitMode.WorkdaysAsPresent)">
+                                        <i class="bi bi-briefcase me-2 text-success"></i>@L["Attendance.InitModeWorkdays"]
+                                    </button>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item" @onclick="() => BatchInitAsync(AttendanceInitMode.AllAsRestDay)">
+                                        <i class="bi bi-moon me-2 text-secondary"></i>@L["Attendance.InitModeAllRest"]
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="ClearAllAsync" disabled="@isSaving"
+                                title="@L["Attendance.ClearAllHint"]">
+                            <i class="bi bi-trash me-1"></i>@L["Attendance.ClearAll"]
+                        </button>
+                        <div class="ms-auto d-flex gap-2">
+                            <button class="btn btn-sm btn-success" @onclick="SaveAndRebuildAsync"
+                                    disabled="@(!HasDirty || isSaving)">
+                                @if (isSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                <i class="bi bi-arrow-repeat me-1"></i>@L["Attendance.SaveAndRebuild"]
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                @* ── 日曆主體 ── *@
+                <div class="modal-body p-2">
+                    @if (isLoading)
+                    {
+                        <div class="text-center py-4">
+                            <span class="spinner-border spinner-border-sm me-2"></span>@L["Label.Loading"]
+                        </div>
+                    }
+                    else
+                    {
+                        @* 週標題 *@
+                        <div class="attendance-calendar">
+                            <div class="cal-week-header">
+                                @foreach (var d in new[] { "一", "二", "三", "四", "五", "六", "日" })
+                                {
+                                    <div class="cal-weekday @(d is "六" or "日" ? "text-secondary" : "")">@d</div>
+                                }
+                            </div>
+                            @* 日期格子 *@
+                            <div class="cal-grid">
+                                @* 補足月初空格 *@
+                                @for (int i = 0; i < firstDayOffset; i++)
+                                {
+                                    <div class="cal-cell cal-empty"></div>
+                                }
+                                @foreach (var cell in cells)
+                                {
+                                    var c = cell; // capture
+                                    <div class="cal-cell @GetCellCss(c) @(selectedDate == c.Date ? "cal-selected" : "")"
+                                         @onclick="() => SelectDay(c)">
+                                        <div class="cal-day-num">@c.Date.Day</div>
+                                        <div class="cal-status-badge @GetStatusBadgeCss(c.Status)">
+                                            @GetStatusShortLabel(c.Status)
+                                        </div>
+                                        @if (isHourly && c.Status == DailyAttendanceStatus.Present && c.WorkHours > 0)
+                                        {
+                                            <div class="cal-hours">@c.WorkHours.ToString("0.#")h</div>
+                                        }
+                                        @if (c.IsDirty)
+                                        {
+                                            <div class="cal-dirty-dot"></div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        @* ── 選中日的編輯面板 ── *@
+                        @if (selectedDate.HasValue && editingCell != null)
+                        {
+                            var cell = editingCell;
+                            <div class="border rounded p-3 mt-2 bg-light">
+                                <div class="fw-semibold mb-2">
+                                    @selectedDate.Value.Year 年 @selectedDate.Value.Month 月 @selectedDate.Value.Day 日
+                                    （@GetWeekdayLabel(selectedDate.Value.DayOfWeek)）
+                                </div>
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-auto">
+                                        <label class="form-label form-label-sm mb-1">@L["Attendance.Status"]</label>
+                                        <select class="form-select form-select-sm" style="width:auto"
+                                                value="@((int)(cell.Status ?? DailyAttendanceStatus.Present))"
+                                                @onchange="e => OnStatusChanged(cell, e)">
+                                            @foreach (DailyAttendanceStatus s in Enum.GetValues<DailyAttendanceStatus>())
+                                            {
+                                                <option value="@((int)s)">@GetStatusLabel(s)</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    @if (isHourly)
+                                    {
+                                        <div class="col-auto">
+                                            <label class="form-label form-label-sm mb-1">@L["Field.WorkHours"]</label>
+                                            <input type="number" class="form-control form-control-sm" style="width:80px"
+                                                   value="@cell.WorkHours" min="0" max="24" step="0.5"
+                                                   @onchange="e => OnWorkHoursChanged(cell, e)" />
+                                        </div>
+                                    }
+                                    <div class="col-auto">
+                                        <label class="form-label form-label-sm mb-1">@L["Field.OvertimeHours1"]</label>
+                                        <input type="number" class="form-control form-control-sm" style="width:80px"
+                                               value="@cell.OvertimeHours1" min="0" step="0.5"
+                                               @onchange="e => OnDecimalChanged(cell, e, (c, v) => c.OvertimeHours1 = v)" />
+                                    </div>
+                                    <div class="col-auto">
+                                        <label class="form-label form-label-sm mb-1">@L["Field.OvertimeHours2"]</label>
+                                        <input type="number" class="form-control form-control-sm" style="width:80px"
+                                               value="@cell.OvertimeHours2" min="0" step="0.5"
+                                               @onchange="e => OnDecimalChanged(cell, e, (c, v) => c.OvertimeHours2 = v)" />
+                                    </div>
+                                    <div class="col-auto">
+                                        <label class="form-label form-label-sm mb-1">@L["Field.HolidayOvertimeHours"]</label>
+                                        <input type="number" class="form-control form-control-sm" style="width:80px"
+                                               value="@cell.HolidayOvertimeHours" min="0" step="0.5"
+                                               @onchange="e => OnDecimalChanged(cell, e, (c, v) => c.HolidayOvertimeHours = v)" />
+                                    </div>
+                                    <div class="col-auto">
+                                        <label class="form-label form-label-sm mb-1">@L["Field.NationalHolidayHours"]</label>
+                                        <input type="number" class="form-control form-control-sm" style="width:80px"
+                                               value="@cell.NationalHolidayHours" min="0" step="0.5"
+                                               @onchange="e => OnDecimalChanged(cell, e, (c, v) => c.NationalHolidayHours = v)" />
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @* ── 彙總列 ── *@
+                        <div class="d-flex flex-wrap gap-3 mt-2 px-1 small text-muted">
+                            <span><i class="bi bi-check-circle text-success me-1"></i>@L["Attendance.Present"]：<strong>@cells.Count(c => c.Status == DailyAttendanceStatus.Present)</strong></span>
+                            <span><i class="bi bi-x-circle text-danger me-1"></i>@L["DailyStatus.Absent"]：<strong>@cells.Count(c => c.Status == DailyAttendanceStatus.Absent)</strong></span>
+                            <span><i class="bi bi-heart-pulse text-warning me-1"></i>@L["DailyStatus.SickLeave"]：<strong>@cells.Count(c => c.Status == DailyAttendanceStatus.SickLeave)</strong></span>
+                            @if (isHourly)
+                            {
+                                <span class="text-primary fw-semibold">
+                                    <i class="bi bi-clock me-1"></i>@L["Field.TotalWorkHours"]：<strong>@cells.Sum(c => c.WorkHours).ToString("0.##")h</strong>
+                                </span>
+                            }
+                            <span class="ms-auto"><i class="bi bi-alarm me-1"></i>OT：<strong>@(cells.Sum(c => c.OvertimeHours1 + c.OvertimeHours2 + c.HolidayOvertimeHours + c.NationalHolidayHours).ToString("0.##"))h</strong></span>
+                        </div>
+                    }
+                </div>
+
+                <div class="modal-footer py-2">
+                    <button class="btn btn-secondary btn-sm" @onclick="Close">@L["Button.Cancel"]</button>
+                    <button class="btn btn-success btn-sm" @onclick="SaveAndRebuildAsync"
+                            disabled="@(!HasDirty || isSaving)">
+                        @if (isSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        @L["Attendance.SaveAndRebuild"]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int EmployeeId { get; set; }
+    [Parameter] public string EmployeeName { get; set; } = "";
+    [Parameter] public int Year { get; set; }
+    [Parameter] public int Month { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private List<CellViewModel> cells = new();
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private bool isHourly = false;
+    private int firstDayOffset;
+    private DateOnly? selectedDate;
+    private CellViewModel? editingCell;
+    private bool HasDirty => cells.Any(c => c.IsDirty);
+
+    private int _lastEmpId = -1;
+    private int _lastYear = -1;
+    private int _lastMonth = -1;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && (EmployeeId != _lastEmpId || Year != _lastYear || Month != _lastMonth))
+        {
+            _lastEmpId = EmployeeId;
+            _lastYear = Year;
+            _lastMonth = Month;
+            selectedDate = null;
+            editingCell = null;
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        // 判斷薪資類型
+        var salaryResult = await SalaryService.GetCurrentSalaryAsync(EmployeeId);
+        isHourly = salaryResult?.SalaryType == SalaryType.Hourly;
+
+        // 讀取逐日記錄
+        var records = await DailyService.GetByEmployeePeriodAsync(EmployeeId, Year, Month);
+        var recordMap = records.ToDictionary(r => r.Date);
+
+        int adYear = Year + 1911;
+        int daysInMonth = DateTime.DaysInMonth(adYear, Month);
+        var firstDay = new DateOnly(adYear, Month, 1);
+
+        // 週一為起點的 offset（0=週一，6=週日）
+        firstDayOffset = ((int)firstDay.DayOfWeek + 6) % 7;
+
+        cells = Enumerable.Range(1, daysInMonth).Select(d =>
+        {
+            var date = new DateOnly(adYear, Month, d);
+            if (recordMap.TryGetValue(date, out var r))
+            {
+                return new CellViewModel
+                {
+                    Date = date,
+                    RecordId = r.Id,
+                    Status = r.Status,
+                    WorkHours = r.WorkHours,
+                    OvertimeHours1 = r.OvertimeHours1,
+                    OvertimeHours2 = r.OvertimeHours2,
+                    HolidayOvertimeHours = r.HolidayOvertimeHours,
+                    NationalHolidayHours = r.NationalHolidayHours,
+                    Remarks = r.Remarks
+                };
+            }
+            // 尚未建立 — 顯示為未設定
+            return new CellViewModel { Date = date, Status = null };
+        }).ToList();
+
+        isLoading = false;
+    }
+
+    private void SelectDay(CellViewModel cell)
+    {
+        selectedDate = cell.Date;
+        editingCell = cell;
+        // 若格子尚未有記錄，預設依星期給出狀態
+        if (cell.Status == null)
+        {
+            bool isWeekend = cell.Date.DayOfWeek == DayOfWeek.Saturday ||
+                             cell.Date.DayOfWeek == DayOfWeek.Sunday;
+            cell.Status = isWeekend ? DailyAttendanceStatus.RestDay : DailyAttendanceStatus.Present;
+            cell.IsDirty = true;
+        }
+    }
+
+    private void OnStatusChanged(CellViewModel cell, ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int v))
+        {
+            cell.Status = (DailyAttendanceStatus)v;
+            cell.IsDirty = true;
+        }
+    }
+
+    private void OnWorkHoursChanged(CellViewModel cell, ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out decimal v))
+        {
+            cell.WorkHours = v;
+            cell.IsDirty = true;
+        }
+    }
+
+    private void OnDecimalChanged(CellViewModel cell, ChangeEventArgs e, Action<CellViewModel, decimal> setter)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out decimal v))
+        {
+            setter(cell, v);
+            cell.IsDirty = true;
+        }
+    }
+
+    private async Task BatchInitAsync(AttendanceInitMode mode)
+    {
+        isSaving = true;
+        StateHasChanged();
+        var result = await DailyService.BatchInitAsync(EmployeeId, Year, Month, mode);
+        isSaving = false;
+        if (result.IsSuccess)
+        {
+            await NotificationService.ShowSuccessAsync(result.ErrorMessage ?? L["Message.SaveSuccess"].ToString());
+            await LoadAsync();
+        }
+        else
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.SaveFailed"].ToString());
+    }
+
+    private async Task ClearAllAsync()
+    {
+        var records = await DailyService.GetByEmployeePeriodAsync(EmployeeId, Year, Month);
+        isSaving = true;
+        StateHasChanged();
+        foreach (var r in records)
+            await DailyService.DeleteAsync(r.Id);
+        isSaving = false;
+        await NotificationService.ShowSuccessAsync(L["Message.SaveSuccess"].ToString());
+        await LoadAsync();
+    }
+
+    private async Task SaveAndRebuildAsync()
+    {
+        var dirtyList = cells.Where(c => c.IsDirty && c.Status.HasValue).ToList();
+        if (!dirtyList.Any()) return;
+
+        isSaving = true;
+        StateHasChanged();
+
+        int adYear = Year + 1911;
+        int failed = 0;
+        foreach (var cell in dirtyList)
+        {
+            var record = new AttendanceDailyRecord
+            {
+                Id = cell.RecordId ?? 0,
+                EmployeeId = EmployeeId,
+                Date = cell.Date,
+                Status = cell.Status!.Value,
+                WorkHours = cell.WorkHours,
+                OvertimeHours1 = cell.OvertimeHours1,
+                OvertimeHours2 = cell.OvertimeHours2,
+                HolidayOvertimeHours = cell.HolidayOvertimeHours,
+                NationalHolidayHours = cell.NationalHolidayHours,
+                Remarks = cell.Remarks
+            };
+            var result = await DailyService.UpsertAsync(record);
+            if (result.IsSuccess)
+            {
+                cell.RecordId = result.Data!.Id;
+                cell.IsDirty = false;
+            }
+            else
+                failed++;
+        }
+
+        // 彙總至月報表
+        var rebuildResult = await SummaryService.RebuildFromDailyAsync(EmployeeId, Year, Month);
+
+        isSaving = false;
+
+        if (failed == 0)
+        {
+            await NotificationService.ShowSuccessAsync(L["Attendance.SaveAndRebuildSuccess"].ToString());
+            await OnSaved.InvokeAsync();
+        }
+        else
+            await NotificationService.ShowErrorAsync($"{failed} 筆儲存失敗");
+    }
+
+    private void OnBackdropClick() => Close();
+    private void Close() => IsVisibleChanged.InvokeAsync(false);
+
+    // ── 輔助方法 ─────────────────────────────────────────────────
+
+    private string GetCellCss(CellViewModel c)
+    {
+        if (c.Status == null) return "cal-unset";
+        return c.Status switch
+        {
+            DailyAttendanceStatus.Present => "cal-present",
+            DailyAttendanceStatus.MakeUpWork => "cal-makeup",
+            DailyAttendanceStatus.Absent => "cal-absent",
+            DailyAttendanceStatus.SickLeave => "cal-sick",
+            DailyAttendanceStatus.PersonalLeave => "cal-personal",
+            DailyAttendanceStatus.AnnualLeave => "cal-annual",
+            DailyAttendanceStatus.RestDay => "cal-rest",
+            DailyAttendanceStatus.NationalHoliday => "cal-national",
+            _ => ""
+        };
+    }
+
+    private string GetStatusBadgeCss(DailyAttendanceStatus? s) => s switch
+    {
+        DailyAttendanceStatus.Present => "badge-present",
+        DailyAttendanceStatus.MakeUpWork => "badge-makeup",
+        DailyAttendanceStatus.Absent => "badge-absent",
+        DailyAttendanceStatus.SickLeave => "badge-sick",
+        DailyAttendanceStatus.PersonalLeave => "badge-personal",
+        DailyAttendanceStatus.AnnualLeave => "badge-annual",
+        DailyAttendanceStatus.RestDay => "badge-rest",
+        DailyAttendanceStatus.NationalHoliday => "badge-national",
+        null => "badge-unset",
+        _ => ""
+    };
+
+    private string GetStatusShortLabel(DailyAttendanceStatus? s) => s switch
+    {
+        DailyAttendanceStatus.Present => L["DailyStatus.PresentShort"],
+        DailyAttendanceStatus.MakeUpWork => L["DailyStatus.MakeUpWorkShort"],
+        DailyAttendanceStatus.Absent => L["DailyStatus.AbsentShort"],
+        DailyAttendanceStatus.SickLeave => L["DailyStatus.SickLeaveShort"],
+        DailyAttendanceStatus.PersonalLeave => L["DailyStatus.PersonalLeaveShort"],
+        DailyAttendanceStatus.AnnualLeave => L["DailyStatus.AnnualLeaveShort"],
+        DailyAttendanceStatus.RestDay => L["DailyStatus.RestDayShort"],
+        DailyAttendanceStatus.NationalHoliday => L["DailyStatus.NationalHolidayShort"],
+        null => "—",
+        _ => "?"
+    };
+
+    private string GetStatusLabel(DailyAttendanceStatus s) => s switch
+    {
+        DailyAttendanceStatus.Present => L["DailyStatus.Present"],
+        DailyAttendanceStatus.MakeUpWork => L["DailyStatus.MakeUpWork"],
+        DailyAttendanceStatus.Absent => L["DailyStatus.Absent"],
+        DailyAttendanceStatus.SickLeave => L["DailyStatus.SickLeave"],
+        DailyAttendanceStatus.PersonalLeave => L["DailyStatus.PersonalLeave"],
+        DailyAttendanceStatus.AnnualLeave => L["DailyStatus.AnnualLeave"],
+        DailyAttendanceStatus.RestDay => L["DailyStatus.RestDay"],
+        DailyAttendanceStatus.NationalHoliday => L["DailyStatus.NationalHoliday"],
+        _ => s.ToString()
+    };
+
+    private string GetWeekdayLabel(DayOfWeek dow) => dow switch
+    {
+        DayOfWeek.Monday => "週一",
+        DayOfWeek.Tuesday => "週二",
+        DayOfWeek.Wednesday => "週三",
+        DayOfWeek.Thursday => "週四",
+        DayOfWeek.Friday => "週五",
+        DayOfWeek.Saturday => "週六",
+        DayOfWeek.Sunday => "週日",
+        _ => ""
+    };
+
+    private class CellViewModel
+    {
+        public DateOnly Date { get; set; }
+        public int? RecordId { get; set; }
+        public DailyAttendanceStatus? Status { get; set; }
+        public decimal WorkHours { get; set; }
+        public decimal OvertimeHours1 { get; set; }
+        public decimal OvertimeHours2 { get; set; }
+        public decimal HolidayOvertimeHours { get; set; }
+        public decimal NationalHolidayHours { get; set; }
+        public string? Remarks { get; set; }
+        public bool IsDirty { get; set; }
+    }
+}

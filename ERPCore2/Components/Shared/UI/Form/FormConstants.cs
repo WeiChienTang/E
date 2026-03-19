@@ -1,4 +1,4 @@
-namespace ERPCore2.Components.Shared.UI.Form;
+﻿namespace ERPCore2.Components.Shared.UI.Form;
 
 /// <summary>
 /// 表單相關常數定義
@@ -13,7 +13,7 @@ public static class FormConstants
         public const string Add = "新增";
         public const string Edit = "編輯";
         public const string Copy = "複製";
-        public const string CopyProductCode = "同產編";
+        public const string CopyItemCode = "同產編";
         public const string GoTo = "前往";
         public const string Delete = "刪除";
         public const string Search = "搜尋";
@@ -133,7 +133,7 @@ public static class FormConstants
         {
             ActionButtonText.Add => Icons.Add,
             ActionButtonText.Edit => Icons.Edit,
-            ActionButtonText.Copy or ActionButtonText.CopyProductCode => Icons.Copy,
+            ActionButtonText.Copy or ActionButtonText.CopyItemCode => Icons.Copy,
             ActionButtonText.GoTo => Icons.GoTo,
             ActionButtonText.Delete => Icons.Delete,
             ActionButtonText.Search => Icons.Search,

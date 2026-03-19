@@ -1,4 +1,4 @@
-namespace ERPCore2.Models.Configuration
+﻿namespace ERPCore2.Models.Configuration
 {
     /// <summary>
     /// 明細格式設定 - 用於序列化/反序列化 TextMessageTemplate.DetailFormatJson
@@ -9,12 +9,12 @@ namespace ERPCore2.Models.Configuration
         /// <summary>
         /// 是否顯示品項編號
         /// </summary>
-        public bool ShowProductCode { get; set; } = false;
+        public bool ShowItemCode { get; set; } = false;
 
         /// <summary>
         /// 是否顯示品項名稱
         /// </summary>
-        public bool ShowProductName { get; set; } = true;
+        public bool ShowItemName { get; set; } = true;
 
         /// <summary>
         /// 是否顯示數量

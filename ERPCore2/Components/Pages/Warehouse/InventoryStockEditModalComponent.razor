@@ -1,6 +1,6 @@
 ﻿@* 可重用的庫存編輯組件 - 可在任何頁面中嵌入 *@
 @inject IInventoryStockService InventoryStockService
-@inject IProductService ProductService
+@inject IItemService ItemService
 @inject IWarehouseService WarehouseService
 @inject IWarehouseLocationService WarehouseLocationService
 @inject INotificationService NotificationService
@@ -50,7 +50,7 @@
     private GenericEditModalComponent<InventoryStock, IInventoryStockService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
-    private List<Product> availableProducts = new();
+    private List<Item> availableItems = new();
     private List<Unit> availableUnits = new();
     private List<Warehouse> availableWarehouses = new();
     private List<WarehouseLocation> availableWarehouseLocations = new();
@@ -168,10 +168,10 @@
             isDetailDataReady = false;
             
             // 載入品項列表
-            availableProducts = await ProductService.GetAllAsync();
+            availableItems = await ItemService.GetAllAsync();
 
             // 載入單位列表（用於顯示換算資訊）
-            availableUnits = await ProductService.GetUnitsAsync();
+            availableUnits = await ItemService.GetUnitsAsync();
             
             // 載入倉庫列表  
             availableWarehouses = await WarehouseService.GetAllAsync();
@@ -181,7 +181,7 @@
             
             // 配置 AutoComplete
             autoCompleteConfig = new AutoCompleteConfigBuilder<InventoryStock>()
-                .AddField(nameof(InventoryStock.ProductId), "Name", availableProducts)
+                .AddField(nameof(InventoryStock.ItemId), "Name", availableItems)
                 .Build();
             
             isDetailDataReady = true;
@@ -189,7 +189,7 @@
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入庫存資料時發生錯誤：{ex.Message}");
-            availableProducts = new List<Product>();
+            availableItems = new List<Item>();
             availableWarehouses = new List<Warehouse>();
             availableWarehouseLocations = new List<WarehouseLocation>();
             isDetailDataReady = true;
@@ -262,10 +262,10 @@
                 // 基本資訊區段
                 new()
                 {
-                    PropertyName = nameof(InventoryStock.ProductId),
-                    Label = L["Entity.Product"],
+                    PropertyName = nameof(InventoryStock.ItemId),
+                    Label = L["Entity.Item"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Product"]],
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Item"]],
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "輸入品項名稱進行搜尋，或直接選擇",
@@ -286,7 +286,7 @@
 
             formSections = FormSectionHelper<InventoryStock>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
-                    ist => ist.ProductId,
+                    ist => ist.ItemId,
                     ist => ist.TotalCurrentStock)
                 .AddToSection(FormSectionNames.AdditionalData,
                     ist => ist.Remarks)
@@ -331,9 +331,9 @@
     /// <summary>
     /// 根據品項 ID 取得採購/製程單位換算資訊
     /// </summary>
-    private (string PurchaseUnit, string ProductionUnit, string ConversionInfo, decimal? ConversionRate) GetProductUnitInfo(int productId)
+    private (string PurchaseUnit, string ProductionUnit, string ConversionInfo, decimal? ConversionRate) GetItemUnitInfo(int productId)
     {
-        var product = availableProducts.FirstOrDefault(p => p.Id == productId);
+        var product = availableItems.FirstOrDefault(p => p.Id == productId);
         if (product == null) return ("", "", "", null);
 
         var purchaseUnit = availableUnits.FirstOrDefault(u => u.Id == product.UnitId)?.Name ?? "";
@@ -356,8 +356,8 @@
     private string GetCurrentPurchaseUnitName()
     {
         var entity = editModalComponent?.Entity;
-        if (entity == null || !entity.ProductId.HasValue || entity.ProductId.Value <= 0) return "";
-        return GetProductUnitInfo(entity.ProductId.Value).PurchaseUnit;
+        if (entity == null || !entity.ItemId.HasValue || entity.ItemId.Value <= 0) return "";
+        return GetItemUnitInfo(entity.ItemId.Value).PurchaseUnit;
     }
 
     /// <summary>
@@ -366,8 +366,8 @@
     private string GetCurrentProductionUnitName()
     {
         var entity = editModalComponent?.Entity;
-        if (entity == null || !entity.ProductId.HasValue || entity.ProductId.Value <= 0) return "";
-        var info = GetProductUnitInfo(entity.ProductId.Value);
+        if (entity == null || !entity.ItemId.HasValue || entity.ItemId.Value <= 0) return "";
+        var info = GetItemUnitInfo(entity.ItemId.Value);
         return info.ProductionUnit == info.PurchaseUnit ? "" : info.ProductionUnit;
     }
 
@@ -377,8 +377,8 @@
     private decimal? GetCurrentConversionRate()
     {
         var entity = editModalComponent?.Entity;
-        if (entity == null || !entity.ProductId.HasValue || entity.ProductId.Value <= 0) return null;
-        return GetProductUnitInfo(entity.ProductId.Value).ConversionRate;
+        if (entity == null || !entity.ItemId.HasValue || entity.ItemId.Value <= 0) return null;
+        return GetItemUnitInfo(entity.ItemId.Value).ConversionRate;
     }
 
     /// <summary>
@@ -387,9 +387,9 @@
     private RenderFragment CreateUnitInfoContent() => __builder =>
     {
         var entity = editModalComponent?.Entity;
-        if (entity == null || !entity.ProductId.HasValue || entity.ProductId.Value <= 0) return;
+        if (entity == null || !entity.ItemId.HasValue || entity.ItemId.Value <= 0) return;
 
-        var (purchaseUnit, productionUnit, conversionInfo, _) = GetProductUnitInfo(entity.ProductId.Value);
+        var (purchaseUnit, productionUnit, conversionInfo, _) = GetItemUnitInfo(entity.ItemId.Value);
         if (string.IsNullOrEmpty(purchaseUnit)) return;
 
         var hasDifferentProductionUnit = !string.IsNullOrEmpty(conversionInfo);
@@ -418,7 +418,7 @@
                               IsDetailDataReady="@isDetailDataReady"
                               IsDataAvailable="@(availableWarehouses != null && availableWarehouses.Any())"
                               DataUnavailableMessage="無可用的倉庫資料，請聯繫系統管理員"
-                              IsPreconditionMet="@(editModalComponent?.Entity?.ProductId > 0)"
+                              IsPreconditionMet="@(editModalComponent?.Entity?.ItemId > 0)"
                               PreconditionMessage="請先選擇品項後再進行庫存明細管理">
             <InventoryStockTable @ref="inventoryStockDetailManager"
                                  @key="@(editModalComponent?.Entity?.Id ?? 0)"
@@ -478,7 +478,7 @@
         
         PrefilledValues = new Dictionary<string, object?>
         {
-            { nameof(InventoryStock.ProductId), productId }
+            { nameof(InventoryStock.ItemId), productId }
         };
         
         if (IsVisibleChanged.HasDelegate)

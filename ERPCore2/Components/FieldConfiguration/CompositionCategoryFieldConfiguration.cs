@@ -1,4 +1,4 @@
-using ERPCore2.Components.Shared.UI.Form;
+﻿using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
@@ -63,7 +63,7 @@ namespace ERPCore2.FieldConfiguration
                             CustomTemplate = item => builder =>
                             {
                                 var category = (CompositionCategory)item;
-                                var count = category.ProductCompositions?.Count ?? 0;
+                                var count = category.ItemCompositions?.Count ?? 0;
                                 builder.OpenElement(0, "div");
                                 builder.AddAttribute(1, "class", "text-center");
                                 builder.OpenElement(2, "span");

@@ -1,4 +1,4 @@
-@*
+﻿@*
     庫存檢視 Modal 組件
     用於顯示低庫存或庫存過多的品項清單（唯讀）
 *@
@@ -57,7 +57,7 @@
 @* 供應商推薦 Modal *@
 <RelatedDocumentsModalComponent IsVisible="@showSupplierRecommendationModal"
                                IsVisibleChanged="@((bool visible) => showSupplierRecommendationModal = visible)"
-                               ProductName="@selectedProductName"
+                               ItemName="@selectedItemName"
                                RelatedDocuments="@supplierRecommendations"
                                IsLoading="@isLoadingRecommendations"
                                OnDocumentClick="@HandleSupplierClick"
@@ -99,8 +99,8 @@
     // 供應商推薦相關
     private bool showSupplierRecommendationModal = false;
     private bool isLoadingRecommendations = false;
-    private string selectedProductName = string.Empty;
-    private int selectedProductId = 0;
+    private string selectedItemName = string.Empty;
+    private int selectedItemId = 0;
     private List<RelatedDocument> supplierRecommendations = new();
     
     // 採購單相關
@@ -144,9 +144,9 @@
             stockAlertItems = details.Select(d => new StockAlertViewItem
             {
                 DetailId = d.Id,
-                Code = d.InventoryStock?.Product?.Code ?? "未知編號",
-                ProductId = d.InventoryStock?.ProductId ?? 0,
-                ProductName = d.InventoryStock?.Product?.Name ?? "未知品項",
+                Code = d.InventoryStock?.Item?.Code ?? "未知編號",
+                ItemId = d.InventoryStock?.ItemId ?? 0,
+                ItemName = d.InventoryStock?.Item?.Name ?? "未知品項",
                 WarehouseName = d.Warehouse?.Name ?? "未知倉庫",
                 WarehouseLocationName = d.WarehouseLocation?.Name ?? "未指定",
                 CurrentStock = d.CurrentStock,
@@ -181,8 +181,8 @@
             },
             new()
             {
-                Title = L["Column.ProductName"].ToString(),
-                PropertyName = nameof(StockAlertViewItem.ProductName),
+                Title = L["Column.ItemName"].ToString(),
+                PropertyName = nameof(StockAlertViewItem.ItemName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "180px"
             },
@@ -332,12 +332,12 @@
         try
         {
             isLoadingRecommendations = true;
-            selectedProductName = item.ProductName;
-            selectedProductId = item.ProductId;
+            selectedItemName = item.ItemName;
+            selectedItemId = item.ItemId;
             showSupplierRecommendationModal = true;
             
             // 載入供應商推薦
-            var recommendations = await SupplierRecommendationService.GetRecommendedSuppliersAsync(selectedProductId);
+            var recommendations = await SupplierRecommendationService.GetRecommendedSuppliersAsync(selectedItemId);
             
             supplierRecommendations = recommendations.Select(r => new RelatedDocument
             {
@@ -381,9 +381,9 @@
             remarks.Add($"交貨: {recommendation.LeadTimeDays}天");
         }
         
-        if (!string.IsNullOrEmpty(recommendation.SupplierProductCode))
+        if (!string.IsNullOrEmpty(recommendation.SupplierItemCode))
         {
-            remarks.Add($"料號: {recommendation.SupplierProductCode}");
+            remarks.Add($"料號: {recommendation.SupplierItemCode}");
         }
         
         if (recommendation.PurchaseCount > 0)
@@ -409,7 +409,7 @@
             {
                 await purchaseOrderEditModal.ShowAddModalWithPrefilledData(
                     supplierId: document.DocumentId,
-                    productId: selectedProductId,
+                    productId: selectedItemId,
                     suggestedUnitPrice: document.UnitPrice
                 );
             }
@@ -477,8 +477,8 @@
     {
         public int DetailId { get; set; }
         public string Code { get; set; } = string.Empty;
-        public int ProductId { get; set; }
-        public string ProductName { get; set; } = string.Empty;
+        public int ItemId { get; set; }
+        public string ItemName { get; set; } = string.Empty;
         public string WarehouseName { get; set; } = string.Empty;
         public string WarehouseLocationName { get; set; } = string.Empty;
         public decimal CurrentStock { get; set; }

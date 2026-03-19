@@ -1,11 +1,11 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 
 namespace ERPCore2.Services
 {
     /// <summary>
     /// 品項合成服務介面 - 管理 BOM 主檔
     /// </summary>
-    public interface IProductCompositionService : IGenericManagementService<ProductComposition>
+    public interface IItemCompositionService : IGenericManagementService<ItemComposition>
     {
         /// <summary>
         /// 檢查品項合成編號是否已存在
@@ -13,21 +13,21 @@ namespace ERPCore2.Services
         /// <param name="code">品項合成編號</param>
         /// <param name="excludeId">排除的品項合成ID</param>
         /// <returns>是否已存在</returns>
-        Task<bool> IsProductCompositionCodeExistsAsync(string code, int? excludeId = null);
+        Task<bool> IsItemCompositionCodeExistsAsync(string code, int? excludeId = null);
 
     /// <summary>
     /// 取得指定品項的所有配方（用於相關單據查詢）
     /// </summary>
     /// <param name="productId">品項 ID</param>
     /// <returns>配方列表</returns>
-    Task<List<ProductComposition>> GetByProductIdAsync(int productId);
+    Task<List<ItemComposition>> GetByItemIdAsync(int productId);
     
     /// <summary>
     /// 取得指定品項的所有配方
     /// </summary>
     /// <param name="productId">品項 ID</param>
     /// <returns>配方列表</returns>
-    Task<List<ProductComposition>> GetCompositionsByProductIdAsync(int productId);        /// <summary>
+    Task<List<ItemComposition>> GetCompositionsByItemIdAsync(int productId);        /// <summary>
         /// 計算配方總成本
         /// </summary>
         /// <param name="compositionId">配方 ID</param>
@@ -47,8 +47,8 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得分頁資料（支援動態篩選）
         /// </summary>
-        Task<(List<ProductComposition> Items, int TotalCount)> GetPagedWithFiltersAsync(
-            Func<IQueryable<ProductComposition>, IQueryable<ProductComposition>>? filterFunc,
+        Task<(List<ItemComposition> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<ItemComposition>, IQueryable<ItemComposition>>? filterFunc,
             int pageNumber,
             int pageSize);
 

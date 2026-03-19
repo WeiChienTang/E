@@ -1,4 +1,4 @@
-using ERPCore2.Components.Shared.UI.Form;
+﻿using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
@@ -13,55 +13,55 @@ namespace ERPCore2.FieldConfiguration
     /// <summary>
     /// 品項分類欄位配置
     /// </summary>
-    public class ProductCategoryFieldConfiguration : BaseFieldConfiguration<ProductCategory>
+    public class ItemCategoryFieldConfiguration : BaseFieldConfiguration<ItemCategory>
     {
         private readonly INotificationService? _notificationService;
         
-        public ProductCategoryFieldConfiguration(INotificationService? notificationService = null)
+        public ItemCategoryFieldConfiguration(INotificationService? notificationService = null)
         {
             _notificationService = notificationService;
         }
         
-        public override Dictionary<string, FieldDefinition<ProductCategory>> GetFieldDefinitions()
+        public override Dictionary<string, FieldDefinition<ItemCategory>> GetFieldDefinitions()
         {
             try
             {
-                return new Dictionary<string, FieldDefinition<ProductCategory>>
+                return new Dictionary<string, FieldDefinition<ItemCategory>>
                 {
                     {
-                        nameof(ProductCategory.Code),
-                        new FieldDefinition<ProductCategory>
+                        nameof(ItemCategory.Code),
+                        new FieldDefinition<ItemCategory>
                         {
-                            PropertyName = nameof(ProductCategory.Code),
+                            PropertyName = nameof(ItemCategory.Code),
                             DisplayName = Dn("Field.CategoryCode", "分類編號"),
                             FilterPlaceholder = Fp("Field.CategoryCode", "輸入分類編號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(ProductCategory.Code), pc => pc.Code, allowNull: true)
+                                model, query, nameof(ItemCategory.Code), pc => pc.Code, allowNull: true)
                         }
                     },
                     {
-                        nameof(ProductCategory.Name),
-                        new FieldDefinition<ProductCategory>
+                        nameof(ItemCategory.Name),
+                        new FieldDefinition<ItemCategory>
                         {
-                            PropertyName = nameof(ProductCategory.Name),
+                            PropertyName = nameof(ItemCategory.Name),
                             DisplayName = Dn("Field.CategoryName", "分類名稱"),
                             FilterPlaceholder = Fp("Field.CategoryName", "輸入分類名稱搜尋"),
                             TableOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(ProductCategory.Name), pc => pc.Name)
+                                model, query, nameof(ItemCategory.Name), pc => pc.Name)
                         }
                     },
                     {
-                        nameof(ProductCategory.IsSaleable),
-                        new FieldDefinition<ProductCategory>
+                        nameof(ItemCategory.IsSaleable),
+                        new FieldDefinition<ItemCategory>
                         {
-                            PropertyName = nameof(ProductCategory.IsSaleable),
+                            PropertyName = nameof(ItemCategory.IsSaleable),
                             DisplayName = Dn("Field.ForSale", "可販售"),
                             TableOrder = 3,
                             FilterFunction = (model, query) =>
                             {
-                                var filterValue = model.GetFilterValue(nameof(ProductCategory.IsSaleable))?.ToString();
+                                var filterValue = model.GetFilterValue(nameof(ItemCategory.IsSaleable))?.ToString();
                                 if (!string.IsNullOrWhiteSpace(filterValue) && bool.TryParse(filterValue, out var isSaleable))
                                 {
                                     query = query.Where(pc => pc.IsSaleable == isSaleable);
@@ -70,7 +70,7 @@ namespace ERPCore2.FieldConfiguration
                             },
                             CustomTemplate = (context) =>
                             {
-                                var category = context as ProductCategory;
+                                var category = context as ItemCategory;
                                 if (category == null) 
                                 {
                                     return builder => { };
@@ -106,7 +106,7 @@ namespace ERPCore2.FieldConfiguration
                 }
                 
                 // 回傳安全的預設配置
-                return new Dictionary<string, FieldDefinition<ProductCategory>>();
+                return new Dictionary<string, FieldDefinition<ItemCategory>>();
             }
         }
     }

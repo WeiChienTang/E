@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -10,17 +10,17 @@ namespace ERPCore2.Services
     /// <summary>
     /// 品項服務實作 - 繼承 GenericManagementService
     /// </summary>
-    public class ProductService : GenericManagementService<Product>, IProductService
+    public class ItemService : GenericManagementService<Item>, IItemService
     {
         private readonly ISubAccountService _subAccountService;
 
         /// <summary>
         /// 完整建構子 - 使用 ILogger
         /// </summary>
-        public ProductService(
+        public ItemService(
             IDbContextFactory<AppDbContext> contextFactory,
             ISubAccountService subAccountService,
-            ILogger<GenericManagementService<Product>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<Item>> logger) : base(contextFactory, logger)
         {
             _subAccountService = subAccountService;
         }
@@ -28,7 +28,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 簡易建構子 - 不使用 ILogger
         /// </summary>
-        public ProductService(
+        public ItemService(
             IDbContextFactory<AppDbContext> contextFactory,
             ISubAccountService subAccountService) : base(contextFactory)
         {
@@ -40,35 +40,35 @@ namespace ERPCore2.Services
         /// <summary>
         /// 覆寫建立方法 - 在儲存前設定製程單位預設值，儲存後自動產生子科目（若系統參數啟用）
         /// </summary>
-        public override async Task<ServiceResult<Product>> CreateAsync(Product entity)
+        public override async Task<ServiceResult<Item>> CreateAsync(Item entity)
         {
             // 設定製程單位預設值
             SetDefaultProductionUnit(entity);
 
             var result = await base.CreateAsync(entity);
             if (result.IsSuccess)
-                await _subAccountService.GetOrCreateProductSubAccountAsync(entity.Id, entity.CreatedBy ?? "system");
+                await _subAccountService.GetOrCreateItemSubAccountAsync(entity.Id, entity.CreatedBy ?? "system");
             return result;
         }
 
-        protected override IQueryable<Product> BuildGetAllQuery(AppDbContext context)
+        protected override IQueryable<Item> BuildGetAllQuery(AppDbContext context)
         {
-            return context.Products
-                .Include(p => p.ProductCategory)
+            return context.Items
+                .Include(p => p.ItemCategory)
                 .Include(p => p.Unit)
                 .Include(p => p.ProductionUnit)
                 .Include(p => p.Size)
                 .OrderBy(p => p.Name);
         }
 
-        public override async Task<Product?> GetByIdAsync(int id)
+        public override async Task<Item?> GetByIdAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             try
             {
-                return await context.Products
-                    .Include(p => p.ProductCategory)
+                return await context.Items
+                    .Include(p => p.ItemCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
@@ -81,7 +81,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<List<Product>> SearchAsync(string searchTerm)
+        public override async Task<List<Item>> SearchAsync(string searchTerm)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
@@ -90,8 +90,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllAsync();
 
-                return await context.Products
-                    .Include(p => p.ProductCategory)
+                return await context.Items
+                    .Include(p => p.ItemCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
@@ -109,7 +109,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<ServiceResult> ValidateAsync(Product entity)
+        public override async Task<ServiceResult> ValidateAsync(Item entity)
         {
             try
             {
@@ -123,7 +123,7 @@ namespace ERPCore2.Services
                 else
                 {
                     // 檢查品項編號唯一性
-                    var isDuplicate = await IsProductCodeExistsAsync(entity.Code, entity.Id);
+                    var isDuplicate = await IsItemCodeExistsAsync(entity.Code, entity.Id);
                     if (isDuplicate)
                     {
                         errors.Add("品項編號已存在");
@@ -149,7 +149,7 @@ namespace ERPCore2.Services
                     }
                 }
                 
-                if (!entity.ProductCategoryId.HasValue || entity.ProductCategoryId <= 0)
+                if (!entity.ItemCategoryId.HasValue || entity.ItemCategoryId <= 0)
                 {
                     errors.Add("品項類別為必填欄位");
                 }
@@ -171,7 +171,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { EntityId = entity.Id, ProductCode = entity.Code });
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateAsync), GetType(), _logger, new { EntityId = entity.Id, ItemCode = entity.Code });
                 return ServiceResult.Failure($"驗證品項時發生錯誤: {ex.Message}");
             }
         }
@@ -180,14 +180,14 @@ namespace ERPCore2.Services
 
         #region 業務特定查詢方法
 
-        public async Task<Product?> GetByProductCodeAsync(string productCode)
+        public async Task<Item?> GetByItemCodeAsync(string productCode)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             try
             {
-                return await context.Products
-                    .Include(p => p.ProductCategory)
+                return await context.Items
+                    .Include(p => p.ItemCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
@@ -195,19 +195,19 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductCodeAsync), GetType(), _logger, new { ProductCode = productCode });
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemCodeAsync), GetType(), _logger, new { ItemCode = productCode });
                 throw;
             }
         }
 
-        public async Task<Product?> GetByBarcodeAsync(string barcode)
+        public async Task<Item?> GetByBarcodeAsync(string barcode)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             try
             {
-                return await context.Products
-                    .Include(p => p.ProductCategory)
+                return await context.Items
+                    .Include(p => p.ItemCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
@@ -220,13 +220,13 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<bool> IsProductCodeExistsAsync(string productCode, int? excludeId = null)
+        public async Task<bool> IsItemCodeExistsAsync(string productCode, int? excludeId = null)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             try
             {
-                var query = context.Products.Where(p => p.Code == productCode);
+                var query = context.Items.Where(p => p.Code == productCode);
                 
                 if (excludeId.HasValue)
                     query = query.Where(p => p.Id != excludeId.Value);
@@ -235,7 +235,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsProductCodeExistsAsync), GetType(), _logger, new { ProductCode = productCode, ExcludeId = excludeId });
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsItemCodeExistsAsync), GetType(), _logger, new { ItemCode = productCode, ExcludeId = excludeId });
                 throw;
             }
         }
@@ -246,7 +246,7 @@ namespace ERPCore2.Services
 
             try
             {
-                var query = context.Products.Where(p => p.Barcode == barcode);
+                var query = context.Items.Where(p => p.Barcode == barcode);
                 
                 if (excludeId.HasValue)
                     query = query.Where(p => p.Id != excludeId.Value);
@@ -260,40 +260,40 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<Product>> GetByProductCategoryAsync(int productCategoryId)
+        public async Task<List<Item>> GetByItemCategoryAsync(int productCategoryId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             try
             {
-                return await context.Products
-                    .Include(p => p.ProductCategory)
+                return await context.Items
+                    .Include(p => p.ItemCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
-                    .Where(p => p.ProductCategoryId == productCategoryId)
+                    .Where(p => p.ItemCategoryId == productCategoryId)
                     .OrderBy(p => p.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductCategoryAsync), GetType(), _logger, new { ProductCategoryId = productCategoryId });
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemCategoryAsync), GetType(), _logger, new { ItemCategoryId = productCategoryId });
                 throw;
             }
         }
 
-        public async Task<List<Product>> GetBySupplierAsync(int supplierId)
+        public async Task<List<Item>> GetBySupplierAsync(int supplierId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             try
             {
-                var products = await context.Products
-                    .Include(p => p.ProductCategory)
+                var products = await context.Items
+                    .Include(p => p.ItemCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
-                    .Where(p => p.ProductSuppliers.Any(ps => ps.SupplierId == supplierId) && p.Status == EntityStatus.Active)
+                    .Where(p => p.ItemSuppliers.Any(ps => ps.SupplierId == supplierId) && p.Status == EntityStatus.Active)
                     .OrderBy(p => p.Name)
                     .ToListAsync();
                 
@@ -306,14 +306,14 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<Product>> GetActiveProductsAsync()
+        public async Task<List<Item>> GetActiveItemsAsync()
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             try
             {
-                return await context.Products
-                    .Include(p => p.ProductCategory)
+                return await context.Items
+                    .Include(p => p.ItemCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.ProductionUnit)
                     .Include(p => p.Size)
@@ -323,7 +323,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetActiveProductsAsync), GetType(), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetActiveItemsAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -332,20 +332,20 @@ namespace ERPCore2.Services
 
         #region 輔助資料查詢
 
-        public async Task<List<ProductCategory>> GetProductCategoriesAsync()
+        public async Task<List<ItemCategory>> GetItemCategoriesAsync()
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             try
             {
-                return await context.ProductCategories
+                return await context.ItemCategories
                     .Where(pc => pc.Status == EntityStatus.Active)
                     .OrderBy(pc => pc.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetProductCategoriesAsync), GetType(), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetItemCategoriesAsync), GetType(), _logger);
                 throw;
             }
         }
@@ -390,7 +390,7 @@ namespace ERPCore2.Services
 
         #region 輔助方法
 
-        public void InitializeNewProduct(Product product)
+        public void InitializeNewItem(Item product)
         {
             try
             {
@@ -398,12 +398,12 @@ namespace ERPCore2.Services
                 product.Name = string.Empty;
                 product.UnitId = 0;
                 product.SizeId = null;
-                product.ProductCategoryId = null;
+                product.ItemCategoryId = null;
                 product.Status = EntityStatus.Active;
             }
             catch (Exception ex)
             {
-                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(InitializeNewProduct), GetType(), _logger);
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(InitializeNewItem), GetType(), _logger);
                 throw;
             }
         }
@@ -412,7 +412,7 @@ namespace ERPCore2.Services
         {
             try
             {
-                return 2; // ProductCode, ProductName
+                return 2; // ItemCode, ItemName
             }
             catch (Exception ex)
             {
@@ -421,7 +421,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public int GetBasicCompletedFieldsCount(Product product)
+        public int GetBasicCompletedFieldsCount(Item product)
         {
             try
             {
@@ -437,24 +437,24 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetBasicCompletedFieldsCount), GetType(), _logger, new { ProductId = product?.Id });
+                ErrorHandlingHelper.HandleServiceErrorSync(ex, nameof(GetBasicCompletedFieldsCount), GetType(), _logger, new { ItemId = product?.Id });
                 throw;
             }
         }
 
-        public override async Task<ServiceResult<Product>> UpdateAsync(Product entity)
+        public override async Task<ServiceResult<Item>> UpdateAsync(Item entity)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 // 檢查實體是否存在，並載入相關資料
-                var existingEntity = await context.Products
+                var existingEntity = await context.Items
                     .FirstOrDefaultAsync(x => x.Id == entity.Id);
                     
                 if (existingEntity == null)
                 {
-                    return ServiceResult<Product>.Failure("找不到要更新的資料");
+                    return ServiceResult<Item>.Failure("找不到要更新的資料");
                 }
 
                 // 設定製程單位預設值
@@ -464,7 +464,7 @@ namespace ERPCore2.Services
                 var validationResult = await ValidateAsync(entity);
                 if (!validationResult.IsSuccess)
                 {
-                    return ServiceResult<Product>.Failure(validationResult.ErrorMessage);
+                    return ServiceResult<Item>.Failure(validationResult.ErrorMessage);
                 }
 
                 // 保持審計資訊
@@ -479,23 +479,23 @@ namespace ERPCore2.Services
 
                 // 重新載入完整的實體以返回
                 var updatedEntity = await GetByIdAsync(entity.Id);
-                return ServiceResult<Product>.Success(updatedEntity ?? entity);
+                return ServiceResult<Item>.Success(updatedEntity ?? entity);
             }
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateAsync), GetType(), _logger);
-                return ServiceResult<Product>.Failure($"更新品項時發生錯誤: {ex.Message}");
+                return ServiceResult<Item>.Failure($"更新品項時發生錯誤: {ex.Message}");
             }
         }
         
         /// <summary>
         /// 覆寫基底類別的 CanDeleteAsync 方法，實作品項特定的刪除檢查
         /// </summary>
-        protected override async Task<ServiceResult> CanDeleteAsync(Product entity)
+        protected override async Task<ServiceResult> CanDeleteAsync(Item entity)
         {
             try
             {
-                var dependencyCheck = await DependencyCheckHelper.CheckProductDependenciesAsync(_contextFactory, entity.Id);
+                var dependencyCheck = await DependencyCheckHelper.CheckItemDependenciesAsync(_contextFactory, entity.Id);
                 if (!dependencyCheck.CanDelete)
                 {
                     return ServiceResult.Failure(dependencyCheck.GetFormattedErrorMessage("品項"));
@@ -508,7 +508,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CanDeleteAsync), GetType(), _logger, new { 
                     Method = nameof(CanDeleteAsync),
                     ServiceType = GetType().Name,
-                    ProductId = entity.Id 
+                    ItemId = entity.Id 
                 });
                 return ServiceResult.Failure("檢查品項刪除條件時發生錯誤");
             }
@@ -518,7 +518,7 @@ namespace ERPCore2.Services
         /// 設定製程單位預設值
         /// 若 ProductionUnitId 為 null，則預設為 UnitId，並將 ProductionUnitConversionRate 設為 1
         /// </summary>
-        private void SetDefaultProductionUnit(Product entity)
+        private void SetDefaultProductionUnit(Item entity)
         {
             if (!entity.ProductionUnitId.HasValue && entity.UnitId > 0)
             {
@@ -531,16 +531,16 @@ namespace ERPCore2.Services
 
         #region 伺服器端分頁
 
-        public async Task<(List<Product> Items, int TotalCount)> GetPagedWithFiltersAsync(
-            Func<IQueryable<Product>, IQueryable<Product>>? filterFunc,
+        public async Task<(List<Item> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<Item>, IQueryable<Item>>? filterFunc,
             int pageNumber,
             int pageSize)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                IQueryable<Product> query = context.Products
-                    .Include(p => p.ProductCategory)
+                IQueryable<Item> query = context.Items
+                    .Include(p => p.ItemCategory)
                     .Include(p => p.Unit)
                     .Include(p => p.ProductionUnit)
                     .Include(p => p.Size);
@@ -556,7 +556,7 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
-                return (new List<Product>(), 0);
+                return (new List<Item>(), 0);
             }
         }
 

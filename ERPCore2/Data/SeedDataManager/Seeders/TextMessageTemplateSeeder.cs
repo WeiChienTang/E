@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -31,8 +31,8 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             // 預設明細格式設定
             var defaultDetailConfig = new DetailFormatConfig
             {
-                ShowProductCode = false,
-                ShowProductName = true,
+                ShowItemCode = false,
+                ShowItemName = true,
                 ShowQuantity = true,
                 ShowUnit = true,
                 ShowUnitPrice = false,

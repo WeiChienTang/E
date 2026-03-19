@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ERPCore2.Models.Enums
 {
@@ -17,7 +17,7 @@ namespace ERPCore2.Models.Enums
         CustomerRelation = 3,
 
         [Display(Name = "品項管理")]
-        ProductManagement = 4,
+        ItemManagement = 4,
 
         [Display(Name = "庫存管理")]
         InventoryManagement = 5,

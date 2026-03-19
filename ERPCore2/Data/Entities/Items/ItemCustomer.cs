@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,17 +8,17 @@ namespace ERPCore2.Data.Entities
     /// 品項-客戶關聯表
     /// 維護品項與客戶之間的銷售關係（客戶專屬售價、料號等）
     /// </summary>
-    [Index(nameof(ProductId), nameof(CustomerId), IsUnique = true, Name = "UX_ProductCustomer_ProductId_CustomerId")]
-    [Index(nameof(ProductId), nameof(IsPreferred), nameof(Priority), Name = "IX_ProductCustomer_ProductId_IsPreferred_Priority")]
-    [Index(nameof(CustomerId), Name = "IX_ProductCustomer_CustomerId")]
-    public class ProductCustomer : BaseEntity
+    [Index(nameof(ItemId), nameof(CustomerId), IsUnique = true, Name = "UX_ItemCustomer_ItemId_CustomerId")]
+    [Index(nameof(ItemId), nameof(IsPreferred), nameof(Priority), Name = "IX_ItemCustomer_ItemId_IsPreferred_Priority")]
+    [Index(nameof(CustomerId), Name = "IX_ItemCustomer_CustomerId")]
+    public class ItemCustomer : BaseEntity
     {
         // ===== 關聯欄位 =====
 
         [Display(Name = "品項")]
         [Required(ErrorMessage = "品項為必填")]
-        [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int ItemId { get; set; }
 
         [Display(Name = "客戶")]
         [Required(ErrorMessage = "客戶為必填")]
@@ -56,7 +56,7 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [Display(Name = "客戶料號")]
         [MaxLength(50, ErrorMessage = "客戶料號不可超過50個字元")]
-        public string? CustomerProductCode { get; set; }
+        public string? CustomerItemCode { get; set; }
 
         /// <summary>
         /// 最近銷售單價（銷售出貨完成時自動更新）
@@ -82,7 +82,7 @@ namespace ERPCore2.Data.Entities
 
         // ===== 導航屬性 =====
 
-        public virtual Product? Product { get; set; }
+        public virtual Item? Item { get; set; }
         public virtual Customer? Customer { get; set; }
     }
 }

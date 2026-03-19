@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Models.Enums;
@@ -8,15 +8,15 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 供應商定價表 - 管理從供應商的採購價格
     /// </summary>
-    [Index(nameof(ProductId), nameof(SupplierId), nameof(EffectiveDate))]
+    [Index(nameof(ItemId), nameof(SupplierId), nameof(EffectiveDate))]
     [Index(nameof(SupplierId), nameof(EffectiveDate))]
     public class SupplierPricing : BaseEntity
     {
         // 基本資訊
         [Required(ErrorMessage = "品項為必填")]
         [Display(Name = "品項")]
-        [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int ItemId { get; set; }
 
         [Required(ErrorMessage = "供應商為必填")]
         [Display(Name = "供應商")]
@@ -35,7 +35,7 @@ namespace ERPCore2.Data.Entities
 
         [MaxLength(50, ErrorMessage = "供應商品項編號不可超過50個字元")]
         [Display(Name = "供應商品項編號")]
-        public string? SupplierProductCode { get; set; }
+        public string? SupplierItemCode { get; set; }
 
         // 採購條件
         [Display(Name = "最小訂購量")]
@@ -57,7 +57,7 @@ namespace ERPCore2.Data.Entities
         public string? PurchaseRemarks { get; set; }
 
         // Navigation Properties
-        public Product Product { get; set; } = null!;
+        public Item Item { get; set; } = null!;
         public Supplier Supplier { get; set; } = null!;
     }
 }

@@ -1,14 +1,14 @@
-@* 品項照片 Tab - 多張照片，結構與 BusinessCardTab 一致 *@
-@inject IProductPhotoService ProductPhotoService
+﻿@* 品項照片 Tab - 多張照片，結構與 BusinessCardTab 一致 *@
+@inject IItemPhotoService ItemPhotoService
 @inject INotificationService NotificationService
 @inject IWebHostEnvironment Environment
 @inject IStringLocalizer<SharedResource> L
 
-@if (!ProductId.HasValue || ProductId.Value <= 0)
+@if (!ItemId.HasValue || ItemId.Value <= 0)
 {
     <div class="text-center text-muted py-4">
         <i class="bi bi-image fs-1 d-block mb-2"></i>
-        <span>@L["ProductPhoto.SaveFirst"]</span>
+        <span>@L["ItemPhoto.SaveFirst"]</span>
     </div>
 }
 else
@@ -17,9 +17,9 @@ else
 
         @* Header *@
         <div class="d-flex align-items-center justify-content-between mb-3">
-            <span class="fw-semibold">@L["ProductPhoto.PhotoList"]</span>
+            <span class="fw-semibold">@L["ItemPhoto.PhotoList"]</span>
             <label class="btn btn-sm btn-outline-primary" style="cursor:pointer; margin-bottom:0;">
-                <i class="bi bi-upload me-1"></i>@L["ProductPhoto.UploadPhoto"]
+                <i class="bi bi-upload me-1"></i>@L["ItemPhoto.UploadPhoto"]
                 <InputFile OnChange="@HandleFileSelected" accept=".jpg,.jpeg,.png" multiple class="d-none" />
             </label>
         </div>
@@ -42,7 +42,7 @@ else
         {
             <div class="text-center text-muted py-4">
                 <i class="bi bi-image fs-1 d-block mb-2"></i>
-                <span>@L["ProductPhoto.NoPhotos"]</span>
+                <span>@L["ItemPhoto.NoPhotos"]</span>
             </div>
         }
         else
@@ -52,7 +52,7 @@ else
                 {
                     <div class="business-card-item">
                         <div class="business-card-photo-wrapper">
-                            <img src="@photo.PhotoPath" alt="@(photo.Caption ?? L["Entity.Product"])"
+                            <img src="@photo.PhotoPath" alt="@(photo.Caption ?? L["Entity.Item"])"
                                  class="business-card-photo"
                                  @onclick="@(() => OpenPreview(photo))" />
                         </div>
@@ -60,7 +60,7 @@ else
                             <input type="text"
                                    class="form-control form-control-sm border-0 p-0 fw-semibold"
                                    value="@photo.Caption"
-                                   placeholder="@L["ProductPhoto.Caption"]"
+                                   placeholder="@L["ItemPhoto.Caption"]"
                                    @onchange="@(e => SaveCaptionAsync(photo, e.Value?.ToString()))" />
                         </div>
                         <div class="business-card-actions px-2 pb-2 d-flex gap-1">
@@ -80,9 +80,9 @@ else
 @* 刪除確認 Modal *@
 <GenericConfirmModalComponent IsVisible="@showDeleteModal"
                               IsVisibleChanged="@((bool v) => showDeleteModal = v)"
-                              Title="@L["ProductPhoto.DeleteTitle"]"
+                              Title="@L["ItemPhoto.DeleteTitle"]"
                               Icon="bi-trash"
-                              Message="@L["ProductPhoto.DeleteMessage"]"
+                              Message="@L["ItemPhoto.DeleteMessage"]"
                               ConfirmButtonText="@L["Button.ConfirmDelete"]"
                               CancelButtonText="@L["Button.Cancel"]"
                               ConfirmButtonVariant="ButtonVariant.Red"
@@ -97,7 +97,7 @@ else
         <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">@(previewPhoto.Caption ?? L["Entity.Product"])</h5>
+                    <h5 class="modal-title">@(previewPhoto.Caption ?? L["Entity.Item"])</h5>
                     <button type="button" class="btn-close" @onclick="ClosePreview"></button>
                 </div>
                 <div class="modal-body text-center p-2">
@@ -109,23 +109,23 @@ else
 }
 
 @code {
-    [Parameter] public int? ProductId { get; set; }
+    [Parameter] public int? ItemId { get; set; }
 
-    private List<ProductPhoto> photos = new();
+    private List<ItemPhoto> photos = new();
     private bool isUploading = false;
     private string? uploadError = null;
     private bool showDeleteModal = false;
-    private ProductPhoto? deletingPhoto = null;
-    private ProductPhoto? previewPhoto = null;
-    private int? _loadedProductId;
+    private ItemPhoto? deletingPhoto = null;
+    private ItemPhoto? previewPhoto = null;
+    private int? _loadedItemId;
 
     protected override async Task OnParametersSetAsync()
     {
-        if (ProductId != _loadedProductId)
+        if (ItemId != _loadedItemId)
         {
-            _loadedProductId = ProductId;
-            if (ProductId.HasValue && ProductId.Value > 0)
-                await LoadAsync(ProductId.Value);
+            _loadedItemId = ItemId;
+            if (ItemId.HasValue && ItemId.Value > 0)
+                await LoadAsync(ItemId.Value);
             else
                 Clear();
         }
@@ -135,7 +135,7 @@ else
 
     public async Task LoadAsync(int productId)
     {
-        photos = await ProductPhotoService.GetByProductAsync(productId);
+        photos = await ItemPhotoService.GetByItemAsync(productId);
         StateHasChanged();
     }
 
@@ -150,7 +150,7 @@ else
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
-        if (!ProductId.HasValue || ProductId.Value <= 0) return;
+        if (!ItemId.HasValue || ItemId.Value <= 0) return;
 
         uploadError = null;
         isUploading = true;
@@ -171,15 +171,15 @@ else
                     break;
                 }
 
-                var photo = new ProductPhoto
+                var photo = new ItemPhoto
                 {
-                    ProductId = ProductId.Value,
+                    ItemId = ItemId.Value,
                     OriginalFileName = file.Name,
                     PhotoPath = filePath!,
                     SortOrder = nextSortOrder++
                 };
 
-                var result = await ProductPhotoService.CreateAsync(photo);
+                var result = await ItemPhotoService.CreateAsync(photo);
                 if (result.IsSuccess)
                     photos.Add(photo);
                 else
@@ -193,25 +193,25 @@ else
         finally
         {
             isUploading = false;
-            if (ProductId.HasValue && ProductId.Value > 0)
-                photos = await ProductPhotoService.GetByProductAsync(ProductId.Value);
+            if (ItemId.HasValue && ItemId.Value > 0)
+                photos = await ItemPhotoService.GetByItemAsync(ItemId.Value);
             StateHasChanged();
         }
     }
 
     // ===== 圖說（失去焦點自動儲存）=====
 
-    private async Task SaveCaptionAsync(ProductPhoto photo, string? value)
+    private async Task SaveCaptionAsync(ItemPhoto photo, string? value)
     {
         photo.Caption = value;
-        var result = await ProductPhotoService.UpdateAsync(photo);
+        var result = await ItemPhotoService.UpdateAsync(photo);
         if (!result.IsSuccess)
             await NotificationService.ShowErrorAsync(result.ErrorMessage);
     }
 
     // ===== 刪除 =====
 
-    private void RequestDelete(ProductPhoto photo)
+    private void RequestDelete(ItemPhoto photo)
     {
         deletingPhoto = photo;
         showDeleteModal = true;
@@ -227,11 +227,11 @@ else
             if (!string.IsNullOrEmpty(deletingPhoto.PhotoPath))
                 FileUploadHelper.DeleteFile(deletingPhoto.PhotoPath, Environment);
 
-            var result = await ProductPhotoService.DeleteAsync(deletingPhoto.Id);
+            var result = await ItemPhotoService.DeleteAsync(deletingPhoto.Id);
             if (result.IsSuccess)
             {
                 photos.Remove(deletingPhoto);
-                await NotificationService.ShowSuccessAsync(L["ProductPhoto.DeleteSuccess"]);
+                await NotificationService.ShowSuccessAsync(L["ItemPhoto.DeleteSuccess"]);
             }
             else
             {
@@ -252,7 +252,7 @@ else
 
     // ===== 預覽 =====
 
-    private void OpenPreview(ProductPhoto photo)
+    private void OpenPreview(ItemPhoto photo)
     {
         previewPhoto = photo;
         StateHasChanged();

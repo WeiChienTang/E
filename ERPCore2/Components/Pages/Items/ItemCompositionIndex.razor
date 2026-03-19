@@ -1,6 +1,6 @@
-﻿@page "/product-compositions"
-@inject IProductCompositionService ProductCompositionService
-@inject IProductService ProductService
+﻿@page "/item-compositions"
+@inject IItemCompositionService ItemCompositionService
+@inject IItemService ItemService
 @inject ICompositionCategoryService CompositionCategoryService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -8,30 +8,30 @@
 
 @rendermode InteractiveServer
 
-<GenericIndexPageComponent TEntity="ProductComposition" 
-                        TService="IProductCompositionService"
-                        Service="@ProductCompositionService"
-                        EntityBasePath="/product-compositions"                          
-                        PageTitle="@L["Page.ProductCompositionTitle"]"
-                        PageSubtitle="@L["Page.ProductCompositionSubtitle"]"
+<GenericIndexPageComponent TEntity="ItemComposition" 
+                        TService="IItemCompositionService"
+                        Service="@ItemCompositionService"
+                        EntityBasePath="/item-compositions"                          
+                        PageTitle="@L["Page.ItemCompositionTitle"]"
+                        PageSubtitle="@L["Page.ItemCompositionSubtitle"]"
                         ServerDataLoader="@ServerLoadCompositionsAsync"
                         BreadcrumbItems="@breadcrumbItems"
                         FilterDefinitions="@filterDefinitions"
                         ColumnDefinitions="@columnDefinitions"
-                        EntityName="@L["Entity.ProductComposition"]"
+                        EntityName="@L["Entity.ItemComposition"]"
                         GetEntityDisplayName="@(comp => comp.Code ?? $"物料清單{comp.Id}")"
-                        RequiredPermission="@PermissionRegistry.ProductComposition.Read"
+                        RequiredPermission="@PermissionRegistry.ItemComposition.Read"
                         RequiredModule="ProductionManagement"
                         OnAddClick="@modalHandler.ShowAddModalAsync"
                         OnRowClick="@modalHandler.ShowEditModalAsync"
                         ShowDraftTab="true"
-                        DebugPageName="ProductCompositionIndex"
+                        DebugPageName="ItemCompositionIndex"
                         RowPrintService="@BOMReportService"
                         RowPrintReportId="@ReportIds.BOMReport"
                         @ref="indexComponent"/>
 
 @* 品項物料清單編輯 Modal *@
-<ProductCompositionEditModalComponent IsVisible="@showEditModal"
+<ItemCompositionEditModalComponent IsVisible="@showEditModal"
                                      IsVisibleChanged="@((bool visible) => showEditModal = visible)"
                                      CompositionId="@editingCompositionId"
                                      OnCompositionSaved="@modalHandler.OnEntitySavedAsync"
@@ -39,17 +39,17 @@
 
 @code {
     // 組件參考
-    private GenericIndexPageComponent<ProductComposition, IProductCompositionService> indexComponent = default!;
+    private GenericIndexPageComponent<ItemComposition, IItemCompositionService> indexComponent = default!;
     
     // Modal 相關狀態
     private bool showEditModal = false;
     private int? editingCompositionId = null;
     
     // Modal 處理器
-    private ModalHandler<ProductComposition, GenericIndexPageComponent<ProductComposition, IProductCompositionService>> modalHandler = default!;
+    private ModalHandler<ItemComposition, GenericIndexPageComponent<ItemComposition, IItemCompositionService>> modalHandler = default!;
     
     // 欄位配置
-    private ProductCompositionFieldConfiguration fieldConfiguration = default!;
+    private ItemCompositionFieldConfiguration fieldConfiguration = default!;
     
     // 配置相關
     private List<BreadcrumbItem> breadcrumbItems = new();
@@ -57,7 +57,7 @@
     private List<TableColumnDefinition> columnDefinitions = new();
     
     // 相關資料
-    private List<Product> products = new();
+    private List<Item> products = new();
     private List<CompositionCategory> compositionCategories = new();
 
     protected override async Task OnInitializedAsync()
@@ -65,7 +65,7 @@
         try
         {
             // 初始化 Modal 處理器
-            modalHandler = ModalHelper.CreateModalHandler<ProductComposition, GenericIndexPageComponent<ProductComposition, IProductCompositionService>>(
+            modalHandler = ModalHelper.CreateModalHandler<ItemComposition, GenericIndexPageComponent<ItemComposition, IItemCompositionService>>(
                 id => editingCompositionId = id,
                 visible => showEditModal = visible,
                 () => indexComponent,
@@ -75,11 +75,11 @@
             await InitializeBreadcrumbsAsync();
             
             // 載入相關資料
-            await LoadProductsAsync();
+            await LoadItemsAsync();
             await LoadCompositionCategoriesAsync();
             
             // 建立欄位配置（傳遞 NotificationService）
-            fieldConfiguration = new ProductCompositionFieldConfiguration(products, compositionCategories, NotificationService);
+            fieldConfiguration = new ItemCompositionFieldConfiguration(products, compositionCategories, NotificationService);
             fieldConfiguration.SetLocalizer(L);
 
             // 使用欄位配置建立篩選器和表格欄位
@@ -98,10 +98,10 @@
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("生產管理", "物料清單", null, NotificationService, GetType());
 
     // 伺服器端分頁載入
-    private Task<(List<ProductComposition> Items, int TotalCount)> ServerLoadCompositionsAsync(
+    private Task<(List<ItemComposition> Items, int TotalCount)> ServerLoadCompositionsAsync(
         SearchFilterModel filter, int page, int pageSize)
     {
-        return ProductCompositionService.GetPagedWithFiltersAsync(
+        return ItemCompositionService.GetPagedWithFiltersAsync(
             q =>
             {
                 q = q.Where(pc => pc.IsDraft == (filter.ShowDrafts ?? false));
@@ -113,7 +113,7 @@
     }
 
     // 載入品項資料（用於篩選器）
-    private async Task LoadProductsAsync() => products = await DataLoaderHelper.LoadAsync(ProductService.GetAllAsync, "品項", NotificationService, GetType());
+    private async Task LoadItemsAsync() => products = await DataLoaderHelper.LoadAsync(ItemService.GetAllAsync, "品項", NotificationService, GetType());
 
     // 載入物料清單類型資料（用於篩選器）
     private async Task LoadCompositionCategoriesAsync() => compositionCategories = await DataLoaderHelper.LoadAsync(CompositionCategoryService.GetAllAsync, "物料清單類型", NotificationService, GetType());

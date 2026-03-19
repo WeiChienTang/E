@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +7,7 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 庫存主檔實體 - 記錄品項的總庫存資訊（主檔）
     /// </summary>
-    [Index(nameof(ProductId), IsUnique = true)]
+    [Index(nameof(ItemId), IsUnique = true)]
     public class InventoryStock : BaseEntity
     {
         // === 計算屬性：從明細加總 ===
@@ -64,11 +64,11 @@ namespace ERPCore2.Data.Entities
         
         // Foreign Keys
         [Display(Name = "品項")]
-        [ForeignKey(nameof(Product))]
-        public int? ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int? ItemId { get; set; }
 
         // Navigation Properties
-        public Product? Product { get; set; }
+        public Item? Item { get; set; }
         public ICollection<InventoryStockDetail> InventoryStockDetails { get; set; } = new List<InventoryStockDetail>();
         public ICollection<InventoryTransaction> InventoryTransactions { get; set; } = new List<InventoryTransaction>();
         public ICollection<InventoryReservation> InventoryReservations { get; set; } = new List<InventoryReservation>();

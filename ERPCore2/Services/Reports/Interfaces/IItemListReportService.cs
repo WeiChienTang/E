@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models;
 using ERPCore2.Models.Reports;
 using ERPCore2.Models.Reports.FilterCriteria;
@@ -10,11 +10,11 @@ namespace ERPCore2.Services.Reports.Interfaces
     /// 品項資料表報表服務介面
     /// 支援單品列印和批次（清單式）列印
     /// </summary>
-    public interface IProductListReportService : IEntityReportService<Product>
+    public interface IItemListReportService : IEntityReportService<Item>
     {
         /// <summary>
         /// 批次渲染品項清單報表為圖片（清單式報表，非逐筆列印）
         /// </summary>
-        Task<BatchPreviewResult> RenderBatchToImagesAsync(ProductListBatchPrintCriteria criteria);
+        Task<BatchPreviewResult> RenderBatchToImagesAsync(ItemListBatchPrintCriteria criteria);
     }
 }

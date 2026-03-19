@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -13,11 +13,11 @@ namespace ERPCore2.Services
     /// </summary>
     public class SalesOrderCompositionDetailService : GenericManagementService<SalesOrderCompositionDetail>, ISalesOrderCompositionDetailService
     {
-        private readonly IProductCompositionDetailService _productCompositionDetailService;
+        private readonly IItemCompositionDetailService _productCompositionDetailService;
 
         public SalesOrderCompositionDetailService(
             IDbContextFactory<AppDbContext> contextFactory,
-            IProductCompositionDetailService productCompositionDetailService,
+            IItemCompositionDetailService productCompositionDetailService,
             ILogger<GenericManagementService<SalesOrderCompositionDetail>> logger) : base(contextFactory, logger)
         {
             _productCompositionDetailService = productCompositionDetailService;
@@ -28,7 +28,7 @@ namespace ERPCore2.Services
         /// </summary>
         public SalesOrderCompositionDetailService(
             IDbContextFactory<AppDbContext> contextFactory,
-            IProductCompositionDetailService productCompositionDetailService) : base(contextFactory)
+            IItemCompositionDetailService productCompositionDetailService) : base(contextFactory)
         {
             _productCompositionDetailService = productCompositionDetailService;
         }
@@ -41,7 +41,7 @@ namespace ERPCore2.Services
             using var context = await _contextFactory.CreateDbContextAsync();
             
             return await context.SalesOrderCompositionDetails
-                .Include(x => x.ComponentProduct)
+                .Include(x => x.ComponentItem)
                 .Include(x => x.Unit)
                 .Where(x => x.SalesOrderDetailId == salesOrderDetailId)
                 .OrderBy(x => x.Id)
@@ -51,18 +51,18 @@ namespace ERPCore2.Services
         /// <summary>
         /// 從品項物料清單複製 BOM 資料到銷貨訂單（使用最新的配方）
         /// </summary>
-        public async Task<List<SalesOrderCompositionDetail>> CopyFromProductCompositionAsync(
+        public async Task<List<SalesOrderCompositionDetail>> CopyFromItemCompositionAsync(
             int salesOrderDetailId, int productId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             
             // 取得品項的物料清單資料
-            var productCompositions = await context.ProductCompositionDetails
-                .Include(p => p.ComponentProduct)
+            var productCompositions = await context.ItemCompositionDetails
+                .Include(p => p.ComponentItem)
                     .ThenInclude(cp => cp.ProductionUnit)
                 .Include(p => p.Unit)
-                .Where(p => p.ProductCompositionId == context.ProductCompositions
-                    .Where(pc => pc.ParentProductId == productId)
+                .Where(p => p.ItemCompositionId == context.ItemCompositions
+                    .Where(pc => pc.ParentItemId == productId)
                     .Select(pc => pc.Id)
                     .FirstOrDefault())
                 .ToListAsync();
@@ -71,11 +71,11 @@ namespace ERPCore2.Services
             return productCompositions.Select(pc => new SalesOrderCompositionDetail
             {
                 SalesOrderDetailId = salesOrderDetailId,
-                ComponentProductId = pc.ComponentProductId,
-                ComponentProduct = pc.ComponentProduct,
+                ComponentItemId = pc.ComponentItemId,
+                ComponentItem = pc.ComponentItem,
                 Quantity = pc.Quantity,
-                UnitId = pc.ComponentProduct?.ProductionUnitId ?? pc.ComponentProduct?.UnitId ?? pc.UnitId,
-                Unit = pc.ComponentProduct?.ProductionUnit ?? pc.Unit,
+                UnitId = pc.ComponentItem?.ProductionUnitId ?? pc.ComponentItem?.UnitId ?? pc.UnitId,
+                Unit = pc.ComponentItem?.ProductionUnit ?? pc.Unit,
                 ComponentCost = pc.ComponentCost,
                 Status = EntityStatus.Active
             }).ToList();
@@ -90,12 +90,12 @@ namespace ERPCore2.Services
             using var context = await _contextFactory.CreateDbContextAsync();
 
             // 查詢指定的品項配方
-            var productComposition = await context.ProductCompositions
+            var productComposition = await context.ItemCompositions
                 .Include(x => x.CompositionDetails)
-                    .ThenInclude(d => d.ComponentProduct)
+                    .ThenInclude(d => d.ComponentItem)
                         .ThenInclude(p => p.ProductionUnit)
                 .Include(x => x.CompositionDetails)
-                    .ThenInclude(d => d.ComponentProduct)
+                    .ThenInclude(d => d.ComponentItem)
                         .ThenInclude(p => p.Unit)
                 .Include(x => x.CompositionDetails)
                     .ThenInclude(d => d.Unit)
@@ -111,15 +111,15 @@ namespace ERPCore2.Services
 
             foreach (var detail in productComposition.CompositionDetails)
             {
-                var effectiveUnitId = detail.ComponentProduct?.ProductionUnitId ?? detail.ComponentProduct?.UnitId ?? detail.UnitId;
+                var effectiveUnitId = detail.ComponentItem?.ProductionUnitId ?? detail.ComponentItem?.UnitId ?? detail.UnitId;
                 result.Add(new SalesOrderCompositionDetail
                 {
                     SalesOrderDetailId = salesOrderDetailId,
-                    ComponentProductId = detail.ComponentProductId,
-                    ComponentProduct = detail.ComponentProduct!,
+                    ComponentItemId = detail.ComponentItemId,
+                    ComponentItem = detail.ComponentItem!,
                     Quantity = detail.Quantity,
                     UnitId = effectiveUnitId,
-                    Unit = detail.ComponentProduct?.ProductionUnit ?? detail.Unit,
+                    Unit = detail.ComponentItem?.ProductionUnit ?? detail.Unit,
                     ComponentCost = detail.ComponentCost,
                     Status = EntityStatus.Active
                 });
@@ -158,12 +158,12 @@ namespace ERPCore2.Services
             int addCount = 0;
             int updateCount = 0;
 
-            foreach (var detail in compositionDetails.Where(x => x.ComponentProductId > 0 && x.Quantity > 0))
+            foreach (var detail in compositionDetails.Where(x => x.ComponentItemId > 0 && x.Quantity > 0))
             {
                 detail.SalesOrderDetailId = salesOrderDetailId;
                 
                 // 🔑 清除導航屬性，避免 EF Core 嘗試插入已存在的關聯實體
-                detail.ComponentProduct = null!;
+                detail.ComponentItem = null!;
                 detail.Unit = null;
                 detail.SalesOrderDetail = null!;
                 
@@ -222,11 +222,11 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 return await context.SalesOrderCompositionDetails
-                    .Include(x => x.ComponentProduct)
+                    .Include(x => x.ComponentItem)
                     .Include(x => x.Unit)
                     .Include(x => x.SalesOrderDetail)
-                    .Where(x => (x.ComponentProduct.Name != null && x.ComponentProduct.Name.Contains(keyword)) || 
-                               (x.ComponentProduct.Code != null && x.ComponentProduct.Code.Contains(keyword)))
+                    .Where(x => (x.ComponentItem.Name != null && x.ComponentItem.Name.Contains(keyword)) || 
+                               (x.ComponentItem.Code != null && x.ComponentItem.Code.Contains(keyword)))
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -246,7 +246,7 @@ namespace ERPCore2.Services
                 return ServiceResult.Failure("銷貨訂單明細ID無效");
             }
 
-            if (entity.ComponentProductId <= 0)
+            if (entity.ComponentItemId <= 0)
             {
                 return ServiceResult.Failure("組件品項ID無效");
             }

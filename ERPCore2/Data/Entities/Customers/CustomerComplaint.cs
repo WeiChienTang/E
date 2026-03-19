@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using ERPCore2.Models.Enums;
 
 namespace ERPCore2.Data.Entities
@@ -30,7 +30,7 @@ namespace ERPCore2.Data.Entities
         /// <summary>投訴類別</summary>
         [Required(ErrorMessage = "請選擇投訴類別")]
         [Display(Name = "投訴類別")]
-        public ComplaintCategory Category { get; set; } = ComplaintCategory.ProductQuality;
+        public ComplaintCategory Category { get; set; } = ComplaintCategory.ItemQuality;
 
         /// <summary>投訴描述</summary>
         [MaxLength(2000, ErrorMessage = "投訴描述不可超過2000個字元")]

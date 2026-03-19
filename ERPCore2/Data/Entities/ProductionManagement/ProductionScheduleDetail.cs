@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Models.Enums;
@@ -9,8 +9,8 @@ namespace ERPCore2.Data.Entities
     /// 生產排程明細檔 - 記錄生產所需的組件物料資訊
     /// 每個組件對應到一個 ProductionScheduleItem（生產項目）
     /// </summary>
-    [Index(nameof(ProductionScheduleItemId), nameof(ComponentProductId))]
-    [Index(nameof(ComponentProductId))]
+    [Index(nameof(ProductionScheduleItemId), nameof(ComponentItemId))]
+    [Index(nameof(ComponentItemId))]
     public class ProductionScheduleDetail : BaseEntity
     {
         // 關聯資訊
@@ -21,12 +21,12 @@ namespace ERPCore2.Data.Entities
 
         [Required(ErrorMessage = "組件品項為必填")]
         [Display(Name = "組件品項")]
-        [ForeignKey(nameof(ComponentProduct))]
-        public int ComponentProductId { get; set; }
+        [ForeignKey(nameof(ComponentItem))]
+        public int ComponentItemId { get; set; }
 
         [Display(Name = "BOM明細")]
-        [ForeignKey(nameof(ProductCompositionDetail))]
-        public int? ProductCompositionDetailId { get; set; }
+        [ForeignKey(nameof(ItemCompositionDetail))]
+        public int? ItemCompositionDetailId { get; set; }
 
         // 數量資訊
         [Required(ErrorMessage = "需求數量為必填")]
@@ -100,12 +100,12 @@ namespace ERPCore2.Data.Entities
         /// <summary>
         /// 組件品項
         /// </summary>
-        public Product ComponentProduct { get; set; } = null!;
+        public Item ComponentItem { get; set; } = null!;
 
         /// <summary>
         /// BOM明細
         /// </summary>
-        public ProductCompositionDetail? ProductCompositionDetail { get; set; }
+        public ItemCompositionDetail? ItemCompositionDetail { get; set; }
 
         /// <summary>
         /// 領料倉庫

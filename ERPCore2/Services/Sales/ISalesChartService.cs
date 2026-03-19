@@ -1,11 +1,11 @@
-using ERPCore2.Models.Charts;
+﻿using ERPCore2.Models.Charts;
 
 namespace ERPCore2.Services.Sales;
 
 public interface ISalesChartService
 {
     /// <summary>依品項統計銷售金額排行 Top N（含稅）</summary>
-    Task<List<ChartDataItem>> GetTopProductsBySalesAmountAsync(int top = 10);
+    Task<List<ChartDataItem>> GetTopItemsBySalesAmountAsync(int top = 10);
 
     /// <summary>依業務員統計銷售業績排行 Top N（含稅）</summary>
     Task<List<ChartDataItem>> GetTopEmployeesBySalesAmountAsync(int top = 10);
@@ -23,7 +23,7 @@ public interface ISalesChartService
     Task<SalesChartSummary> GetSummaryAsync();
 
     // ===== Drill-down 明細查詢 =====
-    Task<List<ChartDetailItem>> GetDeliveryDetailsByProductAsync(string productLabel);
+    Task<List<ChartDetailItem>> GetDeliveryDetailsByItemAsync(string productLabel);
     Task<List<ChartDetailItem>> GetDeliveryDetailsByEmployeeAsync(string employeeLabel);
     Task<List<ChartDetailItem>> GetReturnDetailsByReasonAsync(string reasonLabel);
 

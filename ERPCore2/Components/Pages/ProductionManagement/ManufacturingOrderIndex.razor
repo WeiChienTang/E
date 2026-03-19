@@ -1,7 +1,7 @@
-@page "/production/manufacturing-orders"
+﻿@page "/production/manufacturing-orders"
 @using ERPCore2.FieldConfiguration
 @inject IProductionScheduleItemService ProductionScheduleItemService
-@inject IProductService ProductService
+@inject IItemService ItemService
 @inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
@@ -55,7 +55,7 @@
         {
             await InitializeBreadcrumbsAsync();
 
-            var products = await DataLoaderHelper.LoadAsync(() => ProductService.GetAllAsync(), "品項", NotificationService, GetType());
+            var products = await DataLoaderHelper.LoadAsync(() => ItemService.GetAllAsync(), "品項", NotificationService, GetType());
             var employees = await DataLoaderHelper.LoadAsync(() => EmployeeService.GetAllAsync(), "員工", NotificationService, GetType());
 
             fieldConfiguration = new ManufacturingOrderFieldConfiguration(products, employees, NotificationService);

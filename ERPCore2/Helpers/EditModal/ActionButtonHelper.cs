@@ -1,4 +1,4 @@
-using ERPCore2.Components.Shared.Modal;
+﻿using ERPCore2.Components.Shared.Modal;
 using ERPCore2.Components.Shared.Table;
 using ERPCore2.Components.Shared.Page;
 using ERPCore2.Components.Shared.Statistics;
@@ -31,7 +31,7 @@ namespace ERPCore2.Helpers
         /// <typeparam name="TService">服務類型，必須實作 IGenericManagementService</typeparam>
         /// <param name="editModalComponent">編輯 Modal 組件參考</param>
         /// <param name="modalManager">相關實體的 Modal 管理器</param>
-        /// <param name="propertyName">實體屬性名稱（如 nameof(Product.ProductCategoryId)）</param>
+        /// <param name="propertyName">實體屬性名稱（如 nameof(Item.ItemCategoryId)）</param>
         /// <returns>FieldActionButton 清單</returns>
         public async Task<List<FieldActionButton>> GenerateFieldActionButtonsAsync<TEntity, TService>(
             GenericEditModalComponent<TEntity, TService>? editModalComponent,

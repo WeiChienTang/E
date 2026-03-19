@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models;
 using ERPCore2.Services;
@@ -56,7 +56,7 @@ namespace ERPCore2.Services
                     .Include(q => q.Employee)
                     .Include(q => q.ApprovedByUser)
                     .Include(q => q.QuotationDetails)
-                        .ThenInclude(qd => qd.Product)
+                        .ThenInclude(qd => qd.Item)
                     .FirstOrDefaultAsync(q => q.Id == id);
             }
             catch (Exception ex)
@@ -226,12 +226,12 @@ namespace ERPCore2.Services
                     .Include(q => q.Employee)
                     .Include(q => q.ApprovedByUser)
                     .Include(q => q.QuotationDetails)
-                        .ThenInclude(qd => qd.Product)
+                        .ThenInclude(qd => qd.Item)
                     .Include(q => q.QuotationDetails)
                         .ThenInclude(qd => qd.Unit)
                     .Include(q => q.QuotationDetails)
                         .ThenInclude(qd => qd.CompositionDetails)
-                            .ThenInclude(cd => cd.ComponentProduct)
+                            .ThenInclude(cd => cd.ComponentItem)
                     .Include(q => q.QuotationDetails)
                         .ThenInclude(qd => qd.CompositionDetails)
                             .ThenInclude(cd => cd.Unit)
@@ -401,7 +401,7 @@ namespace ERPCore2.Services
                 
                 var loadedEntity = await context.Quotations
                     .Include(q => q.QuotationDetails)
-                        .ThenInclude(qd => qd.Product)
+                        .ThenInclude(qd => qd.Item)
                     .FirstOrDefaultAsync(q => q.Id == entity.Id);
 
                 if (loadedEntity == null)
@@ -420,7 +420,7 @@ namespace ERPCore2.Services
                 {
                     if (detail.ConvertedQuantity > 0)
                     {
-                        var productName = detail.Product?.Name ?? "未知品項";
+                        var productName = detail.Item?.Name ?? "未知品項";
                         return ServiceResult.Failure(
                             $"無法刪除此報價單，因為品項「{productName}」已有銷貨記錄（已轉銷貨 {detail.ConvertedQuantity} 個）"
                         );
@@ -602,7 +602,7 @@ namespace ERPCore2.Services
                     .Include(q => q.Customer)
                     .Include(q => q.Employee)
                     .Include(q => q.QuotationDetails)
-                        .ThenInclude(qd => qd.Product)
+                        .ThenInclude(qd => qd.Item)
                     .AsQueryable();
 
                 // 日期範圍篩選

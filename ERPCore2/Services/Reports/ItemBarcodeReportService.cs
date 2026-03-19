@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models;
 using ERPCore2.Models.Barcode;
 using ERPCore2.Models.Reports;
@@ -16,23 +16,23 @@ namespace ERPCore2.Services.Reports;
 /// 使用 FormattedDocument 架構，支援預覽、列印、Excel 匯出
 /// </summary>
 [SupportedOSPlatform("windows")]
-public class ProductBarcodeReportService : IProductBarcodeReportService
+public class ItemBarcodeReportService : IItemBarcodeReportService
 {
-    private readonly IProductService _productService;
+    private readonly IItemService _productService;
     private readonly IFormattedPrintService _formattedPrintService;
     private readonly IBarcodeGeneratorService _barcodeGeneratorService;
-    private readonly ILogger<ProductBarcodeReportService> _logger;
+    private readonly ILogger<ItemBarcodeReportService> _logger;
 
     // 預覽 DPI（與 FormattedPrintService 一致）
     private const int PreviewDPI = 96;
     // 1公分 = PreviewDPI / 2.54 像素
     private float CmToPixel => PreviewDPI / 2.54f;
 
-    public ProductBarcodeReportService(
-        IProductService productService,
+    public ItemBarcodeReportService(
+        IItemService productService,
         IFormattedPrintService formattedPrintService,
         IBarcodeGeneratorService barcodeGeneratorService,
-        ILogger<ProductBarcodeReportService> logger)
+        ILogger<ItemBarcodeReportService> logger)
     {
         _productService = productService;
         _formattedPrintService = formattedPrintService;
@@ -43,7 +43,7 @@ public class ProductBarcodeReportService : IProductBarcodeReportService
     /// <summary>
     /// 批次渲染條碼報表為圖片（統一報表架構）
     /// </summary>
-    public async Task<BatchPreviewResult> RenderBatchToImagesAsync(ProductBarcodeBatchPrintCriteria criteria)
+    public async Task<BatchPreviewResult> RenderBatchToImagesAsync(ItemBarcodeBatchPrintCriteria criteria)
     {
         try
         {
@@ -54,7 +54,7 @@ public class ProductBarcodeReportService : IProductBarcodeReportService
             }
 
             // 載入品項資料
-            var products = await LoadProductsAsync(criteria);
+            var products = await LoadItemsAsync(criteria);
 
             if (products == null || !products.Any())
             {
@@ -93,20 +93,20 @@ public class ProductBarcodeReportService : IProductBarcodeReportService
     /// <summary>
     /// 生成條碼批次列印報表（舊版 API，保留向後相容）
     /// </summary>
-    public async Task<string> GenerateBarcodeReportAsync(ProductBarcodePrintCriteria criteria)
+    public async Task<string> GenerateBarcodeReportAsync(ItemBarcodePrintCriteria criteria)
     {
         try
         {
             // 轉換為新版 Criteria
-            var batchCriteria = new ProductBarcodeBatchPrintCriteria
+            var batchCriteria = new ItemBarcodeBatchPrintCriteria
             {
-                ProductIds = criteria.ProductIds,
+                ItemIds = criteria.ItemIds,
                 CategoryIds = criteria.CategoryIds,
                 OnlyWithBarcode = criteria.OnlyWithBarcode,
                 BarcodeSize = criteria.BarcodeSize,
                 BarcodesPerPage = criteria.BarcodesPerPage,
-                ShowProductName = criteria.ShowProductName,
-                ShowProductCode = criteria.ShowProductCode,
+                ShowItemName = criteria.ShowItemName,
+                ShowItemCode = criteria.ShowItemCode,
                 PrintQuantities = criteria.PrintQuantities
             };
 
@@ -132,10 +132,10 @@ public class ProductBarcodeReportService : IProductBarcodeReportService
     /// <summary>
     /// 載入品項資料
     /// </summary>
-    private async Task<List<Product>> LoadProductsAsync(ProductBarcodeBatchPrintCriteria criteria)
+    private async Task<List<Item>> LoadItemsAsync(ItemBarcodeBatchPrintCriteria criteria)
     {
-        var allProducts = await _productService.GetAllAsync();
-        var query = allProducts.AsQueryable();
+        var allItems = await _productService.GetAllAsync();
+        var query = allItems.AsQueryable();
 
         // 只列印有條碼的品項
         if (criteria.OnlyWithBarcode)
@@ -144,16 +144,16 @@ public class ProductBarcodeReportService : IProductBarcodeReportService
         }
 
         // 篩選特定品項
-        if (criteria.ProductIds.Any())
+        if (criteria.ItemIds.Any())
         {
-            query = query.Where(p => criteria.ProductIds.Contains(p.Id));
+            query = query.Where(p => criteria.ItemIds.Contains(p.Id));
         }
 
         // 篩選特定分類
         if (criteria.CategoryIds.Any())
         {
-            query = query.Where(p => p.ProductCategoryId.HasValue &&
-                                    criteria.CategoryIds.Contains(p.ProductCategoryId.Value));
+            query = query.Where(p => p.ItemCategoryId.HasValue &&
+                                    criteria.CategoryIds.Contains(p.ItemCategoryId.Value));
         }
 
         return query.OrderBy(p => p.Code).ToList();
@@ -162,7 +162,7 @@ public class ProductBarcodeReportService : IProductBarcodeReportService
     /// <summary>
     /// 取得紙張設定
     /// </summary>
-    private PaperSettings GetPaperSettings(ProductBarcodeBatchPrintCriteria criteria)
+    private PaperSettings GetPaperSettings(ItemBarcodeBatchPrintCriteria criteria)
     {
         if (criteria.PaperSetting != null)
         {
@@ -192,7 +192,7 @@ public class ProductBarcodeReportService : IProductBarcodeReportService
     /// <summary>
     /// 建立條碼項目清單（展開列印數量）
     /// </summary>
-    private List<BarcodeItem> CreateBarcodeItems(List<Product> products, ProductBarcodeBatchPrintCriteria criteria)
+    private List<BarcodeItem> CreateBarcodeItems(List<Item> products, ItemBarcodeBatchPrintCriteria criteria)
     {
         var items = new List<BarcodeItem>();
         foreach (var product in products)
@@ -202,9 +202,9 @@ public class ProductBarcodeReportService : IProductBarcodeReportService
             {
                 items.Add(new BarcodeItem
                 {
-                    Product = product,
-                    ShowCode = criteria.ShowProductCode,
-                    ShowName = criteria.ShowProductName
+                    Item = product,
+                    ShowCode = criteria.ShowItemCode,
+                    ShowName = criteria.ShowItemName
                 });
             }
         }
@@ -277,7 +277,7 @@ public class ProductBarcodeReportService : IProductBarcodeReportService
         List<BarcodeItem> items,
         PaperSettings paper,
         BarcodeLayout layout,
-        ProductBarcodeBatchPrintCriteria criteria)
+        ItemBarcodeBatchPrintCriteria criteria)
     {
         var previewImages = new List<byte[]>();
         var document = new FormattedDocument
@@ -357,9 +357,9 @@ public class ProductBarcodeReportService : IProductBarcodeReportService
 
             // 生成條碼圖片
             var barcodeBytes = _barcodeGeneratorService.GenerateBarcodeWithInfo(
-                item.Product.Barcode ?? "",
-                item.ShowCode ? item.Product.Code : null,
-                item.ShowName ? item.Product.Name : null,
+                item.Item.Barcode ?? "",
+                item.ShowCode ? item.Item.Code : null,
+                item.ShowName ? item.Item.Name : null,
                 size);
 
             if (barcodeBytes.Length > 0)
@@ -504,7 +504,7 @@ public class ProductBarcodeReportService : IProductBarcodeReportService
     /// </summary>
     private class BarcodeItem
     {
-        public Product Product { get; set; } = null!;
+        public Item Item { get; set; } = null!;
         public bool ShowCode { get; set; }
         public bool ShowName { get; set; }
     }

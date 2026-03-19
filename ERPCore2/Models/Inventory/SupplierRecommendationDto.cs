@@ -1,4 +1,4 @@
-namespace ERPCore2.Models.Inventory
+﻿namespace ERPCore2.Models.Inventory
 {
     /// <summary>
     /// 供應商推薦資訊
@@ -9,7 +9,7 @@ namespace ERPCore2.Models.Inventory
         public int SupplierId { get; set; }
         public string SupplierName { get; set; } = string.Empty;
         public string SupplierCode { get; set; } = string.Empty;
-        public string? SupplierProductCode { get; set; }
+        public string? SupplierItemCode { get; set; }
         
         // 價格資訊
         public decimal? LastPurchasePrice { get; set; }

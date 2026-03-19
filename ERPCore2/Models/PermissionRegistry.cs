@@ -118,20 +118,20 @@ public static class PermissionRegistry
         public const string ChartRead = "SupplierChart.Read";
     }
 
-    public static class Product
+    public static class Item
     {
-        public const string Read      = "Product.Read";
-        public const string ChartRead = "ProductChart.Read";
+        public const string Read      = "Item.Read";
+        public const string ChartRead = "ItemChart.Read";
     }
 
-    public static class ProductCategory
+    public static class ItemCategory
     {
-        public const string Read = "ProductCategory.Read";
+        public const string Read = "ItemCategory.Read";
     }
 
-    public static class ProductComposition
+    public static class ItemComposition
     {
-        public const string Read = "ProductComposition.Read";
+        public const string Read = "ItemComposition.Read";
     }
 
     public static class CompositionCategory
@@ -141,12 +141,13 @@ public static class PermissionRegistry
 
     public static class ProductionSchedule
     {
-        public const string Read = "ProductionSchedule.Read";
+        public const string Read      = "ProductionSchedule.Read";
+        public const string ChartRead = "ProductionChart.Read";
     }
 
-    public static class ProductPricing
+    public static class ItemPricing
     {
-        public const string Read = "ProductPricing.Read";
+        public const string Read = "ItemPricing.Read";
     }
 
     public static class MasterData
@@ -181,7 +182,8 @@ public static class PermissionRegistry
 
     public static class Vehicle
     {
-        public const string Read = "Vehicle.Read";
+        public const string Read      = "Vehicle.Read";
+        public const string ChartRead = "VehicleChart.Read";
     }
 
     public static class VehicleType
@@ -242,12 +244,14 @@ public static class PermissionRegistry
 
     public static class ScaleRecord
     {
-        public const string Read = "ScaleRecord.Read";
+        public const string Read      = "ScaleRecord.Read";
+        public const string ChartRead = "ScaleChart.Read";
     }
 
     public static class SetoffDocument
     {
-        public const string Read = "SetoffDocument.Read";
+        public const string Read      = "SetoffDocument.Read";
+        public const string ChartRead = "FinancialChart.Read";
     }
 
     public static class PaymentMethod
@@ -371,6 +375,7 @@ public static class PermissionRegistry
         public const string Attendance   = "Payroll.Attendance";
         public const string Payslip      = "Payroll.Payslip";
         public const string SelfView     = "Payroll.SelfView";
+        public const string ChartRead    = "PayrollChart.Read";
     }
 
     // ===== Seeder 使用 =====
@@ -430,24 +435,26 @@ public static class PermissionRegistry
         new(Supplier.ChartRead, "檢視廠商圖表", PermissionLevel.Normal, "檢視廠商統計分析圖表（主管層級）", "Nav.SupplierGroup"),
 
         // ===== 一般權限：品項 =====
-        new(Product.Read,               "檢視品項",         PermissionLevel.Normal, "檢視品項基本資料與規格",         "Nav.ProductGroup"),
-        new(Product.ChartRead,          "檢視品項圖表",     PermissionLevel.Normal, "檢視品項統計分析圖表（主管層級）", "Nav.ProductGroup"),
-        new(ProductCategory.Read,       "檢視品項分類",     PermissionLevel.Normal, "檢視品項分類階層與設定",         "Nav.ProductGroup"),
-        new(ProductComposition.Read,    "檢視品項合成",     PermissionLevel.Normal, "檢視品項合成（BOM）結構與明細", "Nav.ProductGroup"),
-        new(CompositionCategory.Read,   "檢視物料清單類型", PermissionLevel.Normal, "檢視品項物料清單的類型分類",     "Nav.ProductGroup"),
-        new(ProductionSchedule.Read,    "檢視生產排程",     PermissionLevel.Normal, "檢視生產排程的詳細資料",         "Nav.ProductGroup"),
-        new(ProductPricing.Read,        "檢視品項定價",     PermissionLevel.Normal, "檢視品項價格設定與價格表",       "Nav.ProductGroup"),
-        new(MasterData.Read,            "檢視基礎資料",     PermissionLevel.Normal, "檢視系統基礎資料維護功能",       "Nav.ProductGroup"),
-        new(Material.Read,              "檢視材質",         PermissionLevel.Normal, "檢視品項材質分類與屬性",         "Nav.ProductGroup"),
-        new(Weather.Read,               "檢視天氣",         PermissionLevel.Normal, "檢視天氣相關基礎資料",           "Nav.ProductGroup"),
-        new(Color.Read,                 "檢視顏色",         PermissionLevel.Normal, "檢視顏色分類與色彩設定",         "Nav.ProductGroup"),
-        new(Size.Read,                  "檢視尺寸",         PermissionLevel.Normal, "檢視尺寸規格與大小設定",         "Nav.ProductGroup"),
-        new(Unit.Read,                  "檢視單位",         PermissionLevel.Normal, "檢視度量衡單位與換算設定",       "Nav.ProductGroup"),
+        new(Item.Read,               "檢視品項",         PermissionLevel.Normal, "檢視品項基本資料與規格",         "Nav.ItemGroup"),
+        new(Item.ChartRead,          "檢視品項圖表",     PermissionLevel.Normal, "檢視品項統計分析圖表（主管層級）", "Nav.ItemGroup"),
+        new(ItemCategory.Read,       "檢視品項分類",     PermissionLevel.Normal, "檢視品項分類階層與設定",         "Nav.ItemGroup"),
+        new(ItemComposition.Read,    "檢視品項合成",     PermissionLevel.Normal, "檢視品項合成（BOM）結構與明細", "Nav.ItemGroup"),
+        new(CompositionCategory.Read,   "檢視物料清單類型", PermissionLevel.Normal, "檢視品項物料清單的類型分類",     "Nav.ItemGroup"),
+        new(ProductionSchedule.Read,     "檢視生產排程",     PermissionLevel.Normal, "檢視生產排程的詳細資料",           "Nav.ItemGroup"),
+        new(ProductionSchedule.ChartRead,"檢視生產圖表",     PermissionLevel.Normal, "檢視生產管理統計分析圖表（主管層級）", "Nav.ItemGroup"),
+        new(ItemPricing.Read,        "檢視品項定價",     PermissionLevel.Normal, "檢視品項價格設定與價格表",       "Nav.ItemGroup"),
+        new(MasterData.Read,            "檢視基礎資料",     PermissionLevel.Normal, "檢視系統基礎資料維護功能",       "Nav.ItemGroup"),
+        new(Material.Read,              "檢視材質",         PermissionLevel.Normal, "檢視品項材質分類與屬性",         "Nav.ItemGroup"),
+        new(Weather.Read,               "檢視天氣",         PermissionLevel.Normal, "檢視天氣相關基礎資料",           "Nav.ItemGroup"),
+        new(Color.Read,                 "檢視顏色",         PermissionLevel.Normal, "檢視顏色分類與色彩設定",         "Nav.ItemGroup"),
+        new(Size.Read,                  "檢視尺寸",         PermissionLevel.Normal, "檢視尺寸規格與大小設定",         "Nav.ItemGroup"),
+        new(Unit.Read,                  "檢視單位",         PermissionLevel.Normal, "檢視度量衡單位與換算設定",       "Nav.ItemGroup"),
 
         // ===== 一般權限：車輛 =====
         new(Vehicle.Read,           "檢視車輛",     PermissionLevel.Normal, "檢視車輛基本資料與相關資訊",     "Nav.VehicleGroup"),
         new(VehicleType.Read,       "檢視車輛類型", PermissionLevel.Normal, "檢視車輛類型基本資料與相關資訊", "Nav.VehicleGroup"),
-        new(VehicleMaintenance.Read,"檢視保養紀錄", PermissionLevel.Normal, "檢視車輛保養紀錄與維修歷史",     "Nav.VehicleGroup"),
+        new(VehicleMaintenance.Read,"檢視保養紀錄", PermissionLevel.Normal, "檢視車輛保養紀錄與維修歷史",         "Nav.VehicleGroup"),
+        new(Vehicle.ChartRead,      "檢視車輛圖表", PermissionLevel.Normal, "檢視車輛統計分析圖表（主管層級）",   "Nav.VehicleGroup"),
 
         // ===== 一般權限：倉庫 =====
         new(Warehouse.Read,             "檢視倉庫",         PermissionLevel.Normal, "檢視倉庫基本資料與儲位設定",     "Nav.InventoryGroup"),
@@ -462,10 +469,12 @@ public static class PermissionRegistry
         new(StockTaking.Read,           "檢視盤點",         PermissionLevel.Normal, "檢視庫存盤點作業與結果",         "Nav.InventoryGroup"),
 
         // ===== 一般權限：磅秤紀錄 =====
-        new(ScaleRecord.Read,   "檢視磅秤紀錄", PermissionLevel.Normal, "檢視磅秤紀錄基本資料與相關資訊", "Nav.WasteGroup"),
+        new(ScaleRecord.Read,      "檢視磅秤紀錄", PermissionLevel.Normal, "檢視磅秤紀錄基本資料與相關資訊",       "Nav.WasteGroup"),
+        new(ScaleRecord.ChartRead, "檢視磅秤圖表", PermissionLevel.Normal, "檢視磅秤統計分析圖表（主管層級）",     "Nav.WasteGroup"),
 
         // ===== 一般權限：財務 =====
-        new(SetoffDocument.Read,"檢視沖款單",   PermissionLevel.Normal, "檢視客戶應收帳款與交易紀錄",     "Nav.FinanceGroup"),
+        new(SetoffDocument.Read,      "檢視沖款單",   PermissionLevel.Normal, "檢視客戶應收帳款與交易紀錄",         "Nav.FinanceGroup"),
+        new(SetoffDocument.ChartRead, "檢視財務圖表", PermissionLevel.Normal, "檢視財務統計分析圖表（主管層級）",   "Nav.FinanceGroup"),
         new(PaymentMethod.Read, "檢視付款方式", PermissionLevel.Normal, "檢視系統付款方式設定",           "Nav.FinanceGroup"),
         new(Bank.Read,          "檢視銀行",     PermissionLevel.Normal, "檢視銀行基本資料與相關資訊",     "Nav.FinanceGroup"),
         new(Currency.Read,      "檢視貨幣",     PermissionLevel.Normal, "檢視貨幣基本資料與匯率設定",     "Nav.FinanceGroup"),

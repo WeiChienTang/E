@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Models.Schedule;
 using ERPCore2.Services;
@@ -31,7 +31,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據品項ID取得項目列表
         /// </summary>
-        Task<List<ProductionScheduleItem>> GetByProductIdAsync(int productId);
+        Task<List<ProductionScheduleItem>> GetByItemIdAsync(int productId);
 
         /// <summary>
         /// 根據銷售訂單明細ID取得項目列表

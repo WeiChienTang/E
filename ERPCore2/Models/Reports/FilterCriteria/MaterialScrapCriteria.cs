@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models.Reports.FilterAttributes;
 using ERPCore2.Models.Reports.FilterCriteria;
 using ERPCore2.Services;
@@ -19,22 +19,22 @@ public class MaterialScrapCriteria : IReportFilterCriteria
     public DateTime? EndDate { get; set; }
 
     /// <summary>指定成品（生產的主產品），空表示全部</summary>
-    [FilterFK(typeof(IProductService),
+    [FilterFK(typeof(IItemService),
         Group = FilterGroup.Basic,
         Label = "成品",
         Placeholder = "搜尋成品...",
         EmptyMessage = "未選擇（查詢全部成品）",
         Order = 1)]
-    public List<int> ProductIds { get; set; } = new();
+    public List<int> ItemIds { get; set; } = new();
 
     /// <summary>指定組件，空表示全部</summary>
-    [FilterFK(typeof(IProductService),
+    [FilterFK(typeof(IItemService),
         Group = FilterGroup.Basic,
         Label = "組件",
         Placeholder = "搜尋組件...",
         EmptyMessage = "未選擇（查詢全部組件）",
         Order = 2)]
-    public List<int> ComponentProductIds { get; set; } = new();
+    public List<int> ComponentItemIds { get; set; } = new();
 
     /// <summary>只顯示有損耗量的記錄（ScrapQty > 0）</summary>
     [FilterToggle(Group = FilterGroup.Quick, Label = "損耗篩選", CheckboxLabel = "只顯示有損耗量", DefaultValue = false, Order = 1)]
@@ -69,8 +69,8 @@ public class MaterialScrapCriteria : IReportFilterCriteria
     {
         ["startDate"] = StartDate,
         ["endDate"] = EndDate,
-        ["productIds"] = ProductIds.Any() ? ProductIds : null,
-        ["componentProductIds"] = ComponentProductIds.Any() ? ComponentProductIds : null,
+        ["productIds"] = ItemIds.Any() ? ItemIds : null,
+        ["componentItemIds"] = ComponentItemIds.Any() ? ComponentItemIds : null,
         ["onlyWithScrap"] = OnlyWithScrap,
         ["onlyWithReturn"] = OnlyWithReturn
     };
@@ -80,8 +80,8 @@ public class MaterialScrapCriteria : IReportFilterCriteria
         var parts = new List<string>();
         if (StartDate.HasValue) parts.Add($"起：{StartDate:yyyy/MM/dd}");
         if (EndDate.HasValue) parts.Add($"迄：{EndDate:yyyy/MM/dd}");
-        if (ProductIds.Any()) parts.Add($"成品：{ProductIds.Count} 項");
-        if (ComponentProductIds.Any()) parts.Add($"組件：{ComponentProductIds.Count} 項");
+        if (ItemIds.Any()) parts.Add($"成品：{ItemIds.Count} 項");
+        if (ComponentItemIds.Any()) parts.Add($"組件：{ComponentItemIds.Count} 項");
         if (OnlyWithScrap) parts.Add("含損耗");
         if (OnlyWithReturn) parts.Add("含退料");
         return parts.Any() ? string.Join(" | ", parts) : "全部";

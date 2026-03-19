@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
@@ -43,10 +43,10 @@ namespace ERPCore2.Services
                     .Include(ps => ps.CreatedByEmployee)
                     .Include(ps => ps.Customer)
                     .Include(ps => ps.ScheduleItems)
-                        .ThenInclude(psi => psi.Product)
+                        .ThenInclude(psi => psi.Item)
                     .Include(ps => ps.ScheduleItems)
                         .ThenInclude(psi => psi.ScheduleDetails)
-                            .ThenInclude(psd => psd.ComponentProduct)
+                            .ThenInclude(psd => psd.ComponentItem)
                     .FirstOrDefaultAsync(ps => ps.Id == id);
             }
             catch (Exception ex)
@@ -245,11 +245,11 @@ namespace ERPCore2.Services
                     .Include(ps => ps.CreatedByEmployee)
                     .Include(ps => ps.Customer)
                     .Include(ps => ps.ScheduleItems)
-                        .ThenInclude(psi => psi.Product)
-                            .ThenInclude(p => p.ProductCategory)
+                        .ThenInclude(psi => psi.Item)
+                            .ThenInclude(p => p.ItemCategory)
                     .Include(ps => ps.ScheduleItems)
                         .ThenInclude(psi => psi.ScheduleDetails)
-                            .ThenInclude(psd => psd.ComponentProduct)
+                            .ThenInclude(psd => psd.ComponentItem)
                     .Include(ps => ps.ScheduleItems)
                         .ThenInclude(psi => psi.ScheduleDetails)
                             .ThenInclude(psd => psd.Warehouse)

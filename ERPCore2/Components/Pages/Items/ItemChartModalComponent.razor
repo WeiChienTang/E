@@ -1,12 +1,12 @@
-@using ERPCore2.Models.Charts
-@using ERPCore2.Services.Products
-@inject IProductChartService ChartService
+﻿@using ERPCore2.Models.Charts
+@using ERPCore2.Services.Items
+@inject IItemChartService ChartService
 @inject IStringLocalizer<SharedResource> L
 
 <GenericChartModalComponent IsVisible="@IsVisible"
                             IsVisibleChanged="@IsVisibleChanged"
-                            Category="@ChartCategory.Product"
-                            Title="@L["Product.ChartTitle"]"
+                            Category="@ChartCategory.Item"
+                            Title="@L["Item.ChartTitle"]"
                             Icon="bi bi-box-seam-fill"
                             OnDataLoading="@LoadSummaryAsync">
 </GenericChartModalComponent>
@@ -15,7 +15,7 @@
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
 
-    private ProductChartSummary? _summary;
+    private ItemChartSummary? _summary;
 
     private async Task LoadSummaryAsync()
     {

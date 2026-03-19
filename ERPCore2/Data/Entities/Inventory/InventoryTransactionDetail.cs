@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Models.Enums;
@@ -9,7 +9,7 @@ namespace ERPCore2.Data.Entities
     /// 庫存異動明細實體 - 記錄單筆品項的異動詳情
     /// </summary>
     [Index(nameof(InventoryTransactionId))]
-    [Index(nameof(ProductId))]
+    [Index(nameof(ItemId))]
     public class InventoryTransactionDetail : BaseEntity
     {
         // === 關聯欄位 ===
@@ -21,8 +21,8 @@ namespace ERPCore2.Data.Entities
         
         [Required(ErrorMessage = "品項為必填")]
         [Display(Name = "品項")]
-        [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int ItemId { get; set; }
         
         [Display(Name = "倉庫位置")]
         [ForeignKey(nameof(WarehouseLocation))]
@@ -107,7 +107,7 @@ namespace ERPCore2.Data.Entities
         // === 導航屬性 ===
         
         public InventoryTransaction InventoryTransaction { get; set; } = null!;
-        public Product Product { get; set; } = null!;
+        public Item Item { get; set; } = null!;
         public WarehouseLocation? WarehouseLocation { get; set; }
         public InventoryStock? InventoryStock { get; set; }
         public InventoryStockDetail? InventoryStockDetail { get; set; }

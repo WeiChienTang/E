@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Models.Enums;
@@ -10,9 +10,9 @@ namespace ERPCore2.Data.Entities
     /// 支援部分沖銷，一筆來源明細可分多次完成沖銷
     /// </summary>
     [Index(nameof(SetoffDocumentId))]
-    [Index(nameof(ProductId))]
+    [Index(nameof(ItemId))]
     [Index(nameof(SourceDetailType), nameof(SourceDetailId))]
-    public class SetoffProductDetail : BaseEntity
+    public class SetoffItemDetail : BaseEntity
     {
         // ===== 主要關聯 =====
         [Required(ErrorMessage = "沖銷單據為必填")]
@@ -21,7 +21,7 @@ namespace ERPCore2.Data.Entities
 
         [Required(ErrorMessage = "品項為必填")]
         [Display(Name = "品項")]
-        public int ProductId { get; set; }
+        public int ItemId { get; set; }
 
         // ===== 來源明細關聯（使用 Enum + Id）=====
         [Required(ErrorMessage = "來源明細類型為必填")]
@@ -54,6 +54,6 @@ namespace ERPCore2.Data.Entities
 
         // ===== 導航屬性 =====
         public SetoffDocument SetoffDocument { get; set; } = null!;
-        public Product Product { get; set; } = null!;
+        public Item Item { get; set; } = null!;
     }
 }

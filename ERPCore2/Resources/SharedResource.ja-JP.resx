@@ -437,8 +437,23 @@
   <data name="Nav.InventoryCharts" xml:space="preserve">
     <value>在庫グラフ</value>
   </data>
-  <data name="Nav.ProductCharts" xml:space="preserve">
+  <data name="Nav.ItemCharts" xml:space="preserve">
     <value>品目グラフ</value>
+  </data>
+  <data name="Nav.ProductionCharts" xml:space="preserve">
+    <value>生産グラフ</value>
+  </data>
+  <data name="Nav.FinancialCharts" xml:space="preserve">
+    <value>財務グラフ</value>
+  </data>
+  <data name="Nav.PayrollCharts" xml:space="preserve">
+    <value>給与グラフ</value>
+  </data>
+  <data name="Nav.ScaleCharts" xml:space="preserve">
+    <value>計量グラフ</value>
+  </data>
+  <data name="Nav.VehicleCharts" xml:space="preserve">
+    <value>車両グラフ</value>
   </data>
   <data name="Nav.CustomerVisitReport" xml:space="preserve">
     <value>訪問レポート</value>
@@ -446,13 +461,13 @@
   <data name="Nav.CustomerReportIndex" xml:space="preserve">
     <value>顧客レポート</value>
   </data>
-  <data name="Nav.ProductGroup" xml:space="preserve">
+  <data name="Nav.ItemGroup" xml:space="preserve">
     <value>品目</value>
   </data>
-  <data name="Nav.Products" xml:space="preserve">
+  <data name="Nav.Items" xml:space="preserve">
     <value>品目</value>
   </data>
-  <data name="Nav.ProductCategories" xml:space="preserve">
+  <data name="Nav.ItemCategories" xml:space="preserve">
     <value>分類</value>
   </data>
   <data name="Nav.Units" xml:space="preserve">
@@ -461,7 +476,7 @@
   <data name="Nav.Sizes" xml:space="preserve">
     <value>サイズ</value>
   </data>
-  <data name="Nav.ProductCompositions" xml:space="preserve">
+  <data name="Nav.ItemCompositions" xml:space="preserve">
     <value>BOM</value>
   </data>
   <data name="Nav.CompositionCategories" xml:space="preserve">
@@ -470,7 +485,7 @@
   <data name="Nav.ProductionSchedules" xml:space="preserve">
     <value>生産スケジュール</value>
   </data>
-  <data name="Nav.ProductReportIndex" xml:space="preserve">
+  <data name="Nav.ItemReportIndex" xml:space="preserve">
     <value>品目レポート</value>
   </data>
   <data name="Nav.InventoryGroup" xml:space="preserve">
@@ -646,7 +661,7 @@
   <!-- ===== 報表 ===== -->
   <data name="ReportCategory.Customer" xml:space="preserve"><value>得意先レポート</value></data>
   <data name="ReportCategory.Supplier" xml:space="preserve"><value>仕入先レポート</value></data>
-  <data name="ReportCategory.Product" xml:space="preserve"><value>品目レポート</value></data>
+  <data name="ReportCategory.Item" xml:space="preserve"><value>品目レポート</value></data>
   <data name="ReportCategory.Inventory" xml:space="preserve"><value>在庫レポート</value></data>
   <data name="ReportCategory.Sales" xml:space="preserve"><value>売上レポート</value></data>
   <data name="ReportCategory.Purchase" xml:space="preserve"><value>仕入レポート</value></data>
@@ -681,9 +696,9 @@
   <data name="Report.SalesOrder" xml:space="preserve"><value>受注書</value></data>
   <data name="Report.SalesDelivery" xml:space="preserve"><value>出荷伝票</value></data>
   <data name="Report.SalesReturn" xml:space="preserve"><value>返品伝票</value></data>
-  <data name="Report.ProductList" xml:space="preserve"><value>品目一覧表</value></data>
-  <data name="Report.ProductDetail" xml:space="preserve"><value>品目詳細</value></data>
-  <data name="Report.ProductBarcode" xml:space="preserve"><value>品目バーコード</value></data>
+  <data name="Report.ItemList" xml:space="preserve"><value>品目一覧表</value></data>
+  <data name="Report.ItemDetail" xml:space="preserve"><value>品目詳細</value></data>
+  <data name="Report.ItemBarcode" xml:space="preserve"><value>品目バーコード</value></data>
   <data name="Report.BOMReport" xml:space="preserve"><value>BOMレポート</value></data>
   <data name="Report.ProductionSchedule" xml:space="preserve"><value>生産スケジュール</value></data>
   <data name="Report.MaterialScrapRecord" xml:space="preserve"><value>材料廃棄・返却記録</value></data>
@@ -707,6 +722,8 @@
   <data name="Report.GeneralLedger" xml:space="preserve"><value>总分类帐</value></data>
   <data name="Report.SubsidiaryLedger" xml:space="preserve"><value>明細元帳</value></data>
   <data name="Report.DetailAccountBalance" xml:space="preserve"><value>勘定科目殘高表</value></data>
+  <data name="Report.ARAgingAnalysis" xml:space="preserve"><value>売掛金エイジング分析</value></data>
+  <data name="Report.APAgingAnalysis" xml:space="preserve"><value>買掛金エイジング分析</value></data>
   <data name="Label.DocumentPreview" xml:space="preserve"><value>{0}プレビュー</value></data>
   <data name="Message.EditTitle" xml:space="preserve"><value>{0}の編集</value></data>
   <data name="Message.CreateTitle" xml:space="preserve"><value>{0}の作成</value></data>
@@ -735,9 +752,9 @@
   <data name="Entity.Supplier" xml:space="preserve"><value>仕入先</value></data>
   <data name="Entity.SupplierBankAccount" xml:space="preserve"><value>仕入先銀行口座</value></data>
   <data name="Entity.CompanyBankAccount" xml:space="preserve"><value>会社銀行口座</value></data>
-  <data name="Entity.Product" xml:space="preserve"><value>品目</value></data>
-  <data name="Entity.ProductCategory" xml:space="preserve"><value>品目カテゴリ</value></data>
-  <data name="Entity.ProductComposition" xml:space="preserve"><value>部品表</value></data>
+  <data name="Entity.Item" xml:space="preserve"><value>品目</value></data>
+  <data name="Entity.ItemCategory" xml:space="preserve"><value>品目カテゴリ</value></data>
+  <data name="Entity.ItemComposition" xml:space="preserve"><value>部品表</value></data>
   <data name="Entity.BOM" xml:space="preserve"><value>部品表</value></data>
   <data name="Entity.CompositionCategory" xml:space="preserve"><value>部品表カテゴリ</value></data>
   <data name="Entity.Unit" xml:space="preserve"><value>単位</value></data>
@@ -872,7 +889,7 @@
   <data name="Field.SalesDeliveryDate" xml:space="preserve"><value>出荷日</value></data>
   <data name="Field.SalesReturnCode" xml:space="preserve"><value>返品番号</value></data>
   <data name="Field.SalesReturnDate" xml:space="preserve"><value>返品日</value></data>
-  <data name="Column.ProductCodeName" xml:space="preserve"><value>品目コード/名称</value></data>
+  <data name="Column.ItemCodeName" xml:space="preserve"><value>品目コード/名称</value></data>
   <data name="Column.Quantity" xml:space="preserve"><value>数量</value></data>
   <data name="Column.InboundQuantity" xml:space="preserve"><value>入庫済</value></data>
   <data name="Column.UnitPrice" xml:space="preserve"><value>単価</value></data>
@@ -1037,7 +1054,7 @@
   <data name="Column.ReceivablePayable" xml:space="preserve"><value>受取/支払</value></data>
   <data name="Column.SourceDocNumber" xml:space="preserve"><value>元伝票番号</value></data>
   <data name="Column.UnsetoffBalance" xml:space="preserve"><value>未相殺残高</value></data>
-  <!-- ===== Column - Product keys ===== -->
+  <!-- ===== Column - Item keys ===== -->
   <data name="Column.ProductionUnit" xml:space="preserve"><value>生産単位</value></data>
   <data name="Column.RequiredQuantity" xml:space="preserve"><value>必要数量</value></data>
   <!-- ===== Field - Accounting keys ===== -->
@@ -1116,7 +1133,7 @@
   <data name="Field.FollowUpDate" xml:space="preserve"><value>フォローアップ日付</value></data>
   <data name="Field.ResponsibleEmployee" xml:space="preserve"><value>担当者</value></data>
   <data name="Column.ComplaintDate" xml:space="preserve"><value>クレーム日付</value></data>
-  <data name="ComplaintCategory.ProductQuality" xml:space="preserve"><value>製品品質</value></data>
+  <data name="ComplaintCategory.ItemQuality" xml:space="preserve"><value>製品品質</value></data>
   <data name="ComplaintCategory.DeliveryDelay" xml:space="preserve"><value>納期遅延</value></data>
   <data name="ComplaintCategory.ServiceAttitude" xml:space="preserve"><value>サービス態度</value></data>
   <data name="ComplaintCategory.PriceDispute" xml:space="preserve"><value>価格紛争</value></data>
@@ -1130,7 +1147,7 @@
   <!-- ===== Field - Supplier keys ===== -->
   <data name="Field.SupplierCode" xml:space="preserve"><value>仕入先コード</value></data>
   <data name="Field.SupplierName" xml:space="preserve"><value>仕入先名</value></data>
-  <!-- ===== Field - Product keys ===== -->
+  <!-- ===== Field - Item keys ===== -->
   <data name="Field.Barcode" xml:space="preserve"><value>バーコード</value></data>
   <data name="Field.CategoryCode" xml:space="preserve"><value>カテゴリコード</value></data>
   <data name="Field.CategoryName" xml:space="preserve"><value>カテゴリ名</value></data>
@@ -1138,8 +1155,8 @@
   <data name="Field.CompositionCreator" xml:space="preserve"><value>組成作成者</value></data>
   <data name="Field.CompositionType" xml:space="preserve"><value>組成タイプ</value></data>
   <data name="Field.ForSale" xml:space="preserve"><value>販売可能</value></data>
-  <data name="Field.ProductCode" xml:space="preserve"><value>品目コード</value></data>
-  <data name="Field.ProductName" xml:space="preserve"><value>品目名</value></data>
+  <data name="Field.ItemCode" xml:space="preserve"><value>品目コード</value></data>
+  <data name="Field.ItemName" xml:space="preserve"><value>品目名</value></data>
   <data name="Field.ProductionUnit" xml:space="preserve"><value>生産単位</value></data>
   <data name="Field.PurchaseUnit" xml:space="preserve"><value>基本単位</value></data>
   <data name="Field.ScheduleCode" xml:space="preserve"><value>スケジュールコード</value></data>
@@ -1196,7 +1213,7 @@
   <data name="Field.InboundWarehouse" xml:space="preserve"><value>入庫倉庫</value></data>
   <data name="Field.PurchaseFee" xml:space="preserve"><value>購入費用</value></data>
   <data name="Field.RecordDate" xml:space="preserve"><value>記録日付</value></data>
-  <data name="Field.RelatedProduct" xml:space="preserve"><value>関連製品</value></data>
+  <data name="Field.RelatedItem" xml:space="preserve"><value>関連製品</value></data>
   <data name="Field.TotalWeight" xml:space="preserve"><value>総重量</value></data>
   <data name="Field.WasteRecordCode" xml:space="preserve"><value>計量記録コード</value></data>
   <data name="Field.WasteTypeCode" xml:space="preserve"><value>計量タイプコード</value></data>
@@ -1225,8 +1242,8 @@
   <data name="Field.CustomerReceivableAccount" xml:space="preserve"><value>顧客売掛口座</value></data>
   <data name="Field.CustomerReturnAccount" xml:space="preserve"><value>顧客返品口座</value></data>
   <data name="Field.CustomerSubAccount" xml:space="preserve"><value>顧客補助科目</value></data>
-  <data name="Field.ProductInventoryAccount" xml:space="preserve"><value>品目在庫口座</value></data>
-  <data name="Field.ProductSubAccount" xml:space="preserve"><value>品目補助科目</value></data>
+  <data name="Field.ItemInventoryAccount" xml:space="preserve"><value>品目在庫口座</value></data>
+  <data name="Field.ItemSubAccount" xml:space="preserve"><value>品目補助科目</value></data>
   <data name="Field.SubAccountCodeFormat" xml:space="preserve"><value>補助科目コード形式</value></data>
   <data name="Field.SupplierAdvanceAccount" xml:space="preserve"><value>仕入先前払金口座</value></data>
   <data name="Field.SupplierNoteAccount" xml:space="preserve"><value>仕入先手形口座</value></data>
@@ -1434,6 +1451,16 @@
   <data name="Payroll.LaborInsuranceRates" xml:space="preserve"><value>労働保険料率</value></data>
   <data name="Payroll.HealthInsuranceRates" xml:space="preserve"><value>健康保険料率</value></data>
   <data name="Payroll.RetirementAndTaxFree" xml:space="preserve"><value>退職金料率・非課税上限</value></data>
+  <data name="Payroll.OvertimeRates" xml:space="preserve"><value>時間外手当倍率</value></data>
+  <data name="Payroll.OvertimeRatesWarning" xml:space="preserve"><value>以下の倍率は労働基準法の規定に従います。引き下げると違法となる可能性があります。法改正が施行された場合のみ変更してください。</value></data>
+  <data name="Payroll.TimesHourlyRate" xml:space="preserve"><value>× 時給</value></data>
+  <data name="Payroll.LegalDefault" xml:space="preserve"><value>法定デフォルト</value></data>
+  <data name="Payroll.NationalHolidayRateNote" xml:space="preserve"><value>月給には休日賃金が含まれており、これは追加支給倍率です</value></data>
+  <data name="Field.OvertimeRate1" xml:space="preserve"><value>平日残業倍率（前2時間）</value></data>
+  <data name="Field.OvertimeRate2" xml:space="preserve"><value>平日残業倍率（後2時間）</value></data>
+  <data name="Field.RestDayRate1" xml:space="preserve"><value>休息日残業倍率（前2時間）</value></data>
+  <data name="Field.RestDayRate2" xml:space="preserve"><value>休息日残業倍率（2時間超）</value></data>
+  <data name="Field.NationalHolidayRate" xml:space="preserve"><value>国定休日追加支給倍率</value></data>
   <data name="Payroll.AddGrade" xml:space="preserve"><value>等級を追加</value></data>
   <data name="Payroll.EditGrade" xml:space="preserve"><value>等級を編集</value></data>
   <data name="Payroll.AddTaxRow" xml:space="preserve"><value>税額を追加</value></data>
@@ -1460,6 +1487,37 @@
   <data name="Attendance.OT2Note" xml:space="preserve"><value>平日時間外（次の2時間、×5/3）</value></data>
   <data name="Attendance.OvertimeTotal" xml:space="preserve"><value>残業合計時間</value></data>
   <data name="Attendance.TotalRecords" xml:space="preserve"><value>総件数</value></data>
+  <data name="Attendance.DailyDetail" xml:space="preserve"><value>日別出勤明細</value></data>
+  <data name="Attendance.HourlyEmployee" xml:space="preserve"><value>時給制</value></data>
+  <data name="Attendance.InitModeWorkdays" xml:space="preserve"><value>平日出勤（月給固定）</value></data>
+  <data name="Attendance.InitModeAllRest" xml:space="preserve"><value>全休（時給手入力）</value></data>
+  <data name="Attendance.ClearAll" xml:space="preserve"><value>すべてクリア</value></data>
+  <data name="Attendance.ClearAllHint" xml:space="preserve"><value>この月のすべての日別記録を削除</value></data>
+  <data name="Attendance.SaveAndRebuild" xml:space="preserve"><value>保存して集計</value></data>
+  <data name="Attendance.SaveAndRebuildSuccess" xml:space="preserve"><value>日別記録を保存し、月次集計を更新しました</value></data>
+  <data name="Attendance.Status" xml:space="preserve"><value>出勤状態</value></data>
+  <data name="Attendance.Present" xml:space="preserve"><value>出勤</value></data>
+  <data name="Attendance.Detail" xml:space="preserve"><value>明細</value></data>
+  <data name="Attendance.OpenDailyDetail" xml:space="preserve"><value>日別出勤明細を開く</value></data>
+  <data name="Attendance.TotalWorkHoursHint" xml:space="preserve"><value>時給従業員の総労働時間（日別明細から自動集計可）</value></data>
+  <data name="DailyStatus.Present" xml:space="preserve"><value>出勤</value></data>
+  <data name="DailyStatus.MakeUpWork" xml:space="preserve"><value>振替出勤</value></data>
+  <data name="DailyStatus.Absent" xml:space="preserve"><value>欠勤</value></data>
+  <data name="DailyStatus.SickLeave" xml:space="preserve"><value>病気休暇</value></data>
+  <data name="DailyStatus.PersonalLeave" xml:space="preserve"><value>私事休暇</value></data>
+  <data name="DailyStatus.AnnualLeave" xml:space="preserve"><value>有給休暇</value></data>
+  <data name="DailyStatus.RestDay" xml:space="preserve"><value>休日</value></data>
+  <data name="DailyStatus.NationalHoliday" xml:space="preserve"><value>国民の祝日</value></data>
+  <data name="DailyStatus.PresentShort" xml:space="preserve"><value>出</value></data>
+  <data name="DailyStatus.MakeUpWorkShort" xml:space="preserve"><value>補</value></data>
+  <data name="DailyStatus.AbsentShort" xml:space="preserve"><value>欠</value></data>
+  <data name="DailyStatus.SickLeaveShort" xml:space="preserve"><value>病</value></data>
+  <data name="DailyStatus.PersonalLeaveShort" xml:space="preserve"><value>私</value></data>
+  <data name="DailyStatus.AnnualLeaveShort" xml:space="preserve"><value>有</value></data>
+  <data name="DailyStatus.RestDayShort" xml:space="preserve"><value>休</value></data>
+  <data name="DailyStatus.NationalHolidayShort" xml:space="preserve"><value>祝</value></data>
+  <data name="Field.WorkHours" xml:space="preserve"><value>労働時間</value></data>
+  <data name="Field.TotalWorkHours" xml:space="preserve"><value>総労働時間</value></data>
   <data name="Field.ScheduledWorkDays" xml:space="preserve"><value>所定出勤日数</value></data>
   <data name="Field.ActualWorkDays" xml:space="preserve"><value>実際出勤日数</value></data>
   <data name="Field.AbsentDays" xml:space="preserve"><value>無断欠勤日数</value></data>
@@ -1549,8 +1607,8 @@
   <!-- ===== Tab keys (Modal tabs) ===== -->
   <data name="Tab.SupplierData" xml:space="preserve"><value>仕入先情報</value></data>
   <data name="Tab.AccountingInfo" xml:space="preserve"><value>会計情報</value></data>
-  <data name="Tab.SupplierProducts" xml:space="preserve"><value>仕入品目</value></data>
-  <data name="Tab.CustomerProducts" xml:space="preserve"><value>顧客品目</value></data>
+  <data name="Tab.SupplierItems" xml:space="preserve"><value>仕入品目</value></data>
+  <data name="Tab.CustomerItems" xml:space="preserve"><value>顧客品目</value></data>
   <data name="Tab.CustomerData" xml:space="preserve"><value>顧客情報</value></data>
   <data name="Tab.VisitRecords" xml:space="preserve"><value>訪問記録</value></data>
   <data name="Tab.ComplaintRecords" xml:space="preserve"><value>クレーム記録</value></data>
@@ -1592,15 +1650,15 @@
   <data name="EmployeePhoto.Hint" xml:space="preserve"><value>JPG、PNG形式、最大2MBまで対応</value></data>
   <data name="EmployeePhoto.UploadFailed" xml:space="preserve"><value>アップロード失敗</value></data>
   <data name="EmployeePhoto.DeleteFailed" xml:space="preserve"><value>削除失敗</value></data>
-  <data name="Tab.ProductPhotos" xml:space="preserve"><value>品目写真</value></data>
-  <data name="ProductPhoto.SaveFirst" xml:space="preserve"><value>写真をアップロードする前に品目情報を保存してください</value></data>
-  <data name="ProductPhoto.PhotoList" xml:space="preserve"><value>品目写真</value></data>
-  <data name="ProductPhoto.UploadPhoto" xml:space="preserve"><value>写真をアップロード</value></data>
-  <data name="ProductPhoto.NoPhotos" xml:space="preserve"><value>品目写真がまだアップロードされていません</value></data>
-  <data name="ProductPhoto.Caption" xml:space="preserve"><value>キャプション</value></data>
-  <data name="ProductPhoto.DeleteTitle" xml:space="preserve"><value>写真を削除</value></data>
-  <data name="ProductPhoto.DeleteMessage" xml:space="preserve"><value>この写真を削除してもよろしいですか？この操作は元に戻せません。</value></data>
-  <data name="ProductPhoto.DeleteSuccess" xml:space="preserve"><value>写真を削除しました</value></data>
+  <data name="Tab.ItemPhotos" xml:space="preserve"><value>品目写真</value></data>
+  <data name="ItemPhoto.SaveFirst" xml:space="preserve"><value>写真をアップロードする前に品目情報を保存してください</value></data>
+  <data name="ItemPhoto.PhotoList" xml:space="preserve"><value>品目写真</value></data>
+  <data name="ItemPhoto.UploadPhoto" xml:space="preserve"><value>写真をアップロード</value></data>
+  <data name="ItemPhoto.NoPhotos" xml:space="preserve"><value>品目写真がまだアップロードされていません</value></data>
+  <data name="ItemPhoto.Caption" xml:space="preserve"><value>キャプション</value></data>
+  <data name="ItemPhoto.DeleteTitle" xml:space="preserve"><value>写真を削除</value></data>
+  <data name="ItemPhoto.DeleteMessage" xml:space="preserve"><value>この写真を削除してもよろしいですか？この操作は元に戻せません。</value></data>
+  <data name="ItemPhoto.DeleteSuccess" xml:space="preserve"><value>写真を削除しました</value></data>
   <data name="Tab.QuotationPhotos" xml:space="preserve"><value>添付写真</value></data>
   <data name="QuotationPhoto.SaveFirst" xml:space="preserve"><value>写真をアップロードする前に見積データを保存してください</value></data>
   <data name="QuotationPhoto.PhotoList" xml:space="preserve"><value>見積添付写真</value></data>
@@ -1619,7 +1677,7 @@
   <data name="SalesOrderPhoto.DeleteTitle" xml:space="preserve"><value>写真を削除</value></data>
   <data name="SalesOrderPhoto.DeleteMessage" xml:space="preserve"><value>この写真を削除してもよろしいですか？この操作は元に戻せません。</value></data>
   <data name="SalesOrderPhoto.DeleteSuccess" xml:space="preserve"><value>写真を削除しました</value></data>
-  <data name="Tab.ProductData" xml:space="preserve"><value>品目情報</value></data>
+  <data name="Tab.ItemData" xml:space="preserve"><value>品目情報</value></data>
   <data name="Tab.OrderData" xml:space="preserve"><value>受注情報</value></data>
   <data name="Tab.OrderDetail" xml:space="preserve"><value>受注明細</value></data>
   <data name="Tab.ReceivingRecords" xml:space="preserve"><value>入荷記録</value></data>
@@ -1648,10 +1706,10 @@
   <data name="Supplier.CopyToCustomerMessage" xml:space="preserve"><value>この仕入先のデータを新しい顧客としてコピーしますか？</value></data>
   <data name="Supplier.CopyToCustomerSummary" xml:space="preserve"><value>コピー後、顧客一覧に新しいレコードが作成されます。</value></data>
   <data name="Customer.AutoSyncNote" xml:space="preserve"><value>品目リストは受注から自動同期、削除のみ可能</value></data>
-  <data name="Customer.DeleteProductButtonTitle" xml:space="preserve"><value>品目リンクを削除</value></data>
-  <data name="Customer.NoProducts" xml:space="preserve"><value>この顧客の販売品目が登録されていません</value></data>
-  <data name="Customer.RemoveProduct" xml:space="preserve"><value>品目リンクを削除</value></data>
-  <data name="Customer.ConfirmRemoveProduct" xml:space="preserve"><value>「{0}」とこの顧客のリンクを削除しますか？</value></data>
+  <data name="Customer.DeleteItemButtonTitle" xml:space="preserve"><value>品目リンクを削除</value></data>
+  <data name="Customer.NoItems" xml:space="preserve"><value>この顧客の販売品目が登録されていません</value></data>
+  <data name="Customer.RemoveItem" xml:space="preserve"><value>品目リンクを削除</value></data>
+  <data name="Customer.ConfirmRemoveItem" xml:space="preserve"><value>「{0}」とこの顧客のリンクを削除しますか？</value></data>
   <data name="Customer.RemovedFromCatalog" xml:space="preserve"><value>顧客品目リンクを削除しました</value></data>
   <!-- ===== Enum value display keys ===== -->
   <data name="CustomerStatus.Active" xml:space="preserve"><value>取引中</value></data>
@@ -1740,7 +1798,7 @@
   <!-- ===== Field keys - Inventory ===== -->
   <data name="Field.CurrentStock" xml:space="preserve"><value>現在在庫</value></data>
   <data name="Field.AverageCost" xml:space="preserve"><value>平均原価</value></data>
-  <data name="Field.ProductUnit" xml:space="preserve"><value>品目単位</value></data>
+  <data name="Field.ItemUnit" xml:space="preserve"><value>品目単位</value></data>
   <data name="Field.ProductionUnitConversion" xml:space="preserve"><value>製造換算</value></data>
   <data name="Field.ProductionUnitStock" xml:space="preserve"><value>製造在庫</value></data>
 
@@ -1862,7 +1920,7 @@
   <data name="Label.DetailColumns" xml:space="preserve"><value>品目明細（第2段落）</value></data>
   <data name="Label.MessagePreview" xml:space="preserve"><value>メッセージプレビュー</value></data>
   <data name="Label.SupportedVariables" xml:space="preserve"><value>サポート変数：</value></data>
-  <data name="Label.ProductName" xml:space="preserve"><value>品名</value></data>
+  <data name="Label.ItemName" xml:space="preserve"><value>品名</value></data>
   <data name="Label.Quantity" xml:space="preserve"><value>数量</value></data>
   <data name="Label.Unit" xml:space="preserve"><value>単位</value></data>
   <data name="Label.UnitPrice" xml:space="preserve"><value>単価</value></data>
@@ -1881,7 +1939,7 @@
   <data name="Error.FieldChangeFailed" xml:space="preserve"><value>フィールド変更処理エラー：{0}</value></data>
   <data name="Error.LoadDefaultTemplateFailed" xml:space="preserve"><value>デフォルトテンプレートの読み込みエラー：{0}</value></data>
   <!-- ===== FieldConfiguration 補足 keys ===== -->
-  <data name="Field.ProductCategory" xml:space="preserve"><value>品目カテゴリ</value></data>
+  <data name="Field.ItemCategory" xml:space="preserve"><value>品目カテゴリ</value></data>
   <data name="Field.LocationPosition" xml:space="preserve"><value>棚位置</value></data>
   <!-- ===== DynamicFilterTemplate keys ===== -->
   <data name="Filter.BasicFilter" xml:space="preserve"><value>基本フィルター</value></data>
@@ -1893,13 +1951,13 @@
   <data name="Placeholder.Search" xml:space="preserve"><value>検索...</value></data>
   <data name="Label.LoadingFilterOptions" xml:space="preserve"><value>フィルターオプションを読み込み中...</value></data>
   <data name="Error.LoadFieldDataFailed" xml:space="preserve"><value>「{0}」データの読み込みに失敗しました</value></data>
-  <!-- ===== ProductBarcodeBatchFilterTemplate keys ===== -->
+  <!-- ===== ItemBarcodeBatchFilterTemplate keys ===== -->
   <data name="Report.BarcodeSettings" xml:space="preserve"><value>バーコード印刷設定</value></data>
   <data name="Button.DeselectAll" xml:space="preserve"><value>全選択解除</value></data>
-  <data name="Message.NoBarcodeProducts" xml:space="preserve"><value>印刷可能な品目バーコードがありません</value></data>
-  <data name="Label.ShowProductName" xml:space="preserve"><value>品目名を表示</value></data>
-  <data name="Label.ShowProductCode" xml:space="preserve"><value>品目コードを表示</value></data>
-  <data name="Message.LoadProductsFailed" xml:space="preserve"><value>品目データの読み込みに失敗しました</value></data>
+  <data name="Message.NoBarcodeItems" xml:space="preserve"><value>印刷可能な品目バーコードがありません</value></data>
+  <data name="Label.ShowItemName" xml:space="preserve"><value>品目名を表示</value></data>
+  <data name="Label.ShowItemCode" xml:space="preserve"><value>品目コードを表示</value></data>
+  <data name="Message.LoadItemsFailed" xml:space="preserve"><value>品目データの読み込みに失敗しました</value></data>
   <!-- ===== Report Description keys ===== -->
   <data name="Report.CustomerStatementDesc" xml:space="preserve"><value>指定期間の顧客対照表を生成し、出荷・返品・入金明細と期首・期末残高を含む</value></data>
   <data name="Report.CustomerSalesAnalysisDesc" xml:space="preserve"><value>売上金額の高い順に並び、顧客の売上金額比率とランキングを分析</value></data>
@@ -1919,9 +1977,9 @@
   <data name="Report.SalesOrderDesc" xml:space="preserve"><value>顧客情報、品目明細、金額集計を含む受注書を印刷</value></data>
   <data name="Report.SalesDeliveryDesc" xml:space="preserve"><value>顧客情報、品目明細、金額集計を含む納品書を印刷</value></data>
   <data name="Report.SalesReturnDesc" xml:space="preserve"><value>返品理由と返品明細を含む売上返品伝票を印刷</value></data>
-  <data name="Report.ProductListDesc" xml:space="preserve"><value>品番、品名、仕様、バーコード、分類、単位を含む品目基本情報リストを印刷</value></data>
-  <data name="Report.ProductDetailDesc" xml:space="preserve"><value>仕様、バーコード、分類、単位、仕入種別、原価・定価等を含む品目の完全な詳細情報を1ブロック毎に印刷</value></data>
-  <data name="Report.ProductBarcodeDesc" xml:space="preserve"><value>品目バーコードを印刷</value></data>
+  <data name="Report.ItemListDesc" xml:space="preserve"><value>品番、品名、仕様、バーコード、分類、単位を含む品目基本情報リストを印刷</value></data>
+  <data name="Report.ItemDetailDesc" xml:space="preserve"><value>仕様、バーコード、分類、単位、仕入種別、原価・定価等を含む品目の完全な詳細情報を1ブロック毎に印刷</value></data>
+  <data name="Report.ItemBarcodeDesc" xml:space="preserve"><value>品目バーコードを印刷</value></data>
   <data name="Report.BOMReportDesc" xml:space="preserve"><value>配合別に部品品番、品名、数量、単位、原価を表示する品目BOM物料リストを印刷</value></data>
   <data name="Report.ProductionScheduleDesc" xml:space="preserve"><value>スケジュール項目、数量、状態、予定日等の明細を含む生産スケジュールを照会</value></data>
   <data name="Report.InventoryStatusDesc" xml:space="preserve"><value>現有在庫、引当済在庫、利用可能在庫および在庫金額を含む各倉庫の現在庫状況を照会</value></data>
@@ -1941,6 +1999,8 @@
   <data name="Report.GeneralLedgerDesc" xml:space="preserve"><value>科目大類別にグループ化したすべての勘定の勘定カードを表示し、各科目に転記済み伝票明細・期首残高・流水残高・期末残高を表示</value></data>
   <data name="Report.SubsidiaryLedgerDesc" xml:space="preserve"><value>勘定コード・名称キーワードで特定勘定のカードを照会し、転記済み伝票明細と流水残高を表示。顧客別売掛金、仕入先別買掛金等の明細確認に適する</value></data>
   <data name="Report.DetailAccountBalanceDesc" xml:space="preserve"><value>各科目の期首残高、当期借方・貸方発生額、期末残高を集計（逐筆明細なし）、各科目の残高変動を素早く把握するのに適する</value></data>
+  <data name="Report.ARAgingAnalysisDesc" xml:space="preserve"><value>出荷日＋得意先支払日数で期日を算出し、各エイジング区間（未到来/1-30/31-60/61-90/91-120/121日超）の未収金額を得意先別に集計</value></data>
+  <data name="Report.APAgingAnalysisDesc" xml:space="preserve"><value>入荷日＋仕入先支払日数で期日を算出し、各エイジング区間（未到来/1-30/31-60/61-90/91-120/121日超）の未払金額を仕入先別に集計</value></data>
   <data name="Column.TaxRate" xml:space="preserve"><value>税率</value></data>
   <data name="Column.IsReceivingCompleted" xml:space="preserve"><value>入荷完了</value></data>
   <data name="Placeholder.SelectWarehouseFirst" xml:space="preserve"><value>先に倉庫を選択してください</value></data>
@@ -2231,8 +2291,13 @@
   <data name="Sales.ChartTitle" xml:space="preserve"><value>売上分析チャート</value></data>
   <!-- ===== Inventory 在庫モジュール ===== -->
   <data name="Inventory.ChartTitle" xml:space="preserve"><value>在庫分析チャート</value></data>
-  <!-- ===== Product 品目モジュール ===== -->
-  <data name="Product.ChartTitle" xml:space="preserve"><value>品目分析チャート</value></data>
+  <!-- ===== Item 品目モジュール ===== -->
+  <data name="Item.ChartTitle" xml:space="preserve"><value>品目分析チャート</value></data>
+  <data name="Production.ChartTitle" xml:space="preserve"><value>生産分析チャート</value></data>
+  <data name="Financial.ChartTitle" xml:space="preserve"><value>財務分析チャート</value></data>
+  <data name="Payroll.ChartTitle" xml:space="preserve"><value>給与分析チャート</value></data>
+  <data name="Scale.ChartTitle" xml:space="preserve"><value>計量分析チャート</value></data>
+  <data name="Vehicle.ChartTitle" xml:space="preserve"><value>車両分析チャート</value></data>
   <data name="Customer.NoTransactions" xml:space="preserve"><value>関連取引記録がありません</value></data>
   <data name="Customer.NoVisits" xml:space="preserve"><value>訪問記録がありません</value></data>
   <data name="Customer.NoComplaints" xml:space="preserve"><value>クレーム記録がありません</value></data>
@@ -2269,17 +2334,17 @@
   <data name="Column.VisitPurpose" xml:space="preserve"><value>訪問目的</value></data>
   <data name="Column.VisitResult" xml:space="preserve"><value>結果概要</value></data>
   <data name="Column.NextFollowUp" xml:space="preserve"><value>次回フォロー</value></data>
-  <data name="Column.ProductCode" xml:space="preserve"><value>品目コード</value></data>
-  <data name="Column.ProductName" xml:space="preserve"><value>品目名</value></data>
-  <data name="Column.SupplierProductCode" xml:space="preserve"><value>仕入先品番</value></data>
+  <data name="Column.ItemCode" xml:space="preserve"><value>品目コード</value></data>
+  <data name="Column.ItemName" xml:space="preserve"><value>品目名</value></data>
+  <data name="Column.SupplierItemCode" xml:space="preserve"><value>仕入先品番</value></data>
   <data name="Column.LastPurchasePrice" xml:space="preserve"><value>直近仕入価格</value></data>
   <data name="Column.LastPurchaseDate" xml:space="preserve"><value>直近仕入日</value></data>
-  <data name="Column.CustomerProductCode" xml:space="preserve"><value>顧客品番</value></data>
+  <data name="Column.CustomerItemCode" xml:space="preserve"><value>顧客品番</value></data>
   <data name="Column.CustomerPrice" xml:space="preserve"><value>顧客価格</value></data>
   <data name="Column.LastSalePrice" xml:space="preserve"><value>直近売価</value></data>
   <data name="Column.LastSaleDate" xml:space="preserve"><value>直近売日</value></data>
   <data name="Column.IsPreferred" xml:space="preserve"><value>優先</value></data>
-  <data name="Column.Product" xml:space="preserve"><value>品目</value></data>
+  <data name="Column.Item" xml:space="preserve"><value>品目</value></data>
   <data name="Column.Select" xml:space="preserve"><value>選択</value></data>
   <data name="Column.PermissionName" xml:space="preserve"><value>権限名</value></data>
   <data name="Column.PermissionCode" xml:space="preserve"><value>権限コード</value></data>
@@ -2343,10 +2408,10 @@
 
   <!-- ===== Supplier 仕入先モジュール（新規） ===== -->
   <data name="Supplier.AutoSyncNote" xml:space="preserve"><value>発注書保存時に自動同期。★ は優先仕入先を示します</value></data>
-  <data name="Supplier.NoProducts" xml:space="preserve"><value>仕入先品目なし。発注書保存後に自動作成されます</value></data>
-  <data name="Supplier.NoProductsDefault" xml:space="preserve"><value>仕入先品目が設定されていません</value></data>
-  <data name="Supplier.RemoveProduct" xml:space="preserve"><value>仕入先品目を削除</value></data>
-  <data name="Supplier.ConfirmRemoveProduct" xml:space="preserve"><value>「{0}」を仕入先カタログから削除してよろしいですか？</value></data>
+  <data name="Supplier.NoItems" xml:space="preserve"><value>仕入先品目なし。発注書保存後に自動作成されます</value></data>
+  <data name="Supplier.NoItemsDefault" xml:space="preserve"><value>仕入先品目が設定されていません</value></data>
+  <data name="Supplier.RemoveItem" xml:space="preserve"><value>仕入先品目を削除</value></data>
+  <data name="Supplier.ConfirmRemoveItem" xml:space="preserve"><value>「{0}」を仕入先カタログから削除してよろしいですか？</value></data>
   <data name="Supplier.RemovedFromCatalog" xml:space="preserve"><value>仕入先カタログから削除しました</value></data>
   <data name="Supplier.DeleteButtonTitle" xml:space="preserve"><value>仕入先カタログから削除</value></data>
   <data name="Supplier.AlreadyBound" xml:space="preserve"><value>品目「{0}」はすでにこの仕入先に登録されています</value></data>
@@ -2440,7 +2505,7 @@
   <data name="Composition.QuickApply" xml:space="preserve"><value>クイック適用</value></data>
   <data name="Composition.CustomModeShort" xml:space="preserve"><value>カスタム</value></data>
   <data name="Composition.SelectBOM" xml:space="preserve"><value>BOM 配合を選択</value></data>
-  <data name="Composition.SelectBOMWithProduct" xml:space="preserve"><value>BOM 配合を選択 - {0}</value></data>
+  <data name="Composition.SelectBOMWithItem" xml:space="preserve"><value>BOM 配合を選択 - {0}</value></data>
   <data name="Composition.SearchPlaceholder" xml:space="preserve"><value>配合コード・仕様・顧客・カテゴリーで検索...</value></data>
   <data name="Composition.NoMatch" xml:space="preserve"><value>条件に合う配合が見つかりません</value></data>
   <data name="Composition.CurrentCustomer" xml:space="preserve"><value>現在の顧客</value></data>
@@ -2454,14 +2519,13 @@
   <data name="Composition.CustomModeDesc" xml:space="preserve"><value>既存の配合を使わず、部品を手動で選択して数量を設定する</value></data>
   <data name="Composition.NoBOMInfo" xml:space="preserve"><value>この品目の BOM 配合がまだ作成されていません。「カスタム」モードで手動作成してください。</value></data>
   <data name="Composition.EditBOM" xml:space="preserve"><value>BOM 構成を編集</value></data>
-  <data name="Composition.EditBOMWithProduct" xml:space="preserve"><value>BOM 構成を編集 - {0}</value></data>
+  <data name="Composition.EditBOMWithItem" xml:space="preserve"><value>BOM 構成を編集 - {0}</value></data>
   <data name="Composition.CustomModeSelectTitle" xml:space="preserve"><value>カスタムモード - 部品を選択</value></data>
   <data name="Composition.CustomModeSelectDesc" xml:space="preserve"><value>下から部品を選択し、チェックした項目の数量・単位を表で編集できます。</value></data>
   <data name="Composition.SearchComponentPlaceholder" xml:space="preserve"><value>部品コード・名称で検索...</value></data>
   <data name="Composition.NoMatchComponent" xml:space="preserve"><value>条件に合う部品が見つかりません</value></data>
   <data name="Composition.PendingCount" xml:space="preserve"><value>{0} 件の部品にチェック（未ロード）</value></data>
   <data name="Composition.AddedCount" xml:space="preserve"><value>{0} 件の部品を追加済み</value></data>
-  <data name="Column.ComponentItem" xml:space="preserve"><value>品目</value></data>
   <data name="Label.NoRemarks" xml:space="preserve"><value>備考なし</value></data>
   <data name="Composition.EmptyMsgCustom" xml:space="preserve"><value>上の「部品を追加」ボタンをクリックして部品を選択してください</value></data>
   <data name="Composition.EmptyMsg" xml:space="preserve"><value>部品がまだ追加されていません</value></data>
@@ -2536,12 +2600,12 @@
   <data name="Production.SelectScheduleDetails" xml:space="preserve"><value>スケジュール明細を選択</value></data>
   <data name="Production.SelectScheduleDetailsTitle" xml:space="preserve"><value>スケジュール明細を選択 - {0}</value></data>
   <data name="Production.PendingDetails" xml:space="preserve"><value>未スケジュール明細</value></data>
-  <!-- ===== Product ===== -->
-  <data name="Product.BarcodePrint" xml:space="preserve"><value>品目バーコード印刷</value></data>
-  <data name="Product.NoBarcodeItems" xml:space="preserve"><value>印刷可能な品目バーコードがありません</value></data>
-  <data name="Product.NoPrintableProducts" xml:space="preserve"><value>印刷可能な品目がありません</value></data>
-  <data name="Product.A4BarcodeHint" xml:space="preserve"><value>ヒント：A4用紙1枚に24枚のバーコードを印刷できます</value></data>
-  <data name="Product.SelectList" xml:space="preserve"><value>リストを選択</value></data>
+  <!-- ===== Item ===== -->
+  <data name="Item.BarcodePrint" xml:space="preserve"><value>品目バーコード印刷</value></data>
+  <data name="Item.NoBarcodeItems" xml:space="preserve"><value>印刷可能な品目バーコードがありません</value></data>
+  <data name="Item.NoPrintableItems" xml:space="preserve"><value>印刷可能な品目がありません</value></data>
+  <data name="Item.A4BarcodeHint" xml:space="preserve"><value>ヒント：A4用紙1枚に24枚のバーコードを印刷できます</value></data>
+  <data name="Item.SelectList" xml:space="preserve"><value>リストを選択</value></data>
   <!-- ===== Setoff ===== -->
   <data name="Setoff.NoPaymentRecords" xml:space="preserve"><value>入金記録がありません</value></data>
   <data name="Setoff.NoPrepaymentRecords" xml:space="preserve"><value>前払い記録がありません</value></data>
@@ -2597,6 +2661,26 @@
   <data name="Journal.Debit" xml:space="preserve"><value>借方（Debit）</value></data>
   <data name="Journal.Credit" xml:space="preserve"><value>貸方（Credit）</value></data>
   <data name="Journal.Description" xml:space="preserve"><value>摘要</value></data>
+  <data name="Journal.MaterialIssue" xml:space="preserve"><value>材料出庫</value></data>
+  <data name="Journal.MaterialIssueHint" xml:space="preserve"><value>借：仕掛品/材料費 / 貸：商品在庫</value></data>
+  <data name="Journal.NoPendingMaterialIssue" xml:space="preserve"><value>仕訳待ちの承認済み材料出庫はありません</value></data>
+  <data name="Journal.IssueDate" xml:space="preserve"><value>出庫日</value></data>
+  <data name="Journal.IssueType" xml:space="preserve"><value>用途</value></data>
+  <data name="Journal.EstimatedCost" xml:space="preserve"><value>推定原価</value></data>
+  <data name="Journal.NoCostData" xml:space="preserve"><value>⚠ 原価データなし</value></data>
+  <data name="Journal.NoCostDataTooltip" xml:space="preserve"><value>明細の単価が未設定です。仕訳転送に失敗します</value></data>
+  <data name="Journal.ProductionCompletion" xml:space="preserve"><value>生産完了</value></data>
+  <data name="Journal.ProductionCompletionHint" xml:space="preserve"><value>借：製品 / 貸：仕掛品</value></data>
+  <data name="Journal.NoPendingProductionCompletion" xml:space="preserve"><value>仕訳待ちの生産完了記録はありません（在庫異動記録が必要です）</value></data>
+  <data name="Journal.CompletionDate" xml:space="preserve"><value>完成日</value></data>
+  <data name="Journal.ItemName" xml:space="preserve"><value>品目</value></data>
+  <data name="Journal.CompletedQuantity" xml:space="preserve"><value>完成数量</value></data>
+  <data name="Journal.CostAmount" xml:space="preserve"><value>原価金額</value></data>
+  <data name="Journal.ZeroAmount" xml:space="preserve"><value>⚠ 金額ゼロ</value></data>
+  <data name="Journal.ZeroAmountTooltip" xml:space="preserve"><value>在庫異動金額がゼロです</value></data>
+  <data name="MaterialIssueType.Production" xml:space="preserve"><value>生産用材料</value></data>
+  <data name="MaterialIssueType.GeneralConsumption" xml:space="preserve"><value>一般消耗</value></data>
+  <data name="MaterialIssueType.Sample" xml:space="preserve"><value>サンプル</value></data>
   <!-- ===== Report ===== -->
   <data name="Report.AccountsReceivableTitle" xml:space="preserve"><value>売掛金レポート印刷条件</value></data>
   <data name="Report.StatisticsDate" xml:space="preserve"><value>集計日</value></data>
@@ -2606,9 +2690,9 @@
   <data name="Report.ARNoCustomerSelected" xml:space="preserve"><value>顧客未選択時は全顧客の売掛金を印刷します</value></data>
   <!-- ===== Accounting additions ===== -->
   <data name="Accounting.Inventory" xml:space="preserve"><value>棚卸資産</value></data>
-  <data name="Accounting.CreateProductSubAccountTitle" xml:space="preserve"><value>この品目の棚卸補助科目を作成</value></data>
+  <data name="Accounting.CreateItemSubAccountTitle" xml:space="preserve"><value>この品目の棚卸補助科目を作成</value></data>
   <!-- ===== Column additions ===== -->
-  <data name="Column.ComponentProduct" xml:space="preserve"><value>部材品目</value></data>
+  <data name="Column.ComponentItem" xml:space="preserve"><value>部材品目</value></data>
   <data name="Column.RequiredQty" xml:space="preserve"><value>所要数量</value></data>
   <data name="Column.IssuedQty" xml:space="preserve"><value>出庫数量</value></data>
   <data name="Column.PendingIssueQty" xml:space="preserve"><value>未出庫数量</value></data>
@@ -2618,7 +2702,6 @@
   <data name="Column.Barcode" xml:space="preserve"><value>バーコード</value></data>
   <data name="Column.PrintQty" xml:space="preserve"><value>印刷数量</value></data>
   <data name="Column.Supplier" xml:space="preserve"><value>仕入先</value></data>
-  <data name="Column.SupplierItemCode" xml:space="preserve"><value>仕入先品番</value></data>
   <data name="Column.Price" xml:space="preserve"><value>単価</value></data>
   <data name="Column.LeadTimeDays" xml:space="preserve"><value>リードタイム(日)</value></data>
   <data name="Column.MinOrderQty" xml:space="preserve"><value>最小発注量</value></data>
@@ -2694,9 +2777,9 @@
   <data name="Message.NoScheduleItemInfo" xml:space="preserve"><value>スケジュール項目情報を読み込めません</value></data>
   <data name="Message.EnterIssueQty" xml:space="preserve"><value>出庫数量を入力してください</value></data>
   <data name="Message.StockInsufficientFor" xml:space="preserve"><value>以下の部材の在庫が不足しています：{0}</value></data>
-  <data name="Message.SelectAtLeastOneProduct" xml:space="preserve"><value>少なくとも1つの品目を選択してください</value></data>
+  <data name="Message.SelectAtLeastOneItem" xml:space="preserve"><value>少なくとも1つの品目を選択してください</value></data>
   <data name="Message.BarcodePrintWindowOpened" xml:space="preserve"><value>バーコード印刷ウィンドウを開きました（合計{0}枚）</value></data>
-  <data name="Message.NoMatchingProducts" xml:space="preserve"><value>条件に一致する品目がありません</value></data>
+  <data name="Message.NoMatchingItems" xml:space="preserve"><value>条件に一致する品目がありません</value></data>
   <data name="Message.SupplierAlreadyExists" xml:space="preserve"><value>この仕入先は既に存在します。別の仕入先を選択してください</value></data>
   <data name="Message.NeedAtLeastOneSupplier" xml:space="preserve"><value>仕入先が少なくとも1件必要です</value></data>
   <data name="Message.DuplicateSupplier" xml:space="preserve"><value>重複する仕入先が存在します</value></data>
@@ -2726,7 +2809,7 @@
   <data name="Message.LoadCustomerFailed" xml:space="preserve"><value>顧客データの読み込みに失敗しました</value></data>
   <data name="Message.GenerateReportFailed" xml:space="preserve"><value>レポートの生成に失敗しました</value></data>
   <!-- ===== Placeholder additions ===== -->
-  <data name="Placeholder.SearchProductNameCode" xml:space="preserve"><value>品目名/コードを検索...</value></data>
+  <data name="Placeholder.SearchItemNameCode" xml:space="preserve"><value>品目名/コードを検索...</value></data>
   <data name="Placeholder.FilterBySpec" xml:space="preserve"><value>仕様で絞り込み...</value></data>
   <data name="Placeholder.SelectSupplier" xml:space="preserve"><value>仕入先を選択</value></data>
   <data name="Placeholder.EnterCode" xml:space="preserve"><value>コードを入力</value></data>
@@ -2738,7 +2821,7 @@
   <data name="Placeholder.SelectType" xml:space="preserve"><value>種別を選択..</value></data>
   <data name="Placeholder.SelectPrepayment" xml:space="preserve"><value>前払い項目を選択..</value></data>
   <data name="Placeholder.SearchCodeNameStatus" xml:space="preserve"><value>コード/品目名/状態を検索...</value></data>
-  <data name="Placeholder.SearchProductOrderCustomer" xml:space="preserve"><value>品目/注文/顧客を検索...</value></data>
+  <data name="Placeholder.SearchItemOrderCustomer" xml:space="preserve"><value>品目/注文/顧客を検索...</value></data>
   <data name="Placeholder.SelectDefault" xml:space="preserve"><value>選択してください..</value></data>
   <!-- ===== Setoff additional ===== -->
   <data name="Setoff.UnknownSource" xml:space="preserve"><value>不明な発生元</value></data>
@@ -2928,7 +3011,7 @@
   <data name="RelatedDoc.NoDocuments" xml:space="preserve"><value>関連書類がありません</value></data>
   <data name="RelatedDoc.LoadingMessage" xml:space="preserve"><value>関連書類を読み込んでいます...</value></data>
   <data name="RelatedDoc.NoRelated" xml:space="preserve"><value>関連記録がありません</value></data>
-  <data name="RelatedDoc.Product" xml:space="preserve"><value>品目：</value></data>
+  <data name="RelatedDoc.Item" xml:space="preserve"><value>品目：</value></data>
   <data name="RelatedDoc.TransactionCount" xml:space="preserve"><value>{0} 件の異動記録</value></data>
   <data name="RelatedDoc.TransactionHistory" xml:space="preserve"><value>在庫異動履歴</value></data>
   <data name="RelatedDoc.TransactionHistoryTitle" xml:space="preserve"><value>異動履歴 - {0}</value></data>
@@ -3089,7 +3172,7 @@
   <data name="Pagination.GoToLast" xml:space="preserve"><value>最後のページへ</value></data>
   <data name="Pagination.NoData" xml:space="preserve"><value>データが見つかりません</value></data>
 
-  <!-- ===== Products Module (MaterialIssue / Completion / ScheduleItem / Picker / Supplier / Barcode) ===== -->
+  <!-- ===== Items Module (MaterialIssue / Completion / ScheduleItem / Picker / Supplier / Barcode) ===== -->
   <data name="Message.LoadFailed" xml:space="preserve"><value>読み込みに失敗しました：{0}</value></data>
   <data name="Message.ReduceStockFailed" xml:space="preserve"><value>在庫引き当てに失敗しました：{0} - {1}</value></data>
   <data name="Message.IssueSuccess" xml:space="preserve"><value>{0} 件の部品を出庫しました。伝票番号：{1}</value></data>
@@ -3101,11 +3184,11 @@
   <data name="Message.UpdateFailed" xml:space="preserve"><value>更新に失敗しました：{0}</value></data>
   <data name="Message.PrintValidationError" xml:space="preserve"><value>印刷条件エラー：{0}</value></data>
   <data name="Message.PrintFailed" xml:space="preserve"><value>印刷に失敗しました：{0}</value></data>
-  <data name="Message.LoadProductDataFailed" xml:space="preserve"><value>品目データの読み込みに失敗しました：{0}</value></data>
-  <data name="Label.UnknownProduct" xml:space="preserve"><value>不明な品目</value></data>
+  <data name="Message.LoadItemDataFailed" xml:space="preserve"><value>品目データの読み込みに失敗しました：{0}</value></data>
+  <data name="Label.UnknownItem" xml:space="preserve"><value>不明な品目</value></data>
   <data name="Label.UnknownSupplier" xml:space="preserve"><value>不明なサプライヤー</value></data>
   <data name="Placeholder.SelectOption" xml:space="preserve"><value>-- 選択してください --</value></data>
-  <data name="Tooltip.SelectSupplierProduct" xml:space="preserve"><value>この品目を供給するサプライヤーを選択</value></data>
+  <data name="Tooltip.SelectSupplierItem" xml:space="preserve"><value>この品目を供給するサプライヤーを選択</value></data>
   <data name="Tooltip.EnterSupplierCode" xml:space="preserve"><value>サプライヤーの品目コードまたは部品番号を入力</value></data>
   <data name="Tooltip.EnterSupplierPrice" xml:space="preserve"><value>サプライヤーのこの品目への見積価格を入力</value></data>
   <data name="Tooltip.EnterLeadTime" xml:space="preserve"><value>サプライヤーのリードタイム（日数）を入力</value></data>
@@ -3131,11 +3214,11 @@
 
   <!-- ===== PurchaseOrderTable ===== -->
   <data name="Message.SelectSupplierFirst" xml:space="preserve"><value>仕入先を選択すると、未完了の入荷品目が表示されます</value></data>
-  <data name="Message.NoProducts" xml:space="preserve"><value>品目がまだ追加されていません</value></data>
+  <data name="Message.NoItems" xml:space="preserve"><value>品目がまだ追加されていません</value></data>
   <data name="Button.SmartPurchase" xml:space="preserve"><value>スマート発注</value></data>
-  <data name="Tooltip.PurchaseProductSearch" xml:space="preserve"><value>品目を検索して選択（コードまたは名前を入力）。入荷記録のある品目は変更できません</value></data>
-  <data name="Placeholder.PurchaseProductSearch" xml:space="preserve"><value>品目コードまたは名前を入力</value></data>
-  <data name="Message.ProductHasReceiving" xml:space="preserve"><value>この品目には入荷記録があり、変更できません</value></data>
+  <data name="Tooltip.PurchaseItemSearch" xml:space="preserve"><value>品目を検索して選択（コードまたは名前を入力）。入荷記録のある品目は変更できません</value></data>
+  <data name="Placeholder.PurchaseItemSearch" xml:space="preserve"><value>品目コードまたは名前を入力</value></data>
+  <data name="Message.ItemHasReceiving" xml:space="preserve"><value>この品目には入荷記録があり、変更できません</value></data>
   <data name="Tooltip.PurchaseQuantity" xml:space="preserve"><value>発注数量。入荷記録のある品目は数量を変更できません</value></data>
   <data name="Message.QuantityHasReceiving" xml:space="preserve"><value>この品目には入荷記録があり、数量を変更できません</value></data>
   <data name="Tooltip.ReceivedQuantity" xml:space="preserve"><value>入荷済み数量（入荷伝票から自動更新）</value></data>
@@ -3146,7 +3229,7 @@
   <data name="Tooltip.PurchaseRemarks" xml:space="preserve"><value>任意。この仕入明細に関する備考を記録できます（承認後も編集可能）</value></data>
   <data name="Tooltip.ViewRelatedDocuments" xml:space="preserve"><value>関連伝票を表示</value></data>
   <data name="Message.FullyReceivedCannotUndo" xml:space="preserve"><value>この品目は全数入荷済みのため、完了状態を取り消せません</value></data>
-  <data name="Message.NeedAtLeastOneProduct" xml:space="preserve"><value>少なくとも1つの品目が必要です</value></data>
+  <data name="Message.NeedAtLeastOneItem" xml:space="preserve"><value>少なくとも1つの品目が必要です</value></data>
   <data name="Message.PleaseSelectSupplier" xml:space="preserve"><value>先に仕入先を選択してください</value></data>
   <data name="Message.AlreadyHasDetails" xml:space="preserve"><value>既に明細データがあるため、スマート発注は使用できません</value></data>
   <data name="Message.NoHistoryPurchase" xml:space="preserve"><value>この仕入先には発注履歴がありません</value></data>
@@ -3169,6 +3252,32 @@
   <data name="Tooltip.SubtotalTaxInclusive" xml:space="preserve"><value>内税：数量 × 単価（単価に税込み）</value></data>
   <data name="Tooltip.SubtotalNoTax" xml:space="preserve"><value>非課税：数量 × 単価</value></data>
   <data name="Tooltip.SubtotalDefault" xml:space="preserve"><value>数量 × 単価</value></data>
+
+  <!-- ===== Year-End Closing ===== -->
+  <data name="YearEnd.ModalTitle" xml:space="preserve"><value>年度末決算</value></data>
+  <data name="YearEnd.OpenButton" xml:space="preserve"><value>年度決算</value></data>
+  <data name="YearEnd.ConfirmExecute" xml:space="preserve"><value>決算実行確認</value></data>
+  <data name="YearEnd.SelectYear" xml:space="preserve"><value>決算年度を選択</value></data>
+  <data name="YearEnd.PreCheck" xml:space="preserve"><value>事前チェック</value></data>
+  <data name="YearEnd.ReSelectYear" xml:space="preserve"><value>年度を再選択</value></data>
+  <data name="YearEnd.PreCheckTitle" xml:space="preserve"><value>{0} 年度決算事前チェック</value></data>
+  <data name="YearEnd.AlreadyClosed" xml:space="preserve"><value>{0} 年度はすでに決算済みで、再実行できません。</value></data>
+  <data name="YearEnd.PeriodCount" xml:space="preserve"><value>期間数：{0} / 12</value></data>
+  <data name="YearEnd.ClosedPeriods" xml:space="preserve"><value>締済：{0}</value></data>
+  <data name="YearEnd.OpenPeriods" xml:space="preserve"><value>未締：{0}</value></data>
+  <data name="YearEnd.EstimatedProfit" xml:space="preserve"><value>当期純損益（予測）：利益 {0} 円</value></data>
+  <data name="YearEnd.EstimatedLoss" xml:space="preserve"><value>当期純損益（予測）：損失 {0} 円</value></data>
+  <data name="YearEnd.CannotClose" xml:space="preserve"><value>決算を実行できません</value></data>
+  <data name="YearEnd.Warnings" xml:space="preserve"><value>注意事項</value></data>
+  <data name="YearEnd.ConfirmWarning" xml:space="preserve"><value>実行すると {0} 年度のすべての期間がロックされ、仕訳の修正ができなくなります。すべての仕訳を確認後、右上の「決算実行確認」をクリックしてください。</value></data>
+  <data name="YearEnd.InProgress" xml:space="preserve"><value>{0} 年度決算処理中、しばらくお待ちください⋯</value></data>
+  <data name="YearEnd.InProgressNote" xml:space="preserve"><value>決算仕訳を作成し、期間をロックしています。このウィンドウを閉じないでください。</value></data>
+  <data name="YearEnd.Success" xml:space="preserve"><value>{0} 年度決算が完了しました！</value></data>
+  <data name="YearEnd.SuccessNote" xml:space="preserve"><value>決算仕訳を作成し、期間をロックし、{0} 年度の期間を初期化しました。</value></data>
+  <data name="YearEnd.Failed" xml:space="preserve"><value>年度末決算に失敗しました</value></data>
+  <data name="YearEnd.NoCompany" xml:space="preserve"><value>デフォルト会社が見つかりません</value></data>
+  <data name="YearEnd.Completed" xml:space="preserve"><value>{0} 年度決算完了</value></data>
+  <data name="YearEnd.ExecuteFailed" xml:space="preserve"><value>年度末決算に失敗：{0}</value></data>
 
   <data name="Page.AccountItemTitle" xml:space="preserve"><value>会計科目管理</value></data>
   <data name="Page.AccountItemSubtitle" xml:space="preserve"><value>標準勘定科目表（Chart of Accounts）を管理する</value></data>
@@ -3208,12 +3317,12 @@
   <data name="Page.CompositionCategorySubtitle" xml:space="preserve"><value>品目部品表のタイプ分類を設定する</value></data>
   <data name="Page.MaterialTitle" xml:space="preserve"><value>素材</value></data>
   <data name="Page.MaterialSubtitle" xml:space="preserve"><value>すべての素材データと属性設定を管理する</value></data>
-  <data name="Page.ProductCategoryTitle" xml:space="preserve"><value>品目タイプ</value></data>
-  <data name="Page.ProductCategorySubtitle" xml:space="preserve"><value>すべての品目タイプデータと階層構造を管理する</value></data>
-  <data name="Page.ProductCompositionTitle" xml:space="preserve"><value>部品表</value></data>
-  <data name="Page.ProductCompositionSubtitle" xml:space="preserve"><value>品目の製造レシピとコンポーネントを管理する</value></data>
-  <data name="Page.ProductTitle" xml:space="preserve"><value>品目管理</value></data>
-  <data name="Page.ProductSubtitle" xml:space="preserve"><value>すべての品目データと在庫情報を管理する</value></data>
+  <data name="Page.ItemCategoryTitle" xml:space="preserve"><value>品目タイプ</value></data>
+  <data name="Page.ItemCategorySubtitle" xml:space="preserve"><value>すべての品目タイプデータと階層構造を管理する</value></data>
+  <data name="Page.ItemCompositionTitle" xml:space="preserve"><value>部品表</value></data>
+  <data name="Page.ItemCompositionSubtitle" xml:space="preserve"><value>品目の製造レシピとコンポーネントを管理する</value></data>
+  <data name="Page.ItemTitle" xml:space="preserve"><value>品目管理</value></data>
+  <data name="Page.ItemSubtitle" xml:space="preserve"><value>すべての品目データと在庫情報を管理する</value></data>
   <data name="Page.ProductionScheduleTitle" xml:space="preserve"><value>生産スケジュール管理</value></data>
   <data name="Page.ProductionScheduleSubtitle" xml:space="preserve"><value>生産スケジュール計画と実行を管理する</value></data>
   <data name="Page.SizeTitle" xml:space="preserve"><value>サイズ管理</value></data>
@@ -3305,10 +3414,10 @@
   <data name="SubAccount.BatchCreateDesc" xml:space="preserve"><value>既存の顧客、仕入先、品目のサブ勘定科目を補充作成します（既にサブ科目がある場合はスキップ）。実行前に上記の統制科目コードの設定が正しく保存されていることを確認してください。</value></data>
   <data name="SubAccount.CreateCustomer" xml:space="preserve"><value>顧客補充</value></data>
   <data name="SubAccount.CreateSupplier" xml:space="preserve"><value>仕入先補充</value></data>
-  <data name="SubAccount.CreateProduct" xml:space="preserve"><value>品目補充</value></data>
+  <data name="SubAccount.CreateItem" xml:space="preserve"><value>品目補充</value></data>
   <data name="SubAccount.CreateCustomerTitle" xml:space="preserve"><value>すべての既存顧客のサブ勘定科目を補充作成</value></data>
   <data name="SubAccount.CreateSupplierTitle" xml:space="preserve"><value>すべての既存仕入先のサブ勘定科目を補充作成</value></data>
-  <data name="SubAccount.CreateProductTitle" xml:space="preserve"><value>すべての既存品目のサブ勘定科目を補充作成</value></data>
+  <data name="SubAccount.CreateItemTitle" xml:space="preserve"><value>すべての既存品目のサブ勘定科目を補充作成</value></data>
   <data name="SubAccount.CreateResult" xml:space="preserve"><value>{0}サブ勘定科目補充完了：{1} 件作成、{2} 件スキップ</value></data>
   <data name="SubAccount.CreateResultWithErrors" xml:space="preserve"><value>{0}サブ勘定科目補充完了：{1} 件作成、{2} 件スキップ、{3} 件エラー（{4}{5}）</value></data>
   <data name="SubAccount.CreateError" xml:space="preserve"><value>{0}サブ勘定科目の一括補充中にエラーが発生しました：{1}</value></data>

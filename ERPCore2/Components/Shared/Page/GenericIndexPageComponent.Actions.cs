@@ -140,14 +140,32 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     private async Task HandleInternalBatchDeleteAsync(List<TEntity> selectedItems)
     {
         if (selectedItems.Count == 0) return;
-        if (!OnBatchDelete.HasDelegate) return;
 
         try
         {
             _isInternalBatchDeleting = true;
             StateHasChanged();
 
-            await OnBatchDelete.InvokeAsync(selectedItems);
+            if (OnBatchDelete.HasDelegate)
+            {
+                await OnBatchDelete.InvokeAsync(selectedItems);
+            }
+            else
+            {
+                // SuperAdmin 預設行為：逐筆呼叫 Service.DeleteAsync
+                int successCount = 0;
+                var failMessages = new List<string>();
+                foreach (var entity in selectedItems)
+                {
+                    var result = await Service.DeleteAsync(entity.Id);
+                    if (result.IsSuccess) successCount++;
+                    else failMessages.Add(result.ErrorMessage ?? "");
+                }
+                if (successCount > 0)
+                    await NotificationService.ShowSuccessAsync($"成功刪除 {successCount} 筆{EntityName}");
+                if (failMessages.Any())
+                    await NotificationService.ShowErrorAsync($"批次刪除部分失敗：{string.Join("; ", failMessages.Take(3))}");
+            }
 
             _showInternalBatchDeleteModal = false;
             await Refresh();

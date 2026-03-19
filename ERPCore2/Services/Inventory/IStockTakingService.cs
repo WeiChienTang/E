@@ -1,4 +1,4 @@
-using ERPCore2.Components.Shared.UI.Form;
+﻿using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
@@ -20,7 +20,7 @@ namespace ERPCore2.Services
         // 盤點管理
         Task<ServiceResult> CreateStockTakingAsync(StockTaking stockTaking);
         Task<ServiceResult> GenerateStockTakingListAsync(int warehouseId, int? warehouseLocationId = null, 
-            StockTakingTypeEnum takingType = StockTakingTypeEnum.Full, List<int>? specificProductIds = null);
+            StockTakingTypeEnum takingType = StockTakingTypeEnum.Full, List<int>? specificItemIds = null);
         Task<ServiceResult> StartStockTakingAsync(int stockTakingId);
         Task<ServiceResult> CompleteStockTakingAsync(int stockTakingId);
         Task<ServiceResult> ApproveStockTakingAsync(int stockTakingId, int approvedBy, string? remarks = null);

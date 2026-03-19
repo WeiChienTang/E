@@ -1,0 +1,25 @@
+@using ERPCore2.Models.Charts
+@using ERPCore2.Services.ProductionManagement
+@inject IProductionChartService ChartService
+@inject IStringLocalizer<SharedResource> L
+
+<GenericChartModalComponent IsVisible="@IsVisible"
+                            IsVisibleChanged="@IsVisibleChanged"
+                            Category="@ChartCategory.ProductionManagement"
+                            Title="@L["Production.ChartTitle"]"
+                            Icon="bi bi-kanban-fill"
+                            OnDataLoading="@LoadSummaryAsync">
+</GenericChartModalComponent>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    private ProductionChartSummary? _summary;
+
+    private async Task LoadSummaryAsync()
+    {
+        _summary = await ChartService.GetSummaryAsync();
+        StateHasChanged();
+    }
+}

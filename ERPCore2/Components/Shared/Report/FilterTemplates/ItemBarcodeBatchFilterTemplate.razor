@@ -1,4 +1,4 @@
-@* 
+﻿@* 
     品項條碼批次列印篩選模板
     實作 IFilterTemplateComponent 介面，提供品項條碼批次列印的篩選 UI
     設計原則：緊湊式佈局，整合品項選擇表格與列印設定
@@ -9,7 +9,7 @@
 @using ERPCore2.Models.Reports.FilterCriteria
 @using ERPCore2.Models.Reports.FilterTemplates
 @implements IFilterTemplateComponent
-@inject IProductService ProductService
+@inject IItemService ItemService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<ERPCore2.SharedResource> L
 
@@ -32,13 +32,13 @@
         {
             <div class="alert alert-info py-2">
                 <i class="bi bi-info-circle me-2"></i>
-                @L["Message.NoBarcodeProducts"]
+                @L["Message.NoBarcodeItems"]
             </div>
         }
         else
         {
             <div style="max-height: 300px; overflow-y: auto;">
-                <ProductBarcodePrintTable Items="@barcodeItems"
+                <ItemBarcodePrintTable Items="@barcodeItems"
                                         SelectedItems="@selectedItems"
                                         OnSelectionChanged="@HandleSelectionChanged"
                                         OnPrintQuantityChanged="@HandlePrintQuantityChanged"
@@ -63,19 +63,19 @@
 
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox"
-                           @bind="showProductName"
-                           id="showProductName">
-                    <label class="form-check-label" for="showProductName">
-                        @L["Label.ShowProductName"]
+                           @bind="showItemName"
+                           id="showItemName">
+                    <label class="form-check-label" for="showItemName">
+                        @L["Label.ShowItemName"]
                     </label>
                 </div>
 
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox"
-                           @bind="showProductCode"
-                           id="showProductCode">
-                    <label class="form-check-label" for="showProductCode">
-                        @L["Label.ShowProductCode"]
+                           @bind="showItemCode"
+                           id="showItemCode">
+                    <label class="form-check-label" for="showItemCode">
+                        @L["Label.ShowItemCode"]
                     </label>
                 </div>
             </div>
@@ -87,10 +87,10 @@
 @code {
     // ===== 內部狀態 =====
     
-    private List<ProductBarcodeItem> barcodeItems = new();
-    private HashSet<ProductBarcodeItem> selectedItems = new();
-    private bool showProductName = true;
-    private bool showProductCode = true;
+    private List<ItemBarcodeItem> barcodeItems = new();
+    private HashSet<ItemBarcodeItem> selectedItems = new();
+    private bool showItemName = true;
+    private bool showItemCode = true;
     
     // ===== 生命週期方法 =====
     
@@ -103,19 +103,19 @@
     {
         try
         {
-            var allProducts = await ProductService.GetAllAsync();
+            var allItems = await ItemService.GetAllAsync();
             
-            if (allProducts == null || !allProducts.Any())
+            if (allItems == null || !allItems.Any())
             {
                 barcodeItems = new();
                 return;
             }
             
-            barcodeItems = allProducts
+            barcodeItems = allItems
                 .Where(p => !string.IsNullOrWhiteSpace(p.Barcode))
-                .Select(p => new ProductBarcodeItem
+                .Select(p => new ItemBarcodeItem
                 {
-                    ProductId = p.Id,
+                    ItemId = p.Id,
                     Code = p.Code ?? "",
                     Name = p.Name ?? "",
                     Barcode = p.Barcode ?? "",
@@ -126,25 +126,25 @@
         catch (Exception ex)
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadDataAsync), GetType());
-            await NotificationService.ShowErrorAsync(L["Message.LoadProductsFailed"]);
+            await NotificationService.ShowErrorAsync(L["Message.LoadItemsFailed"]);
             barcodeItems = new();
         }
     }
     
     // ===== 事件處理方法 =====
     
-    private void HandleSelectionChanged(HashSet<ProductBarcodeItem> items)
+    private void HandleSelectionChanged(HashSet<ItemBarcodeItem> items)
     {
         selectedItems = items;
         StateHasChanged();
     }
     
-    private string GetRowCssClass(ProductBarcodeItem item, int index)
+    private string GetRowCssClass(ItemBarcodeItem item, int index)
     {
         return selectedItems.Contains(item) ? "table-row-selected" : "";
     }
     
-    private void HandlePrintQuantityChanged((ProductBarcodeItem item, string? value) args)
+    private void HandlePrintQuantityChanged((ItemBarcodeItem item, string? value) args)
     {
         // 數值已經在 Table 元件中更新
         StateHasChanged();
@@ -174,15 +174,15 @@
     /// </summary>
     public IReportFilterCriteria GetCriteria()
     {
-        return new ProductBarcodeBatchPrintCriteria
+        return new ItemBarcodeBatchPrintCriteria
         {
-            ProductIds = selectedItems.Select(x => x.ProductId).ToList(),
+            ItemIds = selectedItems.Select(x => x.ItemId).ToList(),
             BarcodeSize = BarcodeSize.Large,
             BarcodesPerPage = 24,
-            ShowProductName = showProductName,
-            ShowProductCode = showProductCode,
+            ShowItemName = showItemName,
+            ShowItemCode = showItemCode,
             OnlyWithBarcode = true,
-            PrintQuantities = selectedItems.ToDictionary(x => x.ProductId, x => x.PrintQuantity)
+            PrintQuantities = selectedItems.ToDictionary(x => x.ItemId, x => x.PrintQuantity)
         };
     }
     
@@ -192,8 +192,8 @@
     public void Reset()
     {
         selectedItems.Clear();
-        showProductName = true;
-        showProductCode = true;
+        showItemName = true;
+        showItemCode = true;
         
         // 重置每個品項的列印數量為 1
         foreach (var item in barcodeItems)

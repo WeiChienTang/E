@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 
 namespace ERPCore2.Services
 {
@@ -19,7 +19,7 @@ namespace ERPCore2.Services
         /// </summary>
         /// <param name="productId">品項ID</param>
         /// <returns>採購訂單明細清單</returns>
-        Task<List<PurchaseOrderDetail>> GetByProductIdAsync(int productId);
+        Task<List<PurchaseOrderDetail>> GetByItemIdAsync(int productId);
 
         /// <summary>
         /// 根據供應商ID取得所有採購訂單明細
@@ -80,7 +80,7 @@ namespace ERPCore2.Services
         /// <param name="productId">品項ID</param>
         /// <param name="excludeId">排除的明細ID（編輯時使用）</param>
         /// <returns>是否已存在</returns>
-        Task<bool> IsProductExistsInOrderAsync(int purchaseOrderId, int productId, int? excludeId = null);
+        Task<bool> IsItemExistsInOrderAsync(int purchaseOrderId, int productId, int? excludeId = null);
 
         /// <summary>
         /// 計算採購訂單明細的小計金額

@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models.Enums;
@@ -918,7 +918,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.ProductionScheduleCompletions
                     .Include(c => c.ProductionScheduleItem)
-                        .ThenInclude(i => i.Product)
+                        .ThenInclude(i => i.Item)
                     .Include(c => c.InventoryTransaction)
                     .Where(c => !c.IsJournalized && c.InventoryTransactionId != null);
 
@@ -948,7 +948,7 @@ namespace ERPCore2.Services
                 var completion = await context.ProductionScheduleCompletions
                     .Include(c => c.InventoryTransaction)
                     .Include(c => c.ProductionScheduleItem)
-                        .ThenInclude(i => i.Product)
+                        .ThenInclude(i => i.Item)
                     .FirstOrDefaultAsync(c => c.Id == id);
 
                 if (completion == null)
@@ -969,7 +969,7 @@ namespace ERPCore2.Services
                 if (workInProgress == null)
                     return (false, $"找不到在製品科目（代碼 {WorkInProgressCode}）");
 
-                var productName = completion.ProductionScheduleItem?.Product?.Name ?? $"完工記錄 #{id}";
+                var productName = completion.ProductionScheduleItem?.Item?.Name ?? $"完工記錄 #{id}";
 
                 var lines = new List<JournalEntryLine>
                 {

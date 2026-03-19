@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 
 namespace ERPCore2.Services
@@ -76,7 +76,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得模組的所有權限
         /// </summary>
-        /// <param name="modulePrefix">模組前綴（例如：Customer, Product）</param>
+        /// <param name="modulePrefix">模組前綴（例如：Customer, Item）</param>
         /// <returns>模組權限清單</returns>
         Task<ServiceResult<List<Permission>>> GetModulePermissionsAsync(string modulePrefix);
 

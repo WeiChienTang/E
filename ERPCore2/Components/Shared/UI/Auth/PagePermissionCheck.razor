@@ -16,16 +16,39 @@
     [Parameter] public string? RequiredModule { get; set; }
 
     private bool isAuthorized = false;
+    private string? _lastRequiredPermission;
+    private string[]? _lastAnyOfPermissions;
+    private string? _lastRequiredModule;
 
     protected override async Task OnInitializedAsync()
     {
+        _lastRequiredPermission = RequiredPermission;
+        _lastAnyOfPermissions = AnyOfPermissions?.ToArray();
+        _lastRequiredModule = RequiredModule;
         isAuthorized = await CheckPermissionAsync();
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        // 每次參數變更時重新檢查權限，避免快取問題
+        // 僅在權限相關參數實際變更時重新檢查，避免 ChildContent 每次渲染都觸發不必要的重新授權
+        bool permissionChanged =
+            _lastRequiredPermission != RequiredPermission ||
+            _lastRequiredModule != RequiredModule ||
+            !AreArraysEqual(_lastAnyOfPermissions, AnyOfPermissions);
+
+        if (!permissionChanged) return;
+
+        _lastRequiredPermission = RequiredPermission;
+        _lastAnyOfPermissions = AnyOfPermissions?.ToArray();
+        _lastRequiredModule = RequiredModule;
         isAuthorized = await CheckPermissionAsync();
+    }
+
+    private static bool AreArraysEqual(string[]? a, string[]? b)
+    {
+        if (a == null && b == null) return true;
+        if (a == null || b == null) return false;
+        return a.SequenceEqual(b);
     }
 
     private async Task<bool> CheckPermissionAsync()

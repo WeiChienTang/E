@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Models.Enums;
@@ -9,7 +9,7 @@ namespace ERPCore2.Data.Entities
     /// 品項實體 - 定義品項基本資訊
     /// </summary>
     [Index(nameof(Code), IsUnique = true)]
-    public class Product : BaseEntity
+    public class Item : BaseEntity
     {
         [MaxLength(100, ErrorMessage = "品項名稱不可超過100個字元")]
         [Display(Name = "品項名稱")]
@@ -42,8 +42,8 @@ namespace ERPCore2.Data.Entities
         public int? SizeId { get; set; }
 
         [Display(Name = "品項分類")]
-        [ForeignKey(nameof(ProductCategory))]
-        public int? ProductCategoryId { get; set; }
+        [ForeignKey(nameof(ItemCategory))]
+        public int? ItemCategoryId { get; set; }
 
         [Display(Name = "規格說明")]
         [MaxLength(100, ErrorMessage = "規格說明不可超過100個字元")]
@@ -63,28 +63,28 @@ namespace ERPCore2.Data.Entities
         public Unit? Unit { get; set; }
         public Unit? ProductionUnit { get; set; }
         public Size? Size { get; set; }
-        public ProductCategory? ProductCategory { get; set; }
+        public ItemCategory? ItemCategory { get; set; }
         public ICollection<InventoryStock> InventoryStocks { get; set; } = new List<InventoryStock>();
 
-        // Product Composition (BOM) Navigation Properties
+        // Item Composition (BOM) Navigation Properties
         /// <summary>
         /// 此品項作為成品的所有 BOM 配方
         /// </summary>
-        public ICollection<ProductComposition> ProductCompositions { get; set; } = new List<ProductComposition>();
+        public ICollection<ItemComposition> ItemCompositions { get; set; } = new List<ItemComposition>();
 
         /// <summary>
         /// 此品項作為組件被使用在哪些 BOM 中
         /// </summary>
-        public ICollection<ProductCompositionDetail> ComponentInCompositions { get; set; } = new List<ProductCompositionDetail>();
+        public ICollection<ItemCompositionDetail> ComponentInCompositions { get; set; } = new List<ItemCompositionDetail>();
 
         /// <summary>
         /// 供應商關聯列表（品項-供應商綁定）
         /// </summary>
-        public ICollection<ProductSupplier> ProductSuppliers { get; set; } = new List<ProductSupplier>();
+        public ICollection<ItemSupplier> ItemSuppliers { get; set; } = new List<ItemSupplier>();
 
         /// <summary>
         /// 客戶關聯列表（品項-客戶銷售條件）
         /// </summary>
-        public ICollection<ProductCustomer> ProductCustomers { get; set; } = new List<ProductCustomer>();
+        public ICollection<ItemCustomer> ItemCustomers { get; set; } = new List<ItemCustomer>();
     }
 }

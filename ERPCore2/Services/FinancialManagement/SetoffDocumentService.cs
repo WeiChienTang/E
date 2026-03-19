@@ -1,4 +1,4 @@
-#pragma warning disable CS0618 // SetoffDetailType.SalesOrderDetail — 保留舊資料向下相容處理
+﻿#pragma warning disable CS0618 // SetoffDetailType.SalesOrderDetail — 保留舊資料向下相容處理
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
@@ -401,7 +401,7 @@ namespace ERPCore2.Services
             {
                 // 📦 載入完整資料（含所有關聯明細）
                 var document = await context.SetoffDocuments
-                    .Include(d => d.SetoffProductDetails)
+                    .Include(d => d.SetoffItemDetails)
                     .Include(d => d.SetoffPayments)
                     .Include(d => d.Prepayments)
                     .Include(d => d.PrepaymentUsages)
@@ -444,7 +444,7 @@ namespace ERPCore2.Services
                 }
 
                 // 🔄 【關鍵步驟 1】記錄受影響的來源明細（刪除前收集，刪除後重新計算）
-                var affectedSources = document.SetoffProductDetails
+                var affectedSources = document.SetoffItemDetails
                     .Select(d => (d.SourceDetailId, d.SourceDetailType))
                     .Distinct()
                     .ToList();
@@ -478,9 +478,9 @@ namespace ERPCore2.Services
                     await context.SaveChangesAsync();
                 }
 
-                // 🗑️ 刪除沖款單（級聯刪除所有 SetoffProductDetails）
+                // 🗑️ 刪除沖款單（級聯刪除所有 SetoffItemDetails）
                 context.SetoffDocuments.Remove(document);
-                await context.SaveChangesAsync(); // ProductDetails 已隨文件刪除
+                await context.SaveChangesAsync(); // ItemDetails 已隨文件刪除
 
                 // 🔄 【關鍵步驟 3】刪除後在同一交易中重新計算各來源明細的累計金額
                 // 從頭計算（CurrentSetoffAmount + CurrentAllowanceAmount），確保不依賴可能過期的 TotalSetoffAmount
@@ -507,13 +507,13 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 刪除後重新計算來源明細的累計金額（從現存 SetoffProductDetails 重新加總）
+        /// 刪除後重新計算來源明細的累計金額（從現存 SetoffItemDetails 重新加總）
         /// 用於取代逐筆 RollbackSourceDetailAmountAsync，避免 TotalSetoffAmount 過期快照導致的計算錯誤
-        /// IsSettled 使用含稅金額比較，與 SetoffProductDetailService.UpdateSourceDetailCacheInContextAsync 口徑一致
+        /// IsSettled 使用含稅金額比較，與 SetoffItemDetailService.UpdateSourceDetailCacheInContextAsync 口徑一致
         /// </summary>
         private async Task RebuildSourceDetailCacheAsync(AppDbContext context, int sourceDetailId, SetoffDetailType sourceType)
         {
-            var remaining = await context.SetoffProductDetails
+            var remaining = await context.SetoffItemDetails
                 .Where(d => d.SourceDetailId == sourceDetailId && d.SourceDetailType == sourceType)
                 .SumAsync(d => d.CurrentSetoffAmount + d.CurrentAllowanceAmount);
 
@@ -577,7 +577,7 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
-        /// 計算含稅金額（與 SetoffProductDetailService.CalculateTaxInclusiveAmount 邏輯相同）
+        /// 計算含稅金額（與 SetoffItemDetailService.CalculateTaxInclusiveAmount 邏輯相同）
         /// TaxExclusive：subtotal × (1 + rate/100)；TaxInclusive / NoTax：subtotal（稅已包含）
         /// </summary>
         private static decimal CalculateTaxInclusiveAmount(decimal subtotal, decimal? taxRate, TaxCalculationMethod taxMethod)
@@ -595,18 +595,18 @@ namespace ERPCore2.Services
         /// </summary>
         /// <param name="context">資料庫上下文</param>
         /// <param name="detailToDelete">要刪除的沖款明細</param>
-        private async Task RollbackSourceDetailAmountAsync(AppDbContext context, SetoffProductDetail detailToDelete)
+        private async Task RollbackSourceDetailAmountAsync(AppDbContext context, SetoffItemDetail detailToDelete)
         {
             try
             {
                 // 🔍 重新計算累計金額（排除當前要刪除的明細）
-                var newTotalSetoff = await context.SetoffProductDetails
+                var newTotalSetoff = await context.SetoffItemDetails
                     .Where(spd => spd.SourceDetailType == detailToDelete.SourceDetailType
                                && spd.SourceDetailId == detailToDelete.SourceDetailId
                                && spd.Id != detailToDelete.Id)  // ← 排除當前要刪除的
                     .SumAsync(spd => spd.TotalSetoffAmount);
 
-                var newTotalAllowance = await context.SetoffProductDetails
+                var newTotalAllowance = await context.SetoffItemDetails
                     .Where(spd => spd.SourceDetailType == detailToDelete.SourceDetailType
                                && spd.SourceDetailId == detailToDelete.SourceDetailId
                                && spd.Id != detailToDelete.Id)
@@ -726,7 +726,7 @@ namespace ERPCore2.Services
                         .ToListAsync();
                     foreach (var detail in purchaseDetails)
                     {
-                        var total = await context.SetoffProductDetails
+                        var total = await context.SetoffItemDetails
                             .Where(spd => spd.SourceDetailType == type && spd.SourceDetailId == detail.Id)
                             .SumAsync(spd => spd.CurrentSetoffAmount + spd.CurrentAllowanceAmount);
 
@@ -742,7 +742,7 @@ namespace ERPCore2.Services
                         .ToListAsync();
                     foreach (var detail in salesDetails)
                     {
-                        var total = await context.SetoffProductDetails
+                        var total = await context.SetoffItemDetails
                             .Where(spd => spd.SourceDetailType == type && spd.SourceDetailId == detail.Id)
                             .SumAsync(spd => spd.CurrentSetoffAmount + spd.CurrentAllowanceAmount);
 
@@ -758,7 +758,7 @@ namespace ERPCore2.Services
                         .ToListAsync();
                     foreach (var detail in salesDeliveryDetails)
                     {
-                        var total = await context.SetoffProductDetails
+                        var total = await context.SetoffItemDetails
                             .Where(spd => spd.SourceDetailType == type && spd.SourceDetailId == detail.Id)
                             .SumAsync(spd => spd.CurrentSetoffAmount + spd.CurrentAllowanceAmount);
 
@@ -774,7 +774,7 @@ namespace ERPCore2.Services
                         .ToListAsync();
                     foreach (var detail in salesReturnDetails)
                     {
-                        var total = await context.SetoffProductDetails
+                        var total = await context.SetoffItemDetails
                             .Where(spd => spd.SourceDetailType == type && spd.SourceDetailId == detail.Id)
                             .SumAsync(spd => spd.CurrentSetoffAmount + spd.CurrentAllowanceAmount);
 
@@ -790,7 +790,7 @@ namespace ERPCore2.Services
                         .ToListAsync();
                     foreach (var detail in purchaseReturnDetails)
                     {
-                        var total = await context.SetoffProductDetails
+                        var total = await context.SetoffItemDetails
                             .Where(spd => spd.SourceDetailType == type && spd.SourceDetailId == detail.Id)
                             .SumAsync(spd => spd.CurrentSetoffAmount + spd.CurrentAllowanceAmount);
 
@@ -815,7 +815,7 @@ namespace ERPCore2.Services
                     .Select(prd => prd.Id)
                     .ToListAsync();
 
-                var documentIds = await context.SetoffProductDetails
+                var documentIds = await context.SetoffItemDetails
                     .Where(spd => spd.SourceDetailType == SetoffDetailType.PurchaseReceivingDetail &&
                                   receivingDetailIds.Contains(spd.SourceDetailId))
                     .Select(spd => spd.SetoffDocumentId)
@@ -851,7 +851,7 @@ namespace ERPCore2.Services
                     .Select(prd => prd.Id)
                     .ToListAsync();
 
-                var documentIds = await context.SetoffProductDetails
+                var documentIds = await context.SetoffItemDetails
                     .Where(spd => spd.SourceDetailType == SetoffDetailType.PurchaseReturnDetail &&
                                   returnDetailIds.Contains(spd.SourceDetailId))
                     .Select(spd => spd.SetoffDocumentId)
@@ -887,7 +887,7 @@ namespace ERPCore2.Services
                     .Select(sdd => sdd.Id)
                     .ToListAsync();
 
-                var documentIds = await context.SetoffProductDetails
+                var documentIds = await context.SetoffItemDetails
                     .Where(spd => spd.SourceDetailType == SetoffDetailType.SalesDeliveryDetail &&
                                   deliveryDetailIds.Contains(spd.SourceDetailId))
                     .Select(spd => spd.SetoffDocumentId)
@@ -923,7 +923,7 @@ namespace ERPCore2.Services
                     .Select(srd => srd.Id)
                     .ToListAsync();
 
-                var documentIds = await context.SetoffProductDetails
+                var documentIds = await context.SetoffItemDetails
                     .Where(spd => spd.SourceDetailType == SetoffDetailType.SalesReturnDetail &&
                                   returnDetailIds.Contains(spd.SourceDetailId))
                     .Select(spd => spd.SetoffDocumentId)

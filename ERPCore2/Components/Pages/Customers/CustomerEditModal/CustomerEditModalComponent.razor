@@ -132,7 +132,7 @@
     private CustomerComplaintTab? complaintTab;
     private CustomerTransactionTab? transactionTab;
     private GenericAccountingTabComponent? accountingTab;
-    private CustomerProductTab? productTab;
+    private CustomerItemTab? productTab;
     private BusinessCardTab? businessCardTab;
     private DocumentsTab? documentsTab;
 
@@ -168,9 +168,9 @@
         <CustomerTransactionTab @ref="transactionTab" CustomerId="@CustomerId" />
     };
 
-    private RenderFragment CreateProductTabContent() => __builder =>
+    private RenderFragment CreateItemTabContent() => __builder =>
     {
-        <CustomerProductTab @ref="productTab" CustomerId="@CustomerId" />
+        <CustomerItemTab @ref="productTab" CustomerId="@CustomerId" />
     };
 
     private RenderFragment CreateBusinessCardTabContent() => __builder =>
@@ -680,7 +680,7 @@
             builder = builder.GroupIntoCustomTab(L["Tab.BankAccounts"].ToString(), "bi-bank", CreateBankAccountTabContent(), nameof(CustomerBankAccountTab));
 
             var layout = builder
-                .GroupIntoCustomTab(L["Tab.CustomerProducts"].ToString(), "bi-box-seam", CreateProductTabContent(), nameof(CustomerProductTab))
+                .GroupIntoCustomTab(L["Tab.CustomerItems"].ToString(), "bi-box-seam", CreateItemTabContent(), nameof(CustomerItemTab))
                 .GroupIntoCustomTab(L["Tab.VisitRecords"].ToString(), "bi-journal-text", CreateVisitTabContent(), nameof(CustomerVisitTab))
                 .GroupIntoCustomTab(L["Tab.ComplaintRecords"].ToString(), "bi-exclamation-circle", CreateComplaintTabContent(), nameof(CustomerComplaintTab))
                 .GroupIntoCustomTab(L["Tab.TransactionRecords"].ToString(), "bi-receipt", CreateTransactionTabContent(), nameof(CustomerTransactionTab))

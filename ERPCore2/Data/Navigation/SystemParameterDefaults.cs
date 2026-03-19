@@ -1,4 +1,4 @@
-using ERPCore2.Models.Enums;
+﻿using ERPCore2.Models.Enums;
 
 namespace ERPCore2.Data.Navigation;
 
@@ -74,7 +74,7 @@ public static class SystemParameterDefaults
     public const bool DefaultAutoCreateSupplierSubAccount = false;
 
     /// <summary>預設：不自動建立品項子科目</summary>
-    public const bool DefaultAutoCreateProductSubAccount = false;
+    public const bool DefaultAutoCreateItemSubAccount = false;
 
     /// <summary>預設應收帳款統制科目代碼</summary>
     public const string DefaultCustomerSubAccountParentCode = "1191";
@@ -101,7 +101,7 @@ public static class SystemParameterDefaults
     public const string DefaultSupplierAdvanceSubAccountParentCode = "1161";
 
     /// <summary>預設品項存貨統制科目代碼</summary>
-    public const string DefaultProductSubAccountParentCode = "1231";
+    public const string DefaultItemSubAccountParentCode = "1231";
 
     /// <summary>預設子科目代碼格式：流水號</summary>
     public const SubAccountCodeFormat DefaultSubAccountCodeFormat = SubAccountCodeFormat.EntityCode;
@@ -126,7 +126,7 @@ public static class SystemParameterDefaults
         parameter.HideApprovalInfoSection = DefaultHideApprovalInfoSection;
         parameter.AutoCreateCustomerSubAccount = DefaultAutoCreateCustomerSubAccount;
         parameter.AutoCreateSupplierSubAccount = DefaultAutoCreateSupplierSubAccount;
-        parameter.AutoCreateProductSubAccount = DefaultAutoCreateProductSubAccount;
+        parameter.AutoCreateItemSubAccount = DefaultAutoCreateItemSubAccount;
         parameter.CustomerSubAccountParentCode = DefaultCustomerSubAccountParentCode;
         parameter.CustomerNoteSubAccountParentCode = DefaultCustomerNoteSubAccountParentCode;
         parameter.CustomerReturnSubAccountParentCode = DefaultCustomerReturnSubAccountParentCode;
@@ -135,7 +135,7 @@ public static class SystemParameterDefaults
         parameter.SupplierNoteSubAccountParentCode = DefaultSupplierNoteSubAccountParentCode;
         parameter.SupplierReturnSubAccountParentCode = DefaultSupplierReturnSubAccountParentCode;
         parameter.SupplierAdvanceSubAccountParentCode = DefaultSupplierAdvanceSubAccountParentCode;
-        parameter.ProductSubAccountParentCode = DefaultProductSubAccountParentCode;
+        parameter.ItemSubAccountParentCode = DefaultItemSubAccountParentCode;
         parameter.SubAccountCodeFormat = DefaultSubAccountCodeFormat;
     }
 }

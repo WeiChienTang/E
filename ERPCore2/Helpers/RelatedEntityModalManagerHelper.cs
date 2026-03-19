@@ -1,4 +1,4 @@
-using ERPCore2.Data;
+﻿using ERPCore2.Data;
 using ERPCore2.Components.Shared.Modal;
 using ERPCore2.Components.Shared.Table;
 using ERPCore2.Components.Shared.Page;
@@ -18,8 +18,8 @@ public static class RelatedEntityModalManagerHelper
     /// 建立標準的 RelatedEntityModalManager
     /// 適用於大多數場景的預設配置
     /// </summary>
-    /// <typeparam name="TEntity">主實體類型（如 ProductComposition）</typeparam>
-    /// <typeparam name="TRelatedEntity">相關實體類型（如 Product, Customer, Employee）</typeparam>
+    /// <typeparam name="TEntity">主實體類型（如 ItemComposition）</typeparam>
+    /// <typeparam name="TRelatedEntity">相關實體類型（如 Item, Customer, Employee）</typeparam>
     /// <typeparam name="TMainService">主 EditModal 的服務類型</typeparam>
     /// <param name="config">配置參數</param>
     /// <returns>配置好的 RelatedEntityModalManager</returns>
@@ -107,7 +107,7 @@ public class StandardModalManagerConfig<TEntity, TRelatedEntity, TMainService>
     public required string EntityDisplayName { get; set; }
 
     /// <summary>
-    /// 屬性名稱（如 nameof(ProductComposition.ParentProductId)）
+    /// 屬性名稱（如 nameof(ItemComposition.ParentItemId)）
     /// </summary>
     public required string PropertyName { get; set; }
 

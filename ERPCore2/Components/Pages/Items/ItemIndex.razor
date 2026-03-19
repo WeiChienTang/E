@@ -1,61 +1,61 @@
-﻿@page "/products"
+﻿@page "/items"
 @using ERPCore2.Models
-@inject IProductService ProductService
+@inject IItemService ItemService
 @inject ISizeService SizeService
 @rendermode InteractiveServer
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
-@inject IProductDetailReportService ProductDetailReportService
+@inject IItemDetailReportService ItemDetailReportService
 
-<GenericIndexPageComponent TEntity="Product" 
-                          TService="IProductService"
-                          Service="@ProductService"
-                          EntityBasePath="/products"
-                          PageTitle="@L["Page.ProductTitle"]"
-                          PageSubtitle="@L["Page.ProductSubtitle"]"
-                          EntityName="@L["Entity.Product"]"
+<GenericIndexPageComponent TEntity="Item" 
+                          TService="IItemService"
+                          Service="@ItemService"
+                          EntityBasePath="/items"
+                          PageTitle="@L["Page.ItemTitle"]"
+                          PageSubtitle="@L["Page.ItemSubtitle"]"
+                          EntityName="@L["Entity.Item"]"
                           BreadcrumbItems="@breadcrumbItems"
                           FilterDefinitions="@filterDefinitions"
                           ColumnDefinitions="@columnDefinitions"
                           ShowDraftTab="true"
-                          ServerDataLoader="@ServerLoadProductsAsync"
+                          ServerDataLoader="@ServerLoadItemsAsync"
                           GetEntityDisplayName="@(product => product.Name)"
-                          RequiredPermission="@PermissionRegistry.Product.Read"
-                          RequiredModule="Products"
+                          RequiredPermission="@PermissionRegistry.Item.Read"
+                          RequiredModule="Items"
                           OnAddClick="@modalHandler.ShowAddModalAsync"
                           OnRowClick="@modalHandler.ShowEditModalAsync"
-                          DebugPageName="ProductIndex"
-                          RowPrintService="@ProductDetailReportService"
-                          RowPrintReportId="@ReportIds.ProductDetail"
+                          DebugPageName="ItemIndex"
+                          RowPrintService="@ItemDetailReportService"
+                          RowPrintReportId="@ReportIds.ItemDetail"
                           @ref="indexComponent">
 </GenericIndexPageComponent>
 
-@* 使用 ProductEditModalComponent 處理新增/編輯 *@
-<ProductEditModalComponent IsVisible="@showEditModal"
+@* 使用 ItemEditModalComponent 處理新增/編輯 *@
+<ItemEditModalComponent IsVisible="@showEditModal"
                           IsVisibleChanged="@((bool visible) => showEditModal = visible)"
-                          ProductId="@editingProductId"
-                          OnProductSaved="@modalHandler.OnEntitySavedAsync"
+                          ItemId="@editingItemId"
+                          OnItemSaved="@modalHandler.OnEntitySavedAsync"
                           OnCancel="@modalHandler.OnModalCancelAsync" />
 
 @code {
     // 組件參考
-    private GenericIndexPageComponent<Product, IProductService> indexComponent = default!;
+    private GenericIndexPageComponent<Item, IItemService> indexComponent = default!;
     
     // Modal 相關狀態
     private bool showEditModal = false;
-    private int? editingProductId = null;
+    private int? editingItemId = null;
     
     // Modal 處理器
-    private ModalHandler<Product, GenericIndexPageComponent<Product, IProductService>> modalHandler = default!;
+    private ModalHandler<Item, GenericIndexPageComponent<Item, IItemService>> modalHandler = default!;
     
     // 選項清單
-    private List<ProductCategory> productCategories = new();
+    private List<ItemCategory> productCategories = new();
     private List<Supplier> suppliers = new();
     private List<Unit> units = new();
     private List<Size> sizes = new();
     
     // 欄位配置
-    private ProductFieldConfiguration fieldConfiguration = default!;
+    private ItemFieldConfiguration fieldConfiguration = default!;
     
     // 配置相關
     private List<SearchFilterDefinition> filterDefinitions = new();
@@ -67,8 +67,8 @@
         try
         {
             // 初始化 Modal 處理器
-            modalHandler = ModalHelper.CreateModalHandler<Product, GenericIndexPageComponent<Product, IProductService>>(
-                id => editingProductId = id,
+            modalHandler = ModalHelper.CreateModalHandler<Item, GenericIndexPageComponent<Item, IItemService>>(
+                id => editingItemId = id,
                 visible => showEditModal = visible,
                 () => indexComponent,
                 StateHasChanged,
@@ -77,7 +77,7 @@
             await InitializeBreadcrumbsAsync();
             
             // 載入相關資料（即使某些失敗也要繼續）
-            await LoadProductCategoriesAsync();
+            await LoadItemCategoriesAsync();
             await LoadSuppliersAsync();
             await LoadUnitsAsync();
             await LoadSizesAsync();
@@ -87,7 +87,7 @@
             // 建立欄位配置（確保即使載入失敗也能創建配置）
             try
             {
-                fieldConfiguration = new ProductFieldConfiguration(productCategories, suppliers, units, sizes, NotificationService);
+                fieldConfiguration = new ItemFieldConfiguration(productCategories, suppliers, units, sizes, NotificationService);
                 fieldConfiguration.SetLocalizer(L);
 
                 // 使用欄位配置建立篩選器和表格欄位
@@ -104,8 +104,8 @@
                 columnDefinitions = new List<TableColumnDefinition>();
                 
                 // 創建一個最小的欄位配置以避免 null 引用
-                fieldConfiguration = new ProductFieldConfiguration(
-                    new List<ProductCategory>(),
+                fieldConfiguration = new ItemFieldConfiguration(
+                    new List<ItemCategory>(),
                     new List<Supplier>(),
                     new List<Unit>(),
                     new List<Size>(),
@@ -127,28 +127,28 @@
     private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync("品項管理", NotificationService, GetType());
 
     // 伺服器端分頁載入
-    private Task<(List<Product> Items, int TotalCount)> ServerLoadProductsAsync(
+    private Task<(List<Item> Items, int TotalCount)> ServerLoadItemsAsync(
         SearchFilterModel filter, int page, int pageSize)
     {
-        return ProductService.GetPagedWithFiltersAsync(
+        return ItemService.GetPagedWithFiltersAsync(
             q =>
             {
                 q = q.Where(p => p.IsDraft == (filter.ShowDrafts ?? false));
                 if (fieldConfiguration != null)
-                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadProductsAsync), GetType());
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadItemsAsync), GetType());
                 return q;
             },
             page, pageSize);
     }
 
     // 載入品項分類資料
-    private async Task LoadProductCategoriesAsync() => productCategories = await DataLoaderHelper.LoadAsync(() => ProductService.GetProductCategoriesAsync(), "品項分類", NotificationService, GetType());
+    private async Task LoadItemCategoriesAsync() => productCategories = await DataLoaderHelper.LoadAsync(() => ItemService.GetItemCategoriesAsync(), "品項分類", NotificationService, GetType());
 
     // 載入供應商資料
-    private async Task LoadSuppliersAsync() => suppliers = await DataLoaderHelper.LoadAsync(() => ProductService.GetSuppliersAsync(), "供應商", NotificationService, GetType());
+    private async Task LoadSuppliersAsync() => suppliers = await DataLoaderHelper.LoadAsync(() => ItemService.GetSuppliersAsync(), "供應商", NotificationService, GetType());
 
     // 載入單位資料
-    private async Task LoadUnitsAsync() => units = await DataLoaderHelper.LoadAsync(() => ProductService.GetUnitsAsync(), "單位", NotificationService, GetType());
+    private async Task LoadUnitsAsync() => units = await DataLoaderHelper.LoadAsync(() => ItemService.GetUnitsAsync(), "單位", NotificationService, GetType());
 
     // 載入尺寸資料
     private async Task LoadSizesAsync() => sizes = await DataLoaderHelper.LoadAsync(() => SizeService.GetActiveSizesAsync(), "尺寸", NotificationService, GetType());

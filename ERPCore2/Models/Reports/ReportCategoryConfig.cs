@@ -39,9 +39,9 @@ public class ReportCategoryConfig
                 Title = "廠商報表集",
                 Icon = "bi-building"
             },
-            [ReportCategory.Product] = new ReportCategoryConfig
+            [ReportCategory.Item] = new ReportCategoryConfig
             {
-                Category = ReportCategory.Product,
+                Category = ReportCategory.Item,
                 Title = "產品報表集",
                 Icon = "bi-box"
             },

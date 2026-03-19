@@ -1,4 +1,4 @@
-@* 庫存異動關聯查看組件 - 顯示特定品項的原始交易和所有調整記錄 *@
+﻿@* 庫存異動關聯查看組件 - 顯示特定品項的原始交易和所有調整記錄 *@
 
 @using ERPCore2.Models
 @using ERPCore2.Helpers
@@ -29,12 +29,12 @@
         else
         {
             @* 品項資訊提示 *@
-            @if (!string.IsNullOrEmpty(ProductName))
+            @if (!string.IsNullOrEmpty(ItemName))
             {
                 <div class="alert alert-light border d-flex align-items-center mb-3 py-2">
                     <i class="bi bi-box-seam me-2 text-primary"></i>
                     <span>
-                        <strong>@L["RelatedDoc.Product"]</strong>@ProductName
+                        <strong>@L["RelatedDoc.Item"]</strong>@ItemName
                         <span class="text-muted ms-2">（@string.Format(L["RelatedDoc.TransactionCount"].ToString(), relatedDocuments.Count)）</span>
                     </span>
                 </div>
@@ -108,25 +108,25 @@
     /// <summary>
     /// 品項ID（用於過濾特定品項的異動）
     /// </summary>
-    [Parameter] public int? ProductId { get; set; }
+    [Parameter] public int? ItemId { get; set; }
     
     /// <summary>
     /// 品項名稱（顯示用）
     /// </summary>
-    [Parameter] public string? ProductName { get; set; }
+    [Parameter] public string? ItemName { get; set; }
     
     private List<RelatedDocumentInfo>? relatedDocuments;
     private bool isLoading = false;
     private string? _previousTransactionNumber;
-    private int? _previousProductId;
+    private int? _previousItemId;
     
     protected override async Task OnParametersSetAsync()
     {
         // 當參數變更且 Modal 可見時，重新載入資料
-        if (IsVisible && (TransactionNumber != _previousTransactionNumber || ProductId != _previousProductId))
+        if (IsVisible && (TransactionNumber != _previousTransactionNumber || ItemId != _previousItemId))
         {
             _previousTransactionNumber = TransactionNumber;
-            _previousProductId = ProductId;
+            _previousItemId = ItemId;
             await LoadRelatedTransactionsAsync();
         }
     }
@@ -144,8 +144,8 @@
         
         try
         {
-            // 傳入 ProductId 進行過濾
-            relatedDocuments = await InventoryTransactionService.GetRelatedTransactionsAsync(TransactionNumber, ProductId);
+            // 傳入 ItemId 進行過濾
+            relatedDocuments = await InventoryTransactionService.GetRelatedTransactionsAsync(TransactionNumber, ItemId);
         }
         catch
         {

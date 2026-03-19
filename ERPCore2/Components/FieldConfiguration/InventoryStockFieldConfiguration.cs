@@ -1,4 +1,4 @@
-using ERPCore2.Components.Shared.UI.Form;
+﻿using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
@@ -14,17 +14,17 @@ namespace ERPCore2.FieldConfiguration
     /// </summary>
     public class InventoryStockFieldConfiguration : BaseFieldConfiguration<InventoryStock>
     {
-        private readonly List<Product> _products;
+        private readonly List<Item> _products;
         private readonly List<Warehouse> _warehouses;
         private readonly List<WarehouseLocation> _warehouseLocations;
-        private readonly List<ProductCategory> _productCategories;
+        private readonly List<ItemCategory> _productCategories;
         private readonly INotificationService? _notificationService;
 
         public InventoryStockFieldConfiguration(
-            List<Product> products, 
+            List<Item> products, 
             List<Warehouse> warehouses, 
             List<WarehouseLocation> warehouseLocations,
-            List<ProductCategory> productCategories,
+            List<ItemCategory> productCategories,
             INotificationService? notificationService = null)
         {
             _products = products;
@@ -41,34 +41,34 @@ namespace ERPCore2.FieldConfiguration
                 return new Dictionary<string, FieldDefinition<InventoryStock>>
                 {
                     {
-                        "ProductCode",
+                        "ItemCode",
                         new FieldDefinition<InventoryStock>
                         {
-                            PropertyName = "Product.Code",
-                            DisplayName = Dn("Field.ProductCode", "品項編號"),
+                            PropertyName = "Item.Code",
+                            DisplayName = Dn("Field.ItemCode", "品項編號"),
                             FilterType = SearchFilterType.Text,
-                            FilterPlaceholder = Fp("Field.ProductCode", "輸入品項編號搜尋"),
+                            FilterPlaceholder = Fp("Field.ItemCode", "輸入品項編號搜尋"),
                             TableOrder = 1,
                             FilterFunction = (model, query) => {
-                                var filterValue = model.GetFilterValue("ProductCode")?.ToString();
+                                var filterValue = model.GetFilterValue("ItemCode")?.ToString();
                                 if (!string.IsNullOrWhiteSpace(filterValue))
                                 {
                                     // 使用安全的方式查詢，避免導航屬性的 null reference
-                                    query = query.Where(s => s.Product != null &&
-                                                           s.Product.Code != null &&
-                                                           s.Product.Code.Contains(filterValue));
+                                    query = query.Where(s => s.Item != null &&
+                                                           s.Item.Code != null &&
+                                                           s.Item.Code.Contains(filterValue));
                                 }
                                 return query;
                             }
                         }
                     },
                     {
-                        nameof(InventoryStock.ProductId),
+                        nameof(InventoryStock.ItemId),
                         new FieldDefinition<InventoryStock>
                         {
-                            PropertyName = "Product.Name", // 表格顯示用
-                            FilterPropertyName = nameof(InventoryStock.ProductId), // 篩選器用
-                            DisplayName = Dn("Field.ProductName", "品項名稱"),
+                            PropertyName = "Item.Name", // 表格顯示用
+                            FilterPropertyName = nameof(InventoryStock.ItemId), // 篩選器用
+                            DisplayName = Dn("Field.ItemName", "品項名稱"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
                             Options = _products.Select(p => new SelectOption
@@ -77,16 +77,16 @@ namespace ERPCore2.FieldConfiguration
                                 Value = p.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
-                                model, query, nameof(InventoryStock.ProductId), s => s.ProductId)
+                                model, query, nameof(InventoryStock.ItemId), s => s.ItemId)
                         }
                     },
                     {
-                        "ProductCategoryId",
+                        "ItemCategoryId",
                         new FieldDefinition<InventoryStock>
                         {
-                            PropertyName = "Product.ProductCategory.Name",
-                            FilterPropertyName = "ProductCategoryId",
-                            DisplayName = Dn("Field.ProductCategory", "品項類型"),
+                            PropertyName = "Item.ItemCategory.Name",
+                            FilterPropertyName = "ItemCategoryId",
+                            DisplayName = Dn("Field.ItemCategory", "品項類型"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
                             Options = _productCategories.Select(pc => new SelectOption
@@ -95,11 +95,11 @@ namespace ERPCore2.FieldConfiguration
                                 Value = pc.Id.ToString()
                             }).ToList(),
                             FilterFunction = (model, query) => {
-                                var filterValue = model.GetFilterValue("ProductCategoryId")?.ToString();
+                                var filterValue = model.GetFilterValue("ItemCategoryId")?.ToString();
                                 if (!string.IsNullOrWhiteSpace(filterValue) && int.TryParse(filterValue, out int categoryId))
                                 {
-                                    query = query.Where(s => s.Product != null && 
-                                                           s.Product.ProductCategoryId == categoryId);
+                                    query = query.Where(s => s.Item != null && 
+                                                           s.Item.ItemCategoryId == categoryId);
                                 }
                                 return query;
                             }
@@ -119,7 +119,7 @@ namespace ERPCore2.FieldConfiguration
                                 if (data is InventoryStock stock)
                                 {
                                     var valueStr = NumberFormatHelper.FormatSmart(stock.TotalCurrentStock, useThousandsSeparator: true);
-                                    var unitName = stock.Product?.Unit?.Name ?? "";
+                                    var unitName = stock.Item?.Unit?.Name ?? "";
                                     builder.AddContent(0, string.IsNullOrEmpty(unitName) ? valueStr : $"{valueStr} {unitName}");
                                 }
                             })
@@ -129,7 +129,7 @@ namespace ERPCore2.FieldConfiguration
                         "ProductionUnitStock",
                         new FieldDefinition<InventoryStock>
                         {
-                            PropertyName = "Product.ProductionUnit.Name",
+                            PropertyName = "Item.ProductionUnit.Name",
                             DisplayName = Dn("Field.ProductionUnitStock", "製程庫存"),
                             FilterType = SearchFilterType.Text,
                             TableOrder = 5,
@@ -138,7 +138,7 @@ namespace ERPCore2.FieldConfiguration
                             {
                                 if (data is InventoryStock stock)
                                 {
-                                    var product = stock.Product;
+                                    var product = stock.Item;
                                     if (product == null || !product.ProductionUnitId.HasValue ||
                                         product.ProductionUnitId.Value == product.UnitId ||
                                         !product.ProductionUnitConversionRate.HasValue ||
@@ -161,7 +161,7 @@ namespace ERPCore2.FieldConfiguration
                         "ProductionUnitConversion",
                         new FieldDefinition<InventoryStock>
                         {
-                            PropertyName = "Product.ProductionUnit.Name",
+                            PropertyName = "Item.ProductionUnit.Name",
                             DisplayName = Dn("Field.ProductionUnitConversion", "製程換算"),
                             FilterType = SearchFilterType.Text,
                             TableOrder = 6,
@@ -170,7 +170,7 @@ namespace ERPCore2.FieldConfiguration
                             {
                                 if (data is InventoryStock stock)
                                 {
-                                    var product = stock.Product;
+                                    var product = stock.Item;
                                     if (product == null || !product.ProductionUnitId.HasValue ||
                                         product.ProductionUnitId.Value == product.UnitId)
                                     {

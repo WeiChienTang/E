@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -38,11 +38,11 @@ namespace ERPCore2.Services
         {
             return context.PurchaseReturnDetails
                 .Include(prd => prd.PurchaseReturn)
-                .Include(prd => prd.Product)
+                .Include(prd => prd.Item)
                 .Include(prd => prd.Unit)
                 .Include(prd => prd.WarehouseLocation)
                 .OrderBy(prd => prd.PurchaseReturnId)
-                .ThenBy(prd => prd.Product.Name);
+                .ThenBy(prd => prd.Item.Name);
         }
 
         public override async Task<PurchaseReturnDetail?> GetByIdAsync(int id)
@@ -52,7 +52,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturnDetails
                     .Include(prd => prd.PurchaseReturn)
-                    .Include(prd => prd.Product)
+                    .Include(prd => prd.Item)
                     .Include(prd => prd.Unit)
                     .Include(prd => prd.WarehouseLocation)
                     .FirstOrDefaultAsync(prd => prd.Id == id);
@@ -76,8 +76,8 @@ namespace ERPCore2.Services
                 return await context.PurchaseReturnDetails
                     .Include(prd => prd.PurchaseReturn)
                         .ThenInclude(pr => pr.Supplier)
-                    .Include(prd => prd.Product)
-                        .ThenInclude(p => p!.ProductCategory)
+                    .Include(prd => prd.Item)
+                        .ThenInclude(p => p!.ItemCategory)
                     .Include(prd => prd.PurchaseOrderDetail)
                         .ThenInclude(pod => pod!.PurchaseOrder)
                     .Include(prd => prd.PurchaseReceivingDetail)
@@ -103,13 +103,13 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturnDetails
-                    .Include(prd => prd.Product)
+                    .Include(prd => prd.Item)
                     .Include(prd => prd.Unit)
                     .Include(prd => prd.WarehouseLocation)
                     .Include(prd => prd.PurchaseOrderDetail)
                     .Include(prd => prd.PurchaseReceivingDetail)
                     .Where(prd => prd.PurchaseReturnId == purchaseReturnId)
-                    .OrderBy(prd => prd.Product.Name)
+                    .OrderBy(prd => prd.Item.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -123,7 +123,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<PurchaseReturnDetail>> GetByProductIdAsync(int productId)
+        public async Task<List<PurchaseReturnDetail>> GetByItemIdAsync(int productId)
         {
             try
             {
@@ -131,18 +131,18 @@ namespace ERPCore2.Services
                 return await context.PurchaseReturnDetails
                     .Include(prd => prd.PurchaseReturn)
                         .ThenInclude(pr => pr.Supplier)
-                    .Include(prd => prd.Product)
+                    .Include(prd => prd.Item)
                     .Include(prd => prd.Unit)
-                    .Where(prd => prd.ProductId == productId)
+                    .Where(prd => prd.ItemId == productId)
                     .OrderByDescending(prd => prd.PurchaseReturn.ReturnDate)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByProductIdAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemIdAsync), GetType(), _logger, new { 
+                    Method = nameof(GetByItemIdAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId 
+                    ItemId = productId 
                 });
                 return new List<PurchaseReturnDetail>();
             }
@@ -155,7 +155,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturnDetails
                     .Include(prd => prd.PurchaseReturn)
-                    .Include(prd => prd.Product)
+                    .Include(prd => prd.Item)
                     .Include(prd => prd.Unit)
                     .Where(prd => prd.PurchaseOrderDetailId == purchaseOrderDetailId)
                     .OrderByDescending(prd => prd.PurchaseReturn.ReturnDate)
@@ -179,7 +179,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReturnDetails
                     .Include(prd => prd.PurchaseReturn)
-                    .Include(prd => prd.Product)
+                    .Include(prd => prd.Item)
                     .Include(prd => prd.Unit)
                     .Where(prd => prd.PurchaseReceivingDetailId == purchaseReceivingDetailId)
                     .OrderByDescending(prd => prd.PurchaseReturn.ReturnDate)
@@ -208,11 +208,11 @@ namespace ERPCore2.Services
 
                 return await context.PurchaseReturnDetails
                     .Include(prd => prd.PurchaseReturn)
-                    .Include(prd => prd.Product)
+                    .Include(prd => prd.Item)
                     .Include(prd => prd.Unit)
                     .Where(prd => (
-                        (prd.Product.Name != null && prd.Product.Name.ToLower().Contains(lowerSearchTerm)) ||
-                        (prd.Product.Code != null && prd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
+                        (prd.Item.Name != null && prd.Item.Name.ToLower().Contains(lowerSearchTerm)) ||
+                        (prd.Item.Code != null && prd.Item.Code.ToLower().Contains(lowerSearchTerm)) ||
                         (prd.PurchaseReturn.Code != null && prd.PurchaseReturn.Code.ToLower().Contains(lowerSearchTerm)) ||
                         (prd.BatchNumber != null && prd.BatchNumber.ToLower().Contains(lowerSearchTerm)) ||
                         (prd.Remarks != null && prd.Remarks.ToLower().Contains(lowerSearchTerm))
@@ -240,7 +240,7 @@ namespace ERPCore2.Services
                 if (entity.PurchaseReturnId <= 0)
                     errors.Add("必須指定採購退回記錄");
                 
-                if (entity.ProductId <= 0)
+                if (entity.ItemId <= 0)
                     errors.Add("必須選擇品項");
                 
                 if (entity.ReturnQuantity <= 0)
@@ -260,7 +260,7 @@ namespace ERPCore2.Services
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    ProductId = entity.ProductId 
+                    ItemId = entity.ItemId 
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -342,14 +342,14 @@ namespace ERPCore2.Services
 
 
 
-        public async Task<decimal> GetTotalReturnAmountByProductAsync(int productId, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<decimal> GetTotalReturnAmountByItemAsync(int productId, DateTime? startDate = null, DateTime? endDate = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.PurchaseReturnDetails
                     .Include(prd => prd.PurchaseReturn)
-                    .Where(prd => prd.ProductId == productId);
+                    .Where(prd => prd.ItemId == productId);
                 
                 if (startDate.HasValue)
                     query = query.Where(prd => prd.PurchaseReturn.ReturnDate >= startDate.Value);
@@ -361,10 +361,10 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetTotalReturnAmountByProductAsync), GetType(), _logger, new { 
-                    Method = nameof(GetTotalReturnAmountByProductAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetTotalReturnAmountByItemAsync), GetType(), _logger, new { 
+                    Method = nameof(GetTotalReturnAmountByItemAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId,
+                    ItemId = productId,
                     StartDate = startDate,
                     EndDate = endDate 
                 });
@@ -372,7 +372,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<Dictionary<int, int>> GetReturnQuantityByProductAsync(DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<Dictionary<int, int>> GetReturnQuantityByItemAsync(DateTime? startDate = null, DateTime? endDate = null)
         {
             try
             {
@@ -388,13 +388,13 @@ namespace ERPCore2.Services
                     query = query.Where(prd => prd.PurchaseReturn.ReturnDate <= endDate.Value);
                 
                 return await query
-                    .GroupBy(prd => prd.ProductId)
+                    .GroupBy(prd => prd.ItemId)
                     .ToDictionaryAsync(g => g.Key, g => g.Sum(prd => prd.ReturnQuantity));
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReturnQuantityByProductAsync), GetType(), _logger, new { 
-                    Method = nameof(GetReturnQuantityByProductAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetReturnQuantityByItemAsync), GetType(), _logger, new { 
+                    Method = nameof(GetReturnQuantityByItemAsync),
                     ServiceType = GetType().Name,
                     StartDate = startDate,
                     EndDate = endDate 
@@ -411,7 +411,7 @@ namespace ERPCore2.Services
                 return await context.PurchaseReturnDetails
                     .Include(prd => prd.PurchaseReturn)
                         .ThenInclude(pr => pr.Supplier)
-                    .Include(prd => prd.Product)
+                    .Include(prd => prd.Item)
                     .Where(prd => prd.ReturnSubtotalAmount >= minAmount)
                     .OrderByDescending(prd => prd.ReturnSubtotalAmount)
                     .ToListAsync();
@@ -492,7 +492,7 @@ namespace ERPCore2.Services
                     {
                         var operationDescription = $"撤銷採購退回 - {entity.PurchaseReturn?.Code} (明細ID: {entity.Id})";
                         var stockResult = await _inventoryStockService.AddStockAsync(
-                            entity.ProductId,
+                            entity.ItemId,
                             warehouseId.Value,
                             entity.ReturnQuantity,
                             InventoryTransactionTypeEnum.Return,

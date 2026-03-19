@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Models.Enums;
 
@@ -16,6 +16,6 @@ namespace ERPCore2.Data.Entities
         public string? Name { get; set; }
         
         // Navigation Properties
-        public ICollection<Product> Products { get; set; } = new List<Product>();
+        public ICollection<Item> Items { get; set; } = new List<Item>();
     }
 }

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,8 +7,8 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 採購退回明細實體 - 記錄採購退回的品項明細
     /// </summary>
-    [Index(nameof(PurchaseReturnId), nameof(ProductId))]
-    [Index(nameof(ProductId))]
+    [Index(nameof(PurchaseReturnId), nameof(ItemId))]
+    [Index(nameof(ItemId))]
     public class PurchaseReturnDetail : BaseEntity
     {
         [Required(ErrorMessage = "退回數量為必填")]
@@ -49,8 +49,8 @@ namespace ERPCore2.Data.Entities
 
         [Required(ErrorMessage = "品項為必填")]
         [Display(Name = "品項")]
-        [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int ItemId { get; set; }
 
         [Display(Name = "原始採購訂單明細")]
         [ForeignKey(nameof(PurchaseOrderDetail))]
@@ -71,7 +71,7 @@ namespace ERPCore2.Data.Entities
 
         // Navigation Properties
         public PurchaseReturn PurchaseReturn { get; set; } = null!;
-        public Product Product { get; set; } = null!;
+        public Item Item { get; set; } = null!;
         public PurchaseOrderDetail? PurchaseOrderDetail { get; set; }
         public PurchaseReceivingDetail? PurchaseReceivingDetail { get; set; }
         public Unit? Unit { get; set; }

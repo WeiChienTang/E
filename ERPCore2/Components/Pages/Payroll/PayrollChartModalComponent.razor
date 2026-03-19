@@ -1,0 +1,25 @@
+@using ERPCore2.Models.Charts
+@using ERPCore2.Services.Payroll
+@inject IPayrollChartService ChartService
+@inject IStringLocalizer<SharedResource> L
+
+<GenericChartModalComponent IsVisible="@IsVisible"
+                            IsVisibleChanged="@IsVisibleChanged"
+                            Category="@ChartCategory.Payroll"
+                            Title="@L["Payroll.ChartTitle"]"
+                            Icon="bi bi-cash-coin"
+                            OnDataLoading="@LoadSummaryAsync">
+</GenericChartModalComponent>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    private PayrollChartSummary? _summary;
+
+    private async Task LoadSummaryAsync()
+    {
+        _summary = await ChartService.GetSummaryAsync();
+        StateHasChanged();
+    }
+}

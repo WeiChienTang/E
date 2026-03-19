@@ -42,6 +42,11 @@ namespace ERPCore2.Data.Entities.Payroll
         [Column(TypeName = "decimal(6,2)")]
         [Display(Name = "國定假日加班時數")] public decimal NationalHolidayHours { get; set; }
 
+        // ── 時薪專用 ──────────────────────────────────────────
+        /// <summary>時薪員工實際工時總計（月薪員工為 0）</summary>
+        [Column(TypeName = "decimal(7,2)")]
+        [Display(Name = "總工時（時薪）")] public decimal TotalWorkHours { get; set; }
+
         // ── 金額彙總 ──────────────────────────────────────────
         [Column(TypeName = "decimal(18,0)")]
         [Display(Name = "應發薪資")] public decimal GrossIncome { get; set; }

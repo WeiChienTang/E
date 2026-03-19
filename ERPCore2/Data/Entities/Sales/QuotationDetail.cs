@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +7,7 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 報價單明細實體 - 記錄報價單的品項明細
     /// </summary>
-    [Index(nameof(QuotationId), nameof(ProductId))]
+    [Index(nameof(QuotationId), nameof(ItemId))]
     public class QuotationDetail : BaseEntity
     {
         [Required(ErrorMessage = "報價數量為必填")]
@@ -35,7 +35,7 @@ namespace ERPCore2.Data.Entities
 
         /// <summary>
         /// 規格說明 - 從品項帶入後可自行修改
-        /// 新增明細時自動複製 Product.Specification，之後獨立運作
+        /// 新增明細時自動複製 Item.Specification，之後獨立運作
         /// </summary>
         [Display(Name = "規格說明")]
         [MaxLength(500, ErrorMessage = "規格說明不可超過500個字元")]
@@ -64,8 +64,8 @@ namespace ERPCore2.Data.Entities
 
         [Required(ErrorMessage = "品項為必填")]
         [Display(Name = "品項")]
-        [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int ItemId { get; set; }
 
         [Display(Name = "單位")]
         [ForeignKey(nameof(Unit))]
@@ -73,7 +73,7 @@ namespace ERPCore2.Data.Entities
 
         // Navigation Properties
         public Quotation Quotation { get; set; } = null!;
-        public Product Product { get; set; } = null!;
+        public Item Item { get; set; } = null!;
         public Unit? Unit { get; set; }
         public ICollection<SalesOrderDetail> SalesOrderDetails { get; set; } = new List<SalesOrderDetail>();
         

@@ -18,6 +18,28 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
         {
             var now = DateTime.Now;
 
+            // ── 修正既有項目的命名與 IsSystemItem 標記（冪等，可重複執行）──────────────
+            // OT2 原命名為「休息日加班費」但實際用於平日加班後2小時；OT_HOLIDAY 原命名為「例假日加班費」
+            var nameFixes = new Dictionary<string, (string Name, bool IsSystemItem)>
+            {
+                { "OT2",        ("平日加班費（後2小時）", true) },
+                { "OT_HOLIDAY", ("休息日加班費",          true) },
+                { "ABSENT",     ("曠職扣款",               true) },  // 計算引擎依賴此項目，應標為系統項目
+            };
+            bool anyFixed = false;
+            foreach (var (code, (newName, isSystem)) in nameFixes)
+            {
+                var existing = await context.PayrollItems.FirstOrDefaultAsync(i => i.Code == code);
+                if (existing != null && (existing.Name != newName || existing.IsSystemItem != isSystem))
+                {
+                    existing.Name = newName;
+                    existing.IsSystemItem = isSystem;
+                    anyFixed = true;
+                }
+            }
+            if (anyFixed)
+                await context.SaveChangesAsync();
+
             // 取得現有項目代碼，逐一檢查並補齊缺少的項目（支援既有資料庫新增項目）
             var existingCodes = await context.PayrollItems
                 .Select(i => i.Code)
@@ -85,7 +107,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new PayrollItem
                 {
                     Code = "OT1",
-                    Name = "平日加班費",
+                    Name = "平日加班費（前2小時）",   // 勞基法第24條第1項第1款：×4/3
                     ItemType = PayrollItemType.Income,
                     Category = PayrollItemCategory.Overtime,
                     IsTaxable = true,
@@ -99,7 +121,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new PayrollItem
                 {
                     Code = "OT2",
-                    Name = "休息日加班費",
+                    Name = "平日加班費（後2小時）",   // 勞基法第24條第1項第2款：×5/3
                     ItemType = PayrollItemType.Income,
                     Category = PayrollItemCategory.Overtime,
                     IsTaxable = true,
@@ -113,7 +135,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 new PayrollItem
                 {
                     Code = "OT_HOLIDAY",
-                    Name = "例假日加班費",
+                    Name = "休息日加班費",            // 勞基法第24條第2項：前2hr×4/3，後續×5/3
                     ItemType = PayrollItemType.Income,
                     Category = PayrollItemCategory.Overtime,
                     IsTaxable = true,
@@ -121,6 +143,20 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     IsRetirementBasis = false,
                     IsSystemItem = true,
                     SortOrder = 7,
+                    Status = EntityStatus.Active,
+                    CreatedAt = now
+                },
+                new PayrollItem
+                {
+                    Code = "OT_NATIONAL",
+                    Name = "國定假日加班費",          // 勞基法第39條：月薪已含假日薪，加給1倍時薪（合計×2）
+                    ItemType = PayrollItemType.Income,
+                    Category = PayrollItemCategory.Overtime,
+                    IsTaxable = true,
+                    IsInsuranceBasis = false,
+                    IsRetirementBasis = false,
+                    IsSystemItem = true,
+                    SortOrder = 8,
                     Status = EntityStatus.Active,
                     CreatedAt = now
                 },
@@ -205,7 +241,7 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     IsTaxable = false,
                     IsInsuranceBasis = false,
                     IsRetirementBasis = false,
-                    IsSystemItem = false,
+                    IsSystemItem = true,  // 計算引擎直接依賴此項目，不可刪除
                     SortOrder = 20,
                     Status = EntityStatus.Active,
                     CreatedAt = now

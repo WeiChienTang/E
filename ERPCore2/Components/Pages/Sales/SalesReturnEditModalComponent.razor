@@ -11,7 +11,7 @@
 @inject INotificationService NotificationService
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
-@inject IProductService ProductService
+@inject IItemService ItemService
 @inject ISystemParameterService SystemParameterService
 @inject ISetoffDocumentService SetoffDocumentService
 @inject ISalesReturnReportService SalesReturnReportService
@@ -124,7 +124,7 @@
     private List<WarehouseLocation> availableWarehouseLocations = new();
     private List<Customer> availableCustomers = new();
     private List<Employee> availableEmployees = new();
-    private List<Product> availableProducts = new();
+    private List<Item> availableItems = new();
     private List<ERPCore2.Data.Entities.SalesReturnReason> availableReturnReasons = new();
     
     // 下拉選單選項（向下相容，用於過濾後的選項）
@@ -133,7 +133,7 @@
     private List<WarehouseLocation> warehouseLocations = new();
     private List<Customer> customers = new();
     private List<Employee> employees = new();
-    private List<Product> products = new();
+    private List<Item> products = new();
     private List<ERPCore2.Data.Entities.SalesReturnReason> returnReasons = new();
     private List<SelectOption> taxCalculationMethodOptions = new();
     
@@ -148,8 +148,8 @@
     private int _detailsDataVersion = 0;
     
     // ===== 篩選狀態 =====
-    private int? filterProductId = null;
-    private int? FilterProductId => filterProductId;
+    private int? filterItemId = null;
+    private int? FilterItemId => filterItemId;
     private int? FilterSalesDeliveryId = null;
     
     // ===== 明細載入狀態 =====
@@ -193,7 +193,7 @@
                 if (PrefilledCustomerId.HasValue && PrefilledCustomerId.Value > 0)
                 {
                     await UpdateSalesDeliveryOptions(PrefilledCustomerId.Value);
-                    await UpdateFilterProductOptions(PrefilledCustomerId.Value);
+                    await UpdateFilterItemOptions(PrefilledCustomerId.Value);
                     StateHasChanged(); // 強制UI更新
                 }
             }
@@ -373,7 +373,7 @@
             await LoadWarehouseLocationsAsync();
             await LoadCustomersAsync();
             await LoadEmployeesAsync();
-            await LoadProductsAsync();
+            await LoadItemsAsync();
             await LoadReturnReasonsAsync();
             
             //  一次性載入系統稅率（避免每次計算都查詢資料庫）
@@ -473,18 +473,18 @@
         }
     }
 
-    private async Task LoadProductsAsync()
+    private async Task LoadItemsAsync()
     {
         try
         {
-            availableProducts = await ProductService.GetAllAsync();
-            products = availableProducts; // 向下相容
+            availableItems = await ItemService.GetAllAsync();
+            products = availableItems; // 向下相容
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入品項資料時發生錯誤：{ex.Message}");
-            availableProducts = new List<Product>();
-            products = new List<Product>();
+            availableItems = new List<Item>();
+            products = new List<Item>();
         }
     }
 
@@ -499,7 +499,7 @@
             autoCompleteConfig = new AutoCompleteConfigBuilder<SalesReturn>()
                 .AddField(nameof(SalesReturn.CustomerId), "CompanyName", availableCustomers)
                 .AddField("FilterSalesDeliveryId", "Code", availableSalesDeliveries)
-                .AddField("FilterProductId", "Name", availableProducts)
+                .AddField("FilterItemId", "Name", availableItems)
                 .Build();
         }
         catch (Exception ex)
@@ -618,10 +618,10 @@
                 },
                 new()
                 {
-                    PropertyName = "FilterProductId", // 篩選用的虛擬欄位，不儲存至資料庫
-                    Label = L["Entity.Product"],
+                    PropertyName = "FilterItemId", // 篩選用的虛擬欄位，不儲存至資料庫
+                    Label = L["Entity.Item"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Product"]],
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Item"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "輸入品項代碼或名稱進行篩選，或留空顯示所有品項。此欄位不會儲存。",
@@ -757,7 +757,7 @@
                     sr => sr.CustomerId,
                     sr => sr.ReturnReasonId,
                     sr => sr.ReturnDate)
-                .AddCustomFields(FormSectionNames.FilterConditions, "FilterProductId", "FilterSalesDeliveryId")  // 虛擬篩選欄位，不存DB
+                .AddCustomFields(FormSectionNames.FilterConditions, "FilterItemId", "FilterSalesDeliveryId")  // 虛擬篩選欄位，不存DB
                 .AddToSection(FormSectionNames.AmountInfo,
                     sr => sr.TotalReturnAmount,
                     sr => sr.DiscountAmount,
@@ -796,7 +796,7 @@
     /// <summary>
     /// 取得品項篩選選項 - 根據選擇的客戶篩選
     /// </summary>
-    private async Task<List<SelectOption>> GetFilterProductOptions()
+    private async Task<List<SelectOption>> GetFilterItemOptions()
     {
         try
         {
@@ -821,13 +821,13 @@
     /// <summary>
     /// 更新品項篩選選項 - 當客戶變更時調用
     /// </summary>
-    private async Task UpdateFilterProductOptions(int? customerId = null)
+    private async Task UpdateFilterItemOptions(int? customerId = null)
     {
         try
         {
             // 找到品項篩選欄位並更新其選項
-            var filterProductField = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
-            if (filterProductField != null)
+            var filterItemField = formFields.FirstOrDefault(f => f.PropertyName == "FilterItemId");
+            if (filterItemField != null)
             {
                 var options = new List<SelectOption>();
                 
@@ -838,10 +838,10 @@
                     Text = $"{p.Code} - {p.Name}"
                 }));
                 
-                filterProductField.Options = options;
+                filterItemField.Options = options;
                 
                 // 清空目前的品項篩選選擇
-                filterProductId = null;
+                filterItemId = null;
             }
         }
         catch (Exception ex)
@@ -869,7 +869,7 @@
             // 方案 D 改良版：遞增版本號
             _detailsDataVersion++;
             
-            // ⚠️ 關鍵：載入明細後必須同步載入關聯資料（Product），否則鎖定檢查會失效
+            // ⚠️ 關鍵：載入明細後必須同步載入關聯資料（Item），否則鎖定檢查會失效
             // 因為 DetailLockHelper 需要讀取 TotalPaidAmount 欄位
             if (salesReturnDetails.Any())
             {
@@ -903,7 +903,7 @@
             if (editModalComponent?.Entity != null)
             {
                 var (total, tax) = TaxCalculationHelper.CalculateFromDetails(
-                    details.Where(d => d.ProductId > 0),
+                    details.Where(d => d.ItemId > 0),
                     editModalComponent.Entity.TaxCalculationMethod,
                     currentTaxRate,
                     d => d.ReturnSubtotalAmount,
@@ -1015,7 +1015,7 @@
     private void UpdateFilterFieldsState()
     {
         bool noCustomer = !(editModalComponent?.Entity?.CustomerId > 0);
-        var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+        var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterItemId");
         if (productFilter != null) productFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
         var deliveryFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterSalesDeliveryId");
         if (deliveryFilter != null) deliveryFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
@@ -1087,7 +1087,7 @@
                     FilterSalesDeliveryId = null;
                     {
                         bool noCustomer = !(int.TryParse(fieldChange.Value?.ToString(), out int cId) && cId > 0);
-                        var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+                        var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterItemId");
                         if (productFilter != null) productFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
                         var deliveryFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterSalesDeliveryId");
                         if (deliveryFilter != null) deliveryFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
@@ -1095,23 +1095,23 @@
                     StateHasChanged();
                     break;
 
-                case "FilterProductId":
+                case "FilterItemId":
                     //  修正：處理清除值的情況
                     // AutoComplete 清除時可能傳回 null、空字串、"0" 或數字 0
                     {
                         var valueStr = fieldChange.Value?.ToString();
                         if (string.IsNullOrWhiteSpace(valueStr) || valueStr == "0")
                         {
-                            filterProductId = null;
+                            filterItemId = null;
                         }
-                        else if (int.TryParse(valueStr, out var parsedProductId) && parsedProductId > 0)
+                        else if (int.TryParse(valueStr, out var parsedItemId) && parsedItemId > 0)
                         {
-                            filterProductId = parsedProductId;
+                            filterItemId = parsedItemId;
                         }
                         else
                         {
                             // 無法解析的值也視為清除
-                            filterProductId = null;
+                            filterItemId = null;
                         }
                     }
                     // ✅ 欄位依賴變化：篩選條件改變需要立即更新明細表格
@@ -1180,7 +1180,7 @@
             }
             
             // 檢查是否有有效的明細
-            var validDetails = salesReturnDetails.Where(d => d.ProductId > 0 && d.ReturnQuantity > 0).ToList();
+            var validDetails = salesReturnDetails.Where(d => d.ItemId > 0 && d.ReturnQuantity > 0).ToList();
             if (!validDetails.Any())
             {
                 await NotificationService.ShowErrorAsync("至少需要一筆退貨明細");
@@ -1229,7 +1229,7 @@
                     if (!isValidDetails) return false;
                 }
 
-                var validDetails = salesReturnDetails?.Where(d => d.ProductId > 0 && d.ReturnQuantity > 0).ToList() ?? new List<SalesReturnDetail>();
+                var validDetails = salesReturnDetails?.Where(d => d.ItemId > 0 && d.ReturnQuantity > 0).ToList() ?? new List<SalesReturnDetail>();
                 if (!validDetails.Any())
                 {
                     editModalComponent!.PendingSaveError = "至少需要一筆退貨明細";
@@ -1253,12 +1253,12 @@
                 case TaxCalculationMethod.TaxExclusive:
                     // 外加稅
                     salesReturn.TotalReturnAmount = Math.Round(
-                        salesReturnDetails.Where(d => d.ProductId > 0)
+                        salesReturnDetails.Where(d => d.ItemId > 0)
                                          .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100)),
                         0, MidpointRounding.AwayFromZero);
                     
                     salesReturn.ReturnTaxAmount = Math.Round(
-                        salesReturnDetails.Where(d => d.ProductId > 0)
+                        salesReturnDetails.Where(d => d.ItemId > 0)
                                          .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100) * (d.TaxRate ?? 0) / 100),
                         0, MidpointRounding.AwayFromZero);
                     break;
@@ -1266,12 +1266,12 @@
                 case TaxCalculationMethod.TaxInclusive:
                     // 內含稅
                     var totalWithTax = Math.Round(
-                        salesReturnDetails.Where(d => d.ProductId > 0)
+                        salesReturnDetails.Where(d => d.ItemId > 0)
                                          .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100)),
                         0, MidpointRounding.AwayFromZero);
                     
                     var taxAmount = Math.Round(
-                        salesReturnDetails.Where(d => d.ProductId > 0)
+                        salesReturnDetails.Where(d => d.ItemId > 0)
                                          .Sum(d => 
                                          {
                                              var subtotal = d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100);
@@ -1287,7 +1287,7 @@
                 case TaxCalculationMethod.NoTax:
                     // 免稅
                     salesReturn.TotalReturnAmount = Math.Round(
-                        salesReturnDetails.Where(d => d.ProductId > 0)
+                        salesReturnDetails.Where(d => d.ItemId > 0)
                                          .Sum(d => d.ReturnQuantity * d.OriginalUnitPrice * (1 - d.DiscountPercentage / 100)),
                         0, MidpointRounding.AwayFromZero);
                     
@@ -1389,14 +1389,14 @@
                               IsPreconditionMet="@(editModalComponent?.Entity?.CustomerId > 0)"
                               PreconditionMessage="請先選擇客戶後再進行退貨明細管理">
             <SalesReturnTable @ref="salesReturnDetailManager"
-                              Products="@products"
+                              ItemEntities="@products"
                               CustomerId="@(editModalComponent?.Entity?.CustomerId)"
                               SelectedSupplierId="@(editModalComponent?.Entity?.CustomerId)"
                               FilterSalesDeliveryId="@FilterSalesDeliveryId"
-                              FilterProductId="@FilterProductId"
+                              FilterItemId="@FilterItemId"
                               SelectedCustomerName="@GetSelectedCustomerName()"
                               SelectedSalesDeliveryCode="@GetSelectedSalesDeliveryCode()"
-                              FilterProductName="@GetFilterProductName()"
+                              FilterItemName="@GetFilterItemName()"
                               ExistingDetails="@salesReturnDetails"
                               DataVersion="@_detailsDataVersion"
                               IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
@@ -1569,8 +1569,8 @@
     private string? GetSelectedSalesDeliveryCode()
         => EntityDisplayHelper.GetDisplayValue(FilterSalesDeliveryId, salesDeliveries, sd => sd.Code);
 
-    private string? GetFilterProductName()
-        => EntityDisplayHelper.GetDisplayValue(filterProductId, products, p => $"{p.Code} {p.Name}");
+    private string? GetFilterItemName()
+        => EntityDisplayHelper.GetDisplayValue(filterItemId, products, p => $"{p.Code} {p.Name}");
 
     /// <summary>
     /// 使用差異比較更新庫存（統一處理新增和編輯）

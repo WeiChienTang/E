@@ -1,4 +1,4 @@
-@* 通用會計資訊 Tab — 支援客戶、廠商、品項；顯示對應子科目，並可立即建立 *@
+﻿@* 通用會計資訊 Tab — 支援客戶、廠商、品項；顯示對應子科目，並可立即建立 *@
 @using ERPCore2.Models.Enums
 @using Microsoft.Extensions.Localization
 @inject ISubAccountService SubAccountService
@@ -119,7 +119,7 @@ else
         {
             AccountingEntityType.Customer => await BuildCustomerRowsAsync(),
             AccountingEntityType.Supplier => await BuildSupplierRowsAsync(),
-            AccountingEntityType.Product  => await BuildProductRowsAsync(),
+            AccountingEntityType.Item  => await BuildItemRowsAsync(),
             _ => new()
         };
 
@@ -162,9 +162,9 @@ else
         };
     }
 
-    private async Task<List<(string, AccountItem?)>> BuildProductRowsAsync()
+    private async Task<List<(string, AccountItem?)>> BuildItemRowsAsync()
     {
-        var item = await SubAccountService.GetSubAccountForProductAsync(_entityId);
+        var item = await SubAccountService.GetSubAccountForItemAsync(_entityId);
         return new()
         {
             (L["Accounting.Inventory"].ToString(), item),
@@ -185,7 +185,7 @@ else
             {
                 AccountingEntityType.Customer => await SubAccountService.GetOrCreateCustomerSubAccountAsync(_entityId, createdBy),
                 AccountingEntityType.Supplier => await SubAccountService.GetOrCreateSupplierSubAccountAsync(_entityId, createdBy),
-                AccountingEntityType.Product  => await SubAccountService.GetOrCreateProductSubAccountAsync(_entityId, createdBy),
+                AccountingEntityType.Item  => await SubAccountService.GetOrCreateItemSubAccountAsync(_entityId, createdBy),
                 _ => null
             };
 

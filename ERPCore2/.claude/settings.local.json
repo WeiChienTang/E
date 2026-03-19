@@ -1,4 +1,4 @@
-{
+﻿{
   "permissions": {
     "allow": [
       "Edit",
@@ -116,7 +116,7 @@
       "Bash(powershell -ExecutionPolicy Bypass -File fix_submessage.ps1)",
       "Bash(powershell -ExecutionPolicy Bypass -File fix_downstream.ps1)",
       "Bash(rm fix_downstream.ps1)",
-      "Bash(\"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Components\\\\Pages\\\\Products\\\\ProductionBoard\\\\ProductionBoardPendingSidebar.razor.css\")",
+      "Bash(\"c:\\\\Users\\\\cses3\\\\source\\\\repos\\\\ERPCore2\\\\ERPCore2\\\\Components\\\\Pages\\\\Items\\\\ProductionBoard\\\\ProductionBoardPendingSidebar.razor.css\")",
       "Bash(dotnet --version)",
       "Bash(where node:*)",
       "Bash(where dotnet:*)",

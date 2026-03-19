@@ -1,4 +1,4 @@
-using ApexCharts;
+﻿using ApexCharts;
 using ERPCore2.Components.Shared.Table;
 using ERPCore2.Models.Charts;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,7 +18,7 @@ public static class InventoryChartDefinitions
             DefaultSeriesType  = SeriesType.Bar,
             AllowedSeriesTypes = new() { SeriesType.Bar, SeriesType.Treemap },
             IsMoneyChart       = true,
-            DataFetcher        = sp => sp.GetRequiredService<IInventoryChartService>().GetTopProductsByStockValueAsync(),
+            DataFetcher        = sp => sp.GetRequiredService<IInventoryChartService>().GetTopItemsByStockValueAsync(),
             DetailFetcher      = (sp, label) => sp.GetRequiredService<IInventoryChartService>().GetStockDetailsByWarehouseAsync(label)
         });
 
@@ -30,7 +30,7 @@ public static class InventoryChartDefinitions
             SortOrder          = 2,
             DefaultSeriesType  = SeriesType.Bar,
             AllowedSeriesTypes = new() { SeriesType.Bar, SeriesType.Treemap },
-            DataFetcher        = sp => sp.GetRequiredService<IInventoryChartService>().GetTopProductsByStockQuantityAsync()
+            DataFetcher        = sp => sp.GetRequiredService<IInventoryChartService>().GetTopItemsByStockQuantityAsync()
             // Top-by-quantity 點擊不做 drill-down（直接看排行即可）
         });
 
@@ -60,7 +60,7 @@ public static class InventoryChartDefinitions
             SortOrder          = 4,
             DefaultSeriesType  = SeriesType.Bar,
             AllowedSeriesTypes = new() { SeriesType.Bar },
-            DataFetcher        = sp => sp.GetRequiredService<IInventoryChartService>().GetLowStockProductsAsync(),
+            DataFetcher        = sp => sp.GetRequiredService<IInventoryChartService>().GetLowStockItemsAsync(),
             DetailFetcher      = (sp, label) => sp.GetRequiredService<IInventoryChartService>().GetLowStockDetailsAsync(label),
             DetailColumns      = new()
             {

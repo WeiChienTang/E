@@ -1,4 +1,4 @@
-using ERPCore2.Components.Shared.UI.Form;
+﻿using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
@@ -15,12 +15,12 @@ namespace ERPCore2.FieldConfiguration
     /// </summary>
     public class ManufacturingOrderFieldConfiguration : BaseFieldConfiguration<ProductionScheduleItem>
     {
-        private readonly List<Product> _products;
+        private readonly List<Item> _products;
         private readonly List<Employee> _employees;
         private readonly INotificationService? _notificationService;
 
         public ManufacturingOrderFieldConfiguration(
-            List<Product> products,
+            List<Item> products,
             List<Employee> employees,
             INotificationService? notificationService = null)
         {
@@ -48,12 +48,12 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(ProductionScheduleItem.ProductId),
+                        nameof(ProductionScheduleItem.ItemId),
                         new FieldDefinition<ProductionScheduleItem>
                         {
-                            PropertyName = "Product.Name",
-                            FilterPropertyName = nameof(ProductionScheduleItem.ProductId),
-                            DisplayName = Dn("Field.Product", "品項"),
+                            PropertyName = "Item.Name",
+                            FilterPropertyName = nameof(ProductionScheduleItem.ItemId),
+                            DisplayName = Dn("Field.Item", "品項"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
                             Options = _products.Select(p => new SelectOption
@@ -63,11 +63,11 @@ namespace ERPCore2.FieldConfiguration
                             }).ToList(),
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
-                                model, query, nameof(ProductionScheduleItem.ProductId), psi => psi.ProductId),
+                                model, query, nameof(ProductionScheduleItem.ItemId), psi => psi.ItemId),
                             CustomTemplate = item => builder =>
                             {
                                 var psi = (ProductionScheduleItem)item;
-                                builder.AddContent(0, psi.Product?.Name ?? "-");
+                                builder.AddContent(0, psi.Item?.Name ?? "-");
                             }
                         }
                     },

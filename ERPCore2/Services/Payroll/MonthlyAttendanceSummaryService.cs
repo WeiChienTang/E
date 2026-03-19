@@ -106,6 +106,7 @@ namespace ERPCore2.Services.Payroll
                 existing.OvertimeHours2 = model.OvertimeHours2;
                 existing.HolidayOvertimeHours = model.HolidayOvertimeHours;
                 existing.NationalHolidayHours = model.NationalHolidayHours;
+                existing.TotalWorkHours = model.TotalWorkHours;
                 existing.Remarks = model.Remarks;
                 existing.UpdatedAt = DateTime.UtcNow;
                 existing.UpdatedBy = updatedBy;
@@ -238,6 +239,75 @@ namespace ERPCore2.Services.Payroll
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetAvailablePeriodsAsync), GetType(), _logger);
                 return new List<(int Year, int Month)>();
+            }
+        }
+
+        public async Task<ServiceResult<MonthlyAttendanceSummary>> RebuildFromDailyAsync(
+            int employeeId, int year, int month, string? updatedBy = null)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                int adYear = year + 1911;
+                var from = new DateOnly(adYear, month, 1);
+                var to = new DateOnly(adYear, month, DateTime.DaysInMonth(adYear, month));
+
+                var daily = await context.AttendanceDailyRecords
+                    .Where(r => r.EmployeeId == employeeId && r.Date >= from && r.Date <= to)
+                    .ToListAsync();
+
+                // 彙總各項數字
+                int scheduledDays = GetWorkDaysInMonth(adYear, month);
+                decimal actualWorkDays = daily.Count(r =>
+                    r.Status == DailyAttendanceStatus.Present ||
+                    r.Status == DailyAttendanceStatus.MakeUpWork);
+                decimal absentDays = daily.Count(r => r.Status == DailyAttendanceStatus.Absent);
+                decimal sickLeaveDays = daily.Count(r => r.Status == DailyAttendanceStatus.SickLeave);
+                decimal ot1 = daily.Sum(r => r.OvertimeHours1);
+                decimal ot2 = daily.Sum(r => r.OvertimeHours2);
+                decimal holidayOt = daily.Sum(r => r.HolidayOvertimeHours);
+                decimal nationalOt = daily.Sum(r => r.NationalHolidayHours);
+                decimal totalWorkHours = daily.Sum(r => r.WorkHours);
+
+                var existing = await context.MonthlyAttendanceSummaries
+                    .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.Year == year && a.Month == month);
+
+                if (existing == null)
+                {
+                    var periodResult = await _periodService.EnsurePeriodExistsAsync(year, month, updatedBy);
+                    if (!periodResult.IsSuccess)
+                        return ServiceResult<MonthlyAttendanceSummary>.Failure(periodResult.ErrorMessage ?? "無法建立薪資週期");
+
+                    existing = new MonthlyAttendanceSummary
+                    {
+                        EmployeeId = employeeId,
+                        Year = year,
+                        Month = month,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = updatedBy
+                    };
+                    context.MonthlyAttendanceSummaries.Add(existing);
+                }
+
+                existing.ScheduledWorkDays = scheduledDays;
+                existing.ActualWorkDays = actualWorkDays;
+                existing.AbsentDays = absentDays;
+                existing.SickLeaveDays = sickLeaveDays;
+                existing.OvertimeHours1 = ot1;
+                existing.OvertimeHours2 = ot2;
+                existing.HolidayOvertimeHours = holidayOt;
+                existing.NationalHolidayHours = nationalOt;
+                existing.TotalWorkHours = totalWorkHours;
+                existing.UpdatedAt = DateTime.UtcNow;
+                existing.UpdatedBy = updatedBy;
+
+                await context.SaveChangesAsync();
+                return ServiceResult<MonthlyAttendanceSummary>.Success(existing);
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(RebuildFromDailyAsync), GetType(), _logger);
+                return ServiceResult<MonthlyAttendanceSummary>.Failure("從逐日記錄彙總時發生錯誤");
             }
         }
 

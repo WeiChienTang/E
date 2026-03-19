@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,10 +8,10 @@ namespace ERPCore2.Data.Entities
     /// 品項-供應商關聯表
     /// 維護品項與供應商之間的採購關係
     /// </summary>
-    [Index(nameof(ProductId), nameof(SupplierId), IsUnique = true, Name = "UX_ProductSupplier_ProductId_SupplierId")]
-    [Index(nameof(ProductId), nameof(IsPreferred), nameof(Priority), Name = "IX_ProductSupplier_ProductId_IsPreferred_Priority")]
-    [Index(nameof(SupplierId), Name = "IX_ProductSupplier_SupplierId")]
-    public class ProductSupplier : BaseEntity
+    [Index(nameof(ItemId), nameof(SupplierId), IsUnique = true, Name = "UX_ItemSupplier_ItemId_SupplierId")]
+    [Index(nameof(ItemId), nameof(IsPreferred), nameof(Priority), Name = "IX_ItemSupplier_ItemId_IsPreferred_Priority")]
+    [Index(nameof(SupplierId), Name = "IX_ItemSupplier_SupplierId")]
+    public class ItemSupplier : BaseEntity
     {
         // ===== 關聯欄位 =====
         
@@ -20,8 +20,8 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [Display(Name = "品項")]
         [Required(ErrorMessage = "品項為必填")]
-        [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int ItemId { get; set; }
         
         /// <summary>
         /// 供應商ID
@@ -69,7 +69,7 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [Display(Name = "供應商料號")]
         [MaxLength(50, ErrorMessage = "供應商料號不可超過50個字元")]
-        public string? SupplierProductCode { get; set; }
+        public string? SupplierItemCode { get; set; }
         
         // ===== 交貨條件 =====
         
@@ -89,7 +89,7 @@ namespace ERPCore2.Data.Entities
         /// <summary>
         /// 關聯的品項
         /// </summary>
-        public virtual Product? Product { get; set; }
+        public virtual Item? Item { get; set; }
         
         /// <summary>
         /// 關聯的供應商
@@ -108,18 +108,18 @@ namespace ERPCore2.Data.Entities
         /// 篩選後的品項清單（用於 SearchableSelect 下拉選單）
         /// </summary>
         [NotMapped]
-        public List<Product> FilteredProducts { get; set; } = new();
+        public List<Item> FilteredItems { get; set; } = new();
         
         /// <summary>
         /// 是否顯示品項下拉選單（用於 SearchableSelect）
         /// </summary>
         [NotMapped]
-        public bool ShowProductDropdown { get; set; }
+        public bool ShowItemDropdown { get; set; }
         
         /// <summary>
         /// 品項下拉選單的選中索引（用於 SearchableSelect 鍵盤導航）
         /// </summary>
         [NotMapped]
-        public int ProductSelectedIndex { get; set; } = -1;
+        public int ItemSelectedIndex { get; set; } = -1;
     }
 }

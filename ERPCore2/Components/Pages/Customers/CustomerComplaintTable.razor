@@ -1,4 +1,4 @@
-@* 可重用的客戶投訴紀錄列表面板 - 用於客戶 EditModal 的 Tab 頁籤中 *@
+﻿@* 可重用的客戶投訴紀錄列表面板 - 用於客戶 EditModal 的 Tab 頁籤中 *@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Models.Enums
 @inject IStringLocalizer<SharedResource> L
@@ -90,7 +90,7 @@
                     if (item is CustomerComplaint c)
                         return c.Category switch
                         {
-                            ComplaintCategory.ProductQuality  => L["ComplaintCategory.ProductQuality"],
+                            ComplaintCategory.ItemQuality  => L["ComplaintCategory.ItemQuality"],
                             ComplaintCategory.DeliveryDelay   => L["ComplaintCategory.DeliveryDelay"],
                             ComplaintCategory.ServiceAttitude => L["ComplaintCategory.ServiceAttitude"],
                             ComplaintCategory.PriceDispute    => L["ComplaintCategory.PriceDispute"],

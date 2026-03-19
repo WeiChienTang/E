@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models.Enums;
@@ -173,7 +173,7 @@ namespace ERPCore2.Services
                     .Include(a => a.Parent)
                     .Include(a => a.LinkedCustomer)
                     .Include(a => a.LinkedSupplier)
-                    .Include(a => a.LinkedProduct)
+                    .Include(a => a.LinkedItem)
                     .OrderBy(a => a.AccountLevel)
                     .ThenBy(a => a.SortOrder)
                     .ThenBy(a => a.Code)

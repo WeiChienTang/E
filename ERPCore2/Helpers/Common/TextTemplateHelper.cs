@@ -1,4 +1,4 @@
-using ERPCore2.Models;
+﻿using ERPCore2.Models;
 
 namespace ERPCore2.Helpers
 {
@@ -131,13 +131,13 @@ namespace ERPCore2.Helpers
             parts.Add($"{index}.");
 
             // 品項編號
-            if (config.ShowProductCode && !string.IsNullOrWhiteSpace(productCode))
+            if (config.ShowItemCode && !string.IsNullOrWhiteSpace(productCode))
             {
                 parts.Add($"[{productCode}]");
             }
 
             // 品項名稱
-            if (config.ShowProductName && !string.IsNullOrWhiteSpace(productName))
+            if (config.ShowItemName && !string.IsNullOrWhiteSpace(productName))
             {
                 parts.Add(productName);
             }

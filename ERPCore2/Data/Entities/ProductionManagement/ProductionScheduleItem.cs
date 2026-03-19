@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Models.Enums;
@@ -13,7 +13,7 @@ namespace ERPCore2.Data.Entities
     /// </summary>
     [CodeGenerationStrategy(CodeGenerationStrategy.TimestampWithSequence, Prefix = "MO-")]
     [Index(nameof(Code), IsUnique = true)]
-    [Index(nameof(ProductionScheduleId), nameof(ProductId))]
+    [Index(nameof(ProductionScheduleId), nameof(ItemId))]
     [Index(nameof(SalesOrderDetailId))]
     [Index(nameof(ProductionItemStatus))]
     [Index(nameof(ResponsibleEmployeeId))]
@@ -102,8 +102,8 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [Required(ErrorMessage = "品項為必填")]
         [Display(Name = "品項")]
-        [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int ItemId { get; set; }
         
         /// <summary>
         /// 來源銷售訂單明細 ID - 追蹤來源
@@ -143,7 +143,7 @@ namespace ERPCore2.Data.Entities
         /// <summary>
         /// 品項
         /// </summary>
-        public Product Product { get; set; } = null!;
+        public Item Item { get; set; } = null!;
         
         /// <summary>
         /// 來源銷售訂單明細

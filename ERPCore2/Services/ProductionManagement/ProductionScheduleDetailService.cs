@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
@@ -30,8 +30,8 @@ namespace ERPCore2.Services
             return context.ProductionScheduleDetails
                 .Include(psd => psd.ProductionScheduleItem)
                     .ThenInclude(psi => psi.ProductionSchedule)
-                .Include(psd => psd.ComponentProduct)
-                .Include(psd => psd.ProductCompositionDetail)
+                .Include(psd => psd.ComponentItem)
+                .Include(psd => psd.ItemCompositionDetail)
                 .Include(psd => psd.Warehouse)
                 .OrderBy(psd => psd.ProductionScheduleItemId);
         }
@@ -45,9 +45,9 @@ namespace ERPCore2.Services
                 return await context.ProductionScheduleDetails
                     .Include(psd => psd.ProductionScheduleItem)
                         .ThenInclude(psi => psi.ProductionSchedule)
-                    .Include(psd => psd.ComponentProduct)
-                        .ThenInclude(p => p.ProductCategory)
-                    .Include(psd => psd.ProductCompositionDetail)
+                    .Include(psd => psd.ComponentItem)
+                        .ThenInclude(p => p.ItemCategory)
+                    .Include(psd => psd.ItemCompositionDetail)
                     .Include(psd => psd.Warehouse)
                     .FirstOrDefaultAsync(psd => psd.Id == id);
             }
@@ -73,7 +73,7 @@ namespace ERPCore2.Services
                 if (entity.ProductionScheduleItemId <= 0)
                     errors.Add("生產排程項目為必填");
 
-                if (entity.ComponentProductId <= 0)
+                if (entity.ComponentItemId <= 0)
                     errors.Add("組件品項為必填");
 
                 if (entity.RequiredQuantity <= 0)
@@ -97,8 +97,8 @@ namespace ERPCore2.Services
                     errors.Add("生產排程項目不存在");
 
                 // 檢查品項是否存在
-                var productExists = await context.Products
-                    .AnyAsync(p => p.Id == entity.ComponentProductId);
+                var productExists = await context.Items
+                    .AnyAsync(p => p.Id == entity.ComponentItemId);
 
                 if (!productExists)
                     errors.Add("組件品項不存在");
@@ -116,7 +116,7 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
                     ScheduleItemId = entity.ProductionScheduleItemId,
-                    ProductId = entity.ComponentProductId
+                    ItemId = entity.ComponentItemId
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -134,11 +134,11 @@ namespace ERPCore2.Services
                 return await context.ProductionScheduleDetails
                     .Include(psd => psd.ProductionScheduleItem)
                         .ThenInclude(psi => psi.ProductionSchedule)
-                    .Include(psd => psd.ComponentProduct)
-                    .Include(psd => psd.ProductCompositionDetail)
+                    .Include(psd => psd.ComponentItem)
+                    .Include(psd => psd.ItemCompositionDetail)
                     .Include(psd => psd.Warehouse)
-                    .Where(psd => psd.ComponentProduct!.Name!.Contains(searchTerm) ||
-                                 (psd.ComponentProduct.Code != null && psd.ComponentProduct.Code.Contains(searchTerm)) ||
+                    .Where(psd => psd.ComponentItem!.Name!.Contains(searchTerm) ||
+                                 (psd.ComponentItem.Code != null && psd.ComponentItem.Code.Contains(searchTerm)) ||
                                  (psd.ProductionScheduleItem.ProductionSchedule.Code != null && 
                                   psd.ProductionScheduleItem.ProductionSchedule.Code.Contains(searchTerm)))
                     .OrderBy(psd => psd.ProductionScheduleItemId)
@@ -163,9 +163,9 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.ProductionScheduleDetails
-                    .Include(psd => psd.ComponentProduct)
-                        .ThenInclude(p => p.ProductCategory)
-                    .Include(psd => psd.ProductCompositionDetail)
+                    .Include(psd => psd.ComponentItem)
+                        .ThenInclude(p => p.ItemCategory)
+                    .Include(psd => psd.ItemCompositionDetail)
                     .Include(psd => psd.Warehouse)
                     .Where(psd => psd.ProductionScheduleItemId == scheduleItemId)
                     .OrderBy(psd => psd.Id)
@@ -183,7 +183,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<ProductionScheduleDetail>> GetByComponentProductIdAsync(int productId)
+        public async Task<List<ProductionScheduleDetail>> GetByComponentItemIdAsync(int productId)
         {
             try
             {
@@ -191,19 +191,19 @@ namespace ERPCore2.Services
                 return await context.ProductionScheduleDetails
                     .Include(psd => psd.ProductionScheduleItem)
                         .ThenInclude(psi => psi.ProductionSchedule)
-                    .Include(psd => psd.ComponentProduct)
+                    .Include(psd => psd.ComponentItem)
                     .Include(psd => psd.Warehouse)
-                    .Where(psd => psd.ComponentProductId == productId)
+                    .Where(psd => psd.ComponentItemId == productId)
                     .OrderByDescending(psd => psd.ProductionScheduleItem.ProductionSchedule.ScheduleDate)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByComponentProductIdAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByComponentItemIdAsync), GetType(), _logger, new
                 {
-                    Method = nameof(GetByComponentProductIdAsync),
+                    Method = nameof(GetByComponentItemIdAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId
+                    ItemId = productId
                 });
                 return new List<ProductionScheduleDetail>();
             }
@@ -217,7 +217,7 @@ namespace ERPCore2.Services
                 return await context.ProductionScheduleDetails
                     .Include(psd => psd.ProductionScheduleItem)
                         .ThenInclude(psi => psi.ProductionSchedule)
-                    .Include(psd => psd.ComponentProduct)
+                    .Include(psd => psd.ComponentItem)
                     .Include(psd => psd.Warehouse)
                     .Where(psd => psd.WarehouseId == warehouseId)
                     .OrderByDescending(psd => psd.ProductionScheduleItem.ProductionSchedule.ScheduleDate)

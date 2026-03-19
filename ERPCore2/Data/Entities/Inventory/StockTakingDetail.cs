@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Models.Enums;
@@ -8,8 +8,8 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 庫存盤點明細實體 - 記錄盤點明細資料
     /// </summary>
-    [Index(nameof(StockTakingId), nameof(ProductId), nameof(WarehouseLocationId), IsUnique = true)]
-    [Index(nameof(ProductId))]
+    [Index(nameof(StockTakingId), nameof(ItemId), nameof(WarehouseLocationId), IsUnique = true)]
+    [Index(nameof(ItemId))]
     public class StockTakingDetail : BaseEntity
     {
         [Required(ErrorMessage = "盤點主檔為必填")]
@@ -19,8 +19,8 @@ namespace ERPCore2.Data.Entities
 
         [Required(ErrorMessage = "品項為必填")]
         [Display(Name = "品項")]
-        [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int ItemId { get; set; }
 
         [Display(Name = "倉庫位置")]
         [ForeignKey(nameof(WarehouseLocation))]
@@ -72,7 +72,7 @@ namespace ERPCore2.Data.Entities
 
         // Navigation Properties
         public StockTaking StockTaking { get; set; } = null!;
-        public Product Product { get; set; } = null!;
+        public Item Item { get; set; } = null!;
         public WarehouseLocation? WarehouseLocation { get; set; }
     }
 }

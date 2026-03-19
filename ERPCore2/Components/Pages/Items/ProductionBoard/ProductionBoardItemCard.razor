@@ -1,4 +1,4 @@
-@using ERPCore2.Models.Schedule
+﻿@using ERPCore2.Models.Schedule
 @using ERPCore2.Models.Enums
 
 <div class="board-item-card @StatusCssClass @(IsOnBoard ? "on-board" : "in-sidebar") @(IsSortDragging ? "sort-dragging" : "")"
@@ -6,7 +6,7 @@
      @onclick="HandleClick"
      @ondragstart="HandleDragStart"
      @ondragend="HandleDragEnd"
-     title="@Item.ProductCode - @Item.ProductName（點擊編輯）">
+     title="@Item.ItemCode - @Item.ItemName（點擊編輯）">
 
     @* 狀態色條 *@
     <div class="card-status-bar"></div>
@@ -15,8 +15,8 @@
         @* 品項資訊 + 狀態 *@
         <div class="card-header-row">
             <div class="card-product">
-                <span class="product-name">@Item.ProductName</span>
-                <span class="product-code">@Item.ProductCode</span>
+                <span class="product-name">@Item.ItemName</span>
+                <span class="product-code">@Item.ItemCode</span>
             </div>
             <span class="card-status-badge @StatusCssClass">@StatusText</span>
         </div>

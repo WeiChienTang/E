@@ -252,7 +252,10 @@ namespace ERPCore2.Services
                 if (nonDetailAccounts.Any())
                     return (false, $"以下科目非明細科目，不可記帳：{string.Join("、", nonDetailAccounts)}");
 
-                // 驗證會計期間是否開放（期初餘額傳票跳過期間鎖定檢查）
+                // 驗證會計期間是否開放
+                // - OpeningBalance：跳過所有期間檢查（期初餘額可能對應不存在的歷史期間）
+                // - Closing：允許過帳到已關帳期間（年底結帳必須在所有期間 Closed 後執行），但 Locked 仍阻擋
+                // - 其他類型：Closed / Locked 均阻擋
                 if (entry.EntryType != JournalEntryType.OpeningBalance)
                 {
                     var period = await _fiscalPeriodService.GetByYearAndPeriodAsync(
@@ -261,7 +264,8 @@ namespace ERPCore2.Services
                     if (period != null && period.PeriodStatus == FiscalPeriodStatus.Locked)
                         return (false, $"會計期間 {entry.FiscalYear}/{entry.FiscalPeriod:D2} 已永久鎖定，不允許過帳");
 
-                    if (period != null && period.PeriodStatus == FiscalPeriodStatus.Closed)
+                    if (entry.EntryType != JournalEntryType.Closing &&
+                        period != null && period.PeriodStatus == FiscalPeriodStatus.Closed)
                         return (false, $"會計期間 {entry.FiscalYear}/{entry.FiscalPeriod:D2} 已關帳，如需補登請先重開期間");
                 }
 

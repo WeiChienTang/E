@@ -1,4 +1,4 @@
-@* 子科目設定 Tab *@
+﻿@* 子科目設定 Tab *@
 
 @inject ISubAccountService SubAccountService
 @inject INotificationService NotificationService
@@ -30,11 +30,11 @@
                                IsLoading="@IsBatchCreatingSupplier"
                                Title="@L["SubAccount.CreateSupplierTitle"]" />
         <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                               Text="@L["SubAccount.CreateProduct"]"
-                               OnClick="HandleBatchCreateProductAsync"
+                               Text="@L["SubAccount.CreateItem"]"
+                               OnClick="HandleBatchCreateItemAsync"
                                IsDisabled="@(isBatchCreating || IsDisabled)"
-                               IsLoading="@IsBatchCreatingProduct"
-                               Title="@L["SubAccount.CreateProductTitle"]" />
+                               IsLoading="@IsBatchCreatingItem"
+                               Title="@L["SubAccount.CreateItemTitle"]" />
     </div>
     @if (!string.IsNullOrEmpty(batchResultMessage))
     {
@@ -78,7 +78,7 @@
     private string batchResultIcon = "bi-info-circle";
     private bool IsBatchCreatingCustomer => isBatchCreating && batchTarget == "customer";
     private bool IsBatchCreatingSupplier => isBatchCreating && batchTarget == "supplier";
-    private bool IsBatchCreatingProduct  => isBatchCreating && batchTarget == "product";
+    private bool IsBatchCreatingItem  => isBatchCreating && batchTarget == "product";
 
     // 確認開啟自動產生 Modal 狀態
     private bool showEnableAutoCreateModal = false;
@@ -101,7 +101,7 @@
             // ===== 子科目自動產生開關 =====
             new FormFieldDefinition { PropertyName = "AutoCreateCustomerSubAccount", Label = L["Field.CustomerSubAccount"], FieldType = FormFieldType.Checkbox },
             new FormFieldDefinition { PropertyName = "AutoCreateSupplierSubAccount", Label = L["Field.SupplierSubAccount"], FieldType = FormFieldType.Checkbox },
-            new FormFieldDefinition { PropertyName = "AutoCreateProductSubAccount",  Label = L["Field.ProductSubAccount"],  FieldType = FormFieldType.Checkbox },
+            new FormFieldDefinition { PropertyName = "AutoCreateItemSubAccount",  Label = L["Field.ItemSubAccount"],  FieldType = FormFieldType.Checkbox },
             new FormFieldDefinition
             {
                 PropertyName = "SubAccountCodeFormat",
@@ -129,14 +129,14 @@
             new FormFieldDefinition { PropertyName = "SupplierReturnSubAccountParentCode",  Label = L["Field.SupplierReturnAccount"],    FieldType = FormFieldType.Text, Placeholder = "預設：5111", MaxLength = 20 },
             new FormFieldDefinition { PropertyName = "SupplierAdvanceSubAccountParentCode", Label = L["Field.SupplierAdvanceAccount"],   FieldType = FormFieldType.Text, Placeholder = "預設：1161", MaxLength = 20 },
             // ===== 統制科目代碼（品項）=====
-            new FormFieldDefinition { PropertyName = "ProductSubAccountParentCode",         Label = L["Field.ProductInventoryAccount"],  FieldType = FormFieldType.Text, Placeholder = "預設：1231", MaxLength = 20 }
+            new FormFieldDefinition { PropertyName = "ItemSubAccountParentCode",         Label = L["Field.ItemInventoryAccount"],  FieldType = FormFieldType.Text, Placeholder = "預設：1231", MaxLength = 20 }
         };
 
         fieldSections = new Dictionary<string, string>
         {
             { "AutoCreateCustomerSubAccount", autoGenerateSection },
             { "AutoCreateSupplierSubAccount", autoGenerateSection },
-            { "AutoCreateProductSubAccount",  autoGenerateSection },
+            { "AutoCreateItemSubAccount",  autoGenerateSection },
             { "SubAccountCodeFormat",         autoGenerateSection },
             { "CustomerSubAccountParentCode",        controlAccountSection },
             { "CustomerNoteSubAccountParentCode",    controlAccountSection },
@@ -146,7 +146,7 @@
             { "SupplierNoteSubAccountParentCode",    controlAccountSection },
             { "SupplierReturnSubAccountParentCode",  controlAccountSection },
             { "SupplierAdvanceSubAccountParentCode", controlAccountSection },
-            { "ProductSubAccountParentCode",         controlAccountSection }
+            { "ItemSubAccountParentCode",         controlAccountSection }
         };
     }
 
@@ -197,20 +197,20 @@
             await SubAccountService.BatchCreateForAllSuppliersAsync(createdBy), L["Entity.Supplier"].ToString());
     }
 
-    private async Task HandleBatchCreateProductAsync()
+    private async Task HandleBatchCreateItemAsync()
     {
-        if (!Model.AutoCreateProductSubAccount)
+        if (!Model.AutoCreateItemSubAccount)
         {
             StorePendingBatchCreate(
                 "product",
-                v => Model.AutoCreateProductSubAccount = v,
-                async (createdBy) => await SubAccountService.BatchCreateForAllProductsAsync(createdBy),
-                L["Entity.Product"].ToString());
+                v => Model.AutoCreateItemSubAccount = v,
+                async (createdBy) => await SubAccountService.BatchCreateForAllItemsAsync(createdBy),
+                L["Entity.Item"].ToString());
             return;
         }
 
         await ExecuteBatchCreateAsync("product", async (createdBy) =>
-            await SubAccountService.BatchCreateForAllProductsAsync(createdBy), L["Entity.Product"].ToString());
+            await SubAccountService.BatchCreateForAllItemsAsync(createdBy), L["Entity.Item"].ToString());
     }
 
     /// <summary>

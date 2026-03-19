@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
 using ERPCore2.Models.Enums;
@@ -159,8 +159,8 @@ namespace ERPCore2.Services.Reports
             var allItems = await _itemService.GetAllAsync();
             var query = allItems.AsQueryable();
 
-            if (criteria.ItemIds.Any())
-                return query.Where(i => criteria.ItemIds.Contains(i.Id)).ToList();
+            if (criteria.ManufacturingOrderIds.Any())
+                return query.Where(i => criteria.ManufacturingOrderIds.Contains(i.Id)).ToList();
 
             if (criteria.StartDate.HasValue)
                 query = query.Where(i => i.PlannedStartDate == null || i.PlannedStartDate >= criteria.StartDate);
@@ -168,8 +168,8 @@ namespace ERPCore2.Services.Reports
             if (criteria.EndDate.HasValue)
                 query = query.Where(i => i.PlannedStartDate == null || i.PlannedStartDate <= criteria.EndDate);
 
-            if (criteria.ProductIds.Any())
-                query = query.Where(i => criteria.ProductIds.Contains(i.ProductId));
+            if (criteria.ItemIds.Any())
+                query = query.Where(i => criteria.ItemIds.Contains(i.ItemId));
 
             if (criteria.ResponsibleEmployeeIds.Any())
                 query = query.Where(i => i.ResponsibleEmployeeId.HasValue && criteria.ResponsibleEmployeeIds.Contains(i.ResponsibleEmployeeId.Value));
@@ -220,9 +220,9 @@ namespace ERPCore2.Services.Reports
                 header.AddSpacing(3);
 
                 header.AddKeyValueRow(
-                    ("品項名稱", item.Product?.Name ?? "-"),
-                    ("品項編號", item.Product?.Code ?? "-"),
-                    ("規格", item.Product?.Specification ?? "-"));
+                    ("品項名稱", item.Item?.Name ?? "-"),
+                    ("品項編號", item.Item?.Code ?? "-"),
+                    ("規格", item.Item?.Specification ?? "-"));
 
                 header.AddKeyValueRow(
                     ("計劃數量", item.ScheduledQuantity.ToString("N0")),
@@ -269,8 +269,8 @@ namespace ERPCore2.Services.Reports
                     {
                         table.AddRow(
                             rowNum.ToString(),
-                            detail.ComponentProduct?.Name ?? $"品項#{detail.ComponentProductId}",
-                            detail.ComponentProduct?.Code ?? "-",
+                            detail.ComponentItem?.Name ?? $"品項#{detail.ComponentItemId}",
+                            detail.ComponentItem?.Code ?? "-",
                             detail.RequiredQuantity.ToString("N2"),
                             detail.IssuedQuantity.ToString("N2"),
                             detail.PendingIssueQuantity.ToString("N2"),

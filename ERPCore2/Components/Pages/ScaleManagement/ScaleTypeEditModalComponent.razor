@@ -1,6 +1,6 @@
-@* 可重用的磅秤類型編輯組件 - 可在任何頁面中嵌入 *@
+﻿@* 可重用的磅秤類型編輯組件 - 可在任何頁面中嵌入 *@
 @inject IScaleTypeService ScaleTypeService
-@inject IProductService ProductService
+@inject IItemService ItemService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 
@@ -46,7 +46,7 @@
     private Dictionary<string, string> formSections = new();
 
     private AutoCompleteConfig? autoCompleteConfig;
-    private List<Product> availableProducts = new();
+    private List<Item> availableItems = new();
 
     private bool isDataLoaded = false;
 
@@ -68,16 +68,16 @@
     {
         try
         {
-            availableProducts = await ProductService.GetAllAsync();
+            availableItems = await ItemService.GetAllAsync();
 
             autoCompleteConfig = new AutoCompleteConfigBuilder<ScaleType>()
-                .AddField(nameof(ScaleType.ProductId), "Name", availableProducts)
+                .AddField(nameof(ScaleType.ItemId), "Name", availableItems)
                 .Build();
         }
         catch (Exception)
         {
             await NotificationService.ShowErrorAsync("載入磅秤類型編輯相關資料時發生錯誤");
-            availableProducts = new List<Product>();
+            availableItems = new List<Item>();
         }
     }
 
@@ -112,10 +112,10 @@
             },
             new()
             {
-                PropertyName = nameof(ScaleType.ProductId),
-                Label = L["Field.RelatedProduct"],
+                PropertyName = nameof(ScaleType.ItemId),
+                Label = L["Field.RelatedItem"],
                 FieldType = FormFieldType.AutoComplete,
-                Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.RelatedProduct"]],
+                Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.RelatedItem"]],
                 IsRequired = false,
                 MinSearchLength = 0,
                 HelpText = "選填。選擇後，儲存磅秤紀錄時會自動將磅秤數量入庫至此品項"
@@ -139,7 +139,7 @@
                 st => st.Code,
                 st => st.Name,
                 st => st.Unit,
-                st => st.ProductId)
+                st => st.ItemId)
             .AddToSection(FormSectionNames.AdditionalInfo,
                 st => st.Description,
                 st => st.Remarks)

@@ -3,34 +3,34 @@
 @using ERPCore2.Models
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
-@inject IProductService ProductService
+@inject IItemService ItemService
 @inject ISizeService SizeService
-@inject IProductCategoryService ProductCategoryService
+@inject IItemCategoryService ItemCategoryService
 @inject IUnitService UnitService
 @inject ISupplierService SupplierService
 @inject IInventoryStockService InventoryStockService
 @inject ISystemParameterService SystemParameterService
-@inject IProductCompositionService ProductCompositionService
+@inject IItemCompositionService ItemCompositionService
 @inject INotificationService NotificationService
-@inject IProductListReportService ProductListReportService
-@inject IProductDetailReportService ProductDetailReportService
+@inject IItemListReportService ItemListReportService
+@inject IItemDetailReportService ItemDetailReportService
 @inject ActionButtonHelper ActionButtonHelper
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
 @inject ICompanyModuleService CompanyModuleService
 @inject INavigationPermissionService NavigationPermissionService
 @inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="Product" 
-                          TService="IProductService"
+<GenericEditModalComponent TEntity="Item" 
+                          TService="IItemService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
-                          @bind-Id="@ProductId"
-                          Service="@ProductService"
-                          EntityName="@L["Entity.Product"]"
-                          EntityNamePlural="@L["Entity.Product"]"
-                          ModalTitle="@(ProductId.HasValue ? L["Message.EditTitle", L["Entity.Product"]].ToString() : L["Message.CreateTitle", L["Entity.Product"]].ToString())"
-                          Size="GenericEditModalComponent<Product, IProductService>.ModalSize.Desktop"
+                          @bind-Id="@ItemId"
+                          Service="@ItemService"
+                          EntityName="@L["Entity.Item"]"
+                          EntityNamePlural="@L["Entity.Item"]"
+                          ModalTitle="@(ItemId.HasValue ? L["Message.EditTitle", L["Entity.Item"]].ToString() : L["Message.CreateTitle", L["Entity.Item"]].ToString())"
+                          Size="GenericEditModalComponent<Item, IItemService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
@@ -40,33 +40,33 @@
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
                           ModalManagers="@modalManagers?.AsDictionary()"
-                          DataLoader="@LoadProductData"
+                          DataLoader="@LoadItemData"
                           ShowDraftButton="true"
                           DraftSuccessMessage="品項草稿已儲存，請記得補齊必填資料"
                           UseGenericSave="true"
-                          SaveSuccessMessage="@(ProductId.HasValue ? L["Message.UpdateSuccess", L["Entity.Product"]].ToString() : L["Message.CreateSuccess", L["Entity.Product"]].ToString())"
-                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Product"]]"
-                          RequiredPermission="@PermissionRegistry.Product.Read"
-                          OnEntitySaved="@OnProductSaved"
+                          SaveSuccessMessage="@(ItemId.HasValue ? L["Message.UpdateSuccess", L["Entity.Item"]].ToString() : L["Message.CreateSuccess", L["Entity.Item"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Item"]]"
+                          RequiredPermission="@PermissionRegistry.Item.Read"
+                          OnEntitySaved="@OnItemSaved"
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           OnEntityLoaded="@HandleEntityLoaded"
                           ShowPrintButton="true"
                           PrintButtonText="@L["Button.Print"]"
-                          ReportService="@ProductDetailReportService"
-                          ReportId="@ReportIds.ProductDetail"
-                          ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.Product"]]"
+                          ReportService="@ItemDetailReportService"
+                          ReportId="@ReportIds.ItemDetail"
+                          ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.Item"]]"
                           GetReportDocumentName="@(e => $"品項-{e.Code}")"
                           CustomActionButtons="@CustomActionButtons"
-                          ComponentName="ProductEditModalComponent" />
+                          ComponentName="ItemEditModalComponent" />
 
 @* 品項類型編輯 Modal *@
-<ProductCategoryEditModalComponent @ref="productCategoryEditModal"
+<ItemCategoryEditModalComponent @ref="productCategoryEditModal"
                                   IsVisible="@productCategoryModalManager.IsModalVisible"
                                   IsVisibleChanged="@productCategoryModalManager.HandleModalVisibilityChangedAsync"
-                                  ProductCategoryId="@productCategoryModalManager.SelectedEntityId"
+                                  ItemCategoryId="@productCategoryModalManager.SelectedEntityId"
                                   PrefilledValues="@productCategoryModalManager.PrefilledValues"
-                                  OnProductCategorySaved="@productCategoryModalManager.OnSavedAsync"
+                                  OnItemCategorySaved="@productCategoryModalManager.OnSavedAsync"
                                   OnCancel="@productCategoryModalManager.HandleModalCancelAsync" />
 
 @* 單位編輯 Modal *@
@@ -88,18 +88,18 @@
                        OnCancel="@sizeModalManager.HandleModalCancelAsync" />
 
 @* 品項物料清單編輯 Modal *@
-<ProductCompositionEditModalComponent @ref="productCompositionEditModal"
+<ItemCompositionEditModalComponent @ref="productCompositionEditModal"
                                      IsVisible="@productCompositionModalManager.IsModalVisible"
                                      IsVisibleChanged="@productCompositionModalManager.HandleModalVisibilityChangedAsync"
                                      CompositionId="@productCompositionModalManager.SelectedEntityId"
                                      PrefilledValues="@productCompositionModalManager.PrefilledValues"
-                                     OnCompositionSaved="@OnProductCompositionSavedWrapper"
+                                     OnCompositionSaved="@OnItemCompositionSavedWrapper"
                                      OnCancel="@productCompositionModalManager.HandleModalCancelAsync" />
 
 <!-- 相關單據查看 Modal（物料清單清單）-->
 <RelatedDocumentsModalComponent IsVisible="@showRelatedDocumentsModal"
                                IsVisibleChanged="@((bool visible) => showRelatedDocumentsModal = visible)"
-                               ProductName="@selectedProductName"
+                               ItemName="@selectedItemName"
                                RelatedDocuments="@relatedDocuments"
                                IsLoading="@isLoadingRelatedDocuments"
                                OnDocumentClick="@HandleRelatedDocumentClick"
@@ -109,28 +109,28 @@
     // ===== 必要參數 =====
     [Parameter] public bool IsVisible { get; set; } = false;
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-    [Parameter] public int? ProductId { get; set; }
-    [Parameter] public EventCallback<Product> OnProductSaved { get; set; }
+    [Parameter] public int? ItemId { get; set; }
+    [Parameter] public EventCallback<Item> OnItemSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
 
     // ===== 內部狀態 =====
-    private GenericEditModalComponent<Product, IProductService>? editModalComponent;
+    private GenericEditModalComponent<Item, IItemService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     private List<FormTabDefinition>? tabDefinitions;
 
     // Tab 元件參考
-    private ProductAccountingTab? accountingTab;
-    private ProductPhotoTab? photoTab;
+    private ItemAccountingTab? accountingTab;
+    private ItemPhotoTab? photoTab;
 
     private RenderFragment CreateAccountingTabContent() => __builder =>
     {
-        <ProductAccountingTab @ref="accountingTab" ProductId="@ProductId" />
+        <ItemAccountingTab @ref="accountingTab" ItemId="@ItemId" />
     };
 
     private RenderFragment CreatePhotoTabContent() => __builder =>
     {
-        <ProductPhotoTab @ref="photoTab" ProductId="@ProductId" />
+        <ItemPhotoTab @ref="photoTab" ItemId="@ItemId" />
     };
     
     // 標誌變數，用於追蹤是否需要在實體載入後刷新欄位
@@ -140,7 +140,7 @@
     // ActionButtons 快取機制已移除，改由 GenericEditModalComponent.UpdateAllActionButtons() 統一管理
     
     // 原始資料集合（用於 AutoComplete）
-    private List<ProductCategory> availableProductCategories = new();
+    private List<ItemCategory> availableItemCategories = new();
     private List<Supplier> availableSuppliers = new();
     private List<Unit> availableUnits = new();
     private List<Size> availableSizes = new();
@@ -149,8 +149,8 @@
     private AutoCompleteConfig? autoCompleteConfig;
     
     // Modal 管理器
-    private ProductCategoryEditModalComponent? productCategoryEditModal;
-    private RelatedEntityModalManager<ProductCategory> productCategoryModalManager = default!;
+    private ItemCategoryEditModalComponent? productCategoryEditModal;
+    private RelatedEntityModalManager<ItemCategory> productCategoryModalManager = default!;
     
     private UnitEditModalComponent? unitEditModal;
     private RelatedEntityModalManager<Unit> unitModalManager = default!;
@@ -158,8 +158,8 @@
     private SizeEditModalComponent? sizeEditModal;
     private RelatedEntityModalManager<Size> sizeModalManager = default!;
     
-    private ProductCompositionEditModalComponent? productCompositionEditModal;
-    private RelatedEntityModalManager<ProductComposition> productCompositionModalManager = default!;
+    private ItemCompositionEditModalComponent? productCompositionEditModal;
+    private RelatedEntityModalManager<ItemComposition> productCompositionModalManager = default!;
     
     private ModalManagerCollection modalManagers = default!;
     
@@ -174,7 +174,7 @@
     
     // ===== 相關單據查看（物料清單清單）=====
     private bool showRelatedDocumentsModal = false;
-    private string selectedProductName = string.Empty;
+    private string selectedItemName = string.Empty;
     private List<RelatedDocument>? relatedDocuments = null;
     private bool isLoadingRelatedDocuments = false;
 
@@ -184,22 +184,22 @@
         try
         {
             // 使用 ModalManagerInitHelper 初始化 Modal 管理器
-            modalManagers = ModalManagerInitHelper.CreateBuilder<Product, IProductService>(
+            modalManagers = ModalManagerInitHelper.CreateBuilder<Item, IItemService>(
                     () => editModalComponent,
                     NotificationService,
                     StateHasChanged,
                     LoadAdditionalDataAsync,
                     InitializeFormFieldsAsync)
-                .AddManager<ProductCategory>(nameof(Product.ProductCategoryId), "品項類別")
-                .AddManager<Unit>(nameof(Product.UnitId), "單位")
-                .AddManager<Size>(nameof(Product.SizeId), "尺寸")
+                .AddManager<ItemCategory>(nameof(Item.ItemCategoryId), "品項類別")
+                .AddManager<Unit>(nameof(Item.UnitId), "單位")
+                .AddManager<Size>(nameof(Item.SizeId), "尺寸")
                 .Build();
-            productCategoryModalManager = modalManagers.Get<ProductCategory>(nameof(Product.ProductCategoryId));
-            unitModalManager = modalManagers.Get<Unit>(nameof(Product.UnitId));
-            sizeModalManager = modalManagers.Get<Size>(nameof(Product.SizeId));
+            productCategoryModalManager = modalManagers.Get<ItemCategory>(nameof(Item.ItemCategoryId));
+            unitModalManager = modalManagers.Get<Unit>(nameof(Item.UnitId));
+            sizeModalManager = modalManagers.Get<Size>(nameof(Item.SizeId));
             
             // 初始化品項物料清單 Modal 管理器（獨立初始化）
-            productCompositionModalManager = new RelatedEntityModalManager<ProductComposition>
+            productCompositionModalManager = new RelatedEntityModalManager<ItemComposition>
             {
                 NotificationService = NotificationService,
                 EntityDisplayName = "品項物料清單",
@@ -266,7 +266,7 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         // 只在編輯模式下且實體已載入但還沒檢查過時執行
-        if (IsVisible && ProductId.HasValue && !_hasCheckedEntityLoad && 
+        if (IsVisible && ItemId.HasValue && !_hasCheckedEntityLoad && 
             editModalComponent?.Entity != null && editModalComponent.Entity.Id > 0)
         {
             _hasCheckedEntityLoad = true;
@@ -285,16 +285,16 @@
         // 根據實體狀態正確設定換算欄位的顯示狀態（導航時實體已載入）
         await UpdateProductionUnitConversionFieldAsync();
     }
-    private async Task<Product?> LoadProductData()
+    private async Task<Item?> LoadItemData()
     {
         try
         {
-            if (!ProductId.HasValue)
+            if (!ItemId.HasValue)
             {
                 // 新增模式 - 從系統參數載入預設稅率
                 var defaultTaxRate = await SystemParameterService.GetTaxRateAsync();
                 
-                return new Product
+                return new Item
                 {
                     Status = EntityStatus.Active,
                     TaxRate = defaultTaxRate
@@ -302,7 +302,7 @@
             }
             
             // 編輯模式
-            var product = await ProductService.GetByIdAsync(ProductId.Value);
+            var product = await ItemService.GetByIdAsync(ItemId.Value);
             return product;
         }
         catch (Exception ex)
@@ -317,8 +317,8 @@
         try
         {
             // 載入品項類型
-            var productCategories = await ProductService.GetProductCategoriesAsync();
-            availableProductCategories = productCategories;
+            var productCategories = await ItemService.GetItemCategoriesAsync();
+            availableItemCategories = productCategories;
             productCategoryOptions = productCategories.Select(pc => new SelectOption
             {
                 Text = pc.Name!,
@@ -326,7 +326,7 @@
             }).ToList();
 
             // 載入供應商
-            var suppliers = await ProductService.GetSuppliersAsync();
+            var suppliers = await ItemService.GetSuppliersAsync();
             availableSuppliers = suppliers;
             supplierOptions = suppliers.Select(s => new SelectOption
             {
@@ -335,7 +335,7 @@
             }).ToList();
 
             // 載入單位
-            var units = await ProductService.GetUnitsAsync();
+            var units = await ItemService.GetUnitsAsync();
             availableUnits = units;
             unitOptions = units.Select(u => new SelectOption
             {
@@ -353,11 +353,11 @@
             }).ToList();
             
             // 配置 AutoComplete
-            autoCompleteConfig = new AutoCompleteConfigBuilder<Product>()
-                .AddField(nameof(Product.ProductCategoryId), "Name", availableProductCategories)
-                .AddField(nameof(Product.UnitId), "Name", availableUnits)
-                .AddField(nameof(Product.ProductionUnitId), "Name", availableUnits)
-                .AddField(nameof(Product.SizeId), "Name", availableSizes)
+            autoCompleteConfig = new AutoCompleteConfigBuilder<Item>()
+                .AddField(nameof(Item.ItemCategoryId), "Name", availableItemCategories)
+                .AddField(nameof(Item.UnitId), "Name", availableUnits)
+                .AddField(nameof(Item.ProductionUnitId), "Name", availableUnits)
+                .AddField(nameof(Item.SizeId), "Name", availableSizes)
                 .Build();
         }
         catch (Exception ex)
@@ -372,17 +372,17 @@
         {
             new()
             {
-                PropertyName = nameof(Product.Code),
-                Label = L["Field.ProductCode"],
+                PropertyName = nameof(Item.Code),
+                Label = L["Field.ItemCode"],
                 FieldType = FormFieldType.Text,
-                Placeholder = L["Placeholder.PleaseInput", L["Field.ProductCode"]],
+                Placeholder = L["Placeholder.PleaseInput", L["Field.ItemCode"]],
                 IsRequired = true,
                 MaxLength = 50,
                 HelpText = "品項的唯一識別碼"
             },
             new FormFieldDefinition()
             {
-                PropertyName = nameof(Product.Barcode),
+                PropertyName = nameof(Item.Barcode),
                 Label = L["Field.Barcode"],
                 FieldType = FormFieldType.Text,
                 Placeholder = L["Placeholder.PleaseInput", L["Field.Barcode"]],
@@ -393,10 +393,10 @@
             },
             new()
             {
-                PropertyName = nameof(Product.Name),
-                Label = L["Field.ProductName"],
+                PropertyName = nameof(Item.Name),
+                Label = L["Field.ItemName"],
                 FieldType = FormFieldType.Text,
-                Placeholder = L["Placeholder.PleaseInput", L["Field.ProductName"]],
+                Placeholder = L["Placeholder.PleaseInput", L["Field.ItemName"]],
                 IsRequired = true,
                 MaxLength = 100,
                 HelpText = "品項的完整名稱"
@@ -404,18 +404,18 @@
 
             new()
             {
-                PropertyName = nameof(Product.ProductCategoryId),
+                PropertyName = nameof(Item.ItemCategoryId),
                 Label = L["Field.Type"],
                 FieldType = FormFieldType.AutoComplete,
                 Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.Type"]],
                 IsRequired = true,
                 MinSearchLength = 0,
                 HelpText = "輸入類型名稱進行搜尋，或直接選擇",
-                ActionButtons = await GetProductCategoryActionButtonsAsync()
+                ActionButtons = await GetItemCategoryActionButtonsAsync()
             },
             new()
             {
-                PropertyName = nameof(Product.SizeId),
+                PropertyName = nameof(Item.SizeId),
                 Label = L["Entity.Size"],
                 FieldType = FormFieldType.AutoComplete,
                 Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Size"]],
@@ -426,7 +426,7 @@
             },
             new()
             {
-                PropertyName = nameof(Product.UnitId),
+                PropertyName = nameof(Item.UnitId),
                 Label = L["Field.PurchaseUnit"],
                 FieldType = FormFieldType.AutoComplete,
                 Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.PurchaseUnit"]],
@@ -437,7 +437,7 @@
             },
             new()
             {
-                PropertyName = nameof(Product.ProductionUnitId),
+                PropertyName = nameof(Item.ProductionUnitId),
                 Label = L["Field.ProductionUnit"],
                 FieldType = FormFieldType.AutoComplete,
                 Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.ProductionUnit"]],
@@ -448,7 +448,7 @@
             },
             new FormFieldDefinition()
             {
-                PropertyName = nameof(Product.ProductionUnitConversionRate),
+                PropertyName = nameof(Item.ProductionUnitConversionRate),
                 Label = GetProductionUnitConversionLabel(),
                 LabelFactory = () => GetProductionUnitConversionLabel(),
                 FieldType = FormFieldType.Number,
@@ -461,7 +461,7 @@
             },
             new FormFieldDefinition()
             {
-                PropertyName = nameof(Product.TaxRate),
+                PropertyName = nameof(Item.TaxRate),
                 Label = L["Field.TaxRate"],
                 FieldType = FormFieldType.Number,
                 Placeholder = L["Placeholder.PleaseInput", L["Field.TaxRate"]],
@@ -473,7 +473,7 @@
             // 暫時不讓使用者輸入，因為成本計算還尚未完善
             /*new FormFieldDefinition()
             {
-                PropertyName = nameof(Product.StandardCost),
+                PropertyName = nameof(Item.StandardCost),
                 Label = "成本",
                 FieldType = FormFieldType.Number,
                 Placeholder = "請輸入成本",
@@ -483,7 +483,7 @@
             },*/
             new()
             {
-                PropertyName = nameof(Product.Specification),
+                PropertyName = nameof(Item.Specification),
                 Label = L["Field.Specification"],
                 FieldType = FormFieldType.TextArea,
                 Placeholder = L["Placeholder.PleaseInput", L["Field.Specification"]],
@@ -492,7 +492,7 @@
                 HelpText = "品項的規格說明資訊"
             },
 
-            FormFieldConfigurationHelper.CreateRemarksField<Product>()
+            FormFieldConfigurationHelper.CreateRemarksField<Item>()
         };
 
         // 模組狀態（停用時隱藏對應 Tab）
@@ -500,7 +500,7 @@
         if (!isAccountingEnabled)
             isAccountingEnabled = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
 
-        var builder = FormSectionHelper<Product>.Create()
+        var builder = FormSectionHelper<Item>.Create()
             .AddToSection(FormSectionNames.BasicInfo,
                 p => p.Code,
                 p => p.Barcode,
@@ -511,17 +511,17 @@
                 p => p.UnitId,
                 p => p.ProductionUnitId,
                 p => p.ProductionUnitConversionRate,
-                p => p.ProductCategoryId,
+                p => p.ItemCategoryId,
                 p => p.SizeId,
                 p => p.Specification)
             .AddToSection(FormSectionNames.AdditionalInfo,
                 p => p.Remarks)
-            .GroupIntoTab(L["Tab.ProductData"].ToString(), "bi-box-seam", FormSectionNames.BasicInfo, FormSectionNames.CategoryAndSpecification, FormSectionNames.AdditionalInfo);
+            .GroupIntoTab(L["Tab.ItemData"].ToString(), "bi-box-seam", FormSectionNames.BasicInfo, FormSectionNames.CategoryAndSpecification, FormSectionNames.AdditionalInfo);
 
         if (isAccountingEnabled)
-            builder = builder.GroupIntoCustomTab(L["Tab.AccountingInfo"].ToString(), "bi-calculator", CreateAccountingTabContent(), nameof(ProductAccountingTab));
+            builder = builder.GroupIntoCustomTab(L["Tab.AccountingInfo"].ToString(), "bi-calculator", CreateAccountingTabContent(), nameof(ItemAccountingTab));
 
-        builder = builder.GroupIntoCustomTab(L["Tab.ProductPhotos"].ToString(), "bi-images", CreatePhotoTabContent(), nameof(ProductPhotoTab));
+        builder = builder.GroupIntoCustomTab(L["Tab.ItemPhotos"].ToString(), "bi-images", CreatePhotoTabContent(), nameof(ItemPhotoTab));
 
         var layout = builder.BuildAll();
         formSections = layout.FieldSections;
@@ -536,12 +536,12 @@
     /// <summary>
     /// 產生品項類型操作按鈕 - 使用統一 Helper
     /// </summary>
-    private async Task<List<FieldActionButton>> GetProductCategoryActionButtonsAsync()
+    private async Task<List<FieldActionButton>> GetItemCategoryActionButtonsAsync()
     {
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent, 
             productCategoryModalManager, 
-            nameof(Product.ProductCategoryId)
+            nameof(Item.ItemCategoryId)
         );
     }
 
@@ -553,7 +553,7 @@
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent, 
             unitModalManager, 
-            nameof(Product.UnitId)
+            nameof(Item.UnitId)
         );
     }
 
@@ -565,7 +565,7 @@
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent, 
             unitModalManager, 
-            nameof(Product.ProductionUnitId)
+            nameof(Item.ProductionUnitId)
         );
     }
 
@@ -577,7 +577,7 @@
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent, 
             sizeModalManager, 
-            nameof(Product.SizeId)
+            nameof(Item.SizeId)
         );
     }
 
@@ -632,7 +632,7 @@
     /// <summary>
     /// 包裝品項物料清單儲存事件
     /// </summary>
-    private async Task OnProductCompositionSavedWrapper(ProductComposition savedComposition)
+    private async Task OnItemCompositionSavedWrapper(ItemComposition savedComposition)
     {
         // 物料清單儲存後，不需要自動選擇，只需重新載入清單
         await NotificationService.ShowSuccessAsync("品項物料清單已儲存");
@@ -642,7 +642,7 @@
         if (editModalComponent?.Entity != null)
         {
             // 重新載入物料清單清單資料（更新快取）
-            await LoadProductCompositions();
+            await LoadItemCompositions();
             
             // 如果清單 Modal 正在顯示，觸發 UI 更新
             if (showRelatedDocumentsModal)
@@ -660,20 +660,20 @@
         try
         {
             // 在第一次欄位變更時檢查實體是否已載入，如果是編輯模式且倉庫位置欄位需要刷新，則刷新
-            if (!_entityLoadedButFieldsNotRefreshed && ProductId.HasValue && editModalComponent?.Entity != null)
+            if (!_entityLoadedButFieldsNotRefreshed && ItemId.HasValue && editModalComponent?.Entity != null)
             {
                 _entityLoadedButFieldsNotRefreshed = true;
                 await RefreshFormFieldsAfterEntityLoadAsync();
             }
             
             // 使用統一 Helper 處理品項類型欄位變更
-            if (fieldChange.PropertyName == nameof(Product.ProductCategoryId))
+            if (fieldChange.PropertyName == nameof(Item.ItemCategoryId))
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                     productCategoryModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
             }
             // 使用統一 Helper 處理基本單位欄位變更
-            else if (fieldChange.PropertyName == nameof(Product.UnitId))
+            else if (fieldChange.PropertyName == nameof(Item.UnitId))
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                     unitModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
@@ -682,7 +682,7 @@
                 await UpdateProductionUnitConversionFieldAsync();
             }
             // 使用統一 Helper 處理製程單位欄位變更
-            else if (fieldChange.PropertyName == nameof(Product.ProductionUnitId))
+            else if (fieldChange.PropertyName == nameof(Item.ProductionUnitId))
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                     unitModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
@@ -691,16 +691,16 @@
                 await UpdateProductionUnitConversionFieldAsync();
             }
             // 使用統一 Helper 處理尺寸欄位變更
-            else if (fieldChange.PropertyName == nameof(Product.SizeId))
+            else if (fieldChange.PropertyName == nameof(Item.SizeId))
             {
                 await ActionButtonHelper.UpdateFieldActionButtonsAsync(
                     sizeModalManager, formFields, fieldChange.PropertyName, fieldChange.Value);
             }
             // 換算率數值變更時即時更新欄位標籤
-            else if (fieldChange.PropertyName == nameof(Product.ProductionUnitConversionRate))
+            else if (fieldChange.PropertyName == nameof(Item.ProductionUnitConversionRate))
             {
                 var conversionField = formFields.FirstOrDefault(f =>
-                    f.PropertyName == nameof(Product.ProductionUnitConversionRate));
+                    f.PropertyName == nameof(Item.ProductionUnitConversionRate));
                 if (conversionField != null)
                 {
                     conversionField.Label = GetProductionUnitConversionLabel();
@@ -721,14 +721,14 @@
     /// </summary>
     private RenderFragment? CustomActionButtons => __builder =>
     {
-        @if (ProductId.HasValue && editModalComponent?.Entity?.IsDraft != true)
+        @if (ItemId.HasValue && editModalComponent?.Entity?.IsDraft != true)
         {
             @* 物料清單操作按鈕組 *@
             <div class="d-flex gap-2">
                 @* 查看物料清單清單 *@
                 <GenericButtonComponent
                     Text="查看清單"
-                    OnClick="@ShowProductCompositions"
+                    OnClick="@ShowItemCompositions"
                     Title="查看品項物料清單清單"
                     Variant="ButtonVariant.Blue"
                     Size="ButtonSize.Small">
@@ -749,7 +749,7 @@
     /// <summary>
     /// 顯示品項物料清單清單
     /// </summary>
-    private async Task ShowProductCompositions()
+    private async Task ShowItemCompositions()
     {
         //  關鍵檢查：品項必須先儲存
         if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
@@ -760,7 +760,7 @@
             return;
         }
         
-        selectedProductName = editModalComponent.Entity.Name ?? "未知品項";
+        selectedItemName = editModalComponent.Entity.Name ?? "未知品項";
         
         showRelatedDocumentsModal = true;
         isLoadingRelatedDocuments = true;
@@ -769,7 +769,7 @@
 
         try
         {
-            await LoadProductCompositions();
+            await LoadItemCompositions();
         }
         catch (Exception ex)
         {
@@ -785,7 +785,7 @@
     /// <summary>
     /// 載入品項物料清單清單
     /// </summary>
-    private async Task LoadProductCompositions()
+    private async Task LoadItemCompositions()
     {
         if (editModalComponent?.Entity == null || editModalComponent.Entity.Id <= 0)
         {
@@ -793,7 +793,7 @@
             return;
         }
         
-        relatedDocuments = await RelatedDocumentsHelper.GetProductCompositionsAsync(
+        relatedDocuments = await RelatedDocumentsHelper.GetItemCompositionsAsync(
             editModalComponent.Entity.Id);
     }
     
@@ -802,7 +802,7 @@
     /// </summary>
     private async Task HandleRelatedDocumentClick(RelatedDocument document)
     {
-        if (document.DocumentType == RelatedDocumentType.ProductComposition)
+        if (document.DocumentType == RelatedDocumentType.ItemComposition)
         {
             // 開啟編輯 Modal
             await productCompositionModalManager.OpenModalAsync(document.DocumentId);
@@ -825,7 +825,7 @@
         // 設定預填值（不包含 Code，讓子組件自動產生以確保唯一性）
         var prefilledValues = new Dictionary<string, object?>
         {
-            { nameof(ProductComposition.ParentProductId), editModalComponent.Entity.Id }
+            { nameof(ItemComposition.ParentItemId), editModalComponent.Entity.Id }
         };
         
         // 使用 OpenModalWithPrefilledValuesAsync 開啟新增 Modal
@@ -849,14 +849,14 @@
             }
             
             //  使用統一的 EntityCodeGenerationHelper 產生物料清單編號
-            var newCode = await EntityCodeGenerationHelper.GenerateForEntity<ProductComposition, IProductCompositionService>(
-                ProductCompositionService, "BOM");
+            var newCode = await EntityCodeGenerationHelper.GenerateForEntity<ItemComposition, IItemCompositionService>(
+                ItemCompositionService, "BOM");
             
             //  核心：設定預填值，自動帶入品項
             var prefilledValues = new Dictionary<string, object?>
             {
-                { nameof(ProductComposition.ParentProductId), editModalComponent.Entity.Id },
-                { nameof(ProductComposition.Code), newCode }
+                { nameof(ItemComposition.ParentItemId), editModalComponent.Entity.Id },
+                { nameof(ItemComposition.Code), newCode }
             };
             
             // 使用 ModalManager 開啟新增 Modal
@@ -935,7 +935,7 @@
     private async Task UpdateProductionUnitConversionFieldAsync()
     {
         var conversionField = formFields.FirstOrDefault(f => 
-            f.PropertyName == nameof(Product.ProductionUnitConversionRate));
+            f.PropertyName == nameof(Item.ProductionUnitConversionRate));
             
         if (conversionField != null)
         {

@@ -1,4 +1,4 @@
-namespace ERPCore2.Models.Documents
+﻿namespace ERPCore2.Models.Documents
 {
     /// <summary>
     /// 相關單據資訊 - 用於顯示與明細項目相關的單據列表
@@ -64,7 +64,7 @@ namespace ERPCore2.Models.Documents
             RelatedDocumentType.SetoffDocument => "bi-cash-coin",
             RelatedDocumentType.ReceivingDocument => "bi-box-seam",
             RelatedDocumentType.SalesOrder => "bi-cart-check",
-            RelatedDocumentType.ProductComposition => "bi-diagram-3",
+            RelatedDocumentType.ItemComposition => "bi-diagram-3",
             RelatedDocumentType.DeliveryDocument => "bi-truck",
             RelatedDocumentType.ProductionSchedule => "bi-calendar-check",
             RelatedDocumentType.SupplierRecommendation => "bi-shop",
@@ -83,7 +83,7 @@ namespace ERPCore2.Models.Documents
             RelatedDocumentType.SetoffDocument => "success",
             RelatedDocumentType.ReceivingDocument => "info",
             RelatedDocumentType.SalesOrder => "primary",
-            RelatedDocumentType.ProductComposition => "purple",
+            RelatedDocumentType.ItemComposition => "purple",
             RelatedDocumentType.DeliveryDocument => "info",
             RelatedDocumentType.ProductionSchedule => "dark",
             RelatedDocumentType.SupplierRecommendation => "success",
@@ -102,7 +102,7 @@ namespace ERPCore2.Models.Documents
             RelatedDocumentType.SetoffDocument => "沖款單",
             RelatedDocumentType.ReceivingDocument => "入庫單",
             RelatedDocumentType.SalesOrder => "銷貨訂單",
-            RelatedDocumentType.ProductComposition => "品項物料清單",
+            RelatedDocumentType.ItemComposition => "品項物料清單",
             RelatedDocumentType.DeliveryDocument => "銷貨單",
             RelatedDocumentType.ProductionSchedule => "生產排程",
             RelatedDocumentType.SupplierRecommendation => "供應商推薦",

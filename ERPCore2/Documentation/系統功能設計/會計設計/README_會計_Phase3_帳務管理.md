@@ -1,10 +1,10 @@
 # 會計模組 Phase 3：帳務管理功能
 
 ## 更新日期
-2026-03-14
+2026-03-19
 
 ## 優先等級
-🟡 中優先（Phase 1 完成後可平行推進）
+🟠 高優先（P3-B 已完成；P3-A AR/AP 帳齡分析待實作）
 
 ---
 
@@ -223,12 +223,17 @@ C0002    客戶乙      80,000      40,000                                     1
 - [ ] FN012 / FN013 加入 ReportRegistry.cs
 - [ ] 報表格式正確顯示帳齡分組
 
-### P3-B
-- [ ] `FiscalYearClosingService` 實作完整結帳流程
-- [ ] 結帳後損益科目餘額歸零（JournalEntry 方式驗證）
-- [ ] 結帳後資產負債表顯示保留盈餘正確增加
-- [ ] FiscalPeriodIndex UI 支援年度結帳操作
-- [ ] 結帳後無法對已鎖定期間過帳
+### P3-B（✅ 已完成 2026-03-19）
+- [x] `FiscalYearClosingService` 實作完整結帳流程（PreCheckAsync + ExecuteYearEndClosingAsync）
+- [x] 冪等性保護：已結帳年度拒絕重複執行
+- [x] 前置檢查：確認所有期間 Closed、計算預估損益
+- [x] Step 1：損益科目歸零轉入本期損益 (3351)
+- [x] Step 2：本期損益轉保留盈餘 (3361)
+- [x] Step 3：鎖定所有年度期間（Locked）
+- [x] Step 4：初始化下一年度 12 個期間
+- [x] FiscalPeriodIndex UI：年度結帳 Modal（年度選擇 → 前置檢查 → 二次確認 → 執行 → 結果顯示）
+- [x] **修正 Bug**：`PostEntryAsync` 新增 `Closing` 傳票可過帳到 Closed 期間（原只有 OpeningBalance 例外）
+- [x] 全語系 i18n（YearEnd.* 25 個鍵 × 5 語言）
 
 ### P3-C（✅ 已完成 2026-03-17）
 - [x] 五個 EditModal 新增「相關傳票」折疊區塊

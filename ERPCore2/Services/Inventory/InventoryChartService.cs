@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Models.Charts;
 using ERPCore2.Models.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -15,17 +15,17 @@ public class InventoryChartService : IInventoryChartService
     }
 
     /// <summary>依庫存金額排行 Top N（CurrentStock × AverageCost）</summary>
-    public async Task<List<ChartDataItem>> GetTopProductsByStockValueAsync(int top = 10)
+    public async Task<List<ChartDataItem>> GetTopItemsByStockValueAsync(int top = 10)
     {
         using var context = await _factory.CreateDbContextAsync();
 
         var raw = await (
             from s in context.InventoryStocks
             where s.Status != EntityStatus.Deleted
-            join p in context.Products on s.ProductId equals p.Id
+            join p in context.Items on s.ItemId equals p.Id
             select new
             {
-                ProductName = p.Name ?? "未知品項",
+                ItemName = p.Name ?? "未知品項",
                 s.WeightedAverageCost,
                 s.TotalCurrentStock
             }
@@ -33,7 +33,7 @@ public class InventoryChartService : IInventoryChartService
 
         return raw
             .Where(x => x.TotalCurrentStock > 0)
-            .GroupBy(x => x.ProductName)
+            .GroupBy(x => x.ItemName)
             .Select(g => new ChartDataItem
             {
                 Label = g.Key,
@@ -45,24 +45,24 @@ public class InventoryChartService : IInventoryChartService
     }
 
     /// <summary>依庫存數量排行 Top N</summary>
-    public async Task<List<ChartDataItem>> GetTopProductsByStockQuantityAsync(int top = 10)
+    public async Task<List<ChartDataItem>> GetTopItemsByStockQuantityAsync(int top = 10)
     {
         using var context = await _factory.CreateDbContextAsync();
 
         var raw = await (
             from s in context.InventoryStocks
             where s.Status != EntityStatus.Deleted
-            join p in context.Products on s.ProductId equals p.Id
+            join p in context.Items on s.ItemId equals p.Id
             select new
             {
-                ProductName = p.Name ?? "未知品項",
+                ItemName = p.Name ?? "未知品項",
                 s.TotalCurrentStock
             }
         ).ToListAsync();
 
         return raw
             .Where(x => x.TotalCurrentStock > 0)
-            .GroupBy(x => x.ProductName)
+            .GroupBy(x => x.ItemName)
             .Select(g => new ChartDataItem
             {
                 Label = g.Key,
@@ -102,7 +102,7 @@ public class InventoryChartService : IInventoryChartService
     }
 
     /// <summary>低於安全庫存品項（CurrentStock < MinStockLevel，且 MinStockLevel 有設定）</summary>
-    public async Task<List<ChartDataItem>> GetLowStockProductsAsync()
+    public async Task<List<ChartDataItem>> GetLowStockItemsAsync()
     {
         using var context = await _factory.CreateDbContextAsync();
 
@@ -112,17 +112,17 @@ public class InventoryChartService : IInventoryChartService
                   && d.MinStockLevel.HasValue
                   && d.CurrentStock < d.MinStockLevel.Value
             join s in context.InventoryStocks on d.InventoryStockId equals s.Id
-            join p in context.Products on s.ProductId equals p.Id
+            join p in context.Items on s.ItemId equals p.Id
             select new
             {
-                ProductName  = p.Name ?? "未知品項",
+                ItemName  = p.Name ?? "未知品項",
                 d.CurrentStock,
                 MinStockLevel = d.MinStockLevel!.Value
             }
         ).ToListAsync();
 
         return raw
-            .GroupBy(x => x.ProductName)
+            .GroupBy(x => x.ItemName)
             .Select(g => new ChartDataItem
             {
                 Label = g.Key,
@@ -206,7 +206,7 @@ public class InventoryChartService : IInventoryChartService
 
         return new InventoryChartSummary
         {
-            TotalProductsWithStock = stocks.Count(s => s.TotalCurrentStock > 0),
+            TotalItemsWithStock = stocks.Count(s => s.TotalCurrentStock > 0),
             TotalStockValue        = totalValue,
             LowStockCount          = lowStockCount,
             ExpiringStockCount     = expiringCount,
@@ -227,13 +227,13 @@ public class InventoryChartService : IInventoryChartService
             join w in context.Warehouses on d.WarehouseId equals w.Id
             where (w.Name ?? "") == warehouseLabel
             join s in context.InventoryStocks on d.InventoryStockId equals s.Id
-            join p in context.Products on s.ProductId equals p.Id
+            join p in context.Items on s.ItemId equals p.Id
             orderby d.CurrentStock descending
             select new
             {
                 s.Id,
-                ProductName = p.Name ?? "未知品項",
-                ProductCode = p.Code ?? "",
+                ItemName = p.Name ?? "未知品項",
+                ItemCode = p.Code ?? "",
                 d.CurrentStock,
                 d.AverageCost
             }
@@ -242,7 +242,7 @@ public class InventoryChartService : IInventoryChartService
         return raw.Select(x => new ChartDetailItem
         {
             Id       = x.Id,
-            Name     = x.ProductName,
+            Name     = x.ItemName,
             SubLabel = $"{x.CurrentStock:N2} 件"
         }).ToList();
     }
@@ -257,12 +257,12 @@ public class InventoryChartService : IInventoryChartService
                   && d.MinStockLevel.HasValue
                   && d.CurrentStock < d.MinStockLevel.Value
             join s in context.InventoryStocks on d.InventoryStockId equals s.Id
-            join p in context.Products on s.ProductId equals p.Id
+            join p in context.Items on s.ItemId equals p.Id
             orderby d.CurrentStock ascending
             select new
             {
                 s.Id,
-                ProductName   = p.Name ?? "未知品項",
+                ItemName   = p.Name ?? "未知品項",
                 d.CurrentStock,
                 MinStockLevel = d.MinStockLevel!.Value
             }
@@ -271,7 +271,7 @@ public class InventoryChartService : IInventoryChartService
         return raw.Select(x => new ChartDetailItem
         {
             Id       = x.Id,
-            Name     = x.ProductName,
+            Name     = x.ItemName,
             SubLabel = $"現有 {x.CurrentStock:N2} / 安全 {x.MinStockLevel:N2}"
         }).ToList();
     }

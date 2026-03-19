@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
 using ERPCore2.Models.Enums;
@@ -100,8 +100,8 @@ namespace ERPCore2.Services.Reports
                     WarehouseName = g.Key.WarehouseName,
                     Items = g.Select(d => new StockItem
                     {
-                        ProductCode = stock.Product?.Code ?? "",
-                        ProductName = stock.Product?.Name ?? "",
+                        ItemCode = stock.Item?.Code ?? "",
+                        ItemName = stock.Item?.Name ?? "",
                         LocationName = d.WarehouseLocation?.Name ?? "",
                         CurrentStock = d.CurrentStock,
                         ReservedStock = d.ReservedStock,
@@ -214,7 +214,7 @@ namespace ERPCore2.Services.Reports
         /// </summary>
         private async Task<List<WarehouseGroup>> GetInventoryDataAsync(InventoryStatusCriteria criteria)
         {
-            // 取得所有庫存明細（含 Product、Warehouse、WarehouseLocation 導航屬性）
+            // 取得所有庫存明細（含 Item、Warehouse、WarehouseLocation 導航屬性）
             var allDetails = await _inventoryStockDetailService.GetAllAsync();
             allDetails = allDetails.ExcludeDrafts();
 
@@ -230,8 +230,8 @@ namespace ERPCore2.Services.Reports
             if (criteria.CategoryIds.Any())
             {
                 allDetails = allDetails
-                    .Where(d => d.InventoryStock?.Product?.ProductCategoryId != null &&
-                                criteria.CategoryIds.Contains(d.InventoryStock.Product.ProductCategoryId.Value))
+                    .Where(d => d.InventoryStock?.Item?.ItemCategoryId != null &&
+                                criteria.CategoryIds.Contains(d.InventoryStock.Item.ItemCategoryId.Value))
                     .ToList();
             }
 
@@ -241,8 +241,8 @@ namespace ERPCore2.Services.Reports
                 var keyword = criteria.Keyword;
                 allDetails = allDetails
                     .Where(d =>
-                        (d.InventoryStock?.Product?.Code != null && d.InventoryStock.Product.Code.Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
-                        (d.InventoryStock?.Product?.Name != null && d.InventoryStock.Product.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
+                        (d.InventoryStock?.Item?.Code != null && d.InventoryStock.Item.Code.Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
+                        (d.InventoryStock?.Item?.Name != null && d.InventoryStock.Item.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
                     .ToList();
             }
 
@@ -262,8 +262,8 @@ namespace ERPCore2.Services.Reports
                     WarehouseCode = g.Key.WarehouseCode,
                     Items = g.Select(d => new StockItem
                     {
-                        ProductCode = d.InventoryStock?.Product?.Code ?? "",
-                        ProductName = d.InventoryStock?.Product?.Name ?? "",
+                        ItemCode = d.InventoryStock?.Item?.Code ?? "",
+                        ItemName = d.InventoryStock?.Item?.Name ?? "",
                         LocationName = d.WarehouseLocation?.Name ?? "",
                         CurrentStock = d.CurrentStock,
                         ReservedStock = d.ReservedStock,
@@ -271,7 +271,7 @@ namespace ERPCore2.Services.Reports
                         AverageCost = d.AverageCost ?? 0,
                         StockValue = d.CurrentStock * (d.AverageCost ?? 0)
                     })
-                    .OrderBy(i => i.ProductCode)
+                    .OrderBy(i => i.ItemCode)
                     .ThenBy(i => i.LocationName)
                     .ToList()
                 })
@@ -353,8 +353,8 @@ namespace ERPCore2.Services.Reports
                     {
                         table.AddRow(
                             rowNum.ToString(),
-                            item.ProductCode,
-                            item.ProductName,
+                            item.ItemCode,
+                            item.ItemName,
                             item.LocationName,
                             item.CurrentStock.ToString("N0"),
                             item.ReservedStock.ToString("N0"),
@@ -431,8 +431,8 @@ namespace ERPCore2.Services.Reports
         /// </summary>
         private class StockItem
         {
-            public string ProductCode { get; set; } = "";
-            public string ProductName { get; set; } = "";
+            public string ItemCode { get; set; } = "";
+            public string ItemName { get; set; } = "";
             public string LocationName { get; set; } = "";
             public decimal CurrentStock { get; set; }
             public decimal ReservedStock { get; set; }

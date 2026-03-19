@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ERPCore2.Data.Entities
 {
@@ -16,6 +16,6 @@ namespace ERPCore2.Data.Entities
         /// <summary>
         /// 使用此類型的品項合成記錄
         /// </summary>
-        public ICollection<ProductComposition> ProductCompositions { get; set; } = new List<ProductComposition>();
+        public ICollection<ItemComposition> ItemCompositions { get; set; } = new List<ItemComposition>();
     }
 }

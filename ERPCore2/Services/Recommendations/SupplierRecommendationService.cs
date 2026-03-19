@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
 using ERPCore2.Models;
@@ -34,15 +34,15 @@ namespace ERPCore2.Services
             try
             {
                 // 1. 取得綁定的供應商資料
-                var bindingData = await context.ProductSuppliers
-                    .Where(ps => ps.ProductId == productId && ps.Status == EntityStatus.Active)
+                var bindingData = await context.ItemSuppliers
+                    .Where(ps => ps.ItemId == productId && ps.Status == EntityStatus.Active)
                     .Include(ps => ps.Supplier)
                     .Select(ps => new
                     {
                         ps.SupplierId,
                         SupplierName = ps.Supplier!.CompanyName,
                         SupplierCode = ps.Supplier.Code ?? "",
-                        ps.SupplierProductCode,
+                        ps.SupplierItemCode,
                         ps.IsPreferred,
                         ps.Priority,
                         ps.LastPurchasePrice,
@@ -56,7 +56,7 @@ namespace ERPCore2.Services
                 var historyData = await context.PurchaseOrders
                     .Where(po => po.Status == EntityStatus.Active)
                     .SelectMany(po => po.PurchaseOrderDetails
-                        .Where(pod => pod.ProductId == productId)
+                        .Where(pod => pod.ItemId == productId)
                         .Select(pod => new
                         {
                             po.SupplierId,
@@ -93,7 +93,7 @@ namespace ERPCore2.Services
                         SupplierId = binding.SupplierId,
                         SupplierName = binding.SupplierName!,
                         SupplierCode = binding.SupplierCode!,
-                        SupplierProductCode = binding.SupplierProductCode,
+                        SupplierItemCode = binding.SupplierItemCode,
                         IsPreferred = binding.IsPreferred,
                         Priority = binding.Priority,
                         LastPurchasePrice = binding.LastPurchasePrice ?? history?.LastPurchasePrice,
@@ -141,7 +141,7 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetRecommendedSuppliersAsync), GetType(), _logger,
-                    new { ProductId = productId });
+                    new { ItemId = productId });
                 throw;
             }
         }
@@ -158,7 +158,7 @@ namespace ERPCore2.Services
                 var lastPurchase = await context.PurchaseOrders
                     .Where(po => po.SupplierId == supplierId && po.Status == EntityStatus.Active)
                     .SelectMany(po => po.PurchaseOrderDetails
-                        .Where(pod => pod.ProductId == productId)
+                        .Where(pod => pod.ItemId == productId)
                         .Select(pod => new
                         {
                             pod.UnitPrice,
@@ -174,7 +174,7 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLastPurchasePriceAsync), GetType(), _logger,
-                    new { SupplierId = supplierId, ProductId = productId });
+                    new { SupplierId = supplierId, ItemId = productId });
                 return null;  // 不拋出例外，避免影響主流程
             }
         }

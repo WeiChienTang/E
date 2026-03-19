@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -27,7 +27,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據品項ID查詢異動記錄（透過明細查詢）
         /// </summary>
-        public async Task<List<InventoryTransaction>> GetByProductIdAsync(int productId)
+        public async Task<List<InventoryTransaction>> GetByItemIdAsync(int productId)
         {
             try
             {
@@ -36,16 +36,16 @@ namespace ERPCore2.Services
                     .Include(t => t.Warehouse)
                     .Include(t => t.Employee)
                     .Include(t => t.Details)
-                        .ThenInclude(d => d.Product)
+                        .ThenInclude(d => d.Item)
                     .Include(t => t.Details)
                         .ThenInclude(d => d.WarehouseLocation)
-                    .Where(t => t.Details.Any(d => d.ProductId == productId))
+                    .Where(t => t.Details.Any(d => d.ItemId == productId))
                     .OrderByDescending(t => t.TransactionDate)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAsync), typeof(InventoryTransactionService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemIdAsync), typeof(InventoryTransactionService), _logger);
                 return new List<InventoryTransaction>();
             }
         }
@@ -59,7 +59,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Warehouse)
                     .Include(t => t.Employee)
                     .Include(t => t.Details)
-                        .ThenInclude(d => d.Product)
+                        .ThenInclude(d => d.Item)
                     .Where(t => t.WarehouseId == warehouseId)
                     .OrderByDescending(t => t.TransactionDate)
                     .ToListAsync();
@@ -80,7 +80,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Warehouse)
                     .Include(t => t.Employee)
                     .Include(t => t.Details)
-                        .ThenInclude(d => d.Product)
+                        .ThenInclude(d => d.Item)
                     .Include(t => t.Details)
                         .ThenInclude(d => d.WarehouseLocation)
                     .Where(t => t.TransactionNumber == transactionNumber)
@@ -103,7 +103,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Warehouse)
                     .Include(t => t.Employee)
                     .Include(t => t.Details)
-                        .ThenInclude(d => d.Product)
+                        .ThenInclude(d => d.Item)
                     .Where(t => t.TransactionType == transactionType)
                     .OrderByDescending(t => t.TransactionDate)
                     .ToListAsync();
@@ -124,7 +124,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Warehouse)
                     .Include(t => t.Employee)
                     .Include(t => t.Details)
-                        .ThenInclude(d => d.Product)
+                        .ThenInclude(d => d.Item)
                     .Where(t => t.TransactionDate >= startDate && t.TransactionDate <= endDate)
                     .OrderByDescending(t => t.TransactionDate)
                     .ToListAsync();
@@ -136,7 +136,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<InventoryTransaction>> GetByProductAndDateRangeAsync(int productId, DateTime startDate, DateTime endDate)
+        public async Task<List<InventoryTransaction>> GetByItemAndDateRangeAsync(int productId, DateTime startDate, DateTime endDate)
         {
             try
             {
@@ -145,8 +145,8 @@ namespace ERPCore2.Services
                     .Include(t => t.Warehouse)
                     .Include(t => t.Employee)
                     .Include(t => t.Details)
-                        .ThenInclude(d => d.Product)
-                    .Where(t => t.Details.Any(d => d.ProductId == productId) && 
+                        .ThenInclude(d => d.Item)
+                    .Where(t => t.Details.Any(d => d.ItemId == productId) && 
                                t.TransactionDate >= startDate && 
                                t.TransactionDate <= endDate)
                     .OrderByDescending(t => t.TransactionDate)
@@ -154,7 +154,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductAndDateRangeAsync), typeof(InventoryTransactionService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemAndDateRangeAsync), typeof(InventoryTransactionService), _logger);
                 return new List<InventoryTransaction>();
             }
         }
@@ -168,7 +168,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Warehouse)
                     .Include(t => t.Employee)
                     .Include(t => t.Details)
-                        .ThenInclude(d => d.Product)
+                        .ThenInclude(d => d.Item)
                     .Where(t => t.WarehouseId == warehouseId && 
                                t.TransactionDate >= startDate && 
                                t.TransactionDate <= endDate)
@@ -191,7 +191,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Warehouse)
                     .Include(t => t.Employee)
                     .Include(t => t.Details)
-                        .ThenInclude(d => d.Product)
+                        .ThenInclude(d => d.Item)
                             .ThenInclude(p => p.Unit)
                     .Include(t => t.Details)
                         .ThenInclude(d => d.WarehouseLocation)
@@ -216,7 +216,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Warehouse)
                     .Include(t => t.Employee)
                     .Include(t => t.Details)
-                        .ThenInclude(d => d.Product)
+                        .ThenInclude(d => d.Item)
                     .Where(t => t.SourceDocumentType == sourceDocumentType && 
                                t.SourceDocumentId == sourceDocumentId)
                     .OrderByDescending(t => t.TransactionDate)
@@ -236,14 +236,14 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得品項總入庫量（透過明細彙總）
         /// </summary>
-        public async Task<decimal> GetTotalInboundByProductAsync(int productId, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<decimal> GetTotalInboundByItemAsync(int productId, DateTime? startDate = null, DateTime? endDate = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.InventoryTransactionDetails
                     .Include(d => d.InventoryTransaction)
-                    .Where(d => d.ProductId == productId && d.Quantity > 0);
+                    .Where(d => d.ItemId == productId && d.Quantity > 0);
 
                 if (startDate.HasValue)
                     query = query.Where(d => d.InventoryTransaction.TransactionDate >= startDate.Value);
@@ -255,7 +255,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetTotalInboundByProductAsync), typeof(InventoryTransactionService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetTotalInboundByItemAsync), typeof(InventoryTransactionService), _logger);
                 return 0;
             }
         }
@@ -263,14 +263,14 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得品項總出庫量（透過明細彙總）
         /// </summary>
-        public async Task<decimal> GetTotalOutboundByProductAsync(int productId, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<decimal> GetTotalOutboundByItemAsync(int productId, DateTime? startDate = null, DateTime? endDate = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.InventoryTransactionDetails
                     .Include(d => d.InventoryTransaction)
-                    .Where(d => d.ProductId == productId && d.Quantity < 0);
+                    .Where(d => d.ItemId == productId && d.Quantity < 0);
 
                 if (startDate.HasValue)
                     query = query.Where(d => d.InventoryTransaction.TransactionDate >= startDate.Value);
@@ -282,7 +282,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetTotalOutboundByProductAsync), typeof(InventoryTransactionService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetTotalOutboundByItemAsync), typeof(InventoryTransactionService), _logger);
                 return 0;
             }
         }
@@ -352,7 +352,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得品項的異動歷史（透過明細查詢）
         /// </summary>
-        public async Task<List<InventoryTransactionDetail>> GetProductMovementHistoryDetailsAsync(int productId, int? warehouseId = null)
+        public async Task<List<InventoryTransactionDetail>> GetItemMovementHistoryDetailsAsync(int productId, int? warehouseId = null)
         {
             try
             {
@@ -360,9 +360,9 @@ namespace ERPCore2.Services
                 var query = context.InventoryTransactionDetails
                     .Include(d => d.InventoryTransaction)
                         .ThenInclude(t => t.Warehouse)
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Include(d => d.WarehouseLocation)
-                    .Where(d => d.ProductId == productId);
+                    .Where(d => d.ItemId == productId);
 
                 if (warehouseId.HasValue)
                     query = query.Where(d => d.InventoryTransaction.WarehouseId == warehouseId.Value);
@@ -373,7 +373,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetProductMovementHistoryDetailsAsync), typeof(InventoryTransactionService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetItemMovementHistoryDetailsAsync), typeof(InventoryTransactionService), _logger);
                 return new List<InventoryTransactionDetail>();
             }
         }
@@ -381,7 +381,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得品項的異動歷史（主檔層級）
         /// </summary>
-        public async Task<List<InventoryTransaction>> GetProductMovementHistoryAsync(int productId, int? warehouseId = null)
+        public async Task<List<InventoryTransaction>> GetItemMovementHistoryAsync(int productId, int? warehouseId = null)
         {
             try
             {
@@ -389,8 +389,8 @@ namespace ERPCore2.Services
                 var query = context.InventoryTransactions
                     .Include(t => t.Warehouse)
                     .Include(t => t.Details)
-                        .ThenInclude(d => d.Product)
-                    .Where(t => t.Details.Any(d => d.ProductId == productId));
+                        .ThenInclude(d => d.Item)
+                    .Where(t => t.Details.Any(d => d.ItemId == productId));
 
                 if (warehouseId.HasValue)
                     query = query.Where(t => t.WarehouseId == warehouseId.Value);
@@ -401,7 +401,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetProductMovementHistoryAsync), typeof(InventoryTransactionService), _logger);
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetItemMovementHistoryAsync), typeof(InventoryTransactionService), _logger);
                 return new List<InventoryTransaction>();
             }
         }
@@ -433,7 +433,7 @@ namespace ERPCore2.Services
                 // 查詢該單據的異動記錄
                 var transaction = await context.InventoryTransactions
                     .Include(t => t.Details)
-                        .ThenInclude(d => d.Product)
+                        .ThenInclude(d => d.Item)
                     .FirstOrDefaultAsync(t => t.TransactionNumber == cleanBaseNumber);
                 
                 if (transaction == null)
@@ -443,7 +443,7 @@ namespace ERPCore2.Services
                 
                 // 如果有指定品項ID，只處理包含該品項的明細
                 var relevantDetails = productId.HasValue
-                    ? transaction.Details?.Where(d => d.ProductId == productId.Value).ToList()
+                    ? transaction.Details?.Where(d => d.ItemId == productId.Value).ToList()
                     : transaction.Details?.ToList();
                 
                 if (relevantDetails == null || !relevantDetails.Any())
@@ -462,7 +462,7 @@ namespace ERPCore2.Services
                     
                     // 取得品項名稱（如果有過濾特定品項）
                     var productName = productId.HasValue
-                        ? group.FirstOrDefault()?.Product?.Name
+                        ? group.FirstOrDefault()?.Item?.Name
                         : null;
                     
                     // 根據 OperationType 設定標籤
@@ -597,7 +597,7 @@ namespace ERPCore2.Services
                 .Include(t => t.Warehouse)
                 .Include(t => t.Employee)
                 .Include(t => t.Details)
-                    .ThenInclude(d => d.Product)
+                    .ThenInclude(d => d.Item)
                 .OrderByDescending(t => t.TransactionDate);
         }
 
@@ -610,7 +610,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Warehouse)
                     .Include(t => t.Employee)
                     .Include(t => t.Details)
-                        .ThenInclude(d => d.Product)
+                        .ThenInclude(d => d.Item)
                             .ThenInclude(p => p.Unit)
                     .Include(t => t.Details)
                         .ThenInclude(d => d.WarehouseLocation)
@@ -632,7 +632,7 @@ namespace ERPCore2.Services
                     .Include(t => t.Warehouse)
                     .Include(t => t.Employee)
                     .Include(t => t.Details)
-                        .ThenInclude(d => d.Product)
+                        .ThenInclude(d => d.Item)
                     .Where(t => (t.TransactionNumber.Contains(searchTerm) ||
                                 (t.Remarks != null && t.Remarks.Contains(searchTerm))))
                     .OrderByDescending(t => t.TransactionDate)

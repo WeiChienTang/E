@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +28,7 @@ namespace ERPCore2.Services
         {
             return context.SalesDeliveryDetails
                 .Include(d => d.SalesDelivery)
-                .Include(d => d.Product)
+                .Include(d => d.Item)
                 .Include(d => d.Unit)
                 .Include(d => d.SalesOrderDetail);
         }
@@ -40,7 +40,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesDeliveryDetails
                     .Include(d => d.SalesDelivery)
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Include(d => d.Unit)
                     .Include(d => d.SalesOrderDetail)
                     .FirstOrDefaultAsync(d => d.Id == id);
@@ -65,11 +65,11 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesDeliveryDetails
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Include(d => d.SalesDelivery)
                     .Where(d =>
-                        (d.Product.Name != null && d.Product.Name.Contains(searchTerm)) ||
-                        (d.Product.Barcode != null && d.Product.Barcode.Contains(searchTerm)) ||
+                        (d.Item.Name != null && d.Item.Name.Contains(searchTerm)) ||
+                        (d.Item.Barcode != null && d.Item.Barcode.Contains(searchTerm)) ||
                         (d.SalesDelivery.Code != null && d.SalesDelivery.Code.Contains(searchTerm)))
                     .ToListAsync();
             }
@@ -93,7 +93,7 @@ namespace ERPCore2.Services
                 if (entity.SalesDeliveryId <= 0)
                     errors.Add("銷貨單為必選項目");
 
-                if (entity.ProductId <= 0)
+                if (entity.ItemId <= 0)
                     errors.Add("品項為必選項目");
 
                 if (entity.DeliveryQuantity <= 0)
@@ -114,7 +114,7 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
                     DeliveryId = entity.SalesDeliveryId,
-                    ProductId = entity.ProductId
+                    ItemId = entity.ItemId
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -130,7 +130,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesDeliveryDetails
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Include(d => d.Unit)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
@@ -155,7 +155,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesDeliveryDetails
                     .Include(d => d.SalesDelivery)
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Include(d => d.Unit)
                     .Where(d => d.SalesOrderDetailId == salesOrderDetailId)
                     .ToListAsync();
@@ -182,7 +182,7 @@ namespace ERPCore2.Services
                     query = query.Where(d => d.SalesDeliveryId == deliveryId.Value);
 
                 if (productId.HasValue)
-                    query = query.Where(d => d.ProductId == productId.Value);
+                    query = query.Where(d => d.ItemId == productId.Value);
 
                 var statistics = new SalesDeliveryDetailStatistics
                 {
@@ -198,7 +198,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetStatisticsAsync), GetType(), _logger, new {
                     Method = nameof(GetStatisticsAsync),
                     DeliveryId = deliveryId,
-                    ProductId = productId
+                    ItemId = productId
                 });
                 return new SalesDeliveryDetailStatistics();
             }
@@ -217,7 +217,7 @@ namespace ERPCore2.Services
                 var deliveryDetails = await context.SalesDeliveryDetails
                     .Include(dd => dd.SalesDelivery)
                         .ThenInclude(sd => sd.Customer)
-                    .Include(dd => dd.Product)
+                    .Include(dd => dd.Item)
                     .Include(dd => dd.Unit)
                     .Include(dd => dd.SalesOrderDetail)
                         .ThenInclude(sod => sod!.SalesOrder)
@@ -243,7 +243,7 @@ namespace ERPCore2.Services
                 
                 return returnableDetails
                     .OrderByDescending(dd => dd.SalesDelivery.DeliveryDate)
-                    .ThenBy(dd => dd.Product.Code)
+                    .ThenBy(dd => dd.Item.Code)
                     .ToList();
             }
             catch (Exception ex)
@@ -269,7 +269,7 @@ namespace ERPCore2.Services
                 // 查詢該客戶最近一次的銷貨出貨單
                 var lastSalesDelivery = await context.SalesDeliveries
                     .Include(sd => sd.DeliveryDetails)
-                        .ThenInclude(sdd => sdd.Product)
+                        .ThenInclude(sdd => sdd.Item)
                     .Include(sd => sd.DeliveryDetails)
                         .ThenInclude(sdd => sdd.Warehouse)
                     .Where(sd => sd.CustomerId == customerId 
@@ -283,7 +283,7 @@ namespace ERPCore2.Services
 
                 // 返回該銷貨出貨單的所有明細
                 return lastSalesDelivery.DeliveryDetails
-                    .Where(sdd => sdd.Product != null)
+                    .Where(sdd => sdd.Item != null)
                     .OrderBy(sdd => sdd.Id)
                     .ToList();
             }
@@ -312,9 +312,9 @@ namespace ERPCore2.Services
 
                 // 查詢要刪除的明細,包含相關資訊
                 var entity = await context.SalesDeliveryDetails
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Include(d => d.SalesOrderDetail)
-                        .ThenInclude(sod => sod!.Product)
+                        .ThenInclude(sod => sod!.Item)
                     .FirstOrDefaultAsync(d => d.Id == id);
 
                 if (entity == null)

@@ -1,10 +1,10 @@
 ﻿@* 可重用的品項合成編輯組件 - 可在任何頁面中嵌入 *@
 @using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
-@inject IProductCompositionService ProductCompositionService
-@inject IProductCompositionDetailService ProductCompositionDetailService
-@inject IProductService ProductService
-@inject IProductCategoryService ProductCategoryService
+@inject IItemCompositionService ItemCompositionService
+@inject IItemCompositionDetailService ItemCompositionDetailService
+@inject IItemService ItemService
+@inject IItemCategoryService ItemCategoryService
 @inject IUnitService UnitService
 @inject ICustomerService CustomerService
 @inject IEmployeeService EmployeeService
@@ -14,17 +14,17 @@
 @inject IBOMReportService BOMReportService
 @inject IStringLocalizer<SharedResource> L
 
-<GenericEditModalComponent TEntity="ProductComposition" 
-                          TService="IProductCompositionService"
+<GenericEditModalComponent TEntity="ItemComposition" 
+                          TService="IItemCompositionService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
                           IsVisibleChanged="@IsVisibleChanged"
                           @bind-Id="@CompositionId"
-                          Service="@ProductCompositionService"
-                          EntityName="@L["Entity.ProductComposition"]"
-                          EntityNamePlural="@L["Entity.ProductComposition"]"
-                          ModalTitle="@(CompositionId.HasValue ? L["Message.EditTitle", L["Entity.ProductComposition"]].ToString() : L["Message.CreateTitle", L["Entity.ProductComposition"]].ToString())"
-                          Size="GenericEditModalComponent<ProductComposition, IProductCompositionService>.ModalSize.Desktop"
+                          Service="@ItemCompositionService"
+                          EntityName="@L["Entity.ItemComposition"]"
+                          EntityNamePlural="@L["Entity.ItemComposition"]"
+                          ModalTitle="@(CompositionId.HasValue ? L["Message.EditTitle", L["Entity.ItemComposition"]].ToString() : L["Message.CreateTitle", L["Entity.ItemComposition"]].ToString())"
+                          Size="GenericEditModalComponent<ItemComposition, IItemCompositionService>.ModalSize.Desktop"
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
@@ -36,10 +36,10 @@
                           DataLoader="@LoadCompositionData"
                           SaveHandler="@SaveCompositionWithDetails"
                           ShowDraftButton="true"
-                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.ProductComposition"]]"
-                          SaveSuccessMessage="@(CompositionId.HasValue ? L["Message.UpdateSuccess", L["Entity.ProductComposition"]].ToString() : L["Message.CreateSuccess", L["Entity.ProductComposition"]].ToString())"
-                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.ProductComposition"]]"
-                          RequiredPermission="@PermissionRegistry.ProductComposition.Read"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.ItemComposition"]]"
+                          SaveSuccessMessage="@(CompositionId.HasValue ? L["Message.UpdateSuccess", L["Entity.ItemComposition"]].ToString() : L["Message.CreateSuccess", L["Entity.ItemComposition"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.ItemComposition"]]"
+                          RequiredPermission="@PermissionRegistry.ItemComposition.Read"
                           OnEntitySaved="@OnCompositionSaved"
                           OnCancel="@OnCancel"
 ShowPrintButton="true"
@@ -49,7 +49,7 @@ ShowPrintButton="true"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.BOM"]]"
                           GetReportDocumentName="@(e => $"物料清單-{e.Code}")"
                           CustomModules="@GetCustomModules()"
-                          ComponentName="ProductCompositionEditModalComponent" />
+                          ComponentName="ItemCompositionEditModalComponent" />
 
 @* 客戶編輯 Modal *@
 <CustomerEditModalComponent @ref="customerEditModal"
@@ -72,13 +72,13 @@ ShowPrintButton="true"
     [Parameter] public bool IsVisible { get; set; } = false;
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
     [Parameter] public int? CompositionId { get; set; }
-    [Parameter] public EventCallback<ProductComposition> OnCompositionSaved { get; set; }
+    [Parameter] public EventCallback<ItemComposition> OnCompositionSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
 
     // ===== 內部狀態 =====
-    private GenericEditModalComponent<ProductComposition, IProductCompositionService>? editModalComponent;
-    private ProductCompositionTable? detailManager;
+    private GenericEditModalComponent<ItemComposition, IItemCompositionService>? editModalComponent;
+    private ItemCompositionTable? detailManager;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     
@@ -86,13 +86,13 @@ ShowPrintButton="true"
     private AutoCompleteConfig? autoCompleteConfig;
     
     // 品項列表（分為主檔用和明細用）
-    private List<Product> availableParentProducts = new();    // 主檔品項選項（只顯示自製品項）
-    private List<Product> availableComponentProducts = new(); // 明細材料選項（顯示所有品項）
+    private List<Item> availableParentItems = new();    // 主檔品項選項（只顯示自製品項）
+    private List<Item> availableComponentItems = new(); // 明細材料選項（顯示所有品項）
     private List<Unit> availableUnits = new();
     private List<Customer> availableCustomers = new();
     private List<Employee> availableEmployees = new();
     private List<CompositionCategory> availableCompositionCategories = new();
-    private List<ProductCompositionDetail> compositionDetails = new();
+    private List<ItemCompositionDetail> compositionDetails = new();
     private bool isDetailDataReady = false;
     private int _detailsDataVersion = 0;
 
@@ -110,17 +110,17 @@ ShowPrintButton="true"
         try
         {
             // 使用 ModalManagerInitHelper 初始化 Modal 管理器
-            modalManagers = ModalManagerInitHelper.CreateBuilder<ProductComposition, IProductCompositionService>(
+            modalManagers = ModalManagerInitHelper.CreateBuilder<ItemComposition, IItemCompositionService>(
                     () => editModalComponent,
                     NotificationService,
                     StateHasChanged,
                     LoadAdditionalDataAsync,
                     InitializeFormFieldsAsync)
-                .AddManager<Customer>(nameof(ProductComposition.CustomerId), "客戶")
-                .AddManager<Employee>(nameof(ProductComposition.CreatedByEmployeeId), "員工")
+                .AddManager<Customer>(nameof(ItemComposition.CustomerId), "客戶")
+                .AddManager<Employee>(nameof(ItemComposition.CreatedByEmployeeId), "員工")
                 .Build();
-            customerModalManager = modalManagers.Get<Customer>(nameof(ProductComposition.CustomerId));
-            employeeModalManager = modalManagers.Get<Employee>(nameof(ProductComposition.CreatedByEmployeeId));
+            customerModalManager = modalManagers.Get<Customer>(nameof(ItemComposition.CustomerId));
+            employeeModalManager = modalManagers.Get<Employee>(nameof(ItemComposition.CreatedByEmployeeId));
             
             // 移除自動載入資料，改為在 OnParametersSetAsync 中根據 IsVisible 載入
         }
@@ -135,7 +135,7 @@ ShowPrintButton="true"
         if (IsVisible && !isDataLoaded)
         {
             // 每次開啟 Modal 時都重置明細資料
-            compositionDetails = new List<ProductCompositionDetail>();
+            compositionDetails = new List<ItemCompositionDetail>();
             
             await LoadAdditionalDataAsync();
             await InitializeFormFieldsAsync();
@@ -154,13 +154,13 @@ ShowPrintButton="true"
             isDetailDataReady = false;
             
             // 載入所有品項列表（只查詢一次資料庫）
-            var allProducts = await ProductService.GetAllAsync();
+            var allItems = await ItemService.GetAllAsync();
             
             // 主檔品項選項：顯示所有品項
-            availableParentProducts = allProducts.ToList();
+            availableParentItems = allItems.ToList();
 
             // 明細材料選項：顯示所有品項（但會在 Table 中排除主檔品項）
-            availableComponentProducts = allProducts.ToList();
+            availableComponentItems = allItems.ToList();
             
             // 載入可選擇的單位列表
             availableUnits = await UnitService.GetAllAsync();
@@ -176,11 +176,11 @@ ShowPrintButton="true"
             availableCompositionCategories = await CompositionCategoryService.GetAllAsync();
             
             // 使用 AutoCompleteConfigHelper 建立配置
-            autoCompleteConfig = new AutoCompleteConfigBuilder<ProductComposition>()
-                .AddField(nameof(ProductComposition.ParentProductId), "Name", availableParentProducts)
-                .AddField(nameof(ProductComposition.CompositionCategoryId), "Name", availableCompositionCategories)
-                .AddField(nameof(ProductComposition.CustomerId), "CompanyName", availableCustomers)
-                .AddField(nameof(ProductComposition.CreatedByEmployeeId), "Name", availableEmployees)
+            autoCompleteConfig = new AutoCompleteConfigBuilder<ItemComposition>()
+                .AddField(nameof(ItemComposition.ParentItemId), "Name", availableParentItems)
+                .AddField(nameof(ItemComposition.CompositionCategoryId), "Name", availableCompositionCategories)
+                .AddField(nameof(ItemComposition.CustomerId), "CompanyName", availableCustomers)
+                .AddField(nameof(ItemComposition.CreatedByEmployeeId), "Name", availableEmployees)
                 .Build();
             
             // 注意：不在此處清空 compositionDetails！
@@ -192,13 +192,13 @@ ShowPrintButton="true"
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
-            availableParentProducts = new List<Product>();
-            availableComponentProducts = new List<Product>();
+            availableParentItems = new List<Item>();
+            availableComponentItems = new List<Item>();
             availableUnits = new List<Unit>();
             availableCustomers = new List<Customer>();
             availableEmployees = new List<Employee>();
             availableCompositionCategories = new List<CompositionCategory>();
-            compositionDetails = new List<ProductCompositionDetail>();
+            compositionDetails = new List<ItemCompositionDetail>();
             isDetailDataReady = true;
         }
     }
@@ -212,48 +212,48 @@ ShowPrintButton="true"
         {
             if (!CompositionId.HasValue || CompositionId.Value <= 0)
             {
-                compositionDetails = new List<ProductCompositionDetail>();
+                compositionDetails = new List<ItemCompositionDetail>();
                 return;
             }
 
-            // 從資料庫載入明細（只查詢此合成的明細，包含 ComponentProduct 導航屬性）
-            compositionDetails = await ProductCompositionDetailService.GetDetailsByCompositionIdAsync(CompositionId.Value);
+            // 從資料庫載入明細（只查詢此合成的明細，包含 ComponentItem 導航屬性）
+            compositionDetails = await ItemCompositionDetailService.GetDetailsByCompositionIdAsync(CompositionId.Value);
         }
         catch (Exception ex)
         {
             await NotificationService.ShowErrorAsync($"載入品項合成明細時發生錯誤：{ex.Message}");
-            compositionDetails = new List<ProductCompositionDetail>();
+            compositionDetails = new List<ItemCompositionDetail>();
         }
     }
 
-    private async Task<ProductComposition?> LoadCompositionData()
+    private async Task<ItemComposition?> LoadCompositionData()
     {
         try
         {
             if (!CompositionId.HasValue)
             {
                 // 新增模式：建立新的品項物料清單實體並生成編號
-                var newComposition = new ProductComposition
+                var newComposition = new ItemComposition
                 {
                     Status = EntityStatus.Active
                 };
                 
-                // 先應用預填值（業務邏輯需要的欄位，如 ParentProductId）
+                // 先應用預填值（業務邏輯需要的欄位，如 ParentItemId）
                 PrefilledValueHelper.ApplyPrefilledValues(newComposition, PrefilledValues);
                 
                 // 🔑 關鍵：Code 在應用預填值後才產生，確保每次都是新的
                 // 這樣即使 PrefilledValues 中有舊的 Code，也會被覆蓋為新產生的 Code
-                newComposition.Code = await EntityCodeGenerationHelper.GenerateForEntity<ProductComposition, IProductCompositionService>(ProductCompositionService, "BOM");
+                newComposition.Code = await EntityCodeGenerationHelper.GenerateForEntity<ItemComposition, IItemCompositionService>(ItemCompositionService, "BOM");
                 
                 return newComposition;
             }
 
-            var composition = await ProductCompositionService.GetByIdAsync(CompositionId.Value);
+            var composition = await ItemCompositionService.GetByIdAsync(CompositionId.Value);
 
             if (composition == null)
             {
                 // 如果找不到品項物料清單，建立新的預設實體
-                return new ProductComposition
+                return new ItemComposition
                 {
                     Status = EntityStatus.Active
                 };
@@ -270,7 +270,7 @@ ShowPrintButton="true"
             await NotificationService.ShowErrorAsync($"載入品項物料清單資料時發生錯誤：{ex.Message}");
             
             // 設定安全的預設值，確保程式不會崩潰
-            return new ProductComposition
+            return new ItemComposition
             {
                 Code = "ERROR",
                 Status = EntityStatus.Active
@@ -311,7 +311,7 @@ ShowPrintButton="true"
                 // 基本資訊區段
                 new()
                 {
-                    PropertyName = nameof(ProductComposition.Code),
+                    PropertyName = nameof(ItemComposition.Code),
                     Label = L["Field.CompositionCode"],
                     FieldType = FormFieldType.Text,
                     Placeholder = L["Placeholder.PleaseInput", L["Field.CompositionCode"]],
@@ -320,7 +320,7 @@ ShowPrintButton="true"
                 },
                 new()
                 {
-                    PropertyName = nameof(ProductComposition.Name),
+                    PropertyName = nameof(ItemComposition.Name),
                     Label = L["Field.CompositionName"],
                     FieldType = FormFieldType.Text,
                     Placeholder = L["Placeholder.PleaseInput", L["Field.CompositionName"]],
@@ -329,17 +329,17 @@ ShowPrintButton="true"
                 },
                 new()
                 {
-                    PropertyName = nameof(ProductComposition.ParentProductId),
-                    Label = L["Entity.Product"],
+                    PropertyName = nameof(ItemComposition.ParentItemId),
+                    Label = L["Entity.Item"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Product"]],
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Item"]],
                     IsRequired = true,
                     MinSearchLength = 0,
                     HelpText = "此物料清單所屬的品項（建立後無法變更）"
                 },
                 new()
                 {
-                    PropertyName = nameof(ProductComposition.CompositionCategoryId),
+                    PropertyName = nameof(ItemComposition.CompositionCategoryId),
                     Label = L["Field.CompositionType"],
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = L["Placeholder.PleaseSelect", L["Field.CompositionType"]],
@@ -349,7 +349,7 @@ ShowPrintButton="true"
                 },
                 new()
                 {
-                    PropertyName = nameof(ProductComposition.CustomerId),
+                    PropertyName = nameof(ItemComposition.CustomerId),
                     Label = L["Entity.Customer"],
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = L["Placeholder.PleaseSelect", L["Entity.Customer"]],
@@ -360,7 +360,7 @@ ShowPrintButton="true"
                 },
                 new()
                 {
-                    PropertyName = nameof(ProductComposition.CreatedByEmployeeId),
+                    PropertyName = nameof(ItemComposition.CreatedByEmployeeId),
                     Label = L["Field.CompositionCreator"],
                     FieldType = FormFieldType.AutoComplete,
                     Placeholder = L["Placeholder.PleaseSelect", L["Field.CompositionCreator"]],
@@ -371,7 +371,7 @@ ShowPrintButton="true"
                 },
                 new()
                 {
-                    PropertyName = nameof(ProductComposition.Specification),
+                    PropertyName = nameof(ItemComposition.Specification),
                     Label = L["Field.Spec"],
                     FieldType = FormFieldType.Text,
                     Placeholder = L["Placeholder.PleaseInput", L["Field.Spec"]],
@@ -380,14 +380,14 @@ ShowPrintButton="true"
                     ContainerCssClass = "col-6"
                 },
 
-                FormFieldConfigurationHelper.CreateRemarksField<ProductComposition>(containerCssClass:"col-6")
+                FormFieldConfigurationHelper.CreateRemarksField<ItemComposition>(containerCssClass:"col-6")
             };
 
-            formSections = FormSectionHelper<ProductComposition>.Create()
+            formSections = FormSectionHelper<ItemComposition>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     pc => pc.Code,
                     pc => pc.Name,
-                    pc => pc.ParentProductId,
+                    pc => pc.ParentItemId,
                     pc => pc.CompositionCategoryId,
                     pc => pc.CustomerId,
                     pc => pc.CreatedByEmployeeId)
@@ -403,11 +403,11 @@ ShowPrintButton="true"
     }
 
     // ===== 自訂模組 =====
-    private List<GenericEditModalComponent<ProductComposition, IProductCompositionService>.CustomModule> GetCustomModules()
+    private List<GenericEditModalComponent<ItemComposition, IItemCompositionService>.CustomModule> GetCustomModules()
     {
-        return new List<GenericEditModalComponent<ProductComposition, IProductCompositionService>.CustomModule>
+        return new List<GenericEditModalComponent<ItemComposition, IItemCompositionService>.CustomModule>
         {
-            new GenericEditModalComponent<ProductComposition, IProductCompositionService>.CustomModule
+            new GenericEditModalComponent<ItemComposition, IItemCompositionService>.CustomModule
             {
                 Order = 1,
                 IsVisible = true,
@@ -423,18 +423,18 @@ ShowPrintButton="true"
     {
         <DetailSectionWrapper IsEntityReady="@(editModalComponent?.Entity != null)"
                               IsDetailDataReady="@isDetailDataReady"
-                              IsDataAvailable="@(availableComponentProducts != null && availableComponentProducts.Any() && availableUnits != null && availableUnits.Any())"
+                              IsDataAvailable="@(availableComponentItems != null && availableComponentItems.Any() && availableUnits != null && availableUnits.Any())"
                               DataUnavailableMessage="無可用的品項或單位資料，請聯繫系統管理員"
-                              IsPreconditionMet="@(editModalComponent?.Entity?.ParentProductId > 0)"
+                              IsPreconditionMet="@(editModalComponent?.Entity?.ParentItemId > 0)"
                               PreconditionMessage="請先選擇品項後再進行材料清單管理">
-            <ProductCompositionTable @ref="detailManager"
+            <ItemCompositionTable @ref="detailManager"
                                      @key="@(editModalComponent?.Entity?.Id ?? 0)"
                                      ExistingDetails="@compositionDetails"
                                      DataVersion="@_detailsDataVersion"
                                      MainEntity="@editModalComponent?.Entity"
-                                     AvailableProducts="@availableComponentProducts"
+                                     AvailableItems="@availableComponentItems"
                                      AvailableUnits="@availableUnits"
-                                     ParentProductId="@(editModalComponent?.Entity?.ParentProductId ?? 0)"
+                                     ParentItemId="@(editModalComponent?.Entity?.ParentItemId ?? 0)"
                                      IsReadOnly="false"
                                      OnDetailsChanged="@HandleDetailsChanged"
                                      EmptyMessage="尚未新增材料" />
@@ -442,7 +442,7 @@ ShowPrintButton="true"
     };
     
     // ===== 明細變更處理 =====
-    private void HandleDetailsChanged(List<ProductCompositionDetail> details)
+    private void HandleDetailsChanged(List<ItemCompositionDetail> details)
     {
         editModalComponent?.MarkDirty();
         // 僅更新快取，不遞增 DataVersion（避免 Table 重新載入覆蓋使用者的編輯中狀態）
@@ -455,7 +455,7 @@ ShowPrintButton="true"
     /// <summary>
     /// 自訂儲存邏輯 - 同時儲存主檔和明細
     /// </summary>
-    private async Task<bool> SaveCompositionWithDetails(ProductComposition composition)
+    private async Task<bool> SaveCompositionWithDetails(ItemComposition composition)
     {
         try
         {
@@ -485,7 +485,7 @@ ShowPrintButton="true"
                     // 檢查是否有組件與成品相同（循環參考）
                     foreach (var detail in validDetails)
                     {
-                        if (detail.ComponentProductId == composition.ParentProductId)
+                        if (detail.ComponentItemId == composition.ParentItemId)
                         {
                             await NotificationService.ShowErrorAsync("明細驗證失敗：組件不能是成品本身（會造成循環參考）");
                             return false;
@@ -495,13 +495,13 @@ ShowPrintButton="true"
             }
             
             // ========== 第三步：儲存主檔（驗證都通過後才儲存） ==========
-            ProductComposition? savedComposition = null;
+            ItemComposition? savedComposition = null;
             bool isNewRecord = !CompositionId.HasValue || CompositionId.Value == 0;
             
             if (CompositionId.HasValue && CompositionId.Value > 0)
             {
                 // 更新模式
-                var updateResult = await ProductCompositionService.UpdateAsync(composition);
+                var updateResult = await ItemCompositionService.UpdateAsync(composition);
                 if (updateResult.IsSuccess)
                 {
                     savedComposition = updateResult.Data;
@@ -515,7 +515,7 @@ ShowPrintButton="true"
             else
             {
                 // 新增模式
-                var createResult = await ProductCompositionService.CreateAsync(composition);
+                var createResult = await ItemCompositionService.CreateAsync(composition);
                 if (createResult.IsSuccess && createResult.Data != null)
                 {
                     savedComposition = createResult.Data;
@@ -541,11 +541,11 @@ ShowPrintButton="true"
                 // 設定主檔 ID 並清除 Navigation Properties
                 foreach (var detail in validDetails)
                 {
-                    detail.ProductCompositionId = savedComposition.Id;
+                    detail.ItemCompositionId = savedComposition.Id;
                     
                     // 清除 Navigation Properties（避免 EF Core 追蹤錯誤）
-                    detail.ProductComposition = null!;
-                    detail.ComponentProduct = null!;
+                    detail.ItemComposition = null!;
+                    detail.ComponentItem = null!;
                     detail.Unit = null;
                 }
                 
@@ -553,7 +553,7 @@ ShowPrintButton="true"
                 var deletedIds = detailManager.GetDeletedDetailIds();
                 foreach (var deletedId in deletedIds)
                 {
-                    var deleteResult = await ProductCompositionDetailService.DeleteAsync(deletedId);
+                    var deleteResult = await ItemCompositionDetailService.DeleteAsync(deletedId);
                     if (!deleteResult.IsSuccess)
                     {
                         await NotificationService.ShowErrorAsync($"刪除明細失敗：{deleteResult.ErrorMessage}");
@@ -568,7 +568,7 @@ ShowPrintButton="true"
                 {
                     if (detail.Id > 0)
                     {
-                        var updateResult = await ProductCompositionDetailService.UpdateAsync(detail);
+                        var updateResult = await ItemCompositionDetailService.UpdateAsync(detail);
                         if (!updateResult.IsSuccess)
                         {
                             await NotificationService.ShowErrorAsync($"更新明細失敗：{updateResult.ErrorMessage}");
@@ -577,7 +577,7 @@ ShowPrintButton="true"
                     }
                     else
                     {
-                        var createResult = await ProductCompositionDetailService.CreateAsync(detail);
+                        var createResult = await ItemCompositionDetailService.CreateAsync(detail);
                         if (!createResult.IsSuccess)
                         {
                             await NotificationService.ShowErrorAsync($"新增明細失敗：{createResult.ErrorMessage}");
@@ -617,7 +617,7 @@ ShowPrintButton="true"
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent, 
             customerModalManager, 
-            nameof(ProductComposition.CustomerId)
+            nameof(ItemComposition.CustomerId)
         );
     }
     
@@ -629,7 +629,7 @@ ShowPrintButton="true"
         return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
             editModalComponent, 
             employeeModalManager, 
-            nameof(ProductComposition.CreatedByEmployeeId)
+            nameof(ItemComposition.CreatedByEmployeeId)
         );
     }
     

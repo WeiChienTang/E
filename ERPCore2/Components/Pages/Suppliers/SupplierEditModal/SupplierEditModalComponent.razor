@@ -109,7 +109,7 @@
     // Tab 元件參考（透過 @ref 呼叫公開方法）
     private SupplierVehicleTab? vehicleTab;
     private SupplierBankAccountTab? bankAccountTab;
-    private SupplierProductTab? supplierProductTab;
+    private SupplierItemTab? supplierItemTab;
     private GenericAccountingTabComponent? accountingTab;
     private SupplierVisitTab? visitTab;
     private SupplierTransactionTab? transactionTab;
@@ -123,9 +123,9 @@
         <SupplierVehicleTab @ref="vehicleTab" SupplierId="@SupplierId" />
     };
 
-    private RenderFragment CreateSupplierProductTabContent() => __builder =>
+    private RenderFragment CreateSupplierItemTabContent() => __builder =>
     {
-        <SupplierProductTab @ref="supplierProductTab" SupplierId="@SupplierId" />
+        <SupplierItemTab @ref="supplierItemTab" SupplierId="@SupplierId" />
     };
 
     private RenderFragment CreateAccountingTabContent() => __builder =>
@@ -205,7 +205,7 @@
             {
                 if (vehicleTab != null)         await vehicleTab.LoadAsync(loadedEntityId);
                 if (bankAccountTab != null)     await bankAccountTab.LoadAsync(loadedEntityId);
-                if (supplierProductTab != null) await supplierProductTab.LoadAsync(loadedEntityId);
+                if (supplierItemTab != null) await supplierItemTab.LoadAsync(loadedEntityId);
                 if (accountingTab != null)      await accountingTab.LoadAsync(loadedEntityId);
                 if (visitTab != null)           await visitTab.LoadAsync(loadedEntityId);
                 if (transactionTab != null)     await transactionTab.LoadAsync(loadedEntityId);
@@ -216,7 +216,7 @@
             {
                 vehicleTab?.Clear();
                 bankAccountTab?.Clear();
-                supplierProductTab?.Clear();
+                supplierItemTab?.Clear();
                 accountingTab?.Clear();
                 visitTab?.Clear();
                 transactionTab?.Clear();
@@ -256,7 +256,7 @@
             {
                 vehicleTab?.Clear();
                 bankAccountTab?.Clear();
-                supplierProductTab?.Clear();
+                supplierItemTab?.Clear();
                 visitTab?.Clear();
                 transactionTab?.Clear();
 
@@ -657,7 +657,7 @@
             builder = builder.GroupIntoCustomTab(L["Tab.BankAccounts"].ToString(), "bi-bank", CreateBankAccountTabContent(), nameof(SupplierBankAccountTab));
 
             var layout = builder
-                .GroupIntoCustomTab(L["Tab.SupplierProducts"].ToString(), "bi-box-seam", CreateSupplierProductTabContent(), nameof(SupplierProductTab))
+                .GroupIntoCustomTab(L["Tab.SupplierItems"].ToString(), "bi-box-seam", CreateSupplierItemTabContent(), nameof(SupplierItemTab))
                 .GroupIntoCustomTab(L["Tab.VisitRecords"].ToString(), "bi-journal-text", CreateVisitTabContent(), nameof(SupplierVisitTab))
                 .GroupIntoCustomTab(L["Tab.TransactionRecords"].ToString(), "bi-receipt", CreateTransactionTabContent(), nameof(SupplierTransactionTab))
                 .GroupIntoCustomTab(L["Tab.BusinessCards"].ToString(), "bi-person-vcard", CreateBusinessCardTabContent(), nameof(BusinessCardTab))

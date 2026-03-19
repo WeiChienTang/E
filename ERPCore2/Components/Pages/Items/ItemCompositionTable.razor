@@ -1,9 +1,9 @@
-@* 品項合成明細管理組件 - 繼承 BaseDetailTableComponent，統一架構 *@
-@inherits BaseDetailTableComponent<ProductComposition, ProductCompositionDetail, ProductCompositionTable.CompositionItem>
+﻿@* 品項合成明細管理組件 - 繼承 BaseDetailTableComponent，統一架構 *@
+@inherits BaseDetailTableComponent<ItemComposition, ItemCompositionDetail, ItemCompositionTable.CompositionItem>
 
 @inject INotificationService NotificationService
 @inject IUnitService UnitService
-@inject IProductCategoryService ProductCategoryService
+@inject IItemCategoryService ItemCategoryService
 @inject IStringLocalizer<SharedResource> L
 @using ERPCore2.Helpers
 @using ERPCore2.Data.Entities
@@ -14,17 +14,17 @@
         <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                 Size="ButtonSize.Small"
                                 Text="批量選擇"
-                                OnClick="OpenProductPicker" />
+                                OnClick="OpenItemPicker" />
     </div>
 }
 
-<ProductPickerModal IsVisible="@_showProductPicker"
-                   AvailableProducts="@GetAvailableProducts()"
+<ItemPickerModal IsVisible="@_showItemPicker"
+                   AvailableItems="@GetAvailableItems()"
                    AvailableCategories="@_availableCategories"
                    AvailableUnits="@AvailableUnits"
-                   AlreadyAddedProductIds="@GetAlreadyAddedProductIds()"
-                   OnConfirmed="@HandleProductsSelected"
-                   OnCancelled="@(() => _showProductPicker = false)" />
+                   AlreadyAddedItemIds="@GetAlreadyAddedItemIds()"
+                   OnConfirmed="@HandleItemsSelected"
+                   OnCancelled="@(() => _showItemPicker = false)" />
 
 <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
@@ -49,19 +49,19 @@
 @code {
     // ===== 私有欄位 =====
     private readonly HashSet<int> _deletedDetailIds = new HashSet<int>();
-    private bool _showProductPicker = false;
-    private List<ProductCategory> _availableCategories = new();
+    private bool _showItemPicker = false;
+    private List<ItemCategory> _availableCategories = new();
 
     // ===== 額外參數（非 BaseDetailTableComponent 提供）=====
-    [Parameter] public List<Product> AvailableProducts { get; set; } = new();
+    [Parameter] public List<Item> AvailableItems { get; set; } = new();
     [Parameter] public List<Unit> AvailableUnits { get; set; } = new();
-    [Parameter] public int ParentProductId { get; set; }
+    [Parameter] public int ParentItemId { get; set; }
 
     // ===== 顯示設定 =====
     [Parameter] public string EmptyMessage { get; set; } = "尚未新增材料";
 
     // ===== 保留相容性事件 =====
-    [Parameter] public EventCallback<ProductCompositionDetail> ItemRemoved { get; set; }
+    [Parameter] public EventCallback<ItemCompositionDetail> ItemRemoved { get; set; }
 
     // ===== 生命週期 =====
 
@@ -70,11 +70,11 @@
         try
         {
             // 品項類別只需載入一次，且父組件不提供，在此自行載入
-            _availableCategories = await ProductCategoryService.GetAllAsync();
+            _availableCategories = await ItemCategoryService.GetAllAsync();
         }
         catch
         {
-            _availableCategories = new List<ProductCategory>();
+            _availableCategories = new List<ItemCategory>();
         }
 
         await base.OnInitializedAsync();
@@ -89,12 +89,12 @@
     {
         if (ExistingDetails?.Any() != true) return Task.CompletedTask;
 
-        foreach (var detail in ExistingDetails.Where(d => d.ComponentProduct != null))
+        foreach (var detail in ExistingDetails.Where(d => d.ComponentItem != null))
         {
             Items.Add(new CompositionItem
             {
-                SelectedProduct = detail.ComponentProduct,
-                ProductSearchValue = GetProductDisplayText(detail.ComponentProduct!),
+                SelectedItem = detail.ComponentItem,
+                ItemSearchValue = GetItemDisplayText(detail.ComponentItem!),
                 Quantity = detail.Quantity,
                 UnitId = detail.UnitId,
                 Unit = detail.Unit,
@@ -111,15 +111,15 @@
     protected override bool ComputeHasUndeletableDetails() => false;
 
     /// <summary>
-    /// 將 Items (CompositionItem) 轉換回 ProductCompositionDetail 列表
+    /// 將 Items (CompositionItem) 轉換回 ItemCompositionDetail 列表
     /// </summary>
-    protected override List<ProductCompositionDetail> ConvertItemsToDetails()
+    protected override List<ItemCompositionDetail> ConvertItemsToDetails()
     {
-        var details = new List<ProductCompositionDetail>();
+        var details = new List<ItemCompositionDetail>();
 
-        foreach (var item in Items.Where(x => x.SelectedProduct != null))
+        foreach (var item in Items.Where(x => x.SelectedItem != null))
         {
-            ProductCompositionDetail detail;
+            ItemCompositionDetail detail;
 
             if (item.ExistingDetailEntity != null)
             {
@@ -127,14 +127,14 @@
             }
             else
             {
-                detail = new ProductCompositionDetail
+                detail = new ItemCompositionDetail
                 {
-                    ProductCompositionId = MainEntity?.Id ?? 0
+                    ItemCompositionId = MainEntity?.Id ?? 0
                 };
             }
 
-            detail.ComponentProductId = item.SelectedProduct!.Id;
-            detail.ComponentProduct = item.SelectedProduct;
+            detail.ComponentItemId = item.SelectedItem!.Id;
+            detail.ComponentItem = item.SelectedItem;
             detail.Quantity = item.Quantity;
             detail.UnitId = item.UnitId;
             detail.Unit = item.Unit;
@@ -182,38 +182,38 @@
             {
                 Title = L["Column.MaterialCodeName"],
                 Tooltip = "搜尋並選擇材料（輸入編號或名稱）",
-                PropertyName = nameof(CompositionItem.ProductSearchValue),
-                EmptyCheckPropertyName = nameof(CompositionItem.SelectedProduct),
+                PropertyName = nameof(CompositionItem.ItemSearchValue),
+                EmptyCheckPropertyName = nameof(CompositionItem.SelectedItem),
                 TriggerEmptyRowOnFilled = true,
                 ColumnType = InteractiveColumnType.SearchableSelect,
                 Width = "300px",
                 Placeholder = "請輸入材料編號或名稱",
-                SearchValuePropertyName = nameof(CompositionItem.ProductSearchValue),
-                FilteredItemsPropertyName = nameof(CompositionItem.FilteredProducts),
-                ShowDropdownPropertyName = nameof(CompositionItem.ShowProductDropdown),
-                SelectedIndexPropertyName = nameof(CompositionItem.ProductSelectedIndex),
+                SearchValuePropertyName = nameof(CompositionItem.ItemSearchValue),
+                FilteredItemsPropertyName = nameof(CompositionItem.FilteredItems),
+                ShowDropdownPropertyName = nameof(CompositionItem.ShowItemDropdown),
+                SelectedIndexPropertyName = nameof(CompositionItem.ItemSelectedIndex),
                 ItemDisplayFormatter = (item) =>
                 {
-                    var product = (Product)item;
-                    return GetProductDisplayText(product);
+                    var product = (Item)item;
+                    return GetItemDisplayText(product);
                 },
                 IsDisabledFunc = item => IsReadOnly,
                 OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
                 {
                     var (item, searchValue) = tuple;
-                    OnProductSearchChanged((CompositionItem)item, searchValue);
+                    OnItemSearchChanged((CompositionItem)item, searchValue);
                 }),
                 OnItemSelected = EventCallback.Factory.Create<(object, object?)>(this, async (tuple) =>
                 {
                     var (item, selectedItem) = tuple;
-                    await OnProductSelected((CompositionItem)item, (Product?)selectedItem);
+                    await OnItemSelected((CompositionItem)item, (Item?)selectedItem);
                 }),
                 OnInputFocus = EventCallback.Factory.Create<object>(this, (item) =>
                 {
                     var compositionItem = (CompositionItem)item;
-                    compositionItem.FilteredProducts = GetAvailableProducts().Take(20).ToList();
-                    compositionItem.ShowProductDropdown = true;
-                    compositionItem.ProductSelectedIndex = -1;
+                    compositionItem.FilteredItems = GetAvailableItems().Take(20).ToList();
+                    compositionItem.ShowItemDropdown = true;
+                    compositionItem.ItemSelectedIndex = -1;
                     StateHasChanged();
                 }),
                 OnInputBlur = EventCallback.Factory.Create<object>(this, (item) =>
@@ -221,16 +221,16 @@
                     Task.Delay(200).ContinueWith(_ =>
                     {
                         var compositionItem = (CompositionItem)item;
-                        compositionItem.ShowProductDropdown = false;
+                        compositionItem.ShowItemDropdown = false;
                         InvokeAsync(StateHasChanged);
                     });
                 }),
                 EnableKeyboardNavigation = true,
-                GetDropdownItems = (item) => ((CompositionItem)item).FilteredProducts,
-                GetSelectedIndex = (item) => ((CompositionItem)item).ProductSelectedIndex,
-                SetSelectedIndex = (item, index) => ((CompositionItem)item).ProductSelectedIndex = index,
-                GetShowDropdown = (item) => ((CompositionItem)item).ShowProductDropdown,
-                SetShowDropdown = (item, show) => ((CompositionItem)item).ShowProductDropdown = show,
+                GetDropdownItems = (item) => ((CompositionItem)item).FilteredItems,
+                GetSelectedIndex = (item) => ((CompositionItem)item).ItemSelectedIndex,
+                SetSelectedIndex = (item, index) => ((CompositionItem)item).ItemSelectedIndex = index,
+                GetShowDropdown = (item) => ((CompositionItem)item).ShowItemDropdown,
+                SetShowDropdown = (item, show) => ((CompositionItem)item).ShowItemDropdown = show,
                 MaxDisplayItems = 20
             },
 
@@ -280,7 +280,7 @@
 
     // ===== 工具方法 =====
 
-    private string GetProductDisplayText(Product product)
+    private string GetItemDisplayText(Item product)
     {
         if (!string.IsNullOrWhiteSpace(product.Code))
             return $"{product.Code} - {product.Name}";
@@ -289,39 +289,39 @@
 
     private string GetProductionUnitName(CompositionItem item)
     {
-        if (item.SelectedProduct == null) return string.Empty;
+        if (item.SelectedItem == null) return string.Empty;
 
-        var productionUnitId = item.SelectedProduct.ProductionUnitId ?? item.SelectedProduct.UnitId;
+        var productionUnitId = item.SelectedItem.ProductionUnitId ?? item.SelectedItem.UnitId;
         if (productionUnitId <= 0) return string.Empty;
 
         var unit = AvailableUnits.FirstOrDefault(u => u.Id == productionUnitId);
         return unit?.Name ?? string.Empty;
     }
 
-    private List<Product> GetAvailableProducts()
-        => AvailableProducts.Where(p => p.Id != ParentProductId).ToList();
+    private List<Item> GetAvailableItems()
+        => AvailableItems.Where(p => p.Id != ParentItemId).ToList();
 
-    private HashSet<int> GetAlreadyAddedProductIds()
-        => Items.Where(i => i.SelectedProduct != null)
-                .Select(i => i.SelectedProduct!.Id)
+    private HashSet<int> GetAlreadyAddedItemIds()
+        => Items.Where(i => i.SelectedItem != null)
+                .Select(i => i.SelectedItem!.Id)
                 .ToHashSet();
 
-    private void OpenProductPicker() => _showProductPicker = true;
+    private void OpenItemPicker() => _showItemPicker = true;
 
     // ===== 批量選擇器 =====
 
-    private async Task HandleProductsSelected(List<Product> selectedProducts)
+    private async Task HandleItemsSelected(List<Item> selectedItems)
     {
-        _showProductPicker = false;
+        _showItemPicker = false;
 
-        var alreadyAdded = GetAlreadyAddedProductIds();
-        foreach (var product in selectedProducts.Where(p => !alreadyAdded.Contains(p.Id)))
+        var alreadyAdded = GetAlreadyAddedItemIds();
+        foreach (var product in selectedItems.Where(p => !alreadyAdded.Contains(p.Id)))
         {
             var effectiveUnitId = product.ProductionUnitId ?? (product.UnitId > 0 ? (int?)product.UnitId : null);
             Items.Add(new CompositionItem
             {
-                SelectedProduct = product,
-                ProductSearchValue = GetProductDisplayText(product),
+                SelectedItem = product,
+                ItemSearchValue = GetItemDisplayText(product),
                 UnitId = effectiveUnitId,
                 Unit = AvailableUnits.FirstOrDefault(u => u.Id == effectiveUnitId)
             });
@@ -332,62 +332,62 @@
 
     // ===== SearchableSelect 事件處理 =====
 
-    private void OnProductSearchChanged(CompositionItem item, string? searchValue)
+    private void OnItemSearchChanged(CompositionItem item, string? searchValue)
     {
-        item.ProductSearchValue = searchValue ?? string.Empty;
+        item.ItemSearchValue = searchValue ?? string.Empty;
 
-        var availableProducts = GetAvailableProducts();
+        var availableItems = GetAvailableItems();
 
         if (string.IsNullOrWhiteSpace(searchValue))
         {
-            item.FilteredProducts = availableProducts.Take(20).ToList();
+            item.FilteredItems = availableItems.Take(20).ToList();
         }
         else
         {
-            item.FilteredProducts = availableProducts
+            item.FilteredItems = availableItems
                 .Where(p => (p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false) ||
                             (p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false))
                 .Take(20)
                 .ToList();
         }
 
-        item.ShowProductDropdown = true;
-        item.ProductSelectedIndex = -1;
+        item.ShowItemDropdown = true;
+        item.ItemSelectedIndex = -1;
         StateHasChanged();
     }
 
-    private async Task OnProductSelected(CompositionItem item, Product? selectedProduct)
+    private async Task OnItemSelected(CompositionItem item, Item? selectedItem)
     {
-        if (selectedProduct != null)
+        if (selectedItem != null)
         {
             // 防止選到成品本身
-            if (ParentProductId > 0 && selectedProduct.Id == ParentProductId)
+            if (ParentItemId > 0 && selectedItem.Id == ParentItemId)
             {
                 await NotificationService.ShowErrorAsync("此材料不能是成品本身，請選擇其他材料");
-                item.SelectedProduct = null;
-                item.ProductSearchValue = string.Empty;
+                item.SelectedItem = null;
+                item.ItemSearchValue = string.Empty;
                 StateHasChanged();
                 return;
             }
 
             // 防止重複選擇
-            var existingProductIds = Items
-                .Where(i => i != item && i.SelectedProduct != null)
-                .Select(i => i.SelectedProduct!.Id);
+            var existingItemIds = Items
+                .Where(i => i != item && i.SelectedItem != null)
+                .Select(i => i.SelectedItem!.Id);
 
-            if (existingProductIds.Contains(selectedProduct.Id))
+            if (existingItemIds.Contains(selectedItem.Id))
             {
                 await NotificationService.ShowErrorAsync("此材料已存在，請選擇其他材料");
-                item.SelectedProduct = null;
-                item.ProductSearchValue = string.Empty;
+                item.SelectedItem = null;
+                item.ItemSearchValue = string.Empty;
             }
             else
             {
-                item.SelectedProduct = selectedProduct;
-                item.ProductSearchValue = GetProductDisplayText(selectedProduct);
+                item.SelectedItem = selectedItem;
+                item.ItemSearchValue = GetItemDisplayText(selectedItem);
 
                 // 自動設定製程單位（優先），若無則使用基本單位
-                var effectiveUnitId = selectedProduct.ProductionUnitId ?? (selectedProduct.UnitId > 0 ? (int?)selectedProduct.UnitId : null);
+                var effectiveUnitId = selectedItem.ProductionUnitId ?? (selectedItem.UnitId > 0 ? (int?)selectedItem.UnitId : null);
                 if (effectiveUnitId.HasValue)
                 {
                     item.UnitId = effectiveUnitId.Value;
@@ -397,12 +397,12 @@
         }
         else
         {
-            item.SelectedProduct = null;
-            item.ProductSearchValue = string.Empty;
+            item.SelectedItem = null;
+            item.ItemSearchValue = string.Empty;
         }
 
-        item.ShowProductDropdown = false;
-        item.ProductSelectedIndex = -1;
+        item.ShowItemDropdown = false;
+        item.ItemSelectedIndex = -1;
 
         await NotifyDetailsChangedAsync();
     }
@@ -418,7 +418,7 @@
     public async Task<bool> ValidateAsync()
     {
         var errors = new List<string>();
-        var nonEmptyItems = Items.Where(item => item.SelectedProduct != null).ToList();
+        var nonEmptyItems = Items.Where(item => item.SelectedItem != null).ToList();
 
         if (!nonEmptyItems.Any())
         {
@@ -426,14 +426,14 @@
         }
         else
         {
-            var productIds = nonEmptyItems.Select(item => item.SelectedProduct!.Id).ToList();
+            var productIds = nonEmptyItems.Select(item => item.SelectedItem!.Id).ToList();
             if (productIds.Count != productIds.Distinct().Count())
                 errors.Add("存在重複的材料");
 
             if (nonEmptyItems.Any(item => item.Quantity <= 0))
                 errors.Add("所有材料的數量必須大於 0");
 
-            if (ParentProductId > 0 && nonEmptyItems.Any(item => item.SelectedProduct!.Id == ParentProductId))
+            if (ParentItemId > 0 && nonEmptyItems.Any(item => item.SelectedItem!.Id == ParentItemId))
                 errors.Add("明細中不能包含成品本身");
         }
 
@@ -446,7 +446,7 @@
         return true;
     }
 
-    public List<ProductCompositionDetail> GetNonEmptyItems() => ConvertItemsToDetails();
+    public List<ItemCompositionDetail> GetNonEmptyItems() => ConvertItemsToDetails();
 
     public List<int> GetDeletedDetailIds() => _deletedDetailIds.ToList();
 
@@ -459,16 +459,16 @@
 
     public class CompositionItem
     {
-        public Product? SelectedProduct { get; set; }
+        public Item? SelectedItem { get; set; }
         public decimal Quantity { get; set; } = 0;
         public int? UnitId { get; set; }
         public Unit? Unit { get; set; }
-        public ProductCompositionDetail? ExistingDetailEntity { get; set; }
+        public ItemCompositionDetail? ExistingDetailEntity { get; set; }
 
         // SearchableSelect 支援屬性
-        public string ProductSearchValue { get; set; } = string.Empty;
-        public List<Product> FilteredProducts { get; set; } = new();
-        public bool ShowProductDropdown { get; set; } = false;
-        public int ProductSelectedIndex { get; set; } = -1;
+        public string ItemSearchValue { get; set; } = string.Empty;
+        public List<Item> FilteredItems { get; set; } = new();
+        public bool ShowItemDropdown { get; set; } = false;
+        public int ItemSelectedIndex { get; set; } = -1;
     }
 }

@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -53,7 +53,7 @@ namespace ERPCore2.Services
                     .Include(sd => sd.Warehouse)
                     .Include(sd => sd.ApprovedByUser)
                     .Include(sd => sd.DeliveryDetails)
-                        .ThenInclude(sdd => sdd.Product)
+                        .ThenInclude(sdd => sdd.Item)
                     .FirstOrDefaultAsync(sd => sd.Id == id);
             }
             catch (Exception ex)
@@ -346,37 +346,37 @@ namespace ERPCore2.Services
                                                           d.OperationType != InventoryOperationTypeEnum.Delete).ToList()
                         : allTransactionDetails.Where(d => d.OperationType != InventoryOperationTypeEnum.Delete).ToList();
 
-                    // 建立已處理過庫存的明細字典（ProductId + WarehouseId + LocationId -> 已處理庫存淨值）
-                    var processedInventory = new Dictionary<string, (int ProductId, int WarehouseId, int? LocationId, decimal NetProcessedQuantity)>();
+                    // 建立已處理過庫存的明細字典（ItemId + WarehouseId + LocationId -> 已處理庫存淨值）
+                    var processedInventory = new Dictionary<string, (int ItemId, int WarehouseId, int? LocationId, decimal NetProcessedQuantity)>();
                     
                     foreach (var detail in existingDetails)
                     {
                         var detailWarehouseId = detail.InventoryStockDetail?.WarehouseId ?? detail.InventoryTransaction.WarehouseId;
-                        var key = $"{detail.ProductId}_{detailWarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
+                        var key = $"{detail.ItemId}_{detailWarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
                         if (!processedInventory.ContainsKey(key))
                         {
-                            processedInventory[key] = (detail.ProductId, detailWarehouseId, detail.WarehouseLocationId, 0m);
+                            processedInventory[key] = (detail.ItemId, detailWarehouseId, detail.WarehouseLocationId, 0m);
                         }
                         // 累加所有交易的淨值（注意：出庫的 Quantity 是負數）
                         var oldQty = processedInventory[key].NetProcessedQuantity;
                         var newQty = oldQty + detail.Quantity;
-                        processedInventory[key] = (processedInventory[key].ProductId, processedInventory[key].WarehouseId, 
+                        processedInventory[key] = (processedInventory[key].ItemId, processedInventory[key].WarehouseId, 
                                                   processedInventory[key].LocationId, newQty);
                     }
                     
                     // 建立當前明細字典
-                    var currentInventory = new Dictionary<string, (int ProductId, int? WarehouseId, int? LocationId, decimal CurrentQuantity)>();
+                    var currentInventory = new Dictionary<string, (int ItemId, int? WarehouseId, int? LocationId, decimal CurrentQuantity)>();
                     
                     foreach (var detail in currentDelivery.DeliveryDetails)
                     {
-                        var key = $"{detail.ProductId}_{detail.WarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
+                        var key = $"{detail.ItemId}_{detail.WarehouseId}_{detail.WarehouseLocationId?.ToString() ?? "null"}";
                         if (!currentInventory.ContainsKey(key))
                         {
-                            currentInventory[key] = (detail.ProductId, detail.WarehouseId, detail.WarehouseLocationId, 0);
+                            currentInventory[key] = (detail.ItemId, detail.WarehouseId, detail.WarehouseLocationId, 0);
                         }
                         var oldQty = currentInventory[key].CurrentQuantity;
                         var newQty = oldQty + detail.DeliveryQuantity;
-                        currentInventory[key] = (currentInventory[key].ProductId, currentInventory[key].WarehouseId, 
+                        currentInventory[key] = (currentInventory[key].ItemId, currentInventory[key].WarehouseId, 
                                                currentInventory[key].LocationId, newQty);
                     }
                     
@@ -399,7 +399,7 @@ namespace ERPCore2.Services
                         
                         if (adjustmentNeeded != 0)
                         {
-                            var productId = hasCurrent ? currentInventory[key].ProductId : processedInventory[key].ProductId;
+                            var productId = hasCurrent ? currentInventory[key].ItemId : processedInventory[key].ItemId;
                             var warehouseId = hasCurrent ? currentInventory[key].WarehouseId : processedInventory[key].WarehouseId;
                             var locationId = hasCurrent ? currentInventory[key].LocationId : processedInventory[key].LocationId;
                             
@@ -553,7 +553,7 @@ namespace ERPCore2.Services
                             if (detail.DeliveryQuantity > 0 && detail.WarehouseId.HasValue)
                             {
                                 var addStockResult = await _inventoryStockService.AddStockAsync(
-                                    detail.ProductId,
+                                    detail.ItemId,
                                     detail.WarehouseId.Value,
                                     detail.DeliveryQuantity,
                                     InventoryTransactionTypeEnum.SalesReturn,
@@ -669,7 +669,7 @@ namespace ERPCore2.Services
                         if (detail.DeliveryQuantity > 0 && detail.WarehouseId.HasValue)
                         {
                             var reduceStockResult = await _inventoryStockService.ReduceStockAsync(
-                                detail.ProductId,
+                                detail.ItemId,
                                 detail.WarehouseId.Value,
                                 detail.DeliveryQuantity,
                                 InventoryTransactionTypeEnum.Sale,

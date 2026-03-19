@@ -1,4 +1,4 @@
-@* 批次完工確認 Modal - 選取本週生產中項目，批次輸入入庫數量一次確認 *@
+﻿@* 批次完工確認 Modal - 選取本週生產中項目，批次輸入入庫數量一次確認 *@
 @using ERPCore2.Models.Schedule
 @using ERPCore2.Models.Enums
 @using ERPCore2.Data.Entities
@@ -66,8 +66,8 @@
                                            @onchange="e => row.IsSelected = (bool)(e.Value ?? false)" />
                                 </td>
                                 <td>
-                                    <div class="fw-semibold" style="font-size:0.9rem;">@row.Item.ProductName</div>
-                                    <div class="text-muted" style="font-size:0.8rem;">@row.Item.ProductCode</div>
+                                    <div class="fw-semibold" style="font-size:0.9rem;">@row.Item.ItemName</div>
+                                    <div class="text-muted" style="font-size:0.8rem;">@row.Item.ItemCode</div>
                                 </td>
                                 <td>
                                     <div style="font-size:0.85rem;">@row.Item.CustomerName</div>
@@ -168,7 +168,7 @@
 
                 if (!result.IsSuccess)
                 {
-                    await NotificationService.ShowWarningAsync($"{row.Item.ProductName} 入庫失敗：{result.ErrorMessage}");
+                    await NotificationService.ShowWarningAsync($"{row.Item.ItemName} 入庫失敗：{result.ErrorMessage}");
                     continue;
                 }
                 successCount++;

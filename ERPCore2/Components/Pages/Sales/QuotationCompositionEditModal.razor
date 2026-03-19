@@ -1,13 +1,13 @@
-@* BOM 組合編輯 Modal - 泛用型 BOM 組成編輯器（支援報價單和銷貨訂單） *@
+﻿@* BOM 組合編輯 Modal - 泛用型 BOM 組成編輯器（支援報價單和銷貨訂單） *@
 @* 整合配方選擇 + 組件編輯為單一 Modal，提供明確的儲存/取消操作 *@
 @typeparam TCompositionDetail where TCompositionDetail : BaseEntity, new()
 @using ERPCore2.Components.Shared.UI.Button
 @using ERPCore2.Components.Shared.UI.Input
 @using ERPCore2.Data.Entities
-@inject IProductService ProductService
+@inject IItemService ItemService
 @inject IUnitService UnitService
-@inject IProductCategoryService ProductCategoryService
-@inject IProductCompositionService ProductCompositionService
+@inject IItemCategoryService ItemCategoryService
+@inject IItemCompositionService ItemCompositionService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
 @inject IStringLocalizer<SharedResource> L
@@ -139,7 +139,7 @@
                     <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                             Size="ButtonSize.Small"
                                             Text=@L["Composition.BatchSelect"]
-                                            OnClick="OpenProductPicker" />
+                                            OnClick="OpenItemPicker" />
                 </div>
             }
 
@@ -167,13 +167,13 @@
 </BaseModalComponent>
 
 @* 品項批量選擇器 *@
-<ProductPickerModal IsVisible="@_showProductPicker"
-                   AvailableProducts="@GetPickerAvailableProducts()"
+<ItemPickerModal IsVisible="@_showItemPicker"
+                   AvailableItems="@GetPickerAvailableItems()"
                    AvailableCategories="@_availableCategories"
                    AvailableUnits="@availableUnits"
-                   AlreadyAddedProductIds="@GetAlreadyAddedProductIds()"
-                   OnConfirmed="@HandleProductsSelected"
-                   OnCancelled="@(() => _showProductPicker = false)" />
+                   AlreadyAddedItemIds="@GetAlreadyAddedItemIds()"
+                   OnConfirmed="@HandleItemsSelected"
+                   OnCancelled="@(() => _showItemPicker = false)" />
 
 @* 空白 BOM 儲存確認對話框 *@
 <GenericConfirmModalComponent IsVisible="@_showEmptyConfirm"
@@ -192,8 +192,8 @@
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
     [Parameter] public int? DetailId { get; set; }  // QuotationDetailId 或 SalesOrderDetailId
-    [Parameter] public string ProductName { get; set; } = string.Empty;
-    [Parameter] public int? ProductId { get; set; }
+    [Parameter] public string ItemName { get; set; } = string.Empty;
+    [Parameter] public int? ItemId { get; set; }
     [Parameter] public bool IsReadOnly { get; set; } = false;
     [Parameter] public EventCallback<List<TCompositionDetail>> OnSave { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
@@ -204,7 +204,7 @@
     [Parameter] public EventCallback<bool> IsCustomModeChanged { get; set; }
 
     /// <summary>可用的配方清單（由父元件傳入，用於頂部 pill 按鈕）</summary>
-    [Parameter] public List<ProductComposition> Compositions { get; set; } = new();
+    [Parameter] public List<ItemComposition> Compositions { get; set; } = new();
 
     /// <summary>當前客戶 ID（用於標示「當前客戶」配方）</summary>
     [Parameter] public int? CurrentCustomerId { get; set; }
@@ -218,11 +218,11 @@
     private bool _dataLoadCompleted = true;
     private bool _previousIsVisible = false;
     private List<TCompositionDetail> compositionDetails = new();
-    private List<ERPCore2.Data.Entities.Product> availableProducts = new();
+    private List<ERPCore2.Data.Entities.Item> availableItems = new();
     private List<ERPCore2.Data.Entities.Unit> availableUnits = new();
-    private List<ERPCore2.Data.Entities.ProductCategory> _availableCategories = new();
+    private List<ERPCore2.Data.Entities.ItemCategory> _availableCategories = new();
     private GenericInteractiveTableComponent<TCompositionDetail>? tableComponent;
-    private bool _showProductPicker = false;
+    private bool _showItemPicker = false;
     
     // ===== 配方選擇狀態 =====
     private int? selectedCompositionId;
@@ -255,9 +255,9 @@
         try
         {
             // 載入可用的品項、單位、品項類別
-            availableProducts = await ProductService.GetAllAsync();
+            availableItems = await ItemService.GetAllAsync();
             availableUnits = await UnitService.GetAllAsync();
-            _availableCategories = await ProductCategoryService.GetAllAsync();
+            _availableCategories = await ItemCategoryService.GetAllAsync();
 
             // 優先從父組件的快取載入
             if (OnRequestCachedData != null)
@@ -298,9 +298,9 @@
             }
 
             // Fallback：從品項預設 BOM 複製
-            if (ProductId.HasValue && DetailId.HasValue)
+            if (ItemId.HasValue && DetailId.HasValue)
             {
-                var defaultCompositions = await ProductCompositionService.GetCompositionsByProductIdAsync(ProductId.Value);
+                var defaultCompositions = await ItemCompositionService.GetCompositionsByItemIdAsync(ItemId.Value);
                 if (defaultCompositions.Any())
                 {
                     var defaultComposition = defaultCompositions.First();
@@ -336,20 +336,20 @@
     {
         foreach (var detail in details)
         {
-            var componentProductIdProp = detail.GetType().GetProperty("ComponentProductId");
-            var componentProductProp = detail.GetType().GetProperty("ComponentProduct");
+            var componentItemIdProp = detail.GetType().GetProperty("ComponentItemId");
+            var componentItemProp = detail.GetType().GetProperty("ComponentItem");
             var unitIdProp = detail.GetType().GetProperty("UnitId");
             var unitProp = detail.GetType().GetProperty("Unit");
 
-            var componentProductId = (int)(componentProductIdProp?.GetValue(detail) ?? 0);
-            var componentProduct = componentProductProp?.GetValue(detail);
+            var componentItemId = (int)(componentItemIdProp?.GetValue(detail) ?? 0);
+            var componentItem = componentItemProp?.GetValue(detail);
             var unitId = unitIdProp?.GetValue(detail) as int?;
             var unit = unitProp?.GetValue(detail);
 
-            if (componentProductId > 0 && componentProduct == null)
+            if (componentItemId > 0 && componentItem == null)
             {
-                var product = availableProducts.FirstOrDefault(p => p.Id == componentProductId);
-                componentProductProp?.SetValue(detail, product);
+                var product = availableItems.FirstOrDefault(p => p.Id == componentItemId);
+                componentItemProp?.SetValue(detail, product);
             }
             if (unitId.HasValue && unit == null)
             {
@@ -360,9 +360,9 @@
     }
 private string GetModalTitle()
     {
-        return string.IsNullOrEmpty(ProductName)
+        return string.IsNullOrEmpty(ItemName)
             ? L["Composition.EditBOM"].ToString()
-            : string.Format(L["Composition.EditBOMWithProduct"].ToString(), ProductName);
+            : string.Format(L["Composition.EditBOMWithItem"].ToString(), ItemName);
     }
 
     // ===== 配方快速套用 =====
@@ -426,26 +426,26 @@ private string GetModalTitle()
 
     // ===== 批量選擇器 =====
     
-    private void OpenProductPicker() => _showProductPicker = true;
+    private void OpenItemPicker() => _showItemPicker = true;
 
     /// <summary>
     /// 取得批量選擇器的可用品項（排除主品項本身）
     /// </summary>
-    private List<Product> GetPickerAvailableProducts()
+    private List<Item> GetPickerAvailableItems()
     {
-        if (!ProductId.HasValue) return availableProducts;
-        return availableProducts.Where(p => p.Id != ProductId.Value).ToList();
+        if (!ItemId.HasValue) return availableItems;
+        return availableItems.Where(p => p.Id != ItemId.Value).ToList();
     }
 
     /// <summary>
     /// 取得已加入的品項 ID 集合（用於選擇器標示「已加入」）
     /// </summary>
-    private HashSet<int> GetAlreadyAddedProductIds()
+    private HashSet<int> GetAlreadyAddedItemIds()
     {
         var ids = new HashSet<int>();
         foreach (var detail in compositionDetails)
         {
-            var prop = detail.GetType().GetProperty("ComponentProductId");
+            var prop = detail.GetType().GetProperty("ComponentItemId");
             var id = (int)(prop?.GetValue(detail) ?? 0);
             if (id > 0) ids.Add(id);
         }
@@ -455,24 +455,24 @@ private string GetModalTitle()
     /// <summary>
     /// 批量選擇器確認：將選取的品項建立為 TCompositionDetail 加入表格
     /// </summary>
-    private async Task HandleProductsSelected(List<Product> selectedProducts)
+    private async Task HandleItemsSelected(List<Item> selectedItems)
     {
-        _showProductPicker = false;
-        if (!selectedProducts.Any()) return;
+        _showItemPicker = false;
+        if (!selectedItems.Any()) return;
 
         _dataLoadCompleted = false;
         StateHasChanged();
 
         try
         {
-            var alreadyAdded = GetAlreadyAddedProductIds();
+            var alreadyAdded = GetAlreadyAddedItemIds();
 
-            foreach (var product in selectedProducts.Where(p => !alreadyAdded.Contains(p.Id)))
+            foreach (var product in selectedItems.Where(p => !alreadyAdded.Contains(p.Id)))
             {
                 var item = CreateEmptyItem();
 
-                item.GetType().GetProperty("ComponentProductId")?.SetValue(item, product.Id);
-                item.GetType().GetProperty("ComponentProduct")?.SetValue(item, product);
+                item.GetType().GetProperty("ComponentItemId")?.SetValue(item, product.Id);
+                item.GetType().GetProperty("ComponentItem")?.SetValue(item, product);
                 item.GetType().GetProperty("Quantity")?.SetValue(item, 1m);
                 var batchEffectiveUnitId = product.ProductionUnitId ?? (product.UnitId > 0 ? (int?)product.UnitId : null);
                 item.GetType().GetProperty("UnitId")?.SetValue(item, batchEffectiveUnitId);
@@ -482,7 +482,7 @@ private string GetModalTitle()
                 compositionDetails.Add(item);
             }
 
-            var addedCount = selectedProducts.Count(p => !alreadyAdded.Contains(p.Id));
+            var addedCount = selectedItems.Count(p => !alreadyAdded.Contains(p.Id));
             if (addedCount > 0)
             {
                 await NotificationService.ShowSuccessAsync(
@@ -509,11 +509,11 @@ private string GetModalTitle()
         columns.Add(new InteractiveColumnDefinition
         {
             Title = L["Column.ComponentItem"].ToString(),
-            PropertyName = "ComponentProductId",
-            EmptyCheckPropertyName = "ComponentProduct",
+            PropertyName = "ComponentItemId",
+            EmptyCheckPropertyName = "ComponentItem",
             ColumnType = InteractiveColumnType.Select,
             Width = "200px",
-            Options = availableProducts.Select(p => new InteractiveSelectOption
+            Options = availableItems.Select(p => new InteractiveSelectOption
             {
                 Value = p.Id,
                 Text = $"[{p.Code}] {p.Name}"
@@ -525,10 +525,10 @@ private string GetModalTitle()
                 if (item is TCompositionDetail detail && value != null)
                 {
                     var productId = Convert.ToInt32(value);
-                    var product = availableProducts.FirstOrDefault(p => p.Id == productId);
+                    var product = availableItems.FirstOrDefault(p => p.Id == productId);
                     
-                    detail.GetType().GetProperty("ComponentProductId")?.SetValue(detail, product?.Id ?? 0);
-                    detail.GetType().GetProperty("ComponentProduct")?.SetValue(detail, product);
+                    detail.GetType().GetProperty("ComponentItemId")?.SetValue(detail, product?.Id ?? 0);
+                    detail.GetType().GetProperty("ComponentItem")?.SetValue(detail, product);
                     var selEffectiveUnitId = product?.ProductionUnitId ?? (product?.UnitId > 0 ? (int?)product.UnitId : null);
                     detail.GetType().GetProperty("UnitId")?.SetValue(detail, selEffectiveUnitId);
                     var selUnit = selEffectiveUnitId.HasValue ? availableUnits.FirstOrDefault(u => u.Id == selEffectiveUnitId.Value) : null;
@@ -656,11 +656,11 @@ private string GetModalTitle()
             // 過濾掉空行
             var validDetails = compositionDetails
                 .Where(x => {
-                    var componentProductIdProp = x.GetType().GetProperty("ComponentProductId");
+                    var componentItemIdProp = x.GetType().GetProperty("ComponentItemId");
                     var quantityProp = x.GetType().GetProperty("Quantity");
-                    var componentProductId = (int)(componentProductIdProp?.GetValue(x) ?? 0);
+                    var componentItemId = (int)(componentItemIdProp?.GetValue(x) ?? 0);
                     var quantity = (decimal)(quantityProp?.GetValue(x) ?? 0m);
-                    return componentProductId > 0 && quantity > 0;
+                    return componentItemId > 0 && quantity > 0;
                 })
                 .ToList();
 
@@ -723,14 +723,14 @@ private string GetModalTitle()
             {
                 var duplicates = validDetails
                     .GroupBy(x => {
-                        var prop = x.GetType().GetProperty("ComponentProductId");
+                        var prop = x.GetType().GetProperty("ComponentItemId");
                         return (int)(prop?.GetValue(x) ?? 0);
                     })
                     .Where(g => g.Count() > 1)
                     .Select(g => {
                         var first = g.First();
-                        var productProp = first.GetType().GetProperty("ComponentProduct");
-                        var product = productProp?.GetValue(first) as Product;
+                        var productProp = first.GetType().GetProperty("ComponentItem");
+                        var product = productProp?.GetValue(first) as Item;
                         return product?.Name ?? L["Label.Unknown"].ToString();
                     })
                     .ToList();

@@ -1,4 +1,4 @@
-@*
+﻿@*
     批次轉傳票 Modal 組件
     將進貨、銷貨、退回等業務單據批次產生會計傳票
     使用 BaseModalComponent 統一 Modal 外觀
@@ -355,16 +355,16 @@
         <div class="card mb-3">
             <div class="card-header d-flex align-items-center py-2" style="cursor:pointer" @onclick="@(() => _showMaterialIssue = !_showMaterialIssue)">
                 <i class="bi @(_showMaterialIssue ? "bi-chevron-down" : "bi-chevron-right") me-2"></i>
-                <strong>材料領用</strong>
+                <strong>@L["Journal.MaterialIssue"]</strong>
                 <span class="badge bg-secondary ms-2">@string.Format(L["Journal.PendingCount"], _materialIssues.Count)</span>
-                <span class="ms-2 text-muted small">借：在製品/物料費用 / 貸：品項存貨</span>
+                <span class="ms-2 text-muted small">@L["Journal.MaterialIssueHint"]</span>
             </div>
             @if (_showMaterialIssue)
             {
                 <div class="card-body p-0">
                     @if (_materialIssues.Count == 0)
                     {
-                        <p class="text-muted p-3 mb-0">無待轉傳票的已確認領料單</p>
+                        <p class="text-muted p-3 mb-0">@L["Journal.NoPendingMaterialIssue"]</p>
                     }
                     else
                     {
@@ -373,9 +373,9 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th>@L["Field.Code"]</th>
-                                        <th>領料日期</th>
-                                        <th>用途</th>
-                                        <th class="text-end">預估成本</th>
+                                        <th>@L["Journal.IssueDate"]</th>
+                                        <th>@L["Journal.IssueType"]</th>
+                                        <th class="text-end">@L["Journal.EstimatedCost"]</th>
                                         <th class="text-center" style="width: 100px;">@L["Label.Actions"]</th>
                                     </tr>
                                 </thead>
@@ -387,18 +387,11 @@
                                         <tr>
                                             <td><code>@doc.Code</code></td>
                                             <td>@doc.IssueDate.ToString("yyyy/MM/dd")</td>
-                                            <td>
-                                                @doc.IssueType switch {
-                                                    ERPCore2.Models.Enums.MaterialIssueType.Production => "生產用料",
-                                                    ERPCore2.Models.Enums.MaterialIssueType.GeneralConsumption => "一般消耗",
-                                                    ERPCore2.Models.Enums.MaterialIssueType.Sample => "樣品",
-                                                    _ => doc.IssueType.ToString()
-                                                }
-                                            </td>
+                                            <td>@L[$"MaterialIssueType.{doc.IssueType}"]</td>
                                             <td class="text-end @(totalCost == 0 ? "text-danger" : "")">
                                                 @if (totalCost == 0)
                                                 {
-                                                    <span title="明細 UnitCost 未設定，轉傳票將失敗">⚠ 無成本資料</span>
+                                                    <span title="@L["Journal.NoCostDataTooltip"]">@L["Journal.NoCostData"]</span>
                                                 }
                                                 else
                                                 {
@@ -426,16 +419,16 @@
         <div class="card mb-3">
             <div class="card-header d-flex align-items-center py-2" style="cursor:pointer" @onclick="@(() => _showProductionCompletion = !_showProductionCompletion)">
                 <i class="bi @(_showProductionCompletion ? "bi-chevron-down" : "bi-chevron-right") me-2"></i>
-                <strong>生產完工</strong>
+                <strong>@L["Journal.ProductionCompletion"]</strong>
                 <span class="badge bg-secondary ms-2">@string.Format(L["Journal.PendingCount"], _productionCompletions.Count)</span>
-                <span class="ms-2 text-muted small">借：製成品存貨 / 貸：在製品</span>
+                <span class="ms-2 text-muted small">@L["Journal.ProductionCompletionHint"]</span>
             </div>
             @if (_showProductionCompletion)
             {
                 <div class="card-body p-0">
                     @if (_productionCompletions.Count == 0)
                     {
-                        <p class="text-muted p-3 mb-0">無待轉傳票的生產完工記錄（需已建立庫存異動記錄）</p>
+                        <p class="text-muted p-3 mb-0">@L["Journal.NoPendingProductionCompletion"]</p>
                     }
                     else
                     {
@@ -443,10 +436,10 @@
                             <table class="table table-sm table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>完工日期</th>
-                                        <th>品項</th>
-                                        <th class="text-end">完工數量</th>
-                                        <th class="text-end">成本金額</th>
+                                        <th>@L["Journal.CompletionDate"]</th>
+                                        <th>@L["Journal.ItemName"]</th>
+                                        <th class="text-end">@L["Journal.CompletedQuantity"]</th>
+                                        <th class="text-end">@L["Journal.CostAmount"]</th>
                                         <th class="text-center" style="width: 100px;">@L["Label.Actions"]</th>
                                     </tr>
                                 </thead>
@@ -456,12 +449,12 @@
                                         var amount = c.InventoryTransaction?.TotalAmount ?? 0;
                                         <tr>
                                             <td>@c.CompletionDate.ToString("yyyy/MM/dd")</td>
-                                            <td>@(c.ProductionScheduleItem?.Product?.Name ?? $"#{c.Id}")</td>
+                                            <td>@(c.ProductionScheduleItem?.Item?.Name ?? $"#{c.Id}")</td>
                                             <td class="text-end">@c.CompletedQuantity.ToString("N3")</td>
                                             <td class="text-end @(amount == 0 ? "text-danger" : "")">
                                                 @if (amount == 0)
                                                 {
-                                                    <span title="庫存異動金額為零">⚠ 金額為零</span>
+                                                    <span title="@L["Journal.ZeroAmountTooltip"]">@L["Journal.ZeroAmount"]</span>
                                                 }
                                                 else
                                                 {

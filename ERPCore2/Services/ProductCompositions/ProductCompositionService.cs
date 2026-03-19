@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -10,49 +10,49 @@ namespace ERPCore2.Services
     /// <summary>
     /// 品項合成服務實作 - 繼承 GenericManagementService
     /// </summary>
-    public class ProductCompositionService : GenericManagementService<ProductComposition>, IProductCompositionService
+    public class ItemCompositionService : GenericManagementService<ItemComposition>, IItemCompositionService
     {
         /// <summary>
         /// 完整建構子 - 使用 ILogger
         /// </summary>
-        public ProductCompositionService(
+        public ItemCompositionService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<ProductComposition>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<ItemComposition>> logger) : base(contextFactory, logger)
         {
         }
 
         /// <summary>
         /// 簡易建構子 - 不使用 ILogger
         /// </summary>
-        public ProductCompositionService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        public ItemCompositionService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
         #region 覆寫基底方法
 
-        protected override IQueryable<ProductComposition> BuildGetAllQuery(AppDbContext context)
+        protected override IQueryable<ItemComposition> BuildGetAllQuery(AppDbContext context)
         {
-            return context.ProductCompositions
-                .Include(pc => pc.ParentProduct)
+            return context.ItemCompositions
+                .Include(pc => pc.ParentItem)
                 .Include(pc => pc.Customer)
                 .Include(pc => pc.CreatedByEmployee)
                 .Include(pc => pc.CompositionDetails)
-                    .ThenInclude(pcd => pcd.ComponentProduct)
-                .OrderBy(pc => pc.ParentProductId)
+                    .ThenInclude(pcd => pcd.ComponentItem)
+                .OrderBy(pc => pc.ParentItemId)
                 .ThenBy(pc => pc.Code);
         }
 
-        public override async Task<ProductComposition?> GetByIdAsync(int id)
+        public override async Task<ItemComposition?> GetByIdAsync(int id)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductCompositions
-                    .Include(pc => pc.ParentProduct)
+                return await context.ItemCompositions
+                    .Include(pc => pc.ParentItem)
                     .Include(pc => pc.Customer)
                     .Include(pc => pc.CreatedByEmployee)
                     .Include(pc => pc.CompositionDetails)
-                        .ThenInclude(pcd => pcd.ComponentProduct)
+                        .ThenInclude(pcd => pcd.ComponentItem)
                     .Include(pc => pc.CompositionDetails)
                         .ThenInclude(pcd => pcd.Unit)
                     .FirstOrDefaultAsync(pc => pc.Id == id);
@@ -69,17 +69,17 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<List<ProductComposition>> SearchAsync(string searchTerm)
+        public override async Task<List<ItemComposition>> SearchAsync(string searchTerm)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.ProductCompositions
-                    .Include(pc => pc.ParentProduct)
+                var query = context.ItemCompositions
+                    .Include(pc => pc.ParentItem)
                     .Include(pc => pc.Customer)
                     .Include(pc => pc.CreatedByEmployee)
                     .Include(pc => pc.CompositionDetails)
-                        .ThenInclude(pcd => pcd.ComponentProduct)
+                        .ThenInclude(pcd => pcd.ComponentItem)
                     .AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -87,13 +87,13 @@ namespace ERPCore2.Services
                     var lowerSearchTerm = searchTerm.ToLower();
                     query = query.Where(pc =>
                         (pc.Code != null && pc.Code.ToLower().Contains(lowerSearchTerm)) ||
-                        (pc.ParentProduct != null && pc.ParentProduct.Name != null && pc.ParentProduct.Name.ToLower().Contains(lowerSearchTerm)) ||
+                        (pc.ParentItem != null && pc.ParentItem.Name != null && pc.ParentItem.Name.ToLower().Contains(lowerSearchTerm)) ||
                         (pc.Specification != null && pc.Specification.ToLower().Contains(lowerSearchTerm)) ||
                         (pc.Customer != null && pc.Customer.CompanyName != null && pc.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)));
                 }
 
                 return await query
-                    .OrderBy(pc => pc.ParentProductId)
+                    .OrderBy(pc => pc.ParentItemId)
                     .ThenBy(pc => pc.Code)
                     .ToListAsync();
             }
@@ -105,25 +105,25 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     SearchTerm = searchTerm
                 });
-                return new List<ProductComposition>();
+                return new List<ItemComposition>();
             }
         }
 
-        public override async Task<ServiceResult> ValidateAsync(ProductComposition entity)
+        public override async Task<ServiceResult> ValidateAsync(ItemComposition entity)
         {
             try
             {
                 var errors = new List<string>();
 
                 // 基本驗證
-                if (!entity.ParentProductId.HasValue || entity.ParentProductId.Value <= 0)
+                if (!entity.ParentItemId.HasValue || entity.ParentItemId.Value <= 0)
                     errors.Add("請選擇成品");
 
                 // 檢查物料清單編號是否重複（參考 PurchaseOrderService 的做法）
                 if (!string.IsNullOrWhiteSpace(entity.Code))
                 {
                     using var context = await _contextFactory.CreateDbContextAsync();
-                    var exists = await context.ProductCompositions
+                    var exists = await context.ItemCompositions
                         .AnyAsync(pc => pc.Code == entity.Code && pc.Id != entity.Id);
                     if (exists)
                         errors.Add("物料清單編號已存在");
@@ -141,7 +141,7 @@ namespace ERPCore2.Services
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    ParentProductId = entity.ParentProductId,
+                    ParentItemId = entity.ParentItemId,
                     Code = entity.Code
                 });
                 return ServiceResult.Failure($"驗證品項物料清單時發生錯誤: {ex.Message}");
@@ -150,9 +150,9 @@ namespace ERPCore2.Services
 
         #endregion
 
-        #region IProductCompositionService 實作
+        #region IItemCompositionService 實作
 
-        public async Task<bool> IsProductCompositionCodeExistsAsync(string code, int? excludeId = null)
+        public async Task<bool> IsItemCompositionCodeExistsAsync(string code, int? excludeId = null)
         {
             try
             {
@@ -160,7 +160,7 @@ namespace ERPCore2.Services
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.ProductCompositions.Where(pc => pc.Code == code);
+                var query = context.ItemCompositions.Where(pc => pc.Code == code);
 
                 if (excludeId.HasValue)
                     query = query.Where(pc => pc.Id != excludeId.Value);
@@ -169,9 +169,9 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsProductCompositionCodeExistsAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsItemCompositionCodeExistsAsync), GetType(), _logger, new
                 {
-                    Method = nameof(IsProductCompositionCodeExistsAsync),
+                    Method = nameof(IsItemCompositionCodeExistsAsync),
                     ServiceType = GetType().Name,
                     Code = code,
                     ExcludeId = excludeId
@@ -183,59 +183,59 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得指定品項的所有物料清單（用於相關單據查詢）
         /// </summary>
-        public async Task<List<ProductComposition>> GetByProductIdAsync(int productId)
+        public async Task<List<ItemComposition>> GetByItemIdAsync(int productId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductCompositions
-                    .Include(pc => pc.ParentProduct)
+                return await context.ItemCompositions
+                    .Include(pc => pc.ParentItem)
                     .Include(pc => pc.Customer)
                     .Include(pc => pc.CreatedByEmployee)
                     .Include(pc => pc.CompositionCategory)
-                    .Where(pc => pc.ParentProductId == productId)
+                    .Where(pc => pc.ParentItemId == productId)
                     .OrderByDescending(pc => pc.CreatedAt)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemIdAsync), GetType(), _logger, new
                 {
-                    Method = nameof(GetByProductIdAsync),
+                    Method = nameof(GetByItemIdAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId
+                    ItemId = productId
                 });
-                return new List<ProductComposition>();
+                return new List<ItemComposition>();
             }
         }
         
-        public async Task<List<ProductComposition>> GetCompositionsByProductIdAsync(int productId)
+        public async Task<List<ItemComposition>> GetCompositionsByItemIdAsync(int productId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductCompositions
-                    .Include(pc => pc.ParentProduct)
+                return await context.ItemCompositions
+                    .Include(pc => pc.ParentItem)
                     .Include(pc => pc.Customer)
                     .Include(pc => pc.CreatedByEmployee)
                     .Include(pc => pc.CompositionCategory)
                     .Include(pc => pc.CompositionDetails)
-                        .ThenInclude(pcd => pcd.ComponentProduct)
+                        .ThenInclude(pcd => pcd.ComponentItem)
                     .Include(pc => pc.CompositionDetails)
                         .ThenInclude(pcd => pcd.Unit)
-                    .Where(pc => pc.ParentProductId == productId)
+                    .Where(pc => pc.ParentItemId == productId)
                     .OrderBy(pc => pc.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCompositionsByProductIdAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetCompositionsByItemIdAsync), GetType(), _logger, new
                 {
-                    Method = nameof(GetCompositionsByProductIdAsync),
+                    Method = nameof(GetCompositionsByItemIdAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId
+                    ItemId = productId
                 });
-                return new List<ProductComposition>();
+                return new List<ItemComposition>();
             }
         }
 
@@ -244,7 +244,7 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var composition = await context.ProductCompositions
+                var composition = await context.ItemCompositions
                     .Include(pc => pc.CompositionDetails)
                     .FirstOrDefaultAsync(pc => pc.Id == compositionId);
 
@@ -280,10 +280,10 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var composition = await context.ProductCompositions
-                    .Include(pc => pc.ParentProduct)
+                var composition = await context.ItemCompositions
+                    .Include(pc => pc.ParentItem)
                     .Include(pc => pc.CompositionDetails)
-                        .ThenInclude(pcd => pcd.ComponentProduct)
+                        .ThenInclude(pcd => pcd.ComponentItem)
                     .Include(pc => pc.CompositionDetails)
                         .ThenInclude(pcd => pcd.Unit)
                     .FirstOrDefaultAsync(pc => pc.Id == compositionId);
@@ -311,7 +311,7 @@ namespace ERPCore2.Services
         /// </summary>
         private async Task<object> BuildBomTreeNodeAsync(
             AppDbContext context,
-            ProductComposition composition,
+            ItemComposition composition,
             int currentLevel,
             int maxLevel,
             HashSet<int> processedCompositions)
@@ -324,8 +324,8 @@ namespace ERPCore2.Services
                     id = composition.Id,
                     code = composition.Code,
                     specification = composition.Specification,
-                    productId = composition.ParentProductId,
-                    productName = composition.ParentProduct?.Name,
+                    productId = composition.ParentItemId,
+                    productName = composition.ParentItem?.Name,
                     isCircular = true,
                     children = new List<object>()
                 };
@@ -341,13 +341,13 @@ namespace ERPCore2.Services
                 foreach (var detail in composition.CompositionDetails)
                 {
                     // 檢查組件是否也有 BOM（取第一個配方）
-                    var childComposition = await context.ProductCompositions
-                        .Include(pc => pc.ParentProduct)
+                    var childComposition = await context.ItemCompositions
+                        .Include(pc => pc.ParentItem)
                         .Include(pc => pc.CompositionDetails)
-                            .ThenInclude(pcd => pcd.ComponentProduct)
+                            .ThenInclude(pcd => pcd.ComponentItem)
                         .Include(pc => pc.CompositionDetails)
                             .ThenInclude(pcd => pcd.Unit)
-                        .Where(pc => pc.ParentProductId == detail.ComponentProductId)
+                        .Where(pc => pc.ParentItemId == detail.ComponentItemId)
                         .FirstOrDefaultAsync();
 
                     if (childComposition != null)
@@ -384,9 +384,9 @@ namespace ERPCore2.Services
                             },
                             component = new
                             {
-                                id = detail.ComponentProduct.Id,
-                                code = detail.ComponentProduct.Code,
-                                name = detail.ComponentProduct.Name,
+                                id = detail.ComponentItem.Id,
+                                code = detail.ComponentItem.Code,
+                                name = detail.ComponentItem.Name,
                                 isLeaf = true
                             }
                         });
@@ -403,8 +403,8 @@ namespace ERPCore2.Services
                 customerName = composition.Customer?.CompanyName,
                 createdByEmployeeId = composition.CreatedByEmployeeId,
                 createdByEmployeeName = composition.CreatedByEmployee?.Name,
-                productId = composition.ParentProductId,
-                productName = composition.ParentProduct?.Name,
+                productId = composition.ParentItemId,
+                productName = composition.ParentItem?.Name,
                 level = currentLevel,
                 children
             };
@@ -414,16 +414,16 @@ namespace ERPCore2.Services
 
         #region 伺服器端分頁
 
-        public async Task<(List<ProductComposition> Items, int TotalCount)> GetPagedWithFiltersAsync(
-            Func<IQueryable<ProductComposition>, IQueryable<ProductComposition>>? filterFunc,
+        public async Task<(List<ItemComposition> Items, int TotalCount)> GetPagedWithFiltersAsync(
+            Func<IQueryable<ItemComposition>, IQueryable<ItemComposition>>? filterFunc,
             int pageNumber,
             int pageSize)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                IQueryable<ProductComposition> query = context.ProductCompositions
-                    .Include(c => c.ParentProduct)
+                IQueryable<ItemComposition> query = context.ItemCompositions
+                    .Include(c => c.ParentItem)
                     .Include(c => c.CompositionCategory);
                 if (filterFunc != null) query = filterFunc(query);
                 var totalCount = await query.CountAsync();
@@ -437,7 +437,7 @@ namespace ERPCore2.Services
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetPagedWithFiltersAsync), GetType(), _logger);
-                return (new List<ProductComposition>(), 0);
+                return (new List<ItemComposition>(), 0);
             }
         }
 

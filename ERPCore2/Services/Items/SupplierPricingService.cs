@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
@@ -42,14 +42,14 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SupplierPricings
-                    .Include(sp => sp.Product)
+                    .Include(sp => sp.Item)
                     .Include(sp => sp.Supplier)
                     .Where(sp => (
-                        (sp.Product != null && sp.Product.Name != null && sp.Product.Name.Contains(searchTerm)) ||
-                        (sp.Product != null && sp.Product.Code != null && sp.Product.Code.Contains(searchTerm)) ||
+                        (sp.Item != null && sp.Item.Name != null && sp.Item.Name.Contains(searchTerm)) ||
+                        (sp.Item != null && sp.Item.Code != null && sp.Item.Code.Contains(searchTerm)) ||
                         (sp.Supplier != null && sp.Supplier.CompanyName != null && sp.Supplier.CompanyName.Contains(searchTerm)) ||
                         (sp.Supplier != null && sp.Supplier.Code != null && sp.Supplier.Code.Contains(searchTerm)) ||
-                        (sp.SupplierProductCode != null && sp.SupplierProductCode.Contains(searchTerm)) ||
+                        (sp.SupplierItemCode != null && sp.SupplierItemCode.Contains(searchTerm)) ||
                         (sp.Currency != null && sp.Currency.Contains(searchTerm))
                     ))
                     .OrderByDescending(sp => sp.EffectiveDate)
@@ -76,7 +76,7 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 // 基本驗證
-                if (entity.ProductId <= 0)
+                if (entity.ItemId <= 0)
                     errors.Add("品項為必填欄位");
 
                 if (entity.SupplierId <= 0)
@@ -101,11 +101,11 @@ namespace ERPCore2.Services
                     errors.Add("失效日期必須大於生效日期");
 
                 // 檢查品項是否存在
-                if (entity.ProductId > 0)
+                if (entity.ItemId > 0)
                 {
                     using var context = await _contextFactory.CreateDbContextAsync();
-                    var productExists = await context.Products
-                        .AnyAsync(p => p.Id == entity.ProductId);
+                    var productExists = await context.Items
+                        .AnyAsync(p => p.Id == entity.ItemId);
                     if (!productExists)
                         errors.Add("指定的品項不存在");
                 }
@@ -121,9 +121,9 @@ namespace ERPCore2.Services
                 }
 
                 // 檢查供應商品項編號是否重複
-                if (!string.IsNullOrWhiteSpace(entity.SupplierProductCode) && entity.SupplierId > 0)
+                if (!string.IsNullOrWhiteSpace(entity.SupplierItemCode) && entity.SupplierId > 0)
                 {
-                    var isCodeExists = await IsSupplierProductCodeExistsAsync(entity.SupplierId, entity.SupplierProductCode, entity.Id == 0 ? null : entity.Id);
+                    var isCodeExists = await IsSupplierItemCodeExistsAsync(entity.SupplierId, entity.SupplierItemCode, entity.Id == 0 ? null : entity.Id);
                     if (isCodeExists)
                         errors.Add("供應商品項編號已存在");
                 }
@@ -139,7 +139,7 @@ namespace ERPCore2.Services
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    ProductId = entity.ProductId,
+                    ItemId = entity.ItemId,
                     SupplierId = entity.SupplierId 
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
@@ -156,7 +156,7 @@ namespace ERPCore2.Services
         protected override IQueryable<SupplierPricing> BuildGetAllQuery(AppDbContext context)
         {
             return context.SupplierPricings
-                .Include(sp => sp.Product)
+                .Include(sp => sp.Item)
                 .Include(sp => sp.Supplier)
                 .OrderByDescending(sp => sp.EffectiveDate);
         }
@@ -170,7 +170,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SupplierPricings
-                    .Include(sp => sp.Product)
+                    .Include(sp => sp.Item)
                     .Include(sp => sp.Supplier)
                     .FirstOrDefaultAsync(sp => sp.Id == id);
             }
@@ -192,24 +192,24 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據品項ID取得供應商定價
         /// </summary>
-        public async Task<List<SupplierPricing>> GetByProductIdAsync(int productId)
+        public async Task<List<SupplierPricing>> GetByItemIdAsync(int productId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SupplierPricings
-                    .Include(sp => sp.Product)
+                    .Include(sp => sp.Item)
                     .Include(sp => sp.Supplier)
-                    .Where(sp => sp.ProductId == productId)
+                    .Where(sp => sp.ItemId == productId)
                     .OrderByDescending(sp => sp.EffectiveDate)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByProductIdAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemIdAsync), GetType(), _logger, new { 
+                    Method = nameof(GetByItemIdAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId 
+                    ItemId = productId 
                 });
                 return new List<SupplierPricing>();
             }
@@ -224,7 +224,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SupplierPricings
-                    .Include(sp => sp.Product)
+                    .Include(sp => sp.Item)
                     .Include(sp => sp.Supplier)
                     .Where(sp => sp.SupplierId == supplierId)
                     .OrderByDescending(sp => sp.EffectiveDate)
@@ -244,24 +244,24 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據品項ID和供應商ID取得定價
         /// </summary>
-        public async Task<List<SupplierPricing>> GetByProductIdAndSupplierIdAsync(int productId, int supplierId)
+        public async Task<List<SupplierPricing>> GetByItemIdAndSupplierIdAsync(int productId, int supplierId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SupplierPricings
-                    .Include(sp => sp.Product)
+                    .Include(sp => sp.Item)
                     .Include(sp => sp.Supplier)
-                    .Where(sp => sp.ProductId == productId && sp.SupplierId == supplierId)
+                    .Where(sp => sp.ItemId == productId && sp.SupplierId == supplierId)
                     .OrderByDescending(sp => sp.EffectiveDate)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAndSupplierIdAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByProductIdAndSupplierIdAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemIdAndSupplierIdAsync), GetType(), _logger, new { 
+                    Method = nameof(GetByItemIdAndSupplierIdAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId,
+                    ItemId = productId,
                     SupplierId = supplierId 
                 });
                 return new List<SupplierPricing>();
@@ -279,9 +279,9 @@ namespace ERPCore2.Services
                 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SupplierPricings
-                    .Include(sp => sp.Product)
+                    .Include(sp => sp.Item)
                     .Include(sp => sp.Supplier)
-                    .Where(sp => sp.ProductId == productId && 
+                    .Where(sp => sp.ItemId == productId && 
                                 sp.EffectiveDate <= checkDate &&
                                 (sp.ExpiryDate == null || sp.ExpiryDate > checkDate))
                     .OrderBy(sp => sp.PurchasePrice)
@@ -292,7 +292,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetEffectivePricingAsync), GetType(), _logger, new { 
                     Method = nameof(GetEffectivePricingAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId,
+                    ItemId = productId,
                     AsOfDate = asOfDate 
                 });
                 return new List<SupplierPricing>();
@@ -302,17 +302,17 @@ namespace ERPCore2.Services
         /// <summary>
         /// 檢查供應商品項編號是否已存在
         /// </summary>
-        public async Task<bool> IsSupplierProductCodeExistsAsync(int supplierId, string supplierProductCode, int? excludeId = null)
+        public async Task<bool> IsSupplierItemCodeExistsAsync(int supplierId, string supplierItemCode, int? excludeId = null)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(supplierProductCode))
+                if (string.IsNullOrWhiteSpace(supplierItemCode))
                     return false;
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.SupplierPricings
                     .Where(sp => sp.SupplierId == supplierId && 
-                                sp.SupplierProductCode == supplierProductCode);
+                                sp.SupplierItemCode == supplierItemCode);
 
                 if (excludeId.HasValue)
                     query = query.Where(sp => sp.Id != excludeId.Value);
@@ -321,11 +321,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsSupplierProductCodeExistsAsync), GetType(), _logger, new { 
-                    Method = nameof(IsSupplierProductCodeExistsAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsSupplierItemCodeExistsAsync), GetType(), _logger, new { 
+                    Method = nameof(IsSupplierItemCodeExistsAsync),
                     ServiceType = GetType().Name,
                     SupplierId = supplierId,
-                    SupplierProductCode = supplierProductCode,
+                    SupplierItemCode = supplierItemCode,
                     ExcludeId = excludeId 
                 });
                 return false;
@@ -335,29 +335,29 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據供應商品項編號查詢
         /// </summary>
-        public async Task<List<SupplierPricing>> GetBySupplierProductCodeAsync(int supplierId, string supplierProductCode)
+        public async Task<List<SupplierPricing>> GetBySupplierItemCodeAsync(int supplierId, string supplierItemCode)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(supplierProductCode))
+                if (string.IsNullOrWhiteSpace(supplierItemCode))
                     return new List<SupplierPricing>();
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SupplierPricings
-                    .Include(sp => sp.Product)
+                    .Include(sp => sp.Item)
                     .Include(sp => sp.Supplier)
                     .Where(sp => sp.SupplierId == supplierId && 
-                                sp.SupplierProductCode == supplierProductCode)
+                                sp.SupplierItemCode == supplierItemCode)
                     .OrderByDescending(sp => sp.EffectiveDate)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySupplierProductCodeAsync), GetType(), _logger, new { 
-                    Method = nameof(GetBySupplierProductCodeAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetBySupplierItemCodeAsync), GetType(), _logger, new { 
+                    Method = nameof(GetBySupplierItemCodeAsync),
                     ServiceType = GetType().Name,
                     SupplierId = supplierId,
-                    SupplierProductCode = supplierProductCode 
+                    SupplierItemCode = supplierItemCode 
                 });
                 return new List<SupplierPricing>();
             }
@@ -374,7 +374,7 @@ namespace ERPCore2.Services
                 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SupplierPricings
-                    .Include(sp => sp.Product)
+                    .Include(sp => sp.Item)
                     .Include(sp => sp.Supplier)
                     .Where(sp => sp.ExpiryDate.HasValue &&
                                 sp.ExpiryDate <= checkDate &&

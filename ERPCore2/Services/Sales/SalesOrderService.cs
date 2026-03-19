@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Models;
@@ -65,7 +65,7 @@ namespace ERPCore2.Services
                     .Include(so => so.Employee)
                     .Include(so => so.ApprovedByUser)
                     .Include(so => so.SalesOrderDetails)
-                    .ThenInclude(sod => sod.Product)
+                    .ThenInclude(sod => sod.Item)
                     .FirstOrDefaultAsync(so => so.Id == id);
             }
             catch (Exception ex)
@@ -268,7 +268,7 @@ namespace ERPCore2.Services
                     .Include(so => so.Employee)
                     .Include(so => so.ApprovedByUser)
                     .Include(so => so.SalesOrderDetails)
-                        .ThenInclude(sod => sod.Product)
+                        .ThenInclude(sod => sod.Item)
                     .Include(so => so.SalesOrderDetails)
                         .ThenInclude(sod => sod.Unit)
                     .Include(so => so.SalesOrderDetails)
@@ -303,10 +303,10 @@ namespace ERPCore2.Services
 
                 var errors = new List<string>();
                 
-                foreach (var detail in salesOrderDetails.Where(d => d.ProductId > 0 && d.OrderQuantity > 0))
+                foreach (var detail in salesOrderDetails.Where(d => d.ItemId > 0 && d.OrderQuantity > 0))
                 {
                     using var context = await _contextFactory.CreateDbContextAsync();
-                    var product = await context.Products.FindAsync(detail.ProductId);
+                    var product = await context.Items.FindAsync(detail.ItemId);
                     var productName = $"{product?.Code ?? "N/A"} - {product?.Name ?? "未知品項"}";
                     
                     // 1. 檢查是否選擇倉庫
@@ -318,7 +318,7 @@ namespace ERPCore2.Services
 
                     // 2. 檢查指定倉庫的庫存（合併計算該倉庫內所有位置的庫存）
                     var availableStock = await _inventoryStockService.GetTotalAvailableStockByWarehouseAsync(
-                        detail.ProductId, detail.WarehouseId.Value);
+                        detail.ItemId, detail.WarehouseId.Value);
                         
                     if (availableStock < detail.OrderQuantity)
                     {
@@ -367,7 +367,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var orderWithDetails = await context.SalesOrders
                     .Include(so => so.SalesOrderDetails)
-                        .ThenInclude(sod => sod.Product)
+                        .ThenInclude(sod => sod.Item)
                     .FirstOrDefaultAsync(so => so.Id == entity.Id);
 
                 if (orderWithDetails == null || orderWithDetails.SalesOrderDetails == null || !orderWithDetails.SalesOrderDetails.Any())
@@ -381,7 +381,7 @@ namespace ERPCore2.Services
                     // 檢查 1：出貨記錄檢查（新增）
                     if (detail.DeliveredQuantity > 0)
                     {
-                        var productName = detail.Product?.Name ?? "未知品項";
+                        var productName = detail.Item?.Name ?? "未知品項";
                         return ServiceResult.Failure(
                             $"無法刪除此銷貨訂單，因為品項「{productName}」已有出貨記錄（已出貨 {detail.DeliveredQuantity} 個）");
                     }
@@ -389,7 +389,7 @@ namespace ERPCore2.Services
                     // 檢查 2：生產排程檢查（新增）
                     if (detail.ScheduledQuantity > 0)
                     {
-                        var productName = detail.Product?.Name ?? "未知品項";
+                        var productName = detail.Item?.Name ?? "未知品項";
                         return ServiceResult.Failure(
                             $"無法刪除此銷貨訂單，因為品項「{productName}」已有生產排程（已排程 {detail.ScheduledQuantity} 個）");
                     }
@@ -402,7 +402,7 @@ namespace ERPCore2.Services
                     //     if (returnDetails != null && returnDetails.Any())
                     //     {
                     //         var totalReturnQuantity = returnDetails.Sum(rd => rd.ReturnQuantity);
-                    //         var productName = detail.Product?.Name ?? "未知品項";
+                    //         var productName = detail.Item?.Name ?? "未知品項";
                     //         return ServiceResult.Failure(
                     //             $"無法刪除此銷貨訂單，因為品項「{productName}」已有退貨記錄（已退貨 {totalReturnQuantity} 個）");
                     //     }
@@ -411,7 +411,7 @@ namespace ERPCore2.Services
                     // 檢查 4：收款記錄檢查
                     if (detail.TotalReceivedAmount > 0)
                     {
-                        var productName = detail.Product?.Name ?? "未知品項";
+                        var productName = detail.Item?.Name ?? "未知品項";
                         return ServiceResult.Failure(
                             $"無法刪除此銷貨訂單，因為品項「{productName}」已有收款記錄（已收款 {detail.TotalReceivedAmount:N2} 元）");
                     }
@@ -461,7 +461,7 @@ namespace ERPCore2.Services
                     // 1. 先取得主記錄（含詳細資料，包含明細關聯）
                     var entity = await context.SalesOrders
                         .Include(so => so.SalesOrderDetails)
-                            .ThenInclude(sod => sod.Product)
+                            .ThenInclude(sod => sod.Item)
                         .FirstOrDefaultAsync(x => x.Id == id);
                         
                     if (entity == null)
@@ -562,7 +562,7 @@ namespace ERPCore2.Services
                 var query = context.SalesOrderDetails
                     .Include(sod => sod.SalesOrder)
                         .ThenInclude(so => so.Customer)
-                    .Include(sod => sod.Product)
+                    .Include(sod => sod.Item)
                     .Include(sod => sod.Warehouse)
                     .Where(sod => sod.SalesOrder.CustomerId == customerId);
 
@@ -576,7 +576,7 @@ namespace ERPCore2.Services
                 }
 
                 return await query.OrderBy(sod => sod.SalesOrder.Code)
-                                .ThenBy(sod => sod.Product.Name)
+                                .ThenBy(sod => sod.Item.Name)
                                 .ToListAsync();
             }
             catch (Exception ex)
@@ -611,7 +611,7 @@ namespace ERPCore2.Services
                     .Include(so => so.Customer)
                     .Include(so => so.Employee)
                     .Include(so => so.SalesOrderDetails)
-                        .ThenInclude(sod => sod.Product)
+                        .ThenInclude(sod => sod.Item)
                     .AsQueryable();
 
                 // 日期範圍篩選
@@ -705,10 +705,10 @@ namespace ERPCore2.Services
                 // 1. 取得訂單基本資料
                 var salesOrder = await context.SalesOrders
                     .Include(so => so.SalesOrderDetails)
-                        .ThenInclude(sod => sod.Product)
+                        .ThenInclude(sod => sod.Item)
                             .ThenInclude(p => p.Unit)
                     .Include(so => so.SalesOrderDetails)
-                        .ThenInclude(sod => sod.Product)
+                        .ThenInclude(sod => sod.Item)
                             .ThenInclude(p => p.ProductionUnit)
                     .Include(so => so.SalesOrderDetails)
                         .ThenInclude(sod => sod.Unit)
@@ -724,20 +724,20 @@ namespace ERPCore2.Services
 
                 var compositionDetails = await context.SalesOrderCompositionDetails
                     .Where(c => detailIds.Contains(c.SalesOrderDetailId))
-                    .Include(c => c.ComponentProduct)
+                    .Include(c => c.ComponentItem)
                         .ThenInclude(p => p.Unit)
-                    .Include(c => c.ComponentProduct)
+                    .Include(c => c.ComponentItem)
                         .ThenInclude(p => p.ProductionUnit)
                     .Include(c => c.Unit)
                     .ToListAsync();
 
                 // 2.1 取得所有產品的主檔 BOM 配方（用於遞迴展開巢狀組成）
-                var productCompositions = await context.ProductCompositions
+                var productCompositions = await context.ItemCompositions
                     .Include(pc => pc.CompositionDetails)
-                        .ThenInclude(cd => cd.ComponentProduct)
+                        .ThenInclude(cd => cd.ComponentItem)
                             .ThenInclude(p => p.Unit)
                     .Include(pc => pc.CompositionDetails)
-                        .ThenInclude(cd => cd.ComponentProduct)
+                        .ThenInclude(cd => cd.ComponentItem)
                             .ThenInclude(p => p.ProductionUnit)
                     .Include(pc => pc.CompositionDetails)
                         .ThenInclude(cd => cd.Unit)
@@ -745,8 +745,8 @@ namespace ERPCore2.Services
 
                 // 建立產品組成字典，方便快速查詢
                 var productCompositionDict = productCompositions
-                    .Where(pc => pc.ParentProductId.HasValue)
-                    .GroupBy(pc => pc.ParentProductId!.Value)
+                    .Where(pc => pc.ParentItemId.HasValue)
+                    .GroupBy(pc => pc.ParentItemId!.Value)
                     .ToDictionary(
                         g => g.Key,
                         g => g.FirstOrDefault() // 取第一個配方（如果有多個配方的話）
@@ -756,23 +756,23 @@ namespace ERPCore2.Services
                 var productIds = new HashSet<int>();
                 foreach (var detail in salesOrder.SalesOrderDetails)
                 {
-                    productIds.Add(detail.ProductId);
+                    productIds.Add(detail.ItemId);
                 }
                 foreach (var comp in compositionDetails)
                 {
-                    productIds.Add(comp.ComponentProductId);
+                    productIds.Add(comp.ComponentItemId);
                     // 遞迴收集子組成的產品ID
-                    CollectProductIdsRecursively(comp.ComponentProductId, productCompositionDict, productIds);
+                    CollectItemIdsRecursively(comp.ComponentItemId, productCompositionDict, productIds);
                 }
 
                 // 4. 批次查詢所有產品的庫存
                 var inventoryStocks = await context.InventoryStocks
-                    .Where(i => i.ProductId.HasValue && productIds.Contains(i.ProductId.Value))
+                    .Where(i => i.ItemId.HasValue && productIds.Contains(i.ItemId.Value))
                     .Include(i => i.InventoryStockDetails)
                     .ToListAsync();
 
                 var stockDictionary = inventoryStocks
-                    .ToDictionary(i => i.ProductId!.Value, i => (decimal)i.TotalAvailableStock);
+                    .ToDictionary(i => i.ItemId!.Value, i => (decimal)i.TotalAvailableStock);
 
                 // 5. 建立檢查結果
                 var result = new OrderInventoryCheckResult
@@ -824,25 +824,25 @@ namespace ERPCore2.Services
             List<SalesOrderCompositionDetail> compositions,
             List<SalesOrderCompositionDetail> allCompositionDetails,
             Dictionary<int, decimal> inventoryStocks,
-            Dictionary<int, ProductComposition?> productCompositionDict,
+            Dictionary<int, ItemComposition?> productCompositionDict,
             int level)
         {
-            var availableStock = inventoryStocks.GetValueOrDefault(detail.ProductId, 0);
+            var availableStock = inventoryStocks.GetValueOrDefault(detail.ItemId, 0);
             var hasComposition = compositions.Any();
 
             var item = new OrderInventoryCheckItem
             {
                 Level = level,
                 DetailId = detail.Id,
-                ProductId = detail.ProductId,
-                ProductCode = detail.Product?.Code ?? "",
-                ProductName = detail.Product?.Name ?? "",
-                ProductSpecification = detail.Product?.Specification,
-                UnitName = detail.Product?.ProductionUnit?.Name ?? detail.Product?.Unit?.Name ?? detail.Unit?.Name ?? "",
+                ItemId = detail.ItemId,
+                ItemCode = detail.Item?.Code ?? "",
+                ItemName = detail.Item?.Name ?? "",
+                ItemSpecification = detail.Item?.Specification,
+                UnitName = detail.Item?.ProductionUnit?.Name ?? detail.Item?.Unit?.Name ?? detail.Unit?.Name ?? "",
                 RequiredQuantity = detail.OrderQuantity,
                 AvailableStock = availableStock,
                 IsComposition = hasComposition,
-                Status = DetermineInventoryStatus(detail.OrderQuantity, availableStock, detail.Product),
+                Status = DetermineInventoryStatus(detail.OrderQuantity, availableStock, detail.Item),
                 Children = new List<OrderInventoryCheckItem>()
             };
 
@@ -851,29 +851,29 @@ namespace ERPCore2.Services
             {
                 foreach (var comp in compositions.OrderBy(c => c.Id))
                 {
-                    var compAvailableStock = inventoryStocks.GetValueOrDefault(comp.ComponentProductId, 0);
+                    var compAvailableStock = inventoryStocks.GetValueOrDefault(comp.ComponentItemId, 0);
                     var requiredQuantity = comp.Quantity * detail.OrderQuantity;
 
                     var childItem = new OrderInventoryCheckItem
                     {
                         Level = level + 1,
                         ParentDetailId = detail.Id,
-                        ProductId = comp.ComponentProductId,
-                        ProductCode = comp.ComponentProduct?.Code ?? "",
-                        ProductName = comp.ComponentProduct?.Name ?? "",
-                        ProductSpecification = comp.ComponentProduct?.Specification,
-                        UnitName = comp.ComponentProduct?.ProductionUnit?.Name ?? comp.ComponentProduct?.Unit?.Name ?? comp.Unit?.Name ?? "",
+                        ItemId = comp.ComponentItemId,
+                        ItemCode = comp.ComponentItem?.Code ?? "",
+                        ItemName = comp.ComponentItem?.Name ?? "",
+                        ItemSpecification = comp.ComponentItem?.Specification,
+                        UnitName = comp.ComponentItem?.ProductionUnit?.Name ?? comp.ComponentItem?.Unit?.Name ?? comp.Unit?.Name ?? "",
                         RequiredQuantity = requiredQuantity,
                         AvailableStock = compAvailableStock,
                         CompositionMultiplier = comp.Quantity,
                         IsComposition = false,
-                        Status = DetermineInventoryStatus(requiredQuantity, compAvailableStock, comp.ComponentProduct),
+                        Status = DetermineInventoryStatus(requiredQuantity, compAvailableStock, comp.ComponentItem),
                         Children = new List<OrderInventoryCheckItem>()
                     };
 
-                    // 🔑 遞迴展開：只使用主檔配方展開（ProductComposition）
+                    // 🔑 遞迴展開：只使用主檔配方展開（ItemComposition）
                     // 自訂組合（SalesOrderCompositionDetail）在儲存時已經是"扁平化"的，不需要遞迴
-                    if (productCompositionDict.TryGetValue(comp.ComponentProductId, out var subComposition) 
+                    if (productCompositionDict.TryGetValue(comp.ComponentItemId, out var subComposition) 
                         && subComposition != null)
                     {
                         childItem.IsComposition = true;
@@ -883,7 +883,7 @@ namespace ERPCore2.Services
                             inventoryStocks,
                             productCompositionDict,
                             level + 2,
-                            comp.ComponentProductId
+                            comp.ComponentItemId
                         );
                     }
 
@@ -897,18 +897,18 @@ namespace ERPCore2.Services
         /// <summary>
         /// 遞迴收集所有子組成的產品ID
         /// </summary>
-        private void CollectProductIdsRecursively(
+        private void CollectItemIdsRecursively(
             int productId,
-            Dictionary<int, ProductComposition?> productCompositionDict,
+            Dictionary<int, ItemComposition?> productCompositionDict,
             HashSet<int> productIds)
         {
             if (productCompositionDict.TryGetValue(productId, out var composition) && composition != null)
             {
                 foreach (var detail in composition.CompositionDetails)
                 {
-                    productIds.Add(detail.ComponentProductId);
+                    productIds.Add(detail.ComponentItemId);
                     // 遞迴收集更深層的組成
-                    CollectProductIdsRecursively(detail.ComponentProductId, productCompositionDict, productIds);
+                    CollectItemIdsRecursively(detail.ComponentItemId, productCompositionDict, productIds);
                 }
             }
         }
@@ -917,40 +917,40 @@ namespace ERPCore2.Services
         /// 遞迴展開子組成（用於巢狀 BOM）
         /// </summary>
         private List<OrderInventoryCheckItem> ExpandSubComposition(
-            ProductComposition composition,
+            ItemComposition composition,
             decimal parentRequiredQuantity,
             Dictionary<int, decimal> inventoryStocks,
-            Dictionary<int, ProductComposition?> productCompositionDict,
+            Dictionary<int, ItemComposition?> productCompositionDict,
             int level,
-            int parentProductId)
+            int parentItemId)
         {
             var children = new List<OrderInventoryCheckItem>();
 
             foreach (var detail in composition.CompositionDetails.OrderBy(d => d.Id))
             {
-                var compAvailableStock = inventoryStocks.GetValueOrDefault(detail.ComponentProductId, 0);
+                var compAvailableStock = inventoryStocks.GetValueOrDefault(detail.ComponentItemId, 0);
                 var requiredQuantity = detail.Quantity * parentRequiredQuantity;
 
                 var childItem = new OrderInventoryCheckItem
                 {
                     Level = level,
                     ParentDetailId = null,
-                    ProductId = detail.ComponentProductId,
-                    ProductCode = detail.ComponentProduct?.Code ?? "",
-                    ProductName = detail.ComponentProduct?.Name ?? "",
-                    ProductSpecification = detail.ComponentProduct?.Specification,
-                    UnitName = detail.ComponentProduct?.ProductionUnit?.Name ?? detail.ComponentProduct?.Unit?.Name ?? detail.Unit?.Name ?? "",
+                    ItemId = detail.ComponentItemId,
+                    ItemCode = detail.ComponentItem?.Code ?? "",
+                    ItemName = detail.ComponentItem?.Name ?? "",
+                    ItemSpecification = detail.ComponentItem?.Specification,
+                    UnitName = detail.ComponentItem?.ProductionUnit?.Name ?? detail.ComponentItem?.Unit?.Name ?? detail.Unit?.Name ?? "",
                     RequiredQuantity = requiredQuantity,
                     AvailableStock = compAvailableStock,
                     CompositionMultiplier = detail.Quantity,
                     IsComposition = false,
-                    Status = DetermineInventoryStatus(requiredQuantity, compAvailableStock, detail.ComponentProduct),
+                    Status = DetermineInventoryStatus(requiredQuantity, compAvailableStock, detail.ComponentItem),
                     Children = new List<OrderInventoryCheckItem>()
                 };
 
                 // 🔑 遞迴展開：檢查子元件是否也是組合產品（防止循環參照）
-                if (detail.ComponentProductId != parentProductId && 
-                    productCompositionDict.TryGetValue(detail.ComponentProductId, out var subComposition) 
+                if (detail.ComponentItemId != parentItemId && 
+                    productCompositionDict.TryGetValue(detail.ComponentItemId, out var subComposition) 
                     && subComposition != null)
                 {
                     childItem.IsComposition = true;
@@ -960,7 +960,7 @@ namespace ERPCore2.Services
                         inventoryStocks,
                         productCompositionDict,
                         level + 1,
-                        detail.ComponentProductId
+                        detail.ComponentItemId
                     );
                 }
 
@@ -973,7 +973,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 判斷庫存狀態
         /// </summary>
-        private InventoryStatus DetermineInventoryStatus(decimal requiredQuantity, decimal availableStock, Product? product)
+        private InventoryStatus DetermineInventoryStatus(decimal requiredQuantity, decimal availableStock, Item? product)
         {
             // 庫存不足
             if (availableStock < requiredQuantity)
@@ -981,8 +981,8 @@ namespace ERPCore2.Services
                 return InventoryStatus.Insufficient;
             }
 
-            // 庫存充足 (暫時不檢查安全庫存，因為 Product 沒有此欄位)
-            // 未來如果需要，可以在 Product 新增 SafetyStock 欄位
+            // 庫存充足 (暫時不檢查安全庫存，因為 Item 沒有此欄位)
+            // 未來如果需要，可以在 Item 新增 SafetyStock 欄位
             return InventoryStatus.Sufficient;
         }
 

@@ -1,4 +1,4 @@
-@using ERPCore2.Components.Shared
+﻿@using ERPCore2.Components.Shared
 @using ERPCore2.Components.Shared.Report
 @using ERPCore2.Data.Entities
 @using ERPCore2.Components.Shared.PersonalTools
@@ -125,8 +125,28 @@
                               IsVisibleChanged="@((bool visible) => showInventoryCharts = visible)" />
 
 @* 品項分析圖表 Modal *@
-<ProductChartModalComponent IsVisible="@showProductCharts"
-                            IsVisibleChanged="@((bool visible) => showProductCharts = visible)" />
+<ItemChartModalComponent IsVisible="@showItemCharts"
+                            IsVisibleChanged="@((bool visible) => showItemCharts = visible)" />
+
+@* 生產管理分析圖表 Modal *@
+<ProductionChartModalComponent IsVisible="@showProductionCharts"
+                               IsVisibleChanged="@((bool visible) => showProductionCharts = visible)" />
+
+@* 財務管理分析圖表 Modal *@
+<FinancialChartModalComponent IsVisible="@showFinancialCharts"
+                              IsVisibleChanged="@((bool visible) => showFinancialCharts = visible)" />
+
+@* 薪資分析圖表 Modal *@
+<PayrollChartModalComponent IsVisible="@showPayrollCharts"
+                            IsVisibleChanged="@((bool visible) => showPayrollCharts = visible)" />
+
+@* 磅秤分析圖表 Modal *@
+<ScaleChartModalComponent IsVisible="@showScaleCharts"
+                          IsVisibleChanged="@((bool visible) => showScaleCharts = visible)" />
+
+@* 車輛分析圖表 Modal *@
+<VehicleChartModalComponent IsVisible="@showVehicleCharts"
+                            IsVisibleChanged="@((bool visible) => showVehicleCharts = visible)" />
 
 @* 系統參數設定 Modal *@
 <SystemParameterSettingsModal IsVisible="@showSystemParameterSettings"
@@ -259,7 +279,22 @@
     private bool showInventoryCharts = false;
 
     // 品項分析圖表 Modal 狀態
-    private bool showProductCharts = false;
+    private bool showItemCharts = false;
+
+    // 生產管理分析圖表 Modal 狀態
+    private bool showProductionCharts = false;
+
+    // 財務管理分析圖表 Modal 狀態
+    private bool showFinancialCharts = false;
+
+    // 薪資分析圖表 Modal 狀態
+    private bool showPayrollCharts = false;
+
+    // 磅秤分析圖表 Modal 狀態
+    private bool showScaleCharts = false;
+
+    // 車輛分析圖表 Modal 狀態
+    private bool showVehicleCharts = false;
 
     // 系統參數設定 Modal 狀態
     private bool showSystemParameterSettings = false;
@@ -340,9 +375,14 @@
         actionRegistry.Register("OpenPurchaseCharts", OpenPurchaseCharts);
         actionRegistry.Register("OpenSalesCharts", OpenSalesCharts);
         actionRegistry.Register("OpenInventoryCharts", OpenInventoryCharts);
-        actionRegistry.Register("OpenProductCharts", OpenProductCharts);
+        actionRegistry.Register("OpenItemCharts", OpenItemCharts);
+        actionRegistry.Register("OpenProductionCharts", OpenProductionCharts);
+        actionRegistry.Register("OpenFinancialCharts", OpenFinancialCharts);
+        actionRegistry.Register("OpenPayrollCharts", OpenPayrollCharts);
+        actionRegistry.Register("OpenScaleCharts", OpenScaleCharts);
+        actionRegistry.Register("OpenVehicleCharts", OpenVehicleCharts);
         actionRegistry.Register("OpenSupplierReportIndex", OpenSupplierReportIndex);        
-        actionRegistry.Register("OpenProductReportIndex", OpenProductReportIndex);
+        actionRegistry.Register("OpenItemReportIndex", OpenItemReportIndex);
         actionRegistry.Register("OpenPurchaseReportIndex", OpenPurchaseReportIndex);
         actionRegistry.Register("OpenSalesReportIndex", OpenSalesReportIndex);
         actionRegistry.Register("OpenFinancialReportIndex", OpenFinancialReportIndex);
@@ -784,9 +824,59 @@
     /// 開啟品項分析圖表 Modal
     /// </summary>
     [JSInvokable]
-    public void OpenProductCharts()
+    public void OpenItemCharts()
     {
-        try { showProductCharts = true; StateHasChanged(); }
+        try { showItemCharts = true; StateHasChanged(); }
+        catch { }
+    }
+
+    /// <summary>
+    /// 開啟生產管理分析圖表 Modal
+    /// </summary>
+    [JSInvokable]
+    public void OpenProductionCharts()
+    {
+        try { showProductionCharts = true; StateHasChanged(); }
+        catch { }
+    }
+
+    /// <summary>
+    /// 開啟財務管理分析圖表 Modal
+    /// </summary>
+    [JSInvokable]
+    public void OpenFinancialCharts()
+    {
+        try { showFinancialCharts = true; StateHasChanged(); }
+        catch { }
+    }
+
+    /// <summary>
+    /// 開啟薪資分析圖表 Modal
+    /// </summary>
+    [JSInvokable]
+    public void OpenPayrollCharts()
+    {
+        try { showPayrollCharts = true; StateHasChanged(); }
+        catch { }
+    }
+
+    /// <summary>
+    /// 開啟磅秤分析圖表 Modal
+    /// </summary>
+    [JSInvokable]
+    public void OpenScaleCharts()
+    {
+        try { showScaleCharts = true; StateHasChanged(); }
+        catch { }
+    }
+
+    /// <summary>
+    /// 開啟車輛分析圖表 Modal
+    /// </summary>
+    [JSInvokable]
+    public void OpenVehicleCharts()
+    {
+        try { showVehicleCharts = true; StateHasChanged(); }
         catch { }
     }
 
@@ -800,7 +890,7 @@
     /// 開啟品項報表中心 Modal（保留供 JSInvokable 使用）
     /// </summary>
     [JSInvokable]
-    public void OpenProductReportIndex() => OpenReportIndex(ERPCore2.Models.Reports.ReportCategory.Product);
+    public void OpenItemReportIndex() => OpenReportIndex(ERPCore2.Models.Reports.ReportCategory.Item);
 
     /// <summary>
     /// 開啟採購報表中心 Modal（保留供 JSInvokable 使用）

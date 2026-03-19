@@ -1,4 +1,4 @@
-using ERPCore2.Data;
+﻿using ERPCore2.Data;
 using ERPCore2.Helpers;
 using ERPCore2.Services;
 using ERPCore2.Components.Shared.UI.Form;
@@ -486,7 +486,7 @@ public partial class GenericEditModalComponent<TEntity, TService>
         if (ModalManagers != null && ModalManagers.ContainsKey(fieldChange.PropertyName))
         {
             var targetField = FormFields?.FirstOrDefault(f => f.PropertyName == fieldChange.PropertyName);
-            // IsFilterOnly 欄位（如 FilterProductId）是虛擬欄位，實體中不存在對應屬性
+            // IsFilterOnly 欄位（如 FilterItemId）是虛擬欄位，實體中不存在對應屬性
             if (targetField != null && !targetField.IsReadOnly && !targetField.IsFilterOnly)
             {
                 int? newId = null;

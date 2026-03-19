@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models;
 using ERPCore2.Services;
 
@@ -28,7 +28,7 @@ namespace ERPCore2.Services
         /// </summary>
         /// <param name="productId">品項ID</param>
         /// <returns>報價單明細列表</returns>
-        Task<List<QuotationDetail>> GetByProductIdAsync(int productId);
+        Task<List<QuotationDetail>> GetByItemIdAsync(int productId);
 
         /// <summary>
         /// 獲取客戶最近一次完整的報價單明細（智能下單用）

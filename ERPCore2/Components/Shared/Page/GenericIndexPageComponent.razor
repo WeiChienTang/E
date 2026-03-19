@@ -72,7 +72,7 @@ else
                 OnBatchApprovalClick="@HandleBatchApprovalClick"
                 ShowImportScheduleButton="@ShowImportScheduleButton"
                 OnImportScheduleClick="@HandleImportScheduleClick"
-                ShowBatchDeleteButton="@ShowBatchDeleteButton"
+                ShowBatchDeleteButton="@(ShowBatchDeleteButton || _isSuperAdmin)"
                 IsBatchDeleteDisabled="@IsBatchDeleteDisabled"
                 OnBatchDeleteClick="@HandleBatchDeleteClick"
                 IsLoading="@IsLoading"
@@ -306,14 +306,14 @@ else
 }
 
 @* 內建批次刪除 Modal *@
-@if (BatchDeleteColumnDefinitions != null)
+@if (BatchDeleteColumnDefinitions != null || _isSuperAdmin)
 {
     <BatchDeleteConfirmModalComponent TItem="TEntity"
                                       IsVisible="@_showInternalBatchDeleteModal"
                                       IsVisibleChanged="@((bool v) => _showInternalBatchDeleteModal = v)"
                                       Title="@GetBatchDeleteTitle()"
                                       Items="@(ServerDataLoader != null ? pagedItems : filteredItems)"
-                                      ColumnDefinitions="@BatchDeleteColumnDefinitions"
+                                      ColumnDefinitions="@GetEffectiveBatchDeleteColumns()"
                                       IsDeleting="@_isInternalBatchDeleting"
                                       OnConfirmDelete="@HandleInternalBatchDeleteAsync"
                                       OnCancel="@(() => _showInternalBatchDeleteModal = false)" />

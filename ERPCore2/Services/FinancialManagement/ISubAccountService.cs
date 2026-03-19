@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 
 namespace ERPCore2.Services
 {
@@ -18,7 +18,7 @@ namespace ERPCore2.Services
         Task<AccountItem?> GetSubAccountForSupplierAsync(int supplierId);
 
         /// <summary>取得品項對應的存貨子科目（若不存在則回傳 null）</summary>
-        Task<AccountItem?> GetSubAccountForProductAsync(int productId);
+        Task<AccountItem?> GetSubAccountForItemAsync(int productId);
 
         /// <summary>取得客戶所有連結子科目（含四種類型），供會計資訊 Tab 顯示用</summary>
         Task<List<AccountItem>> GetAllSubAccountsForCustomerAsync(int customerId);
@@ -42,9 +42,9 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 取得或建立品項子科目。
-        /// 若系統參數未啟用 AutoCreateProductSubAccount，回傳 null。
+        /// 若系統參數未啟用 AutoCreateItemSubAccount，回傳 null。
         /// </summary>
-        Task<AccountItem?> GetOrCreateProductSubAccountAsync(int productId, string createdBy);
+        Task<AccountItem?> GetOrCreateItemSubAccountAsync(int productId, string createdBy);
 
         // ===== 批次補建（為現有資料補建子科目）=====
 
@@ -55,6 +55,6 @@ namespace ERPCore2.Services
         Task<(int Created, int Skipped, List<string> Errors)> BatchCreateForAllSuppliersAsync(string createdBy);
 
         /// <summary>為所有現有 Active 品項補建子科目（已有子科目者略過）</summary>
-        Task<(int Created, int Skipped, List<string> Errors)> BatchCreateForAllProductsAsync(string createdBy);
+        Task<(int Created, int Skipped, List<string> Errors)> BatchCreateForAllItemsAsync(string createdBy);
     }
 }

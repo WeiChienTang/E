@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.SeedDataManager.Interfaces;
 using ERPCore2.Data.SeedDataManager.Seeders;
 using Microsoft.EntityFrameworkCore;
@@ -96,7 +96,7 @@ namespace ERPCore2.Data
                 )
                 CREATE TABLE [__EFMigrationsHistory] (
                     [MigrationId]    nvarchar(150) NOT NULL,
-                    [ProductVersion] nvarchar(32)  NOT NULL,
+                    [ItemVersion] nvarchar(32)  NOT NULL,
                     CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
                 )");
 
@@ -106,7 +106,7 @@ namespace ERPCore2.Data
             {
                 await context.Database.ExecuteSqlRawAsync(
                     "IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = {0}) " +
-                    "INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ({0}, {1})",
+                    "INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ItemVersion]) VALUES ({0}, {1})",
                     migrationId, "9.0.0");
             }
 

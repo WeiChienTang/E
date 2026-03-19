@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Models.Reports.FilterAttributes;
 using ERPCore2.Models.Reports.FilterCriteria;
 using ERPCore2.Services;
@@ -19,13 +19,13 @@ public class MaterialRequirementsCriteria : IReportFilterCriteria
     public DateTime? EndDate { get; set; }
 
     /// <summary>指定成品（生產的主產品），空表示全部</summary>
-    [FilterFK(typeof(IProductService),
+    [FilterFK(typeof(IItemService),
         Group = FilterGroup.Basic,
         Label = "成品篩選",
         Placeholder = "搜尋成品...",
         EmptyMessage = "未選擇（查詢全部成品）",
         Order = 1)]
-    public List<int> ProductIds { get; set; } = new();
+    public List<int> ItemIds { get; set; } = new();
 
     /// <summary>排除已完成的生產項目（ProductionItemStatus == Completed）</summary>
     [FilterToggle(Group = FilterGroup.Quick, Label = "狀態篩選", CheckboxLabel = "排除已完成項目", DefaultValue = true, Order = 1)]
@@ -60,7 +60,7 @@ public class MaterialRequirementsCriteria : IReportFilterCriteria
     {
         ["startDate"] = StartDate,
         ["endDate"] = EndDate,
-        ["productIds"] = ProductIds.Any() ? ProductIds : null,
+        ["productIds"] = ItemIds.Any() ? ItemIds : null,
         ["excludeCompleted"] = ExcludeCompleted,
         ["onlyPendingIssue"] = OnlyPendingIssue
     };
@@ -70,7 +70,7 @@ public class MaterialRequirementsCriteria : IReportFilterCriteria
         var parts = new List<string>();
         if (StartDate.HasValue) parts.Add($"起：{StartDate:yyyy/MM/dd}");
         if (EndDate.HasValue) parts.Add($"迄：{EndDate:yyyy/MM/dd}");
-        if (ProductIds.Any()) parts.Add($"成品：{ProductIds.Count} 項");
+        if (ItemIds.Any()) parts.Add($"成品：{ItemIds.Count} 項");
         if (ExcludeCompleted) parts.Add("排除已完成");
         if (OnlyPendingIssue) parts.Add("只含待領");
         return parts.Any() ? string.Join(" | ", parts) : "全部";

@@ -7,7 +7,7 @@
 @inject IPurchaseReturnDetailService PurchaseReturnDetailService
 @inject ISupplierService SupplierService
 @inject IPurchaseReceivingService PurchaseReceivingService
-@inject IProductService ProductService
+@inject IItemService ItemService
 @inject IPurchaseReturnReasonService PurchaseReturnReasonService
 @inject INotificationService NotificationService
 @inject ISystemParameterService SystemParameterService
@@ -115,7 +115,7 @@
     // 相關資料
     private List<Supplier> suppliers = new();
     private List<PurchaseReceiving> purchaseReceivings = new();
-    private List<Product> products = new();
+    private List<Item> products = new();
     
     // 下拉選單選項
     private List<SelectOption> taxCalculationMethodOptions = new();
@@ -125,7 +125,7 @@
     private AutoCompleteConfig? autoCompleteConfig;
     
     // ===== 篩選狀態 =====
-    private int? filterProductId = null;
+    private int? filterItemId = null;
     private int? filterPurchaseReceivingId = null;
     
     // ===== 退貨明細 =====
@@ -232,7 +232,7 @@
                 // 如果有預填廠商，在表單欄位初始化後再次更新選項
                 if (PrefilledSupplierId.HasValue && PrefilledSupplierId.Value > 0)
                 {
-                    await UpdateFilterProductOptions(PrefilledSupplierId.Value);
+                    await UpdateFilterItemOptions(PrefilledSupplierId.Value);
                     await UpdateFilterPurchaseReceivingOptions(PrefilledSupplierId.Value);
                     StateHasChanged(); // 強制更新 UI
                 }
@@ -404,7 +404,7 @@
             await Task.WhenAll(
                 LoadSuppliersAsync(),
                 LoadPurchaseReceivingsAsync(),
-                LoadProductsAsync(),
+                LoadItemsAsync(),
                 LoadReturnReasonsAsync()
             );
             
@@ -460,17 +460,17 @@
         }
     }
 
-    private async Task LoadProductsAsync()
+    private async Task LoadItemsAsync()
     {
         try
         {
-            products = await ProductService.GetAllAsync();
+            products = await ItemService.GetAllAsync();
             
             // 配置 AutoComplete
             autoCompleteConfig = new AutoCompleteConfigBuilder<PurchaseReturn>()
                 .AddField(nameof(PurchaseReturn.SupplierId), "CompanyName", suppliers)
                 .AddFieldWithMultipleSearchProperties(
-                    "FilterProductId", 
+                    "FilterItemId", 
                     "Name",  // 主要顯示欄位
                     products,
                     new[] { "Code", "Name" })  // 可搜尋的欄位
@@ -479,7 +479,7 @@
         }
         catch (Exception)
         {
-            products = new List<Product>();
+            products = new List<Item>();
         }
     }
 
@@ -514,10 +514,10 @@
                 },
                 new()
                 {
-                    PropertyName = "FilterProductId", // 篩選用的虛擬欄位，不儲存至資料庫
-                    Label = L["Entity.Product"],
+                    PropertyName = "FilterItemId", // 篩選用的虛擬欄位，不儲存至資料庫
+                    Label = L["Entity.Item"],
                     FieldType = FormFieldType.AutoComplete,
-                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Product"]],
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Item"]],
                     IsRequired = false,
                     MinSearchLength = 0,
                     HelpText = "選擇特定品項進行篩選，或留空顯示所有品項。此欄位不會儲存。",
@@ -638,7 +638,7 @@
                     pr => pr.SupplierId,
                     pr => pr.ReturnDate,
                     pr => pr.ReturnReasonId)
-                .AddCustomFields(FormSectionNames.FilterConditions, "FilterProductId", "FilterPurchaseReceivingId")  // 虛擬篩選欄位，不存DB
+                .AddCustomFields(FormSectionNames.FilterConditions, "FilterItemId", "FilterPurchaseReceivingId")  // 虛擬篩選欄位，不存DB
                 .AddToSection(FormSectionNames.AmountInfo,
                     pr => pr.TotalReturnAmount,
                     pr => pr.ReturnTaxAmount,
@@ -670,7 +670,7 @@
             // 關鍵：如果實體已經載入且有廠商ID，立即更新品項和進貨單選項
             if (editModalComponent?.Entity?.SupplierId > 0)
             {
-                await UpdateFilterProductOptions(editModalComponent.Entity.SupplierId);
+                await UpdateFilterItemOptions(editModalComponent.Entity.SupplierId);
                 await UpdateFilterPurchaseReceivingOptions(editModalComponent.Entity.SupplierId);
             }
             
@@ -729,7 +729,7 @@
     private void UpdateFilterFieldsState()
     {
         bool noSupplier = !(editModalComponent?.Entity?.SupplierId > 0);
-        var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+        var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterItemId");
         if (productFilter != null) productFilter.IsReadOnly = noSupplier || hasUndeletableDetails;
         var receivingFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterPurchaseReceivingId");
         if (receivingFilter != null) receivingFilter.IsReadOnly = noSupplier || hasUndeletableDetails;
@@ -792,7 +792,7 @@
     /// 只顯示該廠商有入庫記錄的品項（從 PurchaseReceivingDetail 中提取）
     /// 並且只顯示「外購」類型的品項
     /// </summary>
-    private async Task<List<SelectOption>> GetFilterProductOptions()
+    private async Task<List<SelectOption>> GetFilterItemOptions()
     {
         try
         {
@@ -824,18 +824,18 @@
                     {
                         foreach (var detail in receiving.PurchaseReceivingDetails)
                         {
-                            productIds.Add(detail.ProductId);
+                            productIds.Add(detail.ItemId);
                         }
                     }
                 }
                 
                 // 根據品項ID從 products 列表中找出對應的品項
-                var supplierProducts = products
+                var supplierItems = products
                     .Where(p => productIds.Contains(p.Id))
                     .OrderBy(p => p.Code)
                     .ToList();
                 
-                options.AddRange(supplierProducts.Select(p => new SelectOption
+                options.AddRange(supplierItems.Select(p => new SelectOption
                 {
                     Value = p.Id.ToString(),
                     Text = $"{p.Code} - {p.Name}"
@@ -887,14 +887,14 @@
     /// 更新品項篩選的 AutoComplete 資料集合 - 當廠商變更時調用
     /// 只顯示該廠商有入庫記錄的品項（從 PurchaseReceivingDetail 中提取）
     /// </summary>
-    private async Task UpdateFilterProductOptions(int? supplierId = null)
+    private async Task UpdateFilterItemOptions(int? supplierId = null)
     {
         try
         {
             if (autoCompleteConfig?.Collections == null)
                 return;
             
-            List<Product> filteredProducts;
+            List<Item> filteredItems;
             
             if (supplierId.HasValue && supplierId.Value > 0)
             {
@@ -911,13 +911,13 @@
                     {
                         foreach (var detail in receiving.PurchaseReceivingDetails)
                         {
-                            productIds.Add(detail.ProductId);
+                            productIds.Add(detail.ItemId);
                         }
                     }
                 }
                 
                 // 根據品項ID從 products 列表中找出對應的品項
-                filteredProducts = products
+                filteredItems = products
                     .Where(p => productIds.Contains(p.Id))
                     .OrderBy(p => p.Code)
                     .ToList();
@@ -925,17 +925,17 @@
             else
             {
                 // 如果沒有選擇廠商，顯示全部品項
-                filteredProducts = products.ToList();
+                filteredItems = products.ToList();
             }
             
             // 更新 AutoComplete 的資料集合
-            if (autoCompleteConfig.Collections.ContainsKey("FilterProductId"))
+            if (autoCompleteConfig.Collections.ContainsKey("FilterItemId"))
             {
-                autoCompleteConfig.Collections["FilterProductId"] = filteredProducts;
+                autoCompleteConfig.Collections["FilterItemId"] = filteredItems;
             }
             
             // 清空目前的品項篩選選擇
-            filterProductId = null;
+            filterItemId = null;
         }
         catch (Exception ex)
         {
@@ -1137,12 +1137,12 @@
                 filterPurchaseReceivingId = null;
 
                 // 更新品項和進貨單篩選選項
-                await UpdateFilterProductOptions(supplierId);
+                await UpdateFilterItemOptions(supplierId);
                 await UpdateFilterPurchaseReceivingOptions(supplierId);
 
                 // 廠商變更時更新篩選欄位停用狀態
                 bool noSupplier = !supplierId.HasValue;
-                var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterProductId");
+                var productFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterItemId");
                 if (productFilter != null) productFilter.IsReadOnly = noSupplier || hasUndeletableDetails;
                 var receivingFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterPurchaseReceivingId");
                 if (receivingFilter != null) receivingFilter.IsReadOnly = noSupplier || hasUndeletableDetails;
@@ -1151,17 +1151,17 @@
             }
             
             // 當品項篩選變更時，更新篩選狀態並觸發重新渲染
-            if (fieldChange.PropertyName == "FilterProductId")
+            if (fieldChange.PropertyName == "FilterItemId")
             {
                 if (fieldChange.Value != null && 
                     int.TryParse(fieldChange.Value.ToString(), out int productId) && 
                     productId > 0)
                 {
-                    filterProductId = productId;
+                    filterItemId = productId;
                 }
                 else
                 {
-                    filterProductId = null;
+                    filterItemId = null;
                 }
                 StateHasChanged();
             }
@@ -1249,10 +1249,10 @@
                                  SupplierId="@editModalComponent!.Entity.SupplierId"
                                  SelectedSupplierId="@editModalComponent!.Entity.SupplierId"
                                  FilterPurchaseReceivingId="@filterPurchaseReceivingId"
-                                 FilterProductId="@filterProductId"
+                                 FilterItemId="@filterItemId"
                                  SelectedSupplierName="@GetSelectedSupplierName()"
                                  SelectedPurchaseReceivingCode="@GetSelectedPurchaseReceivingCode()"
-                                 FilterProductName="@GetFilterProductName()"
+                                 FilterItemName="@GetFilterItemName()"
                                  TaxCalculationMethod="@editModalComponent.Entity.TaxCalculationMethod"
                                  IsEditMode="@(PurchaseReturnId.HasValue)"
                                  ExistingDetails="@(purchaseReturnDetails ?? new List<PurchaseReturnDetail>())"
@@ -1336,7 +1336,7 @@
             }
             
             // 檢查是否有有效的明細
-            var validDetails = purchaseReturnDetails.Where(d => d.ProductId > 0 && d.ReturnQuantity > 0).ToList();
+            var validDetails = purchaseReturnDetails.Where(d => d.ItemId > 0 && d.ReturnQuantity > 0).ToList();
             if (!validDetails.Any())
             {
                 await NotificationService.ShowErrorAsync("至少需要一筆退貨明細");
@@ -1367,7 +1367,7 @@
             // 草稿模式跳過業務驗證
             if (!purchaseReturn.IsDraft)
             {
-                var validDetails = purchaseReturnDetails.Where(d => d.ProductId > 0 && d.ReturnQuantity > 0).ToList();
+                var validDetails = purchaseReturnDetails.Where(d => d.ItemId > 0 && d.ReturnQuantity > 0).ToList();
                 if (!validDetails.Any())
                 {
                     editModalComponent!.PendingSaveError = "至少需要一筆退貨明細";
@@ -1423,8 +1423,8 @@
     private string? GetSelectedPurchaseReceivingCode()
         => EntityDisplayHelper.GetDisplayValue(filterPurchaseReceivingId, purchaseReceivings, pr => pr.Code);
 
-    private string? GetFilterProductName()
-        => EntityDisplayHelper.GetDisplayValue(filterProductId, products, p => $"{p.Code} {p.Name}");
+    private string? GetFilterItemName()
+        => EntityDisplayHelper.GetDisplayValue(filterItemId, products, p => $"{p.Code} {p.Name}");
     
     // ===== 公開方法（供外部組件調用） =====
     

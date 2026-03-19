@@ -1,11 +1,11 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 
 namespace ERPCore2.Services
 {
     /// <summary>
     /// 品項-供應商關聯服務介面
     /// </summary>
-    public interface IProductSupplierService : IGenericManagementService<ProductSupplier>
+    public interface IItemSupplierService : IGenericManagementService<ItemSupplier>
     {
         #region 查詢方法
         
@@ -14,21 +14,21 @@ namespace ERPCore2.Services
         /// </summary>
         /// <param name="productId">品項ID</param>
         /// <returns>供應商綁定列表</returns>
-        Task<List<ProductSupplier>> GetByProductIdAsync(int productId);
+        Task<List<ItemSupplier>> GetByItemIdAsync(int productId);
         
         /// <summary>
         /// 依供應商ID取得所有綁定的品項
         /// </summary>
         /// <param name="supplierId">供應商ID</param>
         /// <returns>品項綁定列表</returns>
-        Task<List<ProductSupplier>> GetBySupplierIdAsync(int supplierId);
+        Task<List<ItemSupplier>> GetBySupplierIdAsync(int supplierId);
         
         /// <summary>
         /// 取得指定品項的常用供應商列表（依優先順序排序）
         /// </summary>
         /// <param name="productId">品項ID</param>
         /// <returns>常用供應商列表</returns>
-        Task<List<ProductSupplier>> GetPreferredSuppliersByProductIdAsync(int productId);
+        Task<List<ItemSupplier>> GetPreferredSuppliersByItemIdAsync(int productId);
         
         /// <summary>
         /// 檢查品項-供應商綁定是否存在

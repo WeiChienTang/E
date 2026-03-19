@@ -1,4 +1,4 @@
-@* 看板卡片快速編輯 Modal - 狀態自動管理，使用者僅需確認入庫與用料結算 *@
+﻿@* 看板卡片快速編輯 Modal - 狀態自動管理，使用者僅需確認入庫與用料結算 *@
 @using ERPCore2.Models.Schedule
 @using ERPCore2.Models.Enums
 @using ERPCore2.Data.Entities
@@ -10,7 +10,7 @@
 
 <BaseModalComponent IsVisible="@IsVisible"
                     IsVisibleChanged="@IsVisibleChanged"
-                    Title="@(Item?.ProductName ?? "排程項目")"
+                    Title="@(Item?.ItemName ?? "排程項目")"
                     Size="BaseModalComponent.ModalSize.Large"
                     HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                     UseWhiteCloseButton="true"
@@ -132,10 +132,10 @@
         @if (Item != null)
         {
             @* 品項與訂單資訊 *@
-            @if (!string.IsNullOrEmpty(Item.ProductCode))
+            @if (!string.IsNullOrEmpty(Item.ItemCode))
             {
                 <div class="mb-3 text-muted">
-                    <span class="fw-semibold text-secondary">@Item.ProductCode</span>
+                    <span class="fw-semibold text-secondary">@Item.ItemCode</span>
                     @if (!string.IsNullOrEmpty(Item.CustomerName) || !string.IsNullOrEmpty(Item.SalesOrderCode))
                     {
                         <span class="ms-2">
@@ -223,10 +223,10 @@
                                     var pending = Math.Max(0, d.RequiredQuantity - d.IssuedQuantity);
                                     <tr>
                                         <td>
-                                            @(d.ComponentProduct?.Name ?? $"ID:{d.ComponentProductId}")
-                                            @if (!string.IsNullOrEmpty(d.ComponentProduct?.Code))
+                                            @(d.ComponentItem?.Name ?? $"ID:{d.ComponentItemId}")
+                                            @if (!string.IsNullOrEmpty(d.ComponentItem?.Code))
                                             {
-                                                <span class="text-muted ms-1">(@d.ComponentProduct.Code)</span>
+                                                <span class="text-muted ms-1">(@d.ComponentItem.Code)</span>
                                             }
                                         </td>
                                         <td class="text-end">@NumberFormatHelper.FormatSmart(d.RequiredQuantity)</td>
@@ -514,7 +514,7 @@
         // 預填上次同品項入庫位置
         if (Item != null)
         {
-            var (wId, lId) = await ScheduleItemService.GetLastCompletionWarehouseAsync(Item.ProductId);
+            var (wId, lId) = await ScheduleItemService.GetLastCompletionWarehouseAsync(Item.ItemId);
             if (wId.HasValue)
             {
                 selectedWarehouseId = wId;
@@ -551,7 +551,7 @@
             .Where(d => d.IssuedQuantity > 0)
             .Select(d => new SettlementEditRow
             {
-                ComponentName = d.ComponentProduct?.Name ?? $"ID:{d.ComponentProductId}",
+                ComponentName = d.ComponentItem?.Name ?? $"ID:{d.ComponentItemId}",
                 IssuedQty = d.IssuedQuantity,
                 Settlement = new MaterialSettlementDto
                 {

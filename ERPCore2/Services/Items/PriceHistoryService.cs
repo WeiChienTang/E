@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
@@ -42,12 +42,12 @@ namespace ERPCore2.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PriceHistories
-                    .Include(ph => ph.Product)
+                    .Include(ph => ph.Item)
                     .Include(ph => ph.RelatedCustomer)
                     .Include(ph => ph.RelatedSupplier)
                     .Where(ph => (
-                        (ph.Product.Name != null && ph.Product.Name.Contains(searchTerm)) ||
-                        (ph.Product.Code != null && ph.Product.Code.Contains(searchTerm)) ||
+                        (ph.Item.Name != null && ph.Item.Name.Contains(searchTerm)) ||
+                        (ph.Item.Code != null && ph.Item.Code.Contains(searchTerm)) ||
                         (ph.ChangeReason != null && ph.ChangeReason.Contains(searchTerm)) ||
                         (ph.ChangedByUserName != null && ph.ChangedByUserName.Contains(searchTerm)) ||
                         (ph.RelatedCustomer != null && ph.RelatedCustomer.CompanyName != null && ph.RelatedCustomer.CompanyName.Contains(searchTerm)) ||
@@ -77,7 +77,7 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 // 基本驗證
-                if (entity.ProductId <= 0)
+                if (entity.ItemId <= 0)
                     errors.Add("品項為必填欄位");
 
                 if (entity.OldPrice < 0)
@@ -96,11 +96,11 @@ namespace ERPCore2.Services
                     errors.Add("變更日期不能大於目前時間");
 
                 // 檢查品項是否存在
-                if (entity.ProductId > 0)
+                if (entity.ItemId > 0)
                 {
                     using var context = await _contextFactory.CreateDbContextAsync();
-                    var productExists = await context.Products
-                        .AnyAsync(p => p.Id == entity.ProductId);
+                    var productExists = await context.Items
+                        .AnyAsync(p => p.Id == entity.ItemId);
                     if (!productExists)
                         errors.Add("指定的品項不存在");
                 }
@@ -136,7 +136,7 @@ namespace ERPCore2.Services
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    ProductId = entity.ProductId 
+                    ItemId = entity.ItemId 
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -152,7 +152,7 @@ namespace ERPCore2.Services
         protected override IQueryable<PriceHistory> BuildGetAllQuery(AppDbContext context)
         {
             return context.PriceHistories
-                .Include(ph => ph.Product)
+                .Include(ph => ph.Item)
                 .Include(ph => ph.RelatedCustomer)
                 .Include(ph => ph.RelatedSupplier)
                 .OrderByDescending(ph => ph.ChangeDate);
@@ -167,7 +167,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PriceHistories
-                    .Include(ph => ph.Product)
+                    .Include(ph => ph.Item)
                     .Include(ph => ph.RelatedCustomer)
                     .Include(ph => ph.RelatedSupplier)
                     .FirstOrDefaultAsync(ph => ph.Id == id);
@@ -190,25 +190,25 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據品項ID取得價格歷史
         /// </summary>
-        public async Task<List<PriceHistory>> GetByProductIdAsync(int productId)
+        public async Task<List<PriceHistory>> GetByItemIdAsync(int productId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PriceHistories
-                    .Include(ph => ph.Product)
+                    .Include(ph => ph.Item)
                     .Include(ph => ph.RelatedCustomer)
                     .Include(ph => ph.RelatedSupplier)
-                    .Where(ph => ph.ProductId == productId)
+                    .Where(ph => ph.ItemId == productId)
                     .OrderByDescending(ph => ph.ChangeDate)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByProductIdAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemIdAsync), GetType(), _logger, new { 
+                    Method = nameof(GetByItemIdAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId 
+                    ItemId = productId 
                 });
                 return new List<PriceHistory>();
             }
@@ -217,25 +217,25 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據品項ID和價格類型取得價格歷史
         /// </summary>
-        public async Task<List<PriceHistory>> GetByProductIdAndPriceTypeAsync(int productId, PriceType priceType)
+        public async Task<List<PriceHistory>> GetByItemIdAndPriceTypeAsync(int productId, PriceType priceType)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PriceHistories
-                    .Include(ph => ph.Product)
+                    .Include(ph => ph.Item)
                     .Include(ph => ph.RelatedCustomer)
                     .Include(ph => ph.RelatedSupplier)
-                    .Where(ph => ph.ProductId == productId && ph.PriceType == priceType)
+                    .Where(ph => ph.ItemId == productId && ph.PriceType == priceType)
                     .OrderByDescending(ph => ph.ChangeDate)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAndPriceTypeAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByProductIdAndPriceTypeAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemIdAndPriceTypeAsync), GetType(), _logger, new { 
+                    Method = nameof(GetByItemIdAndPriceTypeAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId,
+                    ItemId = productId,
                     PriceType = priceType 
                 });
                 return new List<PriceHistory>();
@@ -251,7 +251,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PriceHistories
-                    .Include(ph => ph.Product)
+                    .Include(ph => ph.Item)
                     .Include(ph => ph.RelatedCustomer)
                     .Include(ph => ph.RelatedSupplier)
                     .Where(ph => ph.ChangeDate >= startDate && ph.ChangeDate <= endDate)
@@ -279,7 +279,7 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PriceHistories
-                    .Include(ph => ph.Product)
+                    .Include(ph => ph.Item)
                     .Include(ph => ph.RelatedCustomer)
                     .Include(ph => ph.RelatedSupplier)
                     .Where(ph => ph.ChangedByUserId == userId)
@@ -300,25 +300,25 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得品項的最新價格歷史記錄
         /// </summary>
-        public async Task<PriceHistory?> GetLatestByProductIdAndPriceTypeAsync(int productId, PriceType priceType)
+        public async Task<PriceHistory?> GetLatestByItemIdAndPriceTypeAsync(int productId, PriceType priceType)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PriceHistories
-                    .Include(ph => ph.Product)
+                    .Include(ph => ph.Item)
                     .Include(ph => ph.RelatedCustomer)
                     .Include(ph => ph.RelatedSupplier)
-                    .Where(ph => ph.ProductId == productId && ph.PriceType == priceType)
+                    .Where(ph => ph.ItemId == productId && ph.PriceType == priceType)
                     .OrderByDescending(ph => ph.ChangeDate)
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLatestByProductIdAndPriceTypeAsync), GetType(), _logger, new { 
-                    Method = nameof(GetLatestByProductIdAndPriceTypeAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLatestByItemIdAndPriceTypeAsync), GetType(), _logger, new { 
+                    Method = nameof(GetLatestByItemIdAndPriceTypeAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId,
+                    ItemId = productId,
                     PriceType = priceType 
                 });
                 return null;
@@ -334,7 +334,7 @@ namespace ERPCore2.Services
             {
                 var priceHistory = new PriceHistory
                 {
-                    ProductId = productId,
+                    ItemId = productId,
                     PriceType = priceType,
                     OldPrice = oldPrice,
                     NewPrice = newPrice,
@@ -358,7 +358,7 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(RecordPriceChangeAsync), GetType(), _logger, new { 
                     Method = nameof(RecordPriceChangeAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId,
+                    ItemId = productId,
                     PriceType = priceType,
                     OldPrice = oldPrice,
                     NewPrice = newPrice 

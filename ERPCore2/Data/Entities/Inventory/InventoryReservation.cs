@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Models.Enums;
@@ -8,7 +8,7 @@ namespace ERPCore2.Data.Entities
     /// <summary>
     /// 庫存預留實體 - 管理銷售或生產訂單的庫存預留
     /// </summary>
-    [Index(nameof(ProductId), nameof(ReservationDate))]
+    [Index(nameof(ItemId), nameof(ReservationDate))]
     [Index(nameof(ReservationType), nameof(ReservationStatus))]
     [Index(nameof(ReferenceNumber))]
     public class InventoryReservation : BaseEntity
@@ -56,8 +56,8 @@ namespace ERPCore2.Data.Entities
         // Foreign Keys
         [Required(ErrorMessage = "品項為必填")]
         [Display(Name = "品項")]
-        [ForeignKey(nameof(Product))]
-        public int ProductId { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int ItemId { get; set; }
         
         [Required(ErrorMessage = "倉庫為必填")]
         [Display(Name = "倉庫")]
@@ -77,7 +77,7 @@ namespace ERPCore2.Data.Entities
         public int? InventoryStockDetailId { get; set; }
         
         // Navigation Properties
-        public Product Product { get; set; } = null!;
+        public Item Item { get; set; } = null!;
         public Warehouse Warehouse { get; set; } = null!;
         public WarehouseLocation? WarehouseLocation { get; set; }
         public InventoryStock? InventoryStock { get; set; }

@@ -4,8 +4,8 @@
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 
-<div class="d-flex align-items-center justify-content-between mb-2 px-1">
-    <div class="d-flex gap-2">
+<div class="d-flex align-items-center justify-content-between mb-2 px-1 flex-wrap gap-2">
+    <div class="d-flex gap-2 flex-wrap">
         <GenericButtonComponent IconClass="bi bi-people"
                                 Variant="ButtonVariant.DarkBlue"
                                 Size="ButtonSize.Small"
@@ -54,7 +54,9 @@ else
                     <th class="text-center d-none d-lg-table-cell" style="width:55px" title="@L["Field.OvertimeHours2"]">OT2</th>
                     <th class="text-center d-none d-xl-table-cell" style="width:55px" title="@L["Field.HolidayOvertimeHours"]">假日OT</th>
                     <th class="text-center d-none d-xl-table-cell" style="width:55px" title="@L["Field.NationalHolidayHours"]">國定OT</th>
+                    <th class="text-center d-none d-xl-table-cell" style="width:65px" title="@L["Field.TotalWorkHours"]">總工時</th>
                     <th class="text-center" style="width:75px">@L["Field.Status"]</th>
+                    <th class="text-center" style="width:60px">@L["Attendance.Detail"]</th>
                 </tr>
             </thead>
             <tbody>
@@ -72,6 +74,7 @@ else
                             <td class="text-center text-muted align-middle d-none d-lg-table-cell">@row.OvertimeHours2</td>
                             <td class="text-center text-muted align-middle d-none d-xl-table-cell">@row.HolidayOvertimeHours</td>
                             <td class="text-center text-muted align-middle d-none d-xl-table-cell">@row.NationalHolidayHours</td>
+                            <td class="text-center text-muted align-middle d-none d-xl-table-cell">@row.TotalWorkHours</td>
                         }
                         else
                         {
@@ -99,6 +102,10 @@ else
                             <td class="p-1 d-none d-xl-table-cell"><input type="number" class="form-control form-control-sm text-center px-1"
                                        value="@row.NationalHolidayHours" min="0" step="0.5"
                                        @onchange="e => SetField(row, e, (r, v) => r.NationalHolidayHours = v)" /></td>
+                            <td class="p-1 d-none d-xl-table-cell"><input type="number" class="form-control form-control-sm text-center px-1"
+                                       value="@row.TotalWorkHours" min="0" step="0.5"
+                                       @onchange="e => SetField(row, e, (r, v) => r.TotalWorkHours = v)"
+                                       title="@L["Attendance.TotalWorkHoursHint"]" /></td>
                         }
                         <td class="text-center align-middle">
                             @if (row.IsLocked)
@@ -114,11 +121,30 @@ else
                                 <span class="badge bg-info text-dark">已修改</span>
                             }
                         </td>
+                        <td class="text-center align-middle p-1">
+                            <button class="btn btn-outline-primary btn-sm py-0 px-1"
+                                    @onclick="() => OpenDetail(row)"
+                                    title="@L["Attendance.OpenDailyDetail"]">
+                                <i class="bi bi-calendar3"></i>
+                            </button>
+                        </td>
                     </tr>
                 }
             </tbody>
         </table>
     </div>
+}
+
+@* 逐日出勤明細 Modal *@
+@if (showDetail && detailEmployee != null)
+{
+    <AttendanceDailyDetailModal IsVisible="@showDetail"
+                                IsVisibleChanged="@((v) => showDetail = v)"
+                                EmployeeId="@detailEmployee.Id"
+                                EmployeeName="@detailEmployee.Name"
+                                Year="@Year"
+                                Month="@Month"
+                                OnSaved="@OnDetailSaved" />
 }
 
 @code {
@@ -131,6 +157,10 @@ else
     private bool isSaving = false;
     private int _loadedYear = -1;
     private int _loadedMonth = -1;
+
+    // 逐日明細 Modal 狀態
+    private bool showDetail = false;
+    private Employee? detailEmployee;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -154,7 +184,8 @@ else
         StateHasChanged();
 
         var empResult = await EmployeeService.GetActiveEmployeesAsync();
-        var employees = empResult.IsSuccess ? (empResult.Data ?? new()) : new();
+        var employees = (empResult.IsSuccess ? (empResult.Data ?? new()) : new())
+            .Where(e => !e.IsSuperAdmin).ToList();
         var records = await AttendanceService.GetByPeriodAsync(Year, Month);
 
         rows = employees.Select(emp =>
@@ -228,6 +259,18 @@ else
             await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.SaveFailed"].ToString());
     }
 
+    private void OpenDetail(RowViewModel row)
+    {
+        detailEmployee = row.Employee;
+        showDetail = true;
+    }
+
+    private async Task OnDetailSaved()
+    {
+        // 從逐日資料彙總後，重新載入月彙總表
+        await LoadAsync();
+    }
+
     private class RowViewModel
     {
         public Employee Employee { get; set; } = null!;
@@ -242,6 +285,7 @@ else
         public decimal OvertimeHours2 { get; set; }
         public decimal HolidayOvertimeHours { get; set; }
         public decimal NationalHolidayHours { get; set; }
+        public decimal TotalWorkHours { get; set; }
 
         public bool IsLocked => Attendance?.IsLocked == true;
 
@@ -256,6 +300,7 @@ else
             OvertimeHours2 = Attendance.OvertimeHours2;
             HolidayOvertimeHours = Attendance.HolidayOvertimeHours;
             NationalHolidayHours = Attendance.NationalHolidayHours;
+            TotalWorkHours = Attendance.TotalWorkHours;
         }
 
         public MonthlyAttendanceSummary ToEntity(int year, int month) => new()
@@ -272,6 +317,7 @@ else
             OvertimeHours2 = OvertimeHours2,
             HolidayOvertimeHours = HolidayOvertimeHours,
             NationalHolidayHours = NationalHolidayHours,
+            TotalWorkHours = TotalWorkHours,
         };
     }
 }

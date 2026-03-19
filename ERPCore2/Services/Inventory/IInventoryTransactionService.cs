@@ -1,4 +1,4 @@
-using ERPCore2.Components.Shared.UI.Form;
+﻿using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
@@ -15,7 +15,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據品項ID查詢異動記錄（透過明細查詢）
         /// </summary>
-        Task<List<InventoryTransaction>> GetByProductIdAsync(int productId);
+        Task<List<InventoryTransaction>> GetByItemIdAsync(int productId);
         
         Task<List<InventoryTransaction>> GetByWarehouseIdAsync(int warehouseId);
         Task<List<InventoryTransaction>> GetByTransactionNumberAsync(string transactionNumber);
@@ -25,7 +25,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據品項和日期範圍查詢異動記錄（透過明細查詢）
         /// </summary>
-        Task<List<InventoryTransaction>> GetByProductAndDateRangeAsync(int productId, DateTime startDate, DateTime endDate);
+        Task<List<InventoryTransaction>> GetByItemAndDateRangeAsync(int productId, DateTime startDate, DateTime endDate);
         Task<List<InventoryTransaction>> GetByWarehouseAndDateRangeAsync(int warehouseId, DateTime startDate, DateTime endDate);
         
         /// <summary>
@@ -45,12 +45,12 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得品項總入庫量（透過明細彙總）
         /// </summary>
-        Task<decimal> GetTotalInboundByProductAsync(int productId, DateTime? startDate = null, DateTime? endDate = null);
+        Task<decimal> GetTotalInboundByItemAsync(int productId, DateTime? startDate = null, DateTime? endDate = null);
         
         /// <summary>
         /// 取得品項總出庫量（透過明細彙總）
         /// </summary>
-        Task<decimal> GetTotalOutboundByProductAsync(int productId, DateTime? startDate = null, DateTime? endDate = null);
+        Task<decimal> GetTotalOutboundByItemAsync(int productId, DateTime? startDate = null, DateTime? endDate = null);
         
         Task<Dictionary<InventoryTransactionTypeEnum, int>> GetTransactionSummaryAsync(DateTime startDate, DateTime endDate);
 
@@ -85,12 +85,12 @@ namespace ERPCore2.Services
         /// <summary>
         /// 取得品項的異動歷史（主檔層級）
         /// </summary>
-        Task<List<InventoryTransaction>> GetProductMovementHistoryAsync(int productId, int? warehouseId = null);
+        Task<List<InventoryTransaction>> GetItemMovementHistoryAsync(int productId, int? warehouseId = null);
         
         /// <summary>
         /// 取得品項的異動歷史明細
         /// </summary>
-        Task<List<InventoryTransactionDetail>> GetProductMovementHistoryDetailsAsync(int productId, int? warehouseId = null);
+        Task<List<InventoryTransactionDetail>> GetItemMovementHistoryDetailsAsync(int productId, int? warehouseId = null);
 
         /// <summary>
         /// 取得關聯的庫存異動記錄（包含所有操作類型的明細）

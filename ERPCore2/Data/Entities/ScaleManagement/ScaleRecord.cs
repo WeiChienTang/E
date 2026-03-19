@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using ERPCore2.Helpers.EditModal;
@@ -65,9 +65,9 @@ namespace ERPCore2.Data.Entities
         // ===== 外鍵 =====
 
         [Display(Name = "品項")]
-        [ForeignKey(nameof(Product))]
-        public int? ProductId { get; set; }
-        public Product? Product { get; set; }
+        [ForeignKey(nameof(Item))]
+        public int? ItemId { get; set; }
+        public Item? Item { get; set; }
 
         [Display(Name = "車輛")]
         [ForeignKey(nameof(Vehicle))]

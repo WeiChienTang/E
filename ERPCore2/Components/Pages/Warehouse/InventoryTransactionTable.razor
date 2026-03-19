@@ -1,4 +1,4 @@
-@* 庫存異動明細表格組件 - 使用 GenericInteractiveTableComponent 統一UI（唯讀顯示） *@
+﻿@* 庫存異動明細表格組件 - 使用 GenericInteractiveTableComponent 統一UI（唯讀顯示） *@
 @using ERPCore2.Data.Entities
 @using ERPCore2.Models.Enums
 @using ERPCore2.Helpers
@@ -29,8 +29,8 @@
 <InventoryTransactionRelatedModal IsVisible="@showRelatedModal"
                                   IsVisibleChanged="@((bool visible) => showRelatedModal = visible)"
                                   TransactionNumber="@TransactionNumber"
-                                  ProductId="@selectedProductId"
-                                  ProductName="@selectedProductName" />
+                                  ItemId="@selectedItemId"
+                                  ItemName="@selectedItemName" />
 
 @code {
     // ===== 參數 =====
@@ -58,8 +58,8 @@
     
     // ===== 關聯查看狀態 =====
     private bool showRelatedModal = false;
-    private int? selectedProductId = null;
-    private string? selectedProductName = null;
+    private int? selectedItemId = null;
+    private string? selectedItemName = null;
     
     protected override void OnParametersSet()
     {
@@ -91,8 +91,8 @@
             DetailItems.Add(new TransactionDetailItem
             {
                 DetailEntity = detail,
-                ProductCode = detail.Product?.Code ?? "-",
-                ProductName = detail.Product?.Name ?? "-",
+                ItemCode = detail.Item?.Code ?? "-",
+                ItemName = detail.Item?.Name ?? "-",
                 WarehouseLocationName = detail.WarehouseLocation?.Name ?? "-",
                 Quantity = detail.Quantity,
                 UnitCost = detail.UnitCost,
@@ -119,8 +119,8 @@
             // 品項編號
             new()
             {
-                Title = L["Column.ProductCode"].ToString(),
-                PropertyName = nameof(TransactionDetailItem.ProductCode),
+                Title = L["Column.ItemCode"].ToString(),
+                PropertyName = nameof(TransactionDetailItem.ItemCode),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "120px",
                 IsReadOnly = true
@@ -128,8 +128,8 @@
             // 品項名稱
             new()
             {
-                Title = L["Column.ProductName"].ToString(),
-                PropertyName = nameof(TransactionDetailItem.ProductName),
+                Title = L["Column.ItemName"].ToString(),
+                PropertyName = nameof(TransactionDetailItem.ItemName),
                 ColumnType = InteractiveColumnType.Display,
                 Width = "180px",
                 IsReadOnly = true
@@ -254,7 +254,7 @@
                                IconClass="bi bi-clock-history text-white"
                                Size="ButtonSize.Large"
                                Title="@L["Inventory.ViewHistory"]"
-                               OnClick="() => ShowProductTransactionHistory(item)"
+                               OnClick="() => ShowItemTransactionHistory(item)"
                                StopPropagation="true"
                                CssClass="btn-square" />
     };
@@ -262,12 +262,12 @@
     /// <summary>
     /// 顯示特定品項的異動歷史
     /// </summary>
-    private void ShowProductTransactionHistory(TransactionDetailItem item)
+    private void ShowItemTransactionHistory(TransactionDetailItem item)
     {
-        if (item?.DetailEntity?.ProductId != null)
+        if (item?.DetailEntity?.ItemId != null)
         {
-            selectedProductId = item.DetailEntity.ProductId;
-            selectedProductName = item.ProductName;
+            selectedItemId = item.DetailEntity.ItemId;
+            selectedItemName = item.ItemName;
             showRelatedModal = true;
             StateHasChanged();
         }
@@ -305,8 +305,8 @@
     public class TransactionDetailItem
     {
         public InventoryTransactionDetail? DetailEntity { get; set; }
-        public string ProductCode { get; set; } = string.Empty;
-        public string ProductName { get; set; } = string.Empty;
+        public string ItemCode { get; set; } = string.Empty;
+        public string ItemName { get; set; } = string.Empty;
         public string WarehouseLocationName { get; set; } = string.Empty;
         public decimal Quantity { get; set; }
         public decimal? UnitCost { get; set; }

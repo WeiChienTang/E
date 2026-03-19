@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
@@ -47,8 +47,8 @@ namespace ERPCore2.Services
                 .Include(d => d.PurchaseOrderDetail)
                     .ThenInclude(pod => pod!.PurchaseOrder)
                 .Include(d => d.PurchaseOrderDetail)
-                    .ThenInclude(pod => pod!.Product)
-                .Include(d => d.Product)
+                    .ThenInclude(pod => pod!.Item)
+                .Include(d => d.Item)
                 .Include(d => d.Warehouse)
                 .Include(d => d.WarehouseLocation)
                 .OrderByDescending(d => d.CreatedAt)
@@ -68,8 +68,8 @@ namespace ERPCore2.Services
                     .Include(d => d.PurchaseOrderDetail)
                         .ThenInclude(pod => pod!.PurchaseOrder)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod!.Product)
-                    .Include(d => d.Product)
+                        .ThenInclude(pod => pod!.Item)
+                    .Include(d => d.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .FirstOrDefaultAsync(d => d.Id == id);
@@ -101,14 +101,14 @@ namespace ERPCore2.Services
                     .Include(d => d.PurchaseOrderDetail)
                         .ThenInclude(pod => pod!.PurchaseOrder)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod!.Product)
-                    .Include(d => d.Product)
+                        .ThenInclude(pod => pod!.Item)
+                    .Include(d => d.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => (
                         (d.PurchaseReceiving!.Code != null && d.PurchaseReceiving.Code.Contains(searchTerm)) ||
-                        d.Product!.Name!.Contains(searchTerm) ||
-                        (d.Product.Code != null && d.Product.Code.Contains(searchTerm)) ||
+                        d.Item!.Name!.Contains(searchTerm) ||
+                        (d.Item.Code != null && d.Item.Code.Contains(searchTerm)) ||
                         d.Warehouse.Name.Contains(searchTerm) ||
                         (d.BatchNumber != null && d.BatchNumber.Contains(searchTerm))
                     ))
@@ -141,7 +141,7 @@ namespace ERPCore2.Services
                 if (entity.PurchaseReceivingId <= 0)
                     errors.Add("採購入庫單不能為空");
 
-                if (entity.ProductId <= 0)
+                if (entity.ItemId <= 0)
                     errors.Add("品項不能為空");
 
                 if (entity.WarehouseId <= 0)
@@ -171,7 +171,7 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
                     PurchaseReceivingId = entity.PurchaseReceivingId,
-                    ProductId = entity.ProductId 
+                    ItemId = entity.ItemId 
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -193,8 +193,8 @@ namespace ERPCore2.Services
                     .Include(d => d.PurchaseOrderDetail)
                         .ThenInclude(pod => pod!.PurchaseOrder)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod!.Product)
-                    .Include(d => d.Product)
+                        .ThenInclude(pod => pod!.Item)
+                    .Include(d => d.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => d.PurchaseReceivingId == purchaseReceivingId)
@@ -222,7 +222,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.PurchaseReceivingDetails
                     .Include(d => d.PurchaseReceiving)
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => d.PurchaseOrderDetailId == purchaseOrderDetailId)
@@ -243,7 +243,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據品項ID取得所有入庫明細
         /// </summary>
-        public async Task<List<PurchaseReceivingDetail>> GetByProductIdAsync(int productId)
+        public async Task<List<PurchaseReceivingDetail>> GetByItemIdAsync(int productId)
         {
             try
             {
@@ -253,19 +253,19 @@ namespace ERPCore2.Services
                     .Include(d => d.PurchaseOrderDetail)
                         .ThenInclude(pod => pod!.PurchaseOrder)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod!.Product)
+                        .ThenInclude(pod => pod!.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
-                    .Where(d => d.ProductId == productId)
+                    .Where(d => d.ItemId == productId)
                     .OrderByDescending(d => d.CreatedAt)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAsync), GetType(), _logger, new { 
-                    Method = nameof(GetByProductIdAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemIdAsync), GetType(), _logger, new { 
+                    Method = nameof(GetByItemIdAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId 
+                    ItemId = productId 
                 });
                 return new List<PurchaseReceivingDetail>();
             }
@@ -284,8 +284,8 @@ namespace ERPCore2.Services
                     .Include(d => d.PurchaseOrderDetail)
                         .ThenInclude(pod => pod!.PurchaseOrder)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod!.Product)
-                    .Include(d => d.Product)
+                        .ThenInclude(pod => pod!.Item)
+                    .Include(d => d.Item)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => d.WarehouseId == warehouseId)
                     .OrderByDescending(d => d.CreatedAt)
@@ -315,8 +315,8 @@ namespace ERPCore2.Services
                     .Include(d => d.PurchaseOrderDetail)
                         .ThenInclude(pod => pod!.PurchaseOrder)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod!.Product)
-                    .Include(d => d.Product)
+                        .ThenInclude(pod => pod!.Item)
+                    .Include(d => d.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => d.PurchaseReceiving.SupplierId == supplierId &&
@@ -347,7 +347,7 @@ namespace ERPCore2.Services
                 // 查詢該廠商最近一次的採購入庫單
                 var lastReceiving = await context.PurchaseReceivings
                     .Include(pr => pr.PurchaseReceivingDetails)
-                        .ThenInclude(prd => prd.Product)
+                        .ThenInclude(prd => prd.Item)
                     .Include(pr => pr.PurchaseReceivingDetails)
                         .ThenInclude(prd => prd.Warehouse)
                     .Include(pr => pr.PurchaseReceivingDetails)
@@ -365,7 +365,7 @@ namespace ERPCore2.Services
                 
                 // 返回該入庫單的所有明細
                 return lastReceiving.PurchaseReceivingDetails
-                    .Where(prd => prd.Product != null)
+                    .Where(prd => prd.Item != null)
                     .OrderBy(prd => prd.Id)
                     .ToList();
             }
@@ -430,7 +430,7 @@ namespace ERPCore2.Services
                         {
                             // 驗證必要欄位：檢查品項、倉庫和入庫數量
                             // 注意：空白的入庫數量會被前端轉換為 0，這裡會被過濾掉
-                            if (detail.ProductId <= 0 || detail.WarehouseId <= 0 || detail.ReceivedQuantity <= 0)
+                            if (detail.ItemId <= 0 || detail.WarehouseId <= 0 || detail.ReceivedQuantity <= 0)
                                 continue;
 
                             detail.PurchaseReceivingId = purchaseReceivingId;
@@ -450,7 +450,7 @@ namespace ERPCore2.Services
                                 if (existingDetail != null)
                                 {
                                     // 更新現有明細的屬性
-                                    existingDetail.ProductId = detail.ProductId;
+                                    existingDetail.ItemId = detail.ItemId;
                                     existingDetail.PurchaseOrderDetailId = detail.PurchaseOrderDetailId;
                                     existingDetail.OrderQuantity = detail.OrderQuantity;
                                     existingDetail.ReceivedQuantity = detail.ReceivedQuantity;
@@ -525,14 +525,14 @@ namespace ERPCore2.Services
         /// <summary>
         /// 檢查品項在指定採購入庫單中是否已存在
         /// </summary>
-        public async Task<bool> IsProductExistsInReceivingAsync(int purchaseReceivingId, int productId, int purchaseOrderDetailId, int? excludeId = null)
+        public async Task<bool> IsItemExistsInReceivingAsync(int purchaseReceivingId, int productId, int purchaseOrderDetailId, int? excludeId = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.PurchaseReceivingDetails.Where(d => 
                     d.PurchaseReceivingId == purchaseReceivingId && 
-                    d.ProductId == productId && 
+                    d.ItemId == productId && 
                     d.PurchaseOrderDetailId == purchaseOrderDetailId);
                     
                 if (excludeId.HasValue)
@@ -542,11 +542,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsProductExistsInReceivingAsync), GetType(), _logger, new { 
-                    Method = nameof(IsProductExistsInReceivingAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsItemExistsInReceivingAsync), GetType(), _logger, new { 
+                    Method = nameof(IsItemExistsInReceivingAsync),
                     ServiceType = GetType().Name,
                     PurchaseReceivingId = purchaseReceivingId,
-                    ProductId = productId,
+                    ItemId = productId,
                     PurchaseOrderDetailId = purchaseOrderDetailId,
                     ExcludeId = excludeId 
                 });
@@ -557,7 +557,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 檢查品項在指定採購入庫單的特定倉庫位置是否已存在
         /// </summary>
-        public async Task<bool> IsProductWarehouseLocationExistsInReceivingAsync(
+        public async Task<bool> IsItemWarehouseLocationExistsInReceivingAsync(
             int purchaseReceivingId, 
             int productId, 
             int warehouseId, 
@@ -569,7 +569,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var query = context.PurchaseReceivingDetails.Where(d => 
                     d.PurchaseReceivingId == purchaseReceivingId && 
-                    d.ProductId == productId && 
+                    d.ItemId == productId && 
                     d.WarehouseId == warehouseId && 
                     d.WarehouseLocationId == warehouseLocationId);
                     
@@ -580,11 +580,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsProductWarehouseLocationExistsInReceivingAsync), GetType(), _logger, new { 
-                    Method = nameof(IsProductWarehouseLocationExistsInReceivingAsync),
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(IsItemWarehouseLocationExistsInReceivingAsync), GetType(), _logger, new { 
+                    Method = nameof(IsItemWarehouseLocationExistsInReceivingAsync),
                     ServiceType = GetType().Name,
                     PurchaseReceivingId = purchaseReceivingId,
-                    ProductId = productId,
+                    ItemId = productId,
                     WarehouseId = warehouseId,
                     WarehouseLocationId = warehouseLocationId,
                     ExcludeId = excludeId 
@@ -712,11 +712,11 @@ namespace ERPCore2.Services
                     .Include(t => t.Warehouse)
                     .Include(t => t.Employee)
                     .Include(t => t.Details)
-                        .ThenInclude(d => d.Product)
+                        .ThenInclude(d => d.Item)
                     .Include(t => t.Details)
                         .ThenInclude(d => d.WarehouseLocation)
                     .Where(t => (t.Remarks != null && detail.PurchaseReceiving.Code != null && t.Remarks.Contains(detail.PurchaseReceiving.Code)) &&
-                               t.Details.Any(d => d.ProductId == detail.ProductId))
+                               t.Details.Any(d => d.ItemId == detail.ItemId))
                     .OrderByDescending(t => t.CreatedAt)
                     .ToListAsync();
             }
@@ -745,10 +745,10 @@ namespace ERPCore2.Services
 
                 // 查詢要刪除的明細，包含相關資訊
                 var entity = await context.PurchaseReceivingDetails
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Include(d => d.Warehouse)
                     .Include(d => d.PurchaseOrderDetail)
-                        .ThenInclude(pod => pod!.Product)
+                        .ThenInclude(pod => pod!.Item)
                     .FirstOrDefaultAsync(d => d.Id == id);
                     
                 if (entity == null)
@@ -780,7 +780,7 @@ namespace ERPCore2.Services
                 {
                     // 使用 ReduceStockAsync 扣減庫存（因為取消進貨，實際收到的品項應該從庫存中減少）
                     var stockResult = await _inventoryStockService.ReduceStockAsync(
-                        productId: entity.ProductId,
+                        productId: entity.ItemId,
                         warehouseId: entity.WarehouseId,
                         quantity: entity.ReceivedQuantity,
                         transactionType: InventoryTransactionTypeEnum.Adjustment,

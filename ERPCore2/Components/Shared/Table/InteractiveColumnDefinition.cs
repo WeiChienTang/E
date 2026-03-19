@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using ERPCore2.Components.Shared.UI.Button;
 
 namespace ERPCore2.Components.Shared.Table
@@ -330,7 +330,7 @@ namespace ERPCore2.Components.Shared.Table
         /// <summary>
         /// 用於空行檢測的屬性名稱
         /// 當 ColumnType 為 Custom 且 PropertyName 為空時，指定要檢查的實際屬性
-        /// 例如：品項選擇欄位的 PropertyName 是空的，但實際要檢查 "SelectedProduct"
+        /// 例如：品項選擇欄位的 PropertyName 是空的，但實際要檢查 "SelectedItem"
         /// </summary>
         public string? EmptyCheckPropertyName { get; set; }
         

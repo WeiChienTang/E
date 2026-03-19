@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -94,7 +94,7 @@ namespace ERPCore2.Helpers.EditModal
         }
 
         /// <summary>
-        /// 將多個自訂欄位名稱加入指定區段 - 用於非實體屬性的欄位 (如 FilterProductId)
+        /// 將多個自訂欄位名稱加入指定區段 - 用於非實體屬性的欄位 (如 FilterItemId)
         /// </summary>
         /// <param name="sectionName">區段名稱</param>
         /// <param name="fieldNames">欄位名稱陣列</param>

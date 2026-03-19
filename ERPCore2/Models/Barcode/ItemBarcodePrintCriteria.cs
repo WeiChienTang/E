@@ -1,16 +1,16 @@
-using ERPCore2.Models.Reports;
+﻿using ERPCore2.Models.Reports;
 
 namespace ERPCore2.Models.Barcode
 {
     /// <summary>
     /// 品項條碼批次列印條件
     /// </summary>
-    public class ProductBarcodePrintCriteria
+    public class ItemBarcodePrintCriteria
     {
         /// <summary>
         /// 品項ID列表（空列表表示列印所有品項）
         /// </summary>
-        public List<int> ProductIds { get; set; } = new();
+        public List<int> ItemIds { get; set; } = new();
 
         /// <summary>
         /// 品項分類ID列表（可用於篩選特定分類的品項）
@@ -35,15 +35,15 @@ namespace ERPCore2.Models.Barcode
         /// <summary>
         /// 是否顯示品項名稱
         /// </summary>
-        public bool ShowProductName { get; set; } = true;
+        public bool ShowItemName { get; set; } = true;
 
         /// <summary>
         /// 是否顯示品項編號
         /// </summary>
-        public bool ShowProductCode { get; set; } = true;
+        public bool ShowItemCode { get; set; } = true;
 
         /// <summary>
-        /// 每個品項的列印數量字典 (ProductId -> PrintQuantity)
+        /// 每個品項的列印數量字典 (ItemId -> PrintQuantity)
         /// </summary>
         public Dictionary<int, int> PrintQuantities { get; set; } = new();
 
@@ -91,9 +91,9 @@ namespace ERPCore2.Models.Barcode
         {
             var summary = new List<string>();
 
-            if (ProductIds.Any())
+            if (ItemIds.Any())
             {
-                summary.Add($"選擇 {ProductIds.Count} 個品項");
+                summary.Add($"選擇 {ItemIds.Count} 個品項");
             }
             else
             {

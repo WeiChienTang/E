@@ -1,4 +1,4 @@
-#pragma warning disable CS0618 // SetoffDetailType.SalesOrderDetail — 保留舊資料向下相容處理
+﻿#pragma warning disable CS0618 // SetoffDetailType.SalesOrderDetail — 保留舊資料向下相容處理
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
@@ -11,33 +11,33 @@ namespace ERPCore2.Services
     /// <summary>
     /// 沖銷品項明細服務實作
     /// </summary>
-    public class SetoffProductDetailService : GenericManagementService<SetoffProductDetail>, ISetoffProductDetailService
+    public class SetoffItemDetailService : GenericManagementService<SetoffItemDetail>, ISetoffItemDetailService
     {
-        public SetoffProductDetailService(
+        public SetoffItemDetailService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<SetoffProductDetail>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<SetoffItemDetail>> logger) : base(contextFactory, logger)
         {
         }
 
-        public SetoffProductDetailService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        public SetoffItemDetailService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
         /// <summary>
         /// 覆寫 CreateAsync 以計算累計金額
         /// </summary>
-        public override async Task<ServiceResult<SetoffProductDetail>> CreateAsync(SetoffProductDetail entity)
+        public override async Task<ServiceResult<SetoffItemDetail>> CreateAsync(SetoffItemDetail entity)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 // 查詢該來源明細的既有累計金額
-                var existingTotal = await context.SetoffProductDetails
+                var existingTotal = await context.SetoffItemDetails
                     .Where(d => d.SourceDetailId == entity.SourceDetailId && d.SourceDetailType == entity.SourceDetailType)
                     .SumAsync(d => d.CurrentSetoffAmount);
                 
-                var existingAllowance = await context.SetoffProductDetails
+                var existingAllowance = await context.SetoffItemDetails
                     .Where(d => d.SourceDetailId == entity.SourceDetailId && d.SourceDetailType == entity.SourceDetailType)
                     .SumAsync(d => d.CurrentAllowanceAmount);
                 
@@ -64,27 +64,27 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     EntityId = entity.Id
                 });
-                return ServiceResult<SetoffProductDetail>.Failure($"新增沖銷品項明細時發生錯誤: {ex.Message}");
+                return ServiceResult<SetoffItemDetail>.Failure($"新增沖銷品項明細時發生錯誤: {ex.Message}");
             }
         }
 
         /// <summary>
         /// 覆寫 UpdateAsync 以重新計算累計金額
         /// </summary>
-        public override async Task<ServiceResult<SetoffProductDetail>> UpdateAsync(SetoffProductDetail entity)
+        public override async Task<ServiceResult<SetoffItemDetail>> UpdateAsync(SetoffItemDetail entity)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 // 查詢該來源明細的既有累計金額（排除當前正在更新的這筆）
-                var existingTotal = await context.SetoffProductDetails
+                var existingTotal = await context.SetoffItemDetails
                     .Where(d => d.SourceDetailId == entity.SourceDetailId 
                              && d.SourceDetailType == entity.SourceDetailType
                              && d.Id != entity.Id)
                     .SumAsync(d => d.CurrentSetoffAmount);
                 
-                var existingAllowance = await context.SetoffProductDetails
+                var existingAllowance = await context.SetoffItemDetails
                     .Where(d => d.SourceDetailId == entity.SourceDetailId 
                              && d.SourceDetailType == entity.SourceDetailType
                              && d.Id != entity.Id)
@@ -113,32 +113,32 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     EntityId = entity.Id
                 });
-                return ServiceResult<SetoffProductDetail>.Failure($"更新沖銷品項明細時發生錯誤: {ex.Message}");
+                return ServiceResult<SetoffItemDetail>.Failure($"更新沖銷品項明細時發生錯誤: {ex.Message}");
             }
         }
 
         /// <summary>
         /// 覆寫 BuildGetAllQuery 以包含關聯資料
         /// </summary>
-        protected override IQueryable<SetoffProductDetail> BuildGetAllQuery(AppDbContext context)
+        protected override IQueryable<SetoffItemDetail> BuildGetAllQuery(AppDbContext context)
         {
-            return context.SetoffProductDetails
+            return context.SetoffItemDetails
                 .Include(d => d.SetoffDocument)
-                .Include(d => d.Product)
+                .Include(d => d.Item)
                 .OrderByDescending(d => d.CreatedAt);
         }
 
         /// <summary>
         /// 覆寫 GetByIdAsync 以包含關聯資料
         /// </summary>
-        public override async Task<SetoffProductDetail?> GetByIdAsync(int id)
+        public override async Task<SetoffItemDetail?> GetByIdAsync(int id)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SetoffProductDetails
+                return await context.SetoffItemDetails
                     .Include(d => d.SetoffDocument)
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .FirstOrDefaultAsync(d => d.Id == id);
             }
             catch (Exception ex)
@@ -156,16 +156,16 @@ namespace ERPCore2.Services
         /// <summary>
         /// 根據沖款單ID取得品項明細
         /// </summary>
-        public async Task<List<SetoffProductDetail>> GetBySetoffDocumentIdAsync(int setoffDocumentId)
+        public async Task<List<SetoffItemDetail>> GetBySetoffDocumentIdAsync(int setoffDocumentId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.SetoffProductDetails
+                return await context.SetoffItemDetails
                     .AsNoTracking()  // 不追蹤實體，避免後續操作時的追蹤衝突
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Where(d => d.SetoffDocumentId == setoffDocumentId)
-                    .OrderBy(d => d.Product.Name)
+                    .OrderBy(d => d.Item.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -176,7 +176,7 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     SetoffDocumentId = setoffDocumentId
                 });
-                return new List<SetoffProductDetail>();
+                return new List<SetoffItemDetail>();
             }
         }
 
@@ -215,15 +215,15 @@ namespace ERPCore2.Services
                 // 1. 查詢未結清的銷貨退回明細（包含稅率計算所需欄位）
                 var salesReturnRawData = await context.SalesReturnDetails
                     .Include(d => d.SalesReturn)
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Where(d => d.SalesReturn.CustomerId == customerId && !d.IsSettled)
                     .Select(d => new
                     {
                         d.Id,
                         d.SalesReturn.Code,
-                        d.ProductId,
-                        ProductName = d.Product.Name,
-                        ProductCode = d.Product.Code ?? string.Empty,
+                        d.ItemId,
+                        ItemName = d.Item.Name,
+                        ItemCode = d.Item.Code ?? string.Empty,
                         d.ReturnSubtotalAmount,
                         d.TaxRate,
                         d.SalesReturn.TaxCalculationMethod,
@@ -237,9 +237,9 @@ namespace ERPCore2.Services
                     SourceDetailType = SetoffDetailType.SalesReturnDetail,
                     SourceDetailId = d.Id,
                     SourceDocumentNumber = d.Code ?? string.Empty,
-                    ProductId = d.ProductId,
-                    ProductName = d.ProductName!,
-                    ProductCode = d.ProductCode,
+                    ItemId = d.ItemId,
+                    ItemName = d.ItemName!,
+                    ItemCode = d.ItemCode,
                     TotalAmount = CalculateTaxInclusiveAmount(d.ReturnSubtotalAmount, d.TaxRate, d.TaxCalculationMethod),
                     PaidAmount = d.TotalPaidAmount,
                     DocumentDate = d.ReturnDate,
@@ -251,15 +251,15 @@ namespace ERPCore2.Services
                 // 3. 查詢未結清的銷貨出貨明細（包含稅率計算所需欄位）
                 var salesDeliveryRawData = await context.SalesDeliveryDetails
                     .Include(d => d.SalesDelivery)
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Where(d => d.SalesDelivery.CustomerId == customerId && !d.IsSettled)
                     .Select(d => new
                     {
                         d.Id,
                         d.SalesDelivery.Code,
-                        d.ProductId,
-                        ProductName = d.Product.Name,
-                        ProductCode = d.Product.Code ?? string.Empty,
+                        d.ItemId,
+                        ItemName = d.Item.Name,
+                        ItemCode = d.Item.Code ?? string.Empty,
                         d.SubtotalAmount,
                         d.TaxRate,
                         d.SalesDelivery.TaxCalculationMethod,
@@ -273,9 +273,9 @@ namespace ERPCore2.Services
                     SourceDetailType = SetoffDetailType.SalesDeliveryDetail,
                     SourceDetailId = d.Id,
                     SourceDocumentNumber = d.Code ?? string.Empty,
-                    ProductId = d.ProductId,
-                    ProductName = d.ProductName!,
-                    ProductCode = d.ProductCode,
+                    ItemId = d.ItemId,
+                    ItemName = d.ItemName!,
+                    ItemCode = d.ItemCode,
                     TotalAmount = CalculateTaxInclusiveAmount(d.SubtotalAmount, d.TaxRate, d.TaxCalculationMethod),
                     PaidAmount = d.TotalReceivedAmount,
                     DocumentDate = d.DeliveryDate,
@@ -285,13 +285,13 @@ namespace ERPCore2.Services
                 results.AddRange(salesDeliveryDetails);
 
                 // 4. 批次查詢歷史累計沖款和折讓金額（修正 Bug-6：原實作為 N+1，每筆明細兩次 DB 查詢）
-                // 改為一次批次查詢全部相關 SetoffProductDetail，在記憶體中 GroupBy 加總
+                // 改為一次批次查詢全部相關 SetoffItemDetail，在記憶體中 GroupBy 加總
                 if (results.Any())
                 {
                     var returnIds   = salesReturnDetails.Select(d => d.SourceDetailId).ToList();
                     var deliveryIds = salesDeliveryDetails.Select(d => d.SourceDetailId).ToList();
 
-                    var setoffSums = await context.SetoffProductDetails
+                    var setoffSums = await context.SetoffItemDetails
                         .Where(d =>
                             (d.SourceDetailType == SetoffDetailType.SalesReturnDetail   && returnIds.Contains(d.SourceDetailId)) ||
                             (d.SourceDetailType == SetoffDetailType.SalesDeliveryDetail && deliveryIds.Contains(d.SourceDetailId)))
@@ -323,7 +323,7 @@ namespace ERPCore2.Services
                     .Where(r => r.TotalAmount != 0 && r.RemainingAmount != 0)
                     .ToList();
 
-                return results.OrderBy(r => r.DocumentDate).ThenBy(r => r.ProductName).ToList();
+                return results.OrderBy(r => r.DocumentDate).ThenBy(r => r.ItemName).ToList();
             }
             catch (Exception ex)
             {
@@ -350,15 +350,15 @@ namespace ERPCore2.Services
                 // 1. 查詢未結清的採購進貨明細（包含稅率計算所需欄位）
                 var purchaseReceivingRawData = await context.PurchaseReceivingDetails
                     .Include(d => d.PurchaseReceiving)
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Where(d => d.PurchaseReceiving.SupplierId == supplierId && !d.IsSettled)
                     .Select(d => new
                     {
                         d.Id,
                         d.PurchaseReceiving.Code,
-                        d.ProductId,
-                        ProductName = d.Product.Name,
-                        ProductCode = d.Product.Code ?? string.Empty,
+                        d.ItemId,
+                        ItemName = d.Item.Name,
+                        ItemCode = d.Item.Code ?? string.Empty,
                         d.SubtotalAmount,
                         d.TaxRate,
                         d.PurchaseReceiving.TaxCalculationMethod,
@@ -372,9 +372,9 @@ namespace ERPCore2.Services
                     SourceDetailType = SetoffDetailType.PurchaseReceivingDetail,
                     SourceDetailId = d.Id,
                     SourceDocumentNumber = d.Code ?? string.Empty,
-                    ProductId = d.ProductId,
-                    ProductName = d.ProductName!,
-                    ProductCode = d.ProductCode,
+                    ItemId = d.ItemId,
+                    ItemName = d.ItemName!,
+                    ItemCode = d.ItemCode,
                     TotalAmount = CalculateTaxInclusiveAmount(d.SubtotalAmount, d.TaxRate, d.TaxCalculationMethod),
                     PaidAmount = d.TotalPaidAmount,
                     DocumentDate = d.ReceiptDate,
@@ -386,15 +386,15 @@ namespace ERPCore2.Services
                 // 2. 查詢未結清的採購退回明細（包含稅率計算所需欄位）
                 var purchaseReturnRawData = await context.PurchaseReturnDetails
                     .Include(d => d.PurchaseReturn)
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Where(d => d.PurchaseReturn.SupplierId == supplierId && !d.IsSettled)
                     .Select(d => new
                     {
                         d.Id,
                         d.PurchaseReturn.Code,
-                        d.ProductId,
-                        ProductName = d.Product.Name,
-                        ProductCode = d.Product.Code ?? string.Empty,
+                        d.ItemId,
+                        ItemName = d.Item.Name,
+                        ItemCode = d.Item.Code ?? string.Empty,
                         d.ReturnSubtotalAmount,
                         d.TaxRate,
                         d.PurchaseReturn.TaxCalculationMethod,
@@ -408,9 +408,9 @@ namespace ERPCore2.Services
                     SourceDetailType = SetoffDetailType.PurchaseReturnDetail,
                     SourceDetailId = d.Id,
                     SourceDocumentNumber = d.Code ?? string.Empty,
-                    ProductId = d.ProductId,
-                    ProductName = d.ProductName!,
-                    ProductCode = d.ProductCode,
+                    ItemId = d.ItemId,
+                    ItemName = d.ItemName!,
+                    ItemCode = d.ItemCode,
                     TotalAmount = CalculateTaxInclusiveAmount(d.ReturnSubtotalAmount, d.TaxRate, d.TaxCalculationMethod),
                     PaidAmount = d.TotalReceivedAmount,
                     DocumentDate = d.ReturnDate,
@@ -420,13 +420,13 @@ namespace ERPCore2.Services
                 results.AddRange(purchaseReturnDetails);
 
                 // 3. 批次查詢歷史累計沖款和折讓金額（修正 Bug-6：原實作為 N+1，每筆明細兩次 DB 查詢）
-                // 改為一次批次查詢全部相關 SetoffProductDetail，在記憶體中 GroupBy 加總
+                // 改為一次批次查詢全部相關 SetoffItemDetail，在記憶體中 GroupBy 加總
                 if (results.Any())
                 {
                     var receivingIds = purchaseReceivingDetails.Select(d => d.SourceDetailId).ToList();
                     var returnIds    = purchaseReturnDetails.Select(d => d.SourceDetailId).ToList();
 
-                    var setoffSums = await context.SetoffProductDetails
+                    var setoffSums = await context.SetoffItemDetails
                         .Where(d =>
                             (d.SourceDetailType == SetoffDetailType.PurchaseReceivingDetail && receivingIds.Contains(d.SourceDetailId)) ||
                             (d.SourceDetailType == SetoffDetailType.PurchaseReturnDetail    && returnIds.Contains(d.SourceDetailId)))
@@ -458,7 +458,7 @@ namespace ERPCore2.Services
                     .Where(r => r.TotalAmount != 0 && r.RemainingAmount != 0)
                     .ToList();
 
-                return results.OrderBy(r => r.DocumentDate).ThenBy(r => r.ProductName).ToList();
+                return results.OrderBy(r => r.DocumentDate).ThenBy(r => r.ItemName).ToList();
             }
             catch (Exception ex)
             {
@@ -489,7 +489,7 @@ namespace ERPCore2.Services
                     case SetoffDetailType.SalesOrderDetail:
                         var salesDetail = await context.SalesOrderDetails
                             .Include(d => d.SalesOrder)
-                            .Include(d => d.Product)
+                            .Include(d => d.Item)
                             .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
                         
                         if (salesDetail != null)
@@ -499,9 +499,9 @@ namespace ERPCore2.Services
                                 SourceDetailType = SetoffDetailType.SalesOrderDetail,
                                 SourceDetailId = salesDetail.Id,
                                 SourceDocumentNumber = salesDetail.SalesOrder.Code ?? string.Empty,
-                                ProductId = salesDetail.ProductId,
-                                ProductName = salesDetail.Product!.Name!,
-                                ProductCode = salesDetail.Product.Code ?? string.Empty,
+                                ItemId = salesDetail.ItemId,
+                                ItemName = salesDetail.Item!.Name!,
+                                ItemCode = salesDetail.Item.Code ?? string.Empty,
                                 TotalAmount = CalculateTaxInclusiveAmount(
                                     salesDetail.SubtotalAmount,
                                     salesDetail.TaxRate,
@@ -516,7 +516,7 @@ namespace ERPCore2.Services
                     case SetoffDetailType.SalesReturnDetail:
                         var salesReturnDetail = await context.SalesReturnDetails
                             .Include(d => d.SalesReturn)
-                            .Include(d => d.Product)
+                            .Include(d => d.Item)
                             .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
                         
                         if (salesReturnDetail != null)
@@ -526,9 +526,9 @@ namespace ERPCore2.Services
                                 SourceDetailType = SetoffDetailType.SalesReturnDetail,
                                 SourceDetailId = salesReturnDetail.Id,
                                 SourceDocumentNumber = salesReturnDetail.SalesReturn.Code ?? string.Empty,
-                                ProductId = salesReturnDetail.ProductId,
-                                ProductName = salesReturnDetail.Product!.Name!,
-                                ProductCode = salesReturnDetail.Product.Code ?? string.Empty,
+                                ItemId = salesReturnDetail.ItemId,
+                                ItemName = salesReturnDetail.Item!.Name!,
+                                ItemCode = salesReturnDetail.Item.Code ?? string.Empty,
                                 TotalAmount = CalculateTaxInclusiveAmount(
                                     salesReturnDetail.ReturnSubtotalAmount,
                                     salesReturnDetail.TaxRate,
@@ -543,7 +543,7 @@ namespace ERPCore2.Services
                     case SetoffDetailType.PurchaseReceivingDetail:
                         var purchaseDetail = await context.PurchaseReceivingDetails
                             .Include(d => d.PurchaseReceiving)
-                            .Include(d => d.Product)
+                            .Include(d => d.Item)
                             .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
                         
                         if (purchaseDetail != null)
@@ -553,9 +553,9 @@ namespace ERPCore2.Services
                                 SourceDetailType = SetoffDetailType.PurchaseReceivingDetail,
                                 SourceDetailId = purchaseDetail.Id,
                                 SourceDocumentNumber = purchaseDetail.PurchaseReceiving.Code ?? string.Empty,
-                                ProductId = purchaseDetail.ProductId,
-                                ProductName = purchaseDetail.Product!.Name!,
-                                ProductCode = purchaseDetail.Product.Code ?? string.Empty,
+                                ItemId = purchaseDetail.ItemId,
+                                ItemName = purchaseDetail.Item!.Name!,
+                                ItemCode = purchaseDetail.Item.Code ?? string.Empty,
                                 TotalAmount = CalculateTaxInclusiveAmount(
                                     purchaseDetail.SubtotalAmount,
                                     purchaseDetail.TaxRate,
@@ -570,7 +570,7 @@ namespace ERPCore2.Services
                     case SetoffDetailType.PurchaseReturnDetail:
                         var purchaseReturnDetail = await context.PurchaseReturnDetails
                             .Include(d => d.PurchaseReturn)
-                            .Include(d => d.Product)
+                            .Include(d => d.Item)
                             .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
                         
                         if (purchaseReturnDetail != null)
@@ -580,9 +580,9 @@ namespace ERPCore2.Services
                                 SourceDetailType = SetoffDetailType.PurchaseReturnDetail,
                                 SourceDetailId = purchaseReturnDetail.Id,
                                 SourceDocumentNumber = purchaseReturnDetail.PurchaseReturn.Code ?? string.Empty,
-                                ProductId = purchaseReturnDetail.ProductId,
-                                ProductName = purchaseReturnDetail.Product!.Name!,
-                                ProductCode = purchaseReturnDetail.Product.Code ?? string.Empty,
+                                ItemId = purchaseReturnDetail.ItemId,
+                                ItemName = purchaseReturnDetail.Item!.Name!,
+                                ItemCode = purchaseReturnDetail.Item.Code ?? string.Empty,
                                 TotalAmount = CalculateTaxInclusiveAmount(
                                     purchaseReturnDetail.ReturnSubtotalAmount,
                                     purchaseReturnDetail.TaxRate,
@@ -597,7 +597,7 @@ namespace ERPCore2.Services
                     case SetoffDetailType.SalesDeliveryDetail:
                         var salesDeliveryDetail = await context.SalesDeliveryDetails
                             .Include(d => d.SalesDelivery)
-                            .Include(d => d.Product)
+                            .Include(d => d.Item)
                             .FirstOrDefaultAsync(d => d.Id == sourceDetailId);
                         
                         if (salesDeliveryDetail != null)
@@ -607,9 +607,9 @@ namespace ERPCore2.Services
                                 SourceDetailType = SetoffDetailType.SalesDeliveryDetail,
                                 SourceDetailId = salesDeliveryDetail.Id,
                                 SourceDocumentNumber = salesDeliveryDetail.SalesDelivery.Code ?? string.Empty,
-                                ProductId = salesDeliveryDetail.ProductId,
-                                ProductName = salesDeliveryDetail.Product!.Name!,
-                                ProductCode = salesDeliveryDetail.Product.Code ?? string.Empty,
+                                ItemId = salesDeliveryDetail.ItemId,
+                                ItemName = salesDeliveryDetail.Item!.Name!,
+                                ItemCode = salesDeliveryDetail.Item.Code ?? string.Empty,
                                 TotalAmount = CalculateTaxInclusiveAmount(
                                     salesDeliveryDetail.SubtotalAmount,
                                     salesDeliveryDetail.TaxRate,
@@ -625,12 +625,12 @@ namespace ERPCore2.Services
                 // 如果找到了來源明細，查詢該明細的歷史累計沖款和折讓金額
                 if (result != null)
                 {
-                    var historicalSetoff = await context.SetoffProductDetails
+                    var historicalSetoff = await context.SetoffItemDetails
                         .Where(d => d.SourceDetailId == sourceDetailId 
                                  && d.SourceDetailType == sourceDetailType)
                         .SumAsync(d => d.CurrentSetoffAmount);
 
-                    var historicalAllowance = await context.SetoffProductDetails
+                    var historicalAllowance = await context.SetoffItemDetails
                         .Where(d => d.SourceDetailId == sourceDetailId 
                                  && d.SourceDetailType == sourceDetailType)
                         .SumAsync(d => d.CurrentAllowanceAmount);
@@ -664,7 +664,7 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
 
                 // 計算該來源明細的總沖款金額
-                var totalSetoff = await context.SetoffProductDetails
+                var totalSetoff = await context.SetoffItemDetails
                     .Where(d => d.SourceDetailId == sourceDetailId && d.SourceDetailType == sourceType)
                     .SumAsync(d => d.CurrentSetoffAmount + d.CurrentAllowanceAmount);
 
@@ -769,7 +769,7 @@ namespace ERPCore2.Services
         /// </summary>
         private async Task UpdateSourceDetailCacheInContextAsync(AppDbContext context, int sourceDetailId, SetoffDetailType sourceType)
         {
-            var totalSetoff = await context.SetoffProductDetails
+            var totalSetoff = await context.SetoffItemDetails
                 .Where(d => d.SourceDetailId == sourceDetailId && d.SourceDetailType == sourceType)
                 .SumAsync(d => d.CurrentSetoffAmount + d.CurrentAllowanceAmount);
 
@@ -840,7 +840,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 批次建立沖銷品項明細（含驗證）
         /// </summary>
-        public async Task<ServiceResult> CreateBatchWithValidationAsync(List<SetoffProductDetail> details)
+        public async Task<ServiceResult> CreateBatchWithValidationAsync(List<SetoffItemDetail> details)
         {
             try
             {
@@ -851,8 +851,8 @@ namespace ERPCore2.Services
                 await using var transaction = await context.Database.BeginTransactionAsync();
 
                 // 區分新增與更新的明細
-                var detailsToAdd = new List<SetoffProductDetail>();
-                var detailsToUpdate = new List<SetoffProductDetail>();
+                var detailsToAdd = new List<SetoffItemDetail>();
+                var detailsToUpdate = new List<SetoffItemDetail>();
 
                 foreach (var detail in details)
                 {
@@ -920,12 +920,12 @@ namespace ERPCore2.Services
                 foreach (var detail in detailsToAdd)
                 {
                     // 查詢該來源明細的既有累計金額
-                    var existingTotal = await context.SetoffProductDetails
+                    var existingTotal = await context.SetoffItemDetails
                         .Where(d => d.SourceDetailId == detail.SourceDetailId 
                                  && d.SourceDetailType == detail.SourceDetailType)
                         .SumAsync(d => d.CurrentSetoffAmount);
                     
-                    var existingAllowance = await context.SetoffProductDetails
+                    var existingAllowance = await context.SetoffItemDetails
                         .Where(d => d.SourceDetailId == detail.SourceDetailId 
                                  && d.SourceDetailType == detail.SourceDetailType)
                         .SumAsync(d => d.CurrentAllowanceAmount);
@@ -946,7 +946,7 @@ namespace ERPCore2.Services
                 // 處理更新的明細
                 foreach (var detail in detailsToUpdate)
                 {
-                    var existingEntity = await context.SetoffProductDetails.FindAsync(detail.Id);
+                    var existingEntity = await context.SetoffItemDetails.FindAsync(detail.Id);
                     if (existingEntity != null)
                     {
                         // 計算累計金額的差異
@@ -966,7 +966,7 @@ namespace ERPCore2.Services
                 // 批次新增
                 if (detailsToAdd.Any())
                 {
-                    await context.SetoffProductDetails.AddRangeAsync(detailsToAdd);
+                    await context.SetoffItemDetails.AddRangeAsync(detailsToAdd);
                 }
 
                 await context.SaveChangesAsync(); // 儲存明細（交易內）
@@ -1093,7 +1093,7 @@ namespace ERPCore2.Services
                 var previousSetoffAmount = 0m;
                 if (excludeSetoffDetailId.HasValue && excludeSetoffDetailId.Value > 0)
                 {
-                    var existingDetail = await context.SetoffProductDetails
+                    var existingDetail = await context.SetoffItemDetails
                         .FirstOrDefaultAsync(d => d.Id == excludeSetoffDetailId.Value 
                                                 && d.SourceDetailId == sourceDetailId 
                                                 && d.SourceDetailType == sourceType);
@@ -1139,7 +1139,7 @@ namespace ERPCore2.Services
         /// <summary>
         /// 實作搜尋功能
         /// </summary>
-        public override async Task<List<SetoffProductDetail>> SearchAsync(string searchTerm)
+        public override async Task<List<SetoffItemDetail>> SearchAsync(string searchTerm)
         {
             try
             {
@@ -1149,13 +1149,13 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var searchTermLower = searchTerm.ToLower();
 
-                return await context.SetoffProductDetails
+                return await context.SetoffItemDetails
                     .Include(d => d.SetoffDocument)
-                    .Include(d => d.Product)
+                    .Include(d => d.Item)
                     .Where(d =>
                         (d.SetoffDocument.Code != null && d.SetoffDocument.Code.ToLower().Contains(searchTermLower)) ||
-                        d.Product!.Name!.ToLower().Contains(searchTermLower) ||
-                        (d.Product.Code != null && d.Product.Code.ToLower().Contains(searchTermLower)))
+                        d.Item!.Name!.ToLower().Contains(searchTermLower) ||
+                        (d.Item.Code != null && d.Item.Code.ToLower().Contains(searchTermLower)))
                     .OrderByDescending(d => d.CreatedAt)
                     .ToListAsync();
             }
@@ -1167,14 +1167,14 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     SearchTerm = searchTerm
                 });
-                return new List<SetoffProductDetail>();
+                return new List<SetoffItemDetail>();
             }
         }
 
         /// <summary>
         /// 實作驗證功能
         /// </summary>
-        public override async Task<ServiceResult> ValidateAsync(SetoffProductDetail entity)
+        public override async Task<ServiceResult> ValidateAsync(SetoffItemDetail entity)
         {
             try
             {
@@ -1183,7 +1183,7 @@ namespace ERPCore2.Services
                 if (entity.SetoffDocumentId <= 0)
                     errors.Add("沖款單據為必填");
 
-                if (entity.ProductId <= 0)
+                if (entity.ItemId <= 0)
                     errors.Add("品項為必填");
 
                 if (entity.SourceDetailId <= 0)

@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Helpers;
@@ -10,27 +10,27 @@ namespace ERPCore2.Services
     /// <summary>
     /// 品項合成明細服務實作 - 繼承 GenericManagementService
     /// </summary>
-    public class ProductCompositionDetailService : GenericManagementService<ProductCompositionDetail>, IProductCompositionDetailService
+    public class ItemCompositionDetailService : GenericManagementService<ItemCompositionDetail>, IItemCompositionDetailService
     {
         /// <summary>
         /// 完整建構子 - 使用 ILogger
         /// </summary>
-        public ProductCompositionDetailService(
+        public ItemCompositionDetailService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<ProductCompositionDetail>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<ItemCompositionDetail>> logger) : base(contextFactory, logger)
         {
         }
 
         /// <summary>
         /// 簡易建構子 - 不使用 ILogger
         /// </summary>
-        public ProductCompositionDetailService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
+        public ItemCompositionDetailService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
         }
 
         #region 覆寫基底方法
 
-        public override async Task<ServiceResult<ProductCompositionDetail>> CreateAsync(ProductCompositionDetail entity)
+        public override async Task<ServiceResult<ItemCompositionDetail>> CreateAsync(ItemCompositionDetail entity)
         {
             try
             {
@@ -38,7 +38,7 @@ namespace ERPCore2.Services
                 var validationResult = await ValidateAsync(entity);
                 if (!validationResult.IsSuccess)
                 {
-                    return ServiceResult<ProductCompositionDetail>.Failure(validationResult.ErrorMessage);
+                    return ServiceResult<ItemCompositionDetail>.Failure(validationResult.ErrorMessage);
                 }
 
                 // 設定建立資訊
@@ -53,37 +53,37 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 
                 // 清除 Navigation Properties，只保留外鍵 ID（避免 EF Core 追蹤錯誤）
-                entity.ProductComposition = null!;
-                entity.ComponentProduct = null!;
+                entity.ItemComposition = null!;
+                entity.ComponentItem = null!;
                 entity.Unit = null;
                 
-                var dbSet = context.Set<ProductCompositionDetail>();
+                var dbSet = context.Set<ItemCompositionDetail>();
                 dbSet.Add(entity);
                 await context.SaveChangesAsync();
 
-                return ServiceResult<ProductCompositionDetail>.Success(entity);
+                return ServiceResult<ItemCompositionDetail>.Success(entity);
             }
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(CreateAsync), GetType(), _logger, new
                 {
-                    ProductCompositionId = entity.ProductCompositionId,
-                    ComponentProductId = entity.ComponentProductId,
+                    ItemCompositionId = entity.ItemCompositionId,
+                    ComponentItemId = entity.ComponentItemId,
                     Quantity = entity.Quantity,
                     UnitId = entity.UnitId
                 });
                 
                 var innerMessage = ex.InnerException?.Message ?? ex.Message;
-                return ServiceResult<ProductCompositionDetail>.Failure($"建立資料時發生錯誤: {innerMessage}");
+                return ServiceResult<ItemCompositionDetail>.Failure($"建立資料時發生錯誤: {innerMessage}");
             }
         }
 
-        public override async Task<ServiceResult<ProductCompositionDetail>> UpdateAsync(ProductCompositionDetail entity)
+        public override async Task<ServiceResult<ItemCompositionDetail>> UpdateAsync(ItemCompositionDetail entity)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var dbSet = context.Set<ProductCompositionDetail>();
+                var dbSet = context.Set<ItemCompositionDetail>();
                 
                 // 檢查實體是否存在
                 var existingEntity = await dbSet
@@ -91,14 +91,14 @@ namespace ERPCore2.Services
                     
                 if (existingEntity == null)
                 {
-                    return ServiceResult<ProductCompositionDetail>.Failure("找不到要更新的資料");
+                    return ServiceResult<ItemCompositionDetail>.Failure("找不到要更新的資料");
                 }
 
                 // 驗證實體
                 var validationResult = await ValidateAsync(entity);
                 if (!validationResult.IsSuccess)
                 {
-                    return ServiceResult<ProductCompositionDetail>.Failure(validationResult.ErrorMessage);
+                    return ServiceResult<ItemCompositionDetail>.Failure(validationResult.ErrorMessage);
                 }
 
                 // 保持原建立資訊
@@ -109,8 +109,8 @@ namespace ERPCore2.Services
                 entity.UpdatedAt = DateTime.UtcNow;
 
                 // 清除 Navigation Properties，只保留外鍵 ID（避免 EF Core 追蹤錯誤）
-                entity.ProductComposition = null!;
-                entity.ComponentProduct = null!;
+                entity.ItemComposition = null!;
+                entity.ComponentItem = null!;
                 entity.Unit = null;
 
                 // 分離舊實體並附加新實體
@@ -119,43 +119,43 @@ namespace ERPCore2.Services
                 
                 await context.SaveChangesAsync();
 
-                return ServiceResult<ProductCompositionDetail>.Success(entity);
+                return ServiceResult<ItemCompositionDetail>.Success(entity);
             }
             catch (Exception ex)
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateAsync), GetType(), _logger, new
                 {
                     Id = entity.Id,
-                    ProductCompositionId = entity.ProductCompositionId,
-                    ComponentProductId = entity.ComponentProductId,
+                    ItemCompositionId = entity.ItemCompositionId,
+                    ComponentItemId = entity.ComponentItemId,
                     Quantity = entity.Quantity,
                     UnitId = entity.UnitId
                 });
                 
                 var innerMessage = ex.InnerException?.Message ?? ex.Message;
-                return ServiceResult<ProductCompositionDetail>.Failure($"更新資料時發生錯誤: {innerMessage}");
+                return ServiceResult<ItemCompositionDetail>.Failure($"更新資料時發生錯誤: {innerMessage}");
             }
         }
 
-        protected override IQueryable<ProductCompositionDetail> BuildGetAllQuery(AppDbContext context)
+        protected override IQueryable<ItemCompositionDetail> BuildGetAllQuery(AppDbContext context)
         {
-            return context.ProductCompositionDetails
-                .Include(pcd => pcd.ProductComposition)
-                    .ThenInclude(pc => pc.ParentProduct)
-                .Include(pcd => pcd.ComponentProduct)
+            return context.ItemCompositionDetails
+                .Include(pcd => pcd.ItemComposition)
+                    .ThenInclude(pc => pc.ParentItem)
+                .Include(pcd => pcd.ComponentItem)
                 .Include(pcd => pcd.Unit)
-                .OrderBy(pcd => pcd.ProductCompositionId);
+                .OrderBy(pcd => pcd.ItemCompositionId);
         }
 
-        public override async Task<ProductCompositionDetail?> GetByIdAsync(int id)
+        public override async Task<ItemCompositionDetail?> GetByIdAsync(int id)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductCompositionDetails
-                    .Include(pcd => pcd.ProductComposition)
-                        .ThenInclude(pc => pc.ParentProduct)
-                    .Include(pcd => pcd.ComponentProduct)
+                return await context.ItemCompositionDetails
+                    .Include(pcd => pcd.ItemComposition)
+                        .ThenInclude(pc => pc.ParentItem)
+                    .Include(pcd => pcd.ComponentItem)
                     .Include(pcd => pcd.Unit)
                     .FirstOrDefaultAsync(pcd => pcd.Id == id);
             }
@@ -171,15 +171,15 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<List<ProductCompositionDetail>> SearchAsync(string searchTerm)
+        public override async Task<List<ItemCompositionDetail>> SearchAsync(string searchTerm)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.ProductCompositionDetails
-                    .Include(pcd => pcd.ProductComposition)
-                        .ThenInclude(pc => pc.ParentProduct)
-                    .Include(pcd => pcd.ComponentProduct)
+                var query = context.ItemCompositionDetails
+                    .Include(pcd => pcd.ItemComposition)
+                        .ThenInclude(pc => pc.ParentItem)
+                    .Include(pcd => pcd.ComponentItem)
                     .Include(pcd => pcd.Unit)
                     .AsQueryable();
 
@@ -187,12 +187,12 @@ namespace ERPCore2.Services
                 {
                     var lowerSearchTerm = searchTerm.ToLower();
                     query = query.Where(pcd =>
-                        pcd.ComponentProduct!.Name!.ToLower().Contains(lowerSearchTerm) ||
-                        (pcd.ComponentProduct.Code != null && pcd.ComponentProduct.Code.ToLower().Contains(lowerSearchTerm)));
+                        pcd.ComponentItem!.Name!.ToLower().Contains(lowerSearchTerm) ||
+                        (pcd.ComponentItem.Code != null && pcd.ComponentItem.Code.ToLower().Contains(lowerSearchTerm)));
                 }
 
                 return await query
-                    .OrderBy(pcd => pcd.ProductCompositionId)
+                    .OrderBy(pcd => pcd.ItemCompositionId)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -203,21 +203,21 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     SearchTerm = searchTerm
                 });
-                return new List<ProductCompositionDetail>();
+                return new List<ItemCompositionDetail>();
             }
         }
 
-        public override async Task<ServiceResult> ValidateAsync(ProductCompositionDetail entity)
+        public override async Task<ServiceResult> ValidateAsync(ItemCompositionDetail entity)
         {
             try
             {
                 var errors = new List<string>();
 
                 // 基本驗證
-                if (entity.ProductCompositionId <= 0)
+                if (entity.ItemCompositionId <= 0)
                     errors.Add("請選擇品項合成主檔");
 
-                if (entity.ComponentProductId <= 0)
+                if (entity.ComponentItemId <= 0)
                     errors.Add("請選擇組件品項");
 
                 if (entity.Quantity <= 0)
@@ -225,13 +225,13 @@ namespace ERPCore2.Services
 
                 // 組件重複驗證（修正：新增和更新都要正確排除自己）
                 var excludeId = entity.Id > 0 ? entity.Id : (int?)null;
-                if (await IsComponentExistsInCompositionAsync(entity.ProductCompositionId, entity.ComponentProductId, excludeId))
+                if (await IsComponentExistsInCompositionAsync(entity.ItemCompositionId, entity.ComponentItemId, excludeId))
                     errors.Add("此組件已存在於配方中");
 
                 // 防止循環參考：組件不能是成品本身
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var composition = await context.ProductCompositions.FindAsync(entity.ProductCompositionId);
-                if (composition != null && composition.ParentProductId == entity.ComponentProductId)
+                var composition = await context.ItemCompositions.FindAsync(entity.ItemCompositionId);
+                if (composition != null && composition.ParentItemId == entity.ComponentItemId)
                     errors.Add("組件不能是成品本身（會造成循環參考）");
 
                 if (errors.Any())
@@ -246,8 +246,8 @@ namespace ERPCore2.Services
                     Method = nameof(ValidateAsync),
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
-                    CompositionId = entity.ProductCompositionId,
-                    ComponentProductId = entity.ComponentProductId
+                    CompositionId = entity.ItemCompositionId,
+                    ComponentItemId = entity.ComponentItemId
                 });
                 return ServiceResult.Failure($"驗證品項合成明細時發生錯誤: {ex.Message}");
             }
@@ -255,17 +255,17 @@ namespace ERPCore2.Services
 
         #endregion
 
-        #region IProductCompositionDetailService 實作
+        #region IItemCompositionDetailService 實作
 
-        public async Task<List<ProductCompositionDetail>> GetDetailsByCompositionIdAsync(int compositionId)
+        public async Task<List<ItemCompositionDetail>> GetDetailsByCompositionIdAsync(int compositionId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductCompositionDetails
-                    .Include(pcd => pcd.ComponentProduct)
+                return await context.ItemCompositionDetails
+                    .Include(pcd => pcd.ComponentItem)
                     .Include(pcd => pcd.Unit)
-                    .Where(pcd => pcd.ProductCompositionId == compositionId)
+                    .Where(pcd => pcd.ItemCompositionId == compositionId)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -276,17 +276,17 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     CompositionId = compositionId
                 });
-                return new List<ProductCompositionDetail>();
+                return new List<ItemCompositionDetail>();
             }
         }
 
-        public async Task<bool> IsComponentExistsInCompositionAsync(int compositionId, int componentProductId, int? excludeId = null)
+        public async Task<bool> IsComponentExistsInCompositionAsync(int compositionId, int componentItemId, int? excludeId = null)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var query = context.ProductCompositionDetails
-                    .Where(pcd => pcd.ProductCompositionId == compositionId && pcd.ComponentProductId == componentProductId);
+                var query = context.ItemCompositionDetails
+                    .Where(pcd => pcd.ItemCompositionId == compositionId && pcd.ComponentItemId == componentItemId);
 
                 if (excludeId.HasValue)
                     query = query.Where(pcd => pcd.Id != excludeId.Value);
@@ -300,7 +300,7 @@ namespace ERPCore2.Services
                     Method = nameof(IsComponentExistsInCompositionAsync),
                     ServiceType = GetType().Name,
                     CompositionId = compositionId,
-                    ComponentProductId = componentProductId,
+                    ComponentItemId = componentItemId,
                     ExcludeId = excludeId
                 });
                 return false;
@@ -312,8 +312,8 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var detail = await context.ProductCompositionDetails
-                    .Include(pcd => pcd.ProductComposition)
+                var detail = await context.ItemCompositionDetails
+                    .Include(pcd => pcd.ItemComposition)
                     .FirstOrDefaultAsync(pcd => pcd.Id == detailId);
 
                 if (detail == null)
@@ -337,18 +337,18 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<ProductComposition>> GetCompositionsUsingComponentAsync(int componentProductId)
+        public async Task<List<ItemComposition>> GetCompositionsUsingComponentAsync(int componentItemId)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.ProductCompositionDetails
-                    .Include(pcd => pcd.ProductComposition)
-                        .ThenInclude(pc => pc.ParentProduct)
-                    .Where(pcd => pcd.ComponentProductId == componentProductId)
-                    .Select(pcd => pcd.ProductComposition)
+                return await context.ItemCompositionDetails
+                    .Include(pcd => pcd.ItemComposition)
+                        .ThenInclude(pc => pc.ParentItem)
+                    .Where(pcd => pcd.ComponentItemId == componentItemId)
+                    .Select(pcd => pcd.ItemComposition)
                     .Distinct()
-                    .OrderBy(pc => pc.ParentProductId)
+                    .OrderBy(pc => pc.ParentItemId)
                     .ThenBy(pc => pc.Code)
                     .ToListAsync();
             }
@@ -358,9 +358,9 @@ namespace ERPCore2.Services
                 {
                     Method = nameof(GetCompositionsUsingComponentAsync),
                     ServiceType = GetType().Name,
-                    ComponentProductId = componentProductId
+                    ComponentItemId = componentItemId
                 });
-                return new List<ProductComposition>();
+                return new List<ItemComposition>();
             }
         }
 

@@ -1,4 +1,4 @@
-#pragma warning disable CS0618 // SetoffDetailType.SalesOrderDetail — 保留舊資料向下相容查詢
+﻿#pragma warning disable CS0618 // SetoffDetailType.SalesOrderDetail — 保留舊資料向下相容查詢
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
@@ -14,11 +14,11 @@ namespace ERPCore2.Helpers
     public class RelatedDocumentsHelper
     {
         private readonly IDbContextFactory<AppDbContext> _contextFactory;
-        private readonly IProductCompositionService _productCompositionService;
+        private readonly IItemCompositionService _productCompositionService;
 
         public RelatedDocumentsHelper(
             IDbContextFactory<AppDbContext> contextFactory,
-            IProductCompositionService productCompositionService)
+            IItemCompositionService productCompositionService)
         {
             _contextFactory = contextFactory;
             _productCompositionService = productCompositionService;
@@ -53,7 +53,7 @@ namespace ERPCore2.Helpers
             }
 
             // 2. 查詢沖款單
-            var setoffDetails = await context.SetoffProductDetails
+            var setoffDetails = await context.SetoffItemDetails
                 .Include(d => d.SetoffDocument)
                 .Where(d => d.SourceDetailType == SetoffDetailType.PurchaseReceivingDetail 
                          && d.SourceDetailId == purchaseReceivingDetailId)
@@ -111,7 +111,7 @@ namespace ERPCore2.Helpers
             // 2. 查詢生產排程
             var scheduleItems = await context.ProductionScheduleItems
                 .Include(i => i.ProductionSchedule)
-                .Include(i => i.Product)
+                .Include(i => i.Item)
                 .Where(i => i.SalesOrderDetailId == salesOrderDetailId)
                 .ToListAsync();
 
@@ -124,7 +124,7 @@ namespace ERPCore2.Helpers
                     DocumentNumber = item.ProductionSchedule.Code ?? string.Empty,
                     DocumentDate = item.ProductionSchedule.ScheduleDate,
                     Quantity = item.ScheduledQuantity,
-                    Remarks = $"{item.Product.Name} - {item.ProductionItemStatus.ToString()}"
+                    Remarks = $"{item.Item.Name} - {item.ProductionItemStatus.ToString()}"
                 });
             }
 
@@ -153,7 +153,7 @@ namespace ERPCore2.Helpers
             }
 
             // 4. 查詢沖款單
-            var setoffDetails = await context.SetoffProductDetails
+            var setoffDetails = await context.SetoffItemDetails
                 .Include(d => d.SetoffDocument)
                 .Where(d => d.SourceDetailType == SetoffDetailType.SalesOrderDetail 
                          && d.SourceDetailId == salesOrderDetailId)
@@ -189,7 +189,7 @@ namespace ERPCore2.Helpers
             using var context = await _contextFactory.CreateDbContextAsync();
 
             // 查詢沖款單
-            var setoffDetails = await context.SetoffProductDetails
+            var setoffDetails = await context.SetoffItemDetails
                 .Include(d => d.SetoffDocument)
                 .Where(d => d.SourceDetailType == SetoffDetailType.PurchaseReturnDetail 
                          && d.SourceDetailId == purchaseReturnDetailId)
@@ -225,7 +225,7 @@ namespace ERPCore2.Helpers
             using var context = await _contextFactory.CreateDbContextAsync();
 
             // 查詢沖款單
-            var setoffDetails = await context.SetoffProductDetails
+            var setoffDetails = await context.SetoffItemDetails
                 .Include(d => d.SetoffDocument)
                 .Where(d => d.SourceDetailType == SetoffDetailType.SalesReturnDetail 
                          && d.SourceDetailId == salesReturnDetailId)
@@ -292,7 +292,7 @@ namespace ERPCore2.Helpers
             // 2. 查詢沖款單（透過關聯的訂單明細查詢）
             if (deliveryDetail.SalesOrderDetailId.HasValue)
             {
-                var setoffDetails = await context.SetoffProductDetails
+                var setoffDetails = await context.SetoffItemDetails
                     .Include(d => d.SetoffDocument)
                     .Where(d => d.SourceDetailType == SetoffDetailType.SalesOrderDetail 
                              && d.SourceDetailId == deliveryDetail.SalesOrderDetailId.Value)
@@ -420,14 +420,14 @@ namespace ERPCore2.Helpers
         /// <summary>
         /// 取得指定品項的所有物料清單
         /// </summary>
-        public async Task<List<RelatedDocument>> GetProductCompositionsAsync(int productId)
+        public async Task<List<RelatedDocument>> GetItemCompositionsAsync(int productId)
         {
             var documents = new List<RelatedDocument>();
             
             try
             {
-                // 從 ProductCompositionService 取得該品項的所有物料清單
-                var compositions = await _productCompositionService.GetByProductIdAsync(productId);
+                // 從 ItemCompositionService 取得該品項的所有物料清單
+                var compositions = await _productCompositionService.GetByItemIdAsync(productId);
                 
                 foreach (var composition in compositions)
                 {
@@ -457,7 +457,7 @@ namespace ERPCore2.Helpers
                     documents.Add(new RelatedDocument
                     {
                         DocumentId = composition.Id,
-                        DocumentType = RelatedDocumentType.ProductComposition,
+                        DocumentType = RelatedDocumentType.ItemComposition,
                         DocumentNumber = composition.Code ?? string.Empty,
                         DocumentDate = composition.CreatedAt,
                         Remarks = remarksParts.Any() ? string.Join(" | ", remarksParts) : null
@@ -534,7 +534,7 @@ namespace ERPCore2.Helpers
                     .ToListAsync();
 
                 // 查詢沖款單使用紀錄
-                var setoffUsedIds = await context.SetoffProductDetails
+                var setoffUsedIds = await context.SetoffItemDetails
                     .Where(d => d.SourceDetailType == SetoffDetailType.PurchaseReceivingDetail 
                              && detailIds.Contains(d.SourceDetailId))
                     .Select(d => d.SourceDetailId)
@@ -657,7 +657,7 @@ namespace ERPCore2.Helpers
                     .ToListAsync();
 
                 // 查詢沖款單使用紀錄
-                var setoffUsedIds = await context.SetoffProductDetails
+                var setoffUsedIds = await context.SetoffItemDetails
                     .Where(d => d.SourceDetailType == SetoffDetailType.SalesDeliveryDetail 
                              && detailIds.Contains(d.SourceDetailId))
                     .Select(d => d.SourceDetailId)

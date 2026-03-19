@@ -19,13 +19,20 @@ namespace ERPCore2.Services.Payroll
         private readonly ILogger<PayrollCalculationService>? _logger;
 
         // ── 費率備援常數（InsuranceRate 資料表無資料時使用）───────────
-        private const decimal DefaultLaborInsuranceEmployeeRate = 0.02m;
-        private const decimal DefaultLaborInsuranceEmployerRate = 0.10m;
+        private const decimal DefaultLaborInsuranceEmployeeRate  = 0.02m;
+        private const decimal DefaultLaborInsuranceEmployerRate  = 0.10m;
         private const decimal DefaultHealthInsuranceEmployeeRate = 0.0235m;
         private const decimal DefaultHealthInsuranceEmployerRate = 0.0611m;
-        private const decimal DefaultRetirementEmployerRate = 0.06m;
-        private const decimal DefaultMealTaxFreeLimit = 3000m;
-        private const decimal DefaultTransportTaxFreeLimit = 3000m;
+        private const decimal DefaultRetirementEmployerRate      = 0.06m;
+        private const decimal DefaultMealTaxFreeLimit            = 3000m;
+        private const decimal DefaultTransportTaxFreeLimit       = 3000m;
+
+        // 加班費倍率備援常數（勞基法法定值，DB 欄位為 0 時使用）
+        private const decimal DefaultOvertimeRate1      = 4m / 3m;  // 1.3333...（平日前2hr）
+        private const decimal DefaultOvertimeRate2      = 5m / 3m;  // 1.6667...（平日後2hr）
+        private const decimal DefaultRestDayRate1       = 4m / 3m;  // 1.3333...（休息日前2hr）
+        private const decimal DefaultRestDayRate2       = 5m / 3m;  // 1.6667...（休息日後2hr）
+        private const decimal DefaultNationalHolidayRate = 1.0m;    // 1.0000（國定假日加給1倍）
 
         public PayrollCalculationService(
             IDbContextFactory<AppDbContext> contextFactory,
@@ -106,6 +113,7 @@ namespace ERPCore2.Services.Payroll
                     record.OvertimeHours2 = attendance.OvertimeHours2;
                     record.HolidayOvertimeHours = attendance.HolidayOvertimeHours;
                     record.NationalHolidayHours = attendance.NationalHolidayHours;
+                    record.TotalWorkHours = attendance.TotalWorkHours;
                 }
 
                 var items = await context.PayrollItems
@@ -369,25 +377,45 @@ namespace ERPCore2.Services.Payroll
                 .OrderByDescending(r => r.EffectiveDate)
                 .FirstOrDefaultAsync();
 
-            decimal laborInsuranceEmployeeRate = rate?.LaborInsuranceEmployeeRate ?? DefaultLaborInsuranceEmployeeRate;
-            decimal laborInsuranceEmployerRate = rate?.LaborInsuranceEmployerRate ?? DefaultLaborInsuranceEmployerRate;
+            decimal laborInsuranceEmployeeRate  = rate?.LaborInsuranceEmployeeRate  ?? DefaultLaborInsuranceEmployeeRate;
+            decimal laborInsuranceEmployerRate  = rate?.LaborInsuranceEmployerRate  ?? DefaultLaborInsuranceEmployerRate;
             decimal healthInsuranceEmployeeRate = rate?.HealthInsuranceEmployeeRate ?? DefaultHealthInsuranceEmployeeRate;
             decimal healthInsuranceEmployerRate = rate?.HealthInsuranceEmployerRate ?? DefaultHealthInsuranceEmployerRate;
-            decimal retirementEmployerRate = rate?.RetirementEmployerRate ?? DefaultRetirementEmployerRate;
-            decimal mealTaxFreeLimit = rate?.MealTaxFreeLimit ?? DefaultMealTaxFreeLimit;
-            decimal transportTaxFreeLimit = rate?.TransportTaxFreeLimit ?? DefaultTransportTaxFreeLimit;
+            decimal retirementEmployerRate      = rate?.RetirementEmployerRate      ?? DefaultRetirementEmployerRate;
+            decimal mealTaxFreeLimit            = rate?.MealTaxFreeLimit            ?? DefaultMealTaxFreeLimit;
+            decimal transportTaxFreeLimit       = rate?.TransportTaxFreeLimit       ?? DefaultTransportTaxFreeLimit;
 
-            // ── 1. 每日工資基準 ─────────────────────────────────────
-            decimal dailyRate = salary.BaseSalary / 30m;
-            decimal hourlyRate = dailyRate / 8m;
+            // 加班費倍率：DB 值 > 0 時使用設定值，否則 fallback 至法定備援常數
+            decimal ot1Rate      = (rate?.OvertimeRate1      > 0) ? rate!.OvertimeRate1      : DefaultOvertimeRate1;
+            decimal ot2Rate      = (rate?.OvertimeRate2      > 0) ? rate!.OvertimeRate2      : DefaultOvertimeRate2;
+            decimal restDay1Rate = (rate?.RestDayRate1       > 0) ? rate!.RestDayRate1       : DefaultRestDayRate1;
+            decimal restDay2Rate = (rate?.RestDayRate2       > 0) ? rate!.RestDayRate2       : DefaultRestDayRate2;
+            decimal natHolRate   = (rate?.NationalHolidayRate > 0) ? rate!.NationalHolidayRate : DefaultNationalHolidayRate;
 
-            // ── 2. 出勤比例調整後本薪 ────────────────────────────────
-            decimal attendanceRatio = record.ScheduledWorkDays > 0
-                ? record.ActualWorkDays / record.ScheduledWorkDays
-                : 1m;
-            decimal basePay = Math.Round(salary.BaseSalary * attendanceRatio, 0);
-            AddDetail(details, items, "BASE", 1, salary.BaseSalary, basePay,
-                $"本薪 {salary.BaseSalary:N0} × 出勤比例 {attendanceRatio:P0}");
+            // ── 1. 工資基準（月薪 / 時薪分開計算）────────────────────
+            decimal basePay;
+            decimal hourlyRate;
+
+            if (salary.SalaryType == SalaryType.Hourly)
+            {
+                // 時薪制：BaseSalary 即時薪，依實際總工時計算
+                hourlyRate = salary.BaseSalary;
+                basePay = Math.Round(record.TotalWorkHours * hourlyRate, 0);
+                AddDetail(details, items, "BASE", record.TotalWorkHours, hourlyRate, basePay,
+                    $"時薪 {hourlyRate:N0} × 實際工時 {record.TotalWorkHours:N2}h = {basePay:N0}");
+            }
+            else
+            {
+                // 月薪制：依出勤比例調整
+                decimal dailyRate = salary.BaseSalary / 30m;
+                hourlyRate = dailyRate / 8m;
+                decimal attendanceRatio = record.ScheduledWorkDays > 0
+                    ? record.ActualWorkDays / record.ScheduledWorkDays
+                    : 1m;
+                basePay = Math.Round(salary.BaseSalary * attendanceRatio, 0);
+                AddDetail(details, items, "BASE", 1, salary.BaseSalary, basePay,
+                    $"本薪 {salary.BaseSalary:N0} × 出勤比例 {attendanceRatio:P0}");
+            }
 
             // ── 3. 固定月付津貼項目（動態，從 EmployeeSalaryItem 讀取）──
             foreach (var allowanceItem in salary.AllowanceItems.Where(i => i.Amount > 0 && i.PayrollItem != null))
@@ -397,45 +425,63 @@ namespace ERPCore2.Services.Payroll
                     $"{allowanceItem.PayrollItem.Name}（固定）");
             }
 
-            // ── 6. 加班費 ────────────────────────────────────────────
+            // ── 6. 加班費（倍率從 InsuranceRate DB 讀取，備援至法定常數）──────
             if (record.OvertimeHours1 > 0)
             {
-                decimal rate1 = Math.Round(hourlyRate * (4m / 3m), 4);
-                decimal ot1 = Math.Round(record.OvertimeHours1 * rate1, 0);
-                AddDetail(details, items, "OT1", record.OvertimeHours1, rate1, ot1,
-                    $"平日加班（前2hr）{record.OvertimeHours1}hr × {rate1:N2} = {ot1:N0}");
+                decimal appliedRate1 = Math.Round(hourlyRate * ot1Rate, 4);
+                decimal ot1Pay = Math.Round(record.OvertimeHours1 * appliedRate1, 0);
+                AddDetail(details, items, "OT1", record.OvertimeHours1, appliedRate1, ot1Pay,
+                    $"平日加班（前2hr）{record.OvertimeHours1}hr × {appliedRate1:N4}（×{ot1Rate:N4}）= {ot1Pay:N0}");
             }
 
             if (record.OvertimeHours2 > 0)
             {
-                decimal rate2 = Math.Round(hourlyRate * (5m / 3m), 4);
-                decimal ot2 = Math.Round(record.OvertimeHours2 * rate2, 0);
-                AddDetail(details, items, "OT2", record.OvertimeHours2, rate2, ot2,
-                    $"平日加班（後2hr）{record.OvertimeHours2}hr × {rate2:N2} = {ot2:N0}");
+                decimal appliedRate2 = Math.Round(hourlyRate * ot2Rate, 4);
+                decimal ot2Pay = Math.Round(record.OvertimeHours2 * appliedRate2, 0);
+                AddDetail(details, items, "OT2", record.OvertimeHours2, appliedRate2, ot2Pay,
+                    $"平日加班（後2hr）{record.OvertimeHours2}hr × {appliedRate2:N4}（×{ot2Rate:N4}）= {ot2Pay:N0}");
             }
 
-            if (record.HolidayOvertimeHours > 0 || record.NationalHolidayHours > 0)
+            // 休息日加班（勞基法第24條第2項：前2hr 用 restDay1Rate，後續 用 restDay2Rate）
+            if (record.HolidayOvertimeHours > 0)
             {
-                decimal holidayHours = record.HolidayOvertimeHours + record.NationalHolidayHours;
-                decimal holidayRate = Math.Round(hourlyRate * (4m / 3m), 4); // 最低 4/3
-                decimal holidayPay = Math.Round(holidayHours * holidayRate, 0);
-                AddDetail(details, items, "OT_HOLIDAY", holidayHours, holidayRate, holidayPay,
-                    $"假日加班 {holidayHours}hr × {holidayRate:N2} = {holidayPay:N0}");
+                decimal restFirst = Math.Min(record.HolidayOvertimeHours, 2m);
+                decimal restExtra = Math.Max(record.HolidayOvertimeHours - 2m, 0m);
+                decimal appliedRestRate1 = Math.Round(hourlyRate * restDay1Rate, 4);
+                decimal appliedRestRate2 = Math.Round(hourlyRate * restDay2Rate, 4);
+                decimal restPay = Math.Round(restFirst * appliedRestRate1 + restExtra * appliedRestRate2, 0);
+                decimal restAvgRate = record.HolidayOvertimeHours > 0
+                    ? Math.Round(restPay / record.HolidayOvertimeHours, 4) : 0;
+                string restRemark = restExtra > 0
+                    ? $"休息日加班 前{restFirst}hr×{appliedRestRate1:N4}（×{restDay1Rate:N4}）+ 後{restExtra}hr×{appliedRestRate2:N4}（×{restDay2Rate:N4}）= {restPay:N0}"
+                    : $"休息日加班 {restFirst}hr×{appliedRestRate1:N4}（×{restDay1Rate:N4}）= {restPay:N0}";
+                AddDetail(details, items, "OT_HOLIDAY", record.HolidayOvertimeHours, restAvgRate, restPay, restRemark);
             }
 
-            // ── 7. 曠職扣薪（負數） ─────────────────────────────────
-            if (record.AbsentDays > 0)
+            // 國定假日加班（勞基法第39條：月薪已含假日薪，加給 natHolRate 倍時薪）
+            if (record.NationalHolidayHours > 0)
             {
-                decimal absentDeduct = Math.Round(record.AbsentDays * dailyRate, 0);
-                AddDetail(details, items, "ABSENT", record.AbsentDays, dailyRate, -absentDeduct,
-                    $"曠職 {record.AbsentDays}天 × 日薪 {dailyRate:N2} = -{absentDeduct:N0}");
+                decimal appliedNatRate = Math.Round(hourlyRate * natHolRate, 4);
+                decimal nationalPay = Math.Round(record.NationalHolidayHours * appliedNatRate, 0);
+                AddDetail(details, items, "OT_NATIONAL", record.NationalHolidayHours, appliedNatRate, nationalPay,
+                    $"國定假日加班 {record.NationalHolidayHours}hr × {appliedNatRate:N4}（加給×{natHolRate:N4}，月薪已含假日薪）= {nationalPay:N0}");
             }
 
-            // ── 8. 病假半薪扣除（負數）──────────────────────────────
-            if (record.SickLeaveDays > 0)
+            // ── 7. 曠職扣薪（負數）— 月薪制才適用，時薪制以工時計算已無此需求 ──
+            if (salary.SalaryType != SalaryType.Hourly && record.AbsentDays > 0)
             {
-                decimal sickDeduct = Math.Round(record.SickLeaveDays * dailyRate * 0.5m, 0);
-                AddDetail(details, items, "SICK", record.SickLeaveDays, dailyRate * 0.5m, -sickDeduct,
+                decimal dailyRateForDeduct = salary.BaseSalary / 30m;
+                decimal absentDeduct = Math.Round(record.AbsentDays * dailyRateForDeduct, 0);
+                AddDetail(details, items, "ABSENT", record.AbsentDays, dailyRateForDeduct, -absentDeduct,
+                    $"曠職 {record.AbsentDays}天 × 日薪 {dailyRateForDeduct:N2} = -{absentDeduct:N0}");
+            }
+
+            // ── 8. 病假半薪扣除（負數）— 月薪制才適用 ─────────────────
+            if (salary.SalaryType != SalaryType.Hourly && record.SickLeaveDays > 0)
+            {
+                decimal dailyRateForDeduct = salary.BaseSalary / 30m;
+                decimal sickDeduct = Math.Round(record.SickLeaveDays * dailyRateForDeduct * 0.5m, 0);
+                AddDetail(details, items, "SICK", record.SickLeaveDays, dailyRateForDeduct * 0.5m, -sickDeduct,
                     $"病假 {record.SickLeaveDays}天 × 日薪半薪 = -{sickDeduct:N0}");
             }
 
@@ -471,14 +517,20 @@ namespace ERPCore2.Services.Payroll
             }
 
             // ── 13. 課稅所得 ─────────────────────────────────────────
-            // 課稅薪資 = 應發合計 - 免稅津貼（餐、交通）- 勞健保費 - 勞退自提
-            decimal mealAmount = salary.AllowanceItems
-                .FirstOrDefault(i => i.PayrollItem?.Code == "MEAL")?.Amount ?? 0;
-            decimal transportAmount = salary.AllowanceItems
-                .FirstOrDefault(i => i.PayrollItem?.Code == "TRANSPORT")?.Amount ?? 0;
-            decimal taxFreeMeal = Math.Min(mealAmount, mealTaxFreeLimit);
-            decimal taxFreeTransport = Math.Min(transportAmount, transportTaxFreeLimit);
-            decimal taxableIncome = grossIncome - taxFreeMeal - taxFreeTransport - laborInsuranceEE - healthInsuranceEE - voluntaryRetirement;
+            // 依各津貼項目 PayrollItem.IsTaxable 旗標決定免稅額
+            // MEAL / TRANSPORT 有法定免稅上限（來自 InsuranceRate 表）；其他 IsTaxable=false 項目全額免稅
+            decimal taxFreeFromAllowances = 0;
+            foreach (var allowance in salary.AllowanceItems
+                .Where(i => i.PayrollItem != null && !i.PayrollItem.IsTaxable && i.Amount > 0))
+            {
+                decimal taxFreeAmount = allowance.Amount;
+                if (allowance.PayrollItem!.Code == "MEAL")
+                    taxFreeAmount = Math.Min(allowance.Amount, mealTaxFreeLimit);
+                else if (allowance.PayrollItem!.Code == "TRANSPORT")
+                    taxFreeAmount = Math.Min(allowance.Amount, transportTaxFreeLimit);
+                taxFreeFromAllowances += taxFreeAmount;
+            }
+            decimal taxableIncome = grossIncome - taxFreeFromAllowances - laborInsuranceEE - healthInsuranceEE - voluntaryRetirement;
             taxableIncome = Math.Max(taxableIncome, 0);
 
             // ── 14. 查扣繳稅額表 ─────────────────────────────────────
@@ -575,7 +627,13 @@ namespace ERPCore2.Services.Payroll
             string? remark = null)
         {
             var item = items.FirstOrDefault(i => i.Code == itemCode);
-            if (item == null) return; // 找不到項目定義則跳過
+            if (item == null)
+            {
+                // 找不到項目定義：通常表示種子資料未執行或項目被停用
+                // 不應靜默略過，以免造成薪資計算結果不完整而無法察覺
+                System.Diagnostics.Debug.WriteLine($"[PayrollCalculation] 找不到薪資項目代碼 '{itemCode}'，此明細將略過。請確認薪資項目種子資料已完整執行且項目狀態為啟用。");
+                return;
+            }
 
             details.Add(new PayrollRecordDetail
             {

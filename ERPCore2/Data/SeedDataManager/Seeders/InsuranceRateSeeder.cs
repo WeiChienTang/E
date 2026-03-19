@@ -32,6 +32,12 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                 RetirementEmployerRate = 0.06m,
                 MealTaxFreeLimit = 3000m,
                 TransportTaxFreeLimit = 3000m,
+                // 加班費倍率（勞基法法定值）
+                OvertimeRate1 = 1.3333m,         // 平日加班前2hr：勞基法第24條第1項第1款 4/3
+                OvertimeRate2 = 1.6667m,         // 平日加班後2hr：勞基法第24條第1項第2款 5/3
+                RestDayRate1 = 1.3333m,          // 休息日加班前2hr：勞基法第24條第2項 4/3
+                RestDayRate2 = 1.6667m,          // 休息日加班後2hr：勞基法第24條第2項 5/3
+                NationalHolidayRate = 1.0000m,   // 國定假日加給：勞基法第39條，月薪已含假日薪，加給1倍
                 Remarks = "114年度費率（2025年1月1日生效）"
             });
 

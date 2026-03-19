@@ -1,4 +1,4 @@
-namespace ERPCore2.Models.Reports
+﻿namespace ERPCore2.Models.Reports
 {
     /// <summary>
     /// 報表定義 - 用於報表索引顯示
@@ -83,7 +83,7 @@ namespace ERPCore2.Models.Reports
     {
         public const string Customer = "Customer";
         public const string Supplier = "Supplier";
-        public const string Product = "Product";
+        public const string Item = "Item";
         public const string Financial = "Financial";
         public const string Inventory = "Inventory";
         public const string Sales = "Sales";

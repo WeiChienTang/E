@@ -1,4 +1,4 @@
-@using ERPCore2.Models.Schedule
+﻿@using ERPCore2.Models.Schedule
 
 <div class="pending-sidebar @(IsDropTarget ? "drop-target" : "") @(IsDragOver ? "drag-over" : "") @(IsMobileOpen ? "mobile-open" : "")"
      @ondragover:preventDefault="true"
@@ -67,8 +67,8 @@
                             <div class="scard-pending-badge">待審核</div>
                         }
                         <div class="scard-product">
-                            <span class="scard-code">@item.ProductCode</span>
-                            <span class="scard-name">@item.ProductName</span>
+                            <span class="scard-code">@item.ItemCode</span>
+                            <span class="scard-name">@item.ItemName</span>
                         </div>
                         @if (!string.IsNullOrEmpty(item.CustomerName))
                         {
@@ -116,8 +116,8 @@
             {
                 var term = searchText;
                 items = items.Where(i =>
-                    i.ProductCode.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                    i.ProductName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    i.ItemCode.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    i.ItemName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                     i.CustomerName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
                     i.SalesOrderCode.Contains(term, StringComparison.OrdinalIgnoreCase));
             }

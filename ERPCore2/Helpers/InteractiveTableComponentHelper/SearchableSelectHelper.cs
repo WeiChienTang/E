@@ -1,4 +1,4 @@
-using ERPCore2.Data.Entities;
+﻿using ERPCore2.Data.Entities;
 using ERPCore2.Services;
 
 namespace ERPCore2.Helpers;
@@ -15,19 +15,19 @@ public static class SearchableSelectHelper
     /// <typeparam name="TItem">項目類型</typeparam>
     /// <param name="item">當前項目</param>
     /// <param name="searchValue">搜尋值</param>
-    /// <param name="availableProducts">可選擇的品項清單</param>
+    /// <param name="availableItems">可選擇的品項清單</param>
     /// <param name="setSearchValue">設定搜尋值的動作</param>
-    /// <param name="setFilteredProducts">設定過濾後品項的動作</param>
+    /// <param name="setFilteredItems">設定過濾後品項的動作</param>
     /// <param name="setShowDropdown">設定是否顯示下拉選單的動作</param>
     /// <param name="setSelectedIndex">設定選中索引的動作</param>
     /// <param name="onStateChanged">狀態變更回呼（可選，通常是 StateHasChanged）</param>
     /// <param name="maxDisplayItems">最大顯示項目數（預設 20）</param>
-    public static void HandleProductSearch<TItem>(
+    public static void HandleItemSearch<TItem>(
         TItem item,
         string? searchValue,
-        List<Product> availableProducts,
+        List<Item> availableItems,
         Action<TItem, string> setSearchValue,
-        Action<TItem, List<Product>> setFilteredProducts,
+        Action<TItem, List<Item>> setFilteredItems,
         Action<TItem, bool> setShowDropdown,
         Action<TItem, int> setSelectedIndex,
         Action? onStateChanged = null,
@@ -38,15 +38,15 @@ public static class SearchableSelectHelper
         
         // 過濾品項清單
         var filtered = string.IsNullOrWhiteSpace(searchValue)
-            ? availableProducts.Take(maxDisplayItems).ToList()
-            : availableProducts
+            ? availableItems.Take(maxDisplayItems).ToList()
+            : availableItems
                 .Where(p => 
                     (p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false))
                 .Take(maxDisplayItems)
                 .ToList();
         
-        setFilteredProducts(item, filtered);
+        setFilteredItems(item, filtered);
         setShowDropdown(item, true);
         setSelectedIndex(item, -1);
         onStateChanged?.Invoke();
@@ -57,36 +57,36 @@ public static class SearchableSelectHelper
     /// </summary>
     /// <typeparam name="TItem">項目類型</typeparam>
     /// <param name="item">當前項目</param>
-    /// <param name="selectedProduct">選中的品項</param>
-    /// <param name="setSelectedProduct">設定選中品項的動作</param>
+    /// <param name="selectedItem">選中的品項</param>
+    /// <param name="setSelectedItem">設定選中品項的動作</param>
     /// <param name="setSearchValue">設定搜尋值的動作</param>
     /// <param name="setTaxRate">設定稅率的動作</param>
     /// <param name="setShowDropdown">設定是否顯示下拉選單的動作</param>
     /// <param name="systemParameterService">系統參數服務（用於取得預設稅率）</param>
     /// <param name="onChanged">變更後的回呼函式（可選）</param>
     /// <returns>是否成功選擇</returns>
-    public static async Task<bool> HandleProductSelectionAsync<TItem>(
+    public static async Task<bool> HandleItemSelectionAsync<TItem>(
         TItem item,
-        Product? selectedProduct,
-        Action<TItem, Product?> setSelectedProduct,
+        Item? selectedItem,
+        Action<TItem, Item?> setSelectedItem,
         Action<TItem, string> setSearchValue,
         Action<TItem, decimal> setTaxRate,
         Action<TItem, bool> setShowDropdown,
         ISystemParameterService systemParameterService,
         Func<Task>? onChanged = null)
     {
-        if (selectedProduct != null)
+        if (selectedItem != null)
         {
-            setSelectedProduct(item, selectedProduct);
-            setSearchValue(item, FormatProductDisplayText(selectedProduct));
+            setSelectedItem(item, selectedItem);
+            setSearchValue(item, FormatItemDisplayText(selectedItem));
             
             // 自動帶入稅率
-            var taxRate = selectedProduct.TaxRate ?? await systemParameterService.GetTaxRateAsync();
+            var taxRate = selectedItem.TaxRate ?? await systemParameterService.GetTaxRateAsync();
             setTaxRate(item, taxRate);
         }
         else
         {
-            setSelectedProduct(item, null);
+            setSelectedItem(item, null);
             setSearchValue(item, string.Empty);
         }
         
@@ -105,28 +105,28 @@ public static class SearchableSelectHelper
     /// </summary>
     /// <typeparam name="TItem">項目類型</typeparam>
     /// <param name="item">當前項目</param>
-    /// <param name="selectedProduct">選中的品項</param>
-    /// <param name="setSelectedProduct">設定選中品項的動作</param>
+    /// <param name="selectedItem">選中的品項</param>
+    /// <param name="setSelectedItem">設定選中品項的動作</param>
     /// <param name="setSearchValue">設定搜尋值的動作</param>
     /// <param name="setShowDropdown">設定是否顯示下拉選單的動作</param>
     /// <param name="onChanged">變更後的回呼函式（可選）</param>
     /// <returns>是否成功選擇</returns>
-    public static async Task<bool> HandleProductSelectionSimpleAsync<TItem>(
+    public static async Task<bool> HandleItemSelectionSimpleAsync<TItem>(
         TItem item,
-        Product? selectedProduct,
-        Action<TItem, Product?> setSelectedProduct,
+        Item? selectedItem,
+        Action<TItem, Item?> setSelectedItem,
         Action<TItem, string> setSearchValue,
         Action<TItem, bool> setShowDropdown,
         Func<Task>? onChanged = null)
     {
-        if (selectedProduct != null)
+        if (selectedItem != null)
         {
-            setSelectedProduct(item, selectedProduct);
-            setSearchValue(item, FormatProductDisplayText(selectedProduct));
+            setSelectedItem(item, selectedItem);
+            setSearchValue(item, FormatItemDisplayText(selectedItem));
         }
         else
         {
-            setSelectedProduct(item, null);
+            setSelectedItem(item, null);
             setSearchValue(item, string.Empty);
         }
         
@@ -145,7 +145,7 @@ public static class SearchableSelectHelper
     /// </summary>
     /// <param name="product">品項</param>
     /// <returns>格式化後的文字（格式：[編號] 名稱）</returns>
-    public static string FormatProductDisplayText(Product? product)
+    public static string FormatItemDisplayText(Item? product)
     {
         if (product == null) return string.Empty;
         
@@ -171,28 +171,28 @@ public static class SearchableSelectHelper
     /// <typeparam name="TItem">項目類型</typeparam>
     /// <param name="item">當前項目</param>
     /// <param name="searchValue">當前搜尋值</param>
-    /// <param name="availableProducts">可選擇的品項清單</param>
-    /// <param name="setFilteredProducts">設定過濾後品項的動作</param>
+    /// <param name="availableItems">可選擇的品項清單</param>
+    /// <param name="setFilteredItems">設定過濾後品項的動作</param>
     /// <param name="setShowDropdown">設定是否顯示下拉選單的動作</param>
     /// <param name="maxDisplayItems">最大顯示項目數（預設 20）</param>
-    public static void HandleProductFocus<TItem>(
+    public static void HandleItemFocus<TItem>(
         TItem item,
         string? searchValue,
-        List<Product> availableProducts,
-        Action<TItem, List<Product>> setFilteredProducts,
+        List<Item> availableItems,
+        Action<TItem, List<Item>> setFilteredItems,
         Action<TItem, bool> setShowDropdown,
         int maxDisplayItems = 20)
     {
         var filtered = string.IsNullOrWhiteSpace(searchValue)
-            ? availableProducts.Take(maxDisplayItems).ToList()
-            : availableProducts
+            ? availableItems.Take(maxDisplayItems).ToList()
+            : availableItems
                 .Where(p => 
                     (p.Code?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (p.Name?.Contains(searchValue, StringComparison.OrdinalIgnoreCase) ?? false))
                 .Take(maxDisplayItems)
                 .ToList();
         
-        setFilteredProducts(item, filtered);
+        setFilteredItems(item, filtered);
         setShowDropdown(item, true);
     }
     
@@ -203,7 +203,7 @@ public static class SearchableSelectHelper
     /// <param name="item">當前項目</param>
     /// <param name="setShowDropdown">設定是否顯示下拉選單的動作</param>
     /// <param name="delayMs">延遲時間（毫秒，預設 200ms，避免點擊項目時下拉選單先關閉）</param>
-    public static async Task HandleProductBlurAsync<TItem>(
+    public static async Task HandleItemBlurAsync<TItem>(
         TItem item,
         Action<TItem, bool> setShowDropdown,
         int delayMs = 200)
@@ -220,7 +220,7 @@ public static class SearchableSelectHelper
     /// <param name="item">當前項目</param>
     /// <param name="key">按下的按鍵</param>
     /// <param name="currentIndex">當前選中索引</param>
-    /// <param name="filteredProducts">過濾後的品項清單</param>
+    /// <param name="filteredItems">過濾後的品項清單</param>
     /// <param name="setSelectedIndex">設定選中索引的動作</param>
     /// <param name="onEnter">按下 Enter 時的回呼函式（可選）</param>
     /// <returns>是否處理了按鍵事件</returns>
@@ -228,14 +228,14 @@ public static class SearchableSelectHelper
         TItem item,
         string key,
         int currentIndex,
-        List<Product> filteredProducts,
+        List<Item> filteredItems,
         Action<TItem, int> setSelectedIndex,
         Func<Task>? onEnter = null)
     {
         switch (key)
         {
             case "ArrowDown":
-                if (currentIndex < filteredProducts.Count - 1)
+                if (currentIndex < filteredItems.Count - 1)
                 {
                     setSelectedIndex(item, currentIndex + 1);
                 }
@@ -249,7 +249,7 @@ public static class SearchableSelectHelper
                 return true;
             
             case "Enter":
-                if (currentIndex >= 0 && currentIndex < filteredProducts.Count)
+                if (currentIndex >= 0 && currentIndex < filteredItems.Count)
                 {
                     onEnter?.Invoke();
                 }

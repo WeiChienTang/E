@@ -1,6 +1,6 @@
-@* 領貨明細管理組件 - 使用條碼掃描和 InteractiveTableComponent *@
+﻿@* 領貨明細管理組件 - 使用條碼掃描和 InteractiveTableComponent *@
 
-@inject IProductService ProductService
+@inject IItemService ItemService
 @inject IInventoryStockService InventoryStockService
 @inject IMaterialIssueService MaterialIssueService
 @inject INotificationService NotificationService
@@ -73,15 +73,15 @@
     private ElementReference barcodeInputElement;
     private string barcodeInput = string.Empty;
     
-    private List<Product> allProducts = new();
+    private List<Item> allItems = new();
     
     private List<DetailItem> DetailItems = new();
 
     // ===== 內部 Item 類別 =====
     private class DetailItem
     {
-        public int? ProductId { get; set; }
-        public Product? SelectedProduct { get; set; }
+        public int? ItemId { get; set; }
+        public Item? SelectedItem { get; set; }
         public int? WarehouseId { get; set; }
         public int? WarehouseLocationId { get; set; }
         public int? InventoryStockDetailId { get; set; } // 新增：庫存明細ID
@@ -91,10 +91,10 @@
         public int? ProductionScheduleDetailId { get; set; } // 保留關聯排程明細 ID
         
         // SearchableSelect 支援屬性
-        public string ProductSearchValue { get; set; } = string.Empty;
-        public List<Product> FilteredProducts { get; set; } = new();
-        public bool ShowProductDropdown { get; set; }
-        public int ProductSelectedIndex { get; set; } = -1;
+        public string ItemSearchValue { get; set; } = string.Empty;
+        public List<Item> FilteredItems { get; set; } = new();
+        public bool ShowItemDropdown { get; set; }
+        public int ItemSelectedIndex { get; set; } = -1;
         
         // 倉庫庫位組合選項
         public List<InventoryStockDetail> AvailableWarehouseLocations { get; set; } = new();
@@ -137,7 +137,7 @@
     {
         try
         {
-            allProducts = await ProductService.GetAllAsync();
+            allItems = await ItemService.GetAllAsync();
         }
         catch (Exception ex)
         {
@@ -145,7 +145,7 @@
                 additionalData: "載入相關資料失敗");
             await NotificationService.ShowErrorAsync("載入相關資料失敗");
             
-            allProducts = new List<Product>();
+            allItems = new List<Item>();
         }
     }
 
@@ -170,24 +170,24 @@
             
             foreach (var detail in Details)
             {
-                var product = allProducts.FirstOrDefault(p => p.Id == detail.ProductId);
+                var product = allItems.FirstOrDefault(p => p.Id == detail.ItemId);
                 
                 var item = new DetailItem
                 {
-                    ProductId = detail.ProductId,
-                    SelectedProduct = product,
+                    ItemId = detail.ItemId,
+                    SelectedItem = product,
                     WarehouseId = detail.WarehouseId > 0 ? (int?)detail.WarehouseId : null,
                     WarehouseLocationId = detail.WarehouseLocationId,
                     IssueQuantity = detail.IssueQuantity,
                     UnitCost = detail.UnitCost ?? 0m,
-                    ProductSearchValue = product != null ? $"[{product.Code}] {product.Name}" : "",
+                    ItemSearchValue = product != null ? $"[{product.Code}] {product.Name}" : "",
                     ProductionScheduleDetailId = detail.ProductionScheduleDetailId
                 };
 
                 // 載入該品項的可用倉庫位置清單
-                if (item.ProductId.HasValue)
+                if (item.ItemId.HasValue)
                 {
-                    item.AvailableWarehouseLocations = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(item.ProductId.Value);
+                    item.AvailableWarehouseLocations = await InventoryStockService.GetAvailableWarehouseLocationsByItemAsync(item.ItemId.Value);
 
                     if (item.WarehouseId.HasValue)
                     {
@@ -240,39 +240,39 @@
         // 品項欄位 - 使用 SearchableSelect
         columns.Add(new()
         {
-            Title = L["Entity.Product"],
-            PropertyName = "ProductId",
-            EmptyCheckPropertyName = "SelectedProduct",
+            Title = L["Entity.Item"],
+            PropertyName = "ItemId",
+            EmptyCheckPropertyName = "SelectedItem",
             TriggerEmptyRowOnFilled = true,
             ColumnType = InteractiveColumnType.SearchableSelect,
             Width = "250px",
             Tooltip = "搜尋並選擇品項",
             Placeholder = "請輸入品項編號或名稱",
-            SearchValuePropertyName = nameof(DetailItem.ProductSearchValue),
-            FilteredItemsPropertyName = nameof(DetailItem.FilteredProducts),
-            ShowDropdownPropertyName = nameof(DetailItem.ShowProductDropdown),
-            SelectedIndexPropertyName = nameof(DetailItem.ProductSelectedIndex),
+            SearchValuePropertyName = nameof(DetailItem.ItemSearchValue),
+            FilteredItemsPropertyName = nameof(DetailItem.FilteredItems),
+            ShowDropdownPropertyName = nameof(DetailItem.ShowItemDropdown),
+            SelectedIndexPropertyName = nameof(DetailItem.ItemSelectedIndex),
             ItemDisplayFormatter = (item) =>
             {
-                var product = (Product)item;
+                var product = (Item)item;
                 return $"[{product.Code}] {product.Name}";
             },
             OnSearchInputChanged = EventCallback.Factory.Create<(object, string?)>(this, (tuple) =>
             {
                 var (item, searchValue) = tuple;
-                OnProductSearchChanged((DetailItem)item, searchValue);
+                OnItemSearchChanged((DetailItem)item, searchValue);
             }),
             OnItemSelected = EventCallback.Factory.Create<(object, object?)>(this, async (tuple) =>
             {
                 var (item, selectedItem) = tuple;
-                await OnProductSelected((DetailItem)item, (Product?)selectedItem);
+                await OnItemSelected((DetailItem)item, (Item?)selectedItem);
             }),
             OnInputFocus = EventCallback.Factory.Create<object>(this, (item) =>
             {
                 var detailItem = (DetailItem)item;
-                detailItem.FilteredProducts = allProducts.Take(20).ToList();
-                detailItem.ShowProductDropdown = true;
-                detailItem.ProductSelectedIndex = -1;
+                detailItem.FilteredItems = allItems.Take(20).ToList();
+                detailItem.ShowItemDropdown = true;
+                detailItem.ItemSelectedIndex = -1;
                 StateHasChanged();
             }),
             OnInputBlur = EventCallback.Factory.Create<object>(this, (item) =>
@@ -280,16 +280,16 @@
                 Task.Delay(200).ContinueWith(_ =>
                 {
                     var detailItem = (DetailItem)item;
-                    detailItem.ShowProductDropdown = false;
+                    detailItem.ShowItemDropdown = false;
                     InvokeAsync(StateHasChanged);
                 });
             }),
             EnableKeyboardNavigation = true,
-            GetDropdownItems = (item) => ((DetailItem)item).FilteredProducts,
-            GetShowDropdown = (item) => ((DetailItem)item).ShowProductDropdown,
-            GetSelectedIndex = (item) => ((DetailItem)item).ProductSelectedIndex,
-            SetSelectedIndex = (item, index) => ((DetailItem)item).ProductSelectedIndex = index,
-            SetShowDropdown = (item, show) => ((DetailItem)item).ShowProductDropdown = show
+            GetDropdownItems = (item) => ((DetailItem)item).FilteredItems,
+            GetShowDropdown = (item) => ((DetailItem)item).ShowItemDropdown,
+            GetSelectedIndex = (item) => ((DetailItem)item).ItemSelectedIndex,
+            SetSelectedIndex = (item, index) => ((DetailItem)item).ItemSelectedIndex = index,
+            SetShowDropdown = (item, show) => ((DetailItem)item).ShowItemDropdown = show
         });
 
         // 倉庫 - 庫位欄位（合併顯示）
@@ -304,7 +304,7 @@
             {
                 var detailItem = (DetailItem)item;
                 var selectedValue = detailItem.InventoryStockDetailId?.ToString() ?? "";
-                var isDisabled = IsReadOnly || !detailItem.ProductId.HasValue || !detailItem.AvailableWarehouseLocations.Any();
+                var isDisabled = IsReadOnly || !detailItem.ItemId.HasValue || !detailItem.AvailableWarehouseLocations.Any();
 
                 return @<select class="form-select form-select-sm"
                                 value="@selectedValue"
@@ -377,7 +377,7 @@
                 return;
             }
 
-            var product = await ProductService.GetByBarcodeAsync(barcodeInput.Trim());
+            var product = await ItemService.GetByBarcodeAsync(barcodeInput.Trim());
             
             if (product == null)
             {
@@ -387,7 +387,7 @@
             }
 
             // 檢查是否已存在
-            if (DetailItems.Any(item => item.ProductId == product.Id))
+            if (DetailItems.Any(item => item.ItemId == product.Id))
             {
                 await NotificationService.ShowWarningAsync($"品項 {product.Name} 已存在明細中");
                 barcodeInput = string.Empty;
@@ -395,16 +395,16 @@
             }
 
             // 載入可用倉庫位置
-            var availableLocations = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(product.Id);
+            var availableLocations = await InventoryStockService.GetAvailableWarehouseLocationsByItemAsync(product.Id);
 
             // 建立新明細項目
             var newItem = new DetailItem
             {
-                ProductId = product.Id,
-                SelectedProduct = product,
-                ProductSearchValue = $"[{product.Code}] {product.Name}",
+                ItemId = product.Id,
+                SelectedItem = product,
+                ItemSearchValue = $"[{product.Code}] {product.Name}",
                 IssueQuantity = 0, // 預設為0（空白）
-                UnitCost = 0m, // Product 實體中沒有 Cost 屬性,預設為 0
+                UnitCost = 0m, // Item 實體中沒有 Cost 屬性,預設為 0
                 AvailableWarehouseLocations = availableLocations
             };
             await AutoSelectWarehouseAsync(newItem);
@@ -427,18 +427,18 @@
         }
     }
 
-    private void OnProductSearchChanged(DetailItem item, string? searchValue)
+    private void OnItemSearchChanged(DetailItem item, string? searchValue)
     {
-        item.ProductSearchValue = searchValue ?? "";
+        item.ItemSearchValue = searchValue ?? "";
         
         if (string.IsNullOrWhiteSpace(searchValue))
         {
-            item.FilteredProducts = allProducts.Take(20).ToList();
+            item.FilteredItems = allItems.Take(20).ToList();
         }
         else
         {
             var search = searchValue.ToLower();
-            item.FilteredProducts = allProducts
+            item.FilteredItems = allItems
                 .Where(p => (p.Code?.ToLower().Contains(search) ?? false) || 
                            (p.Name?.ToLower().Contains(search) ?? false) ||
                            (p.Barcode?.ToLower().Contains(search) ?? false))
@@ -446,24 +446,24 @@
                 .ToList();
         }
         
-        item.ShowProductDropdown = true;
-        item.ProductSelectedIndex = -1;
+        item.ShowItemDropdown = true;
+        item.ItemSelectedIndex = -1;
         
         StateHasChanged();
     }
 
-    private async Task OnProductSelected(DetailItem item, Product? product)
+    private async Task OnItemSelected(DetailItem item, Item? product)
     {
         if (product == null) return;
 
-        item.ProductId = product.Id;
-        item.SelectedProduct = product;
-        item.ProductSearchValue = $"[{product.Code}] {product.Name}";
-        item.ShowProductDropdown = false;
-        item.UnitCost = 0m; // Product 實體中沒有 Cost 屬性,預設為 0
+        item.ItemId = product.Id;
+        item.SelectedItem = product;
+        item.ItemSearchValue = $"[{product.Code}] {product.Name}";
+        item.ShowItemDropdown = false;
+        item.UnitCost = 0m; // Item 實體中沒有 Cost 屬性,預設為 0
         
         // 載入該品項的可用倉庫位置清單
-        item.AvailableWarehouseLocations = await InventoryStockService.GetAvailableWarehouseLocationsByProductAsync(product.Id);
+        item.AvailableWarehouseLocations = await InventoryStockService.GetAvailableWarehouseLocationsByItemAsync(product.Id);
 
         // 重置選擇後嘗試自動選取
         item.InventoryStockDetailId = null;
@@ -536,7 +536,7 @@
     {
         return new DetailItem
         {
-            FilteredProducts = new List<Product>()
+            FilteredItems = new List<Item>()
         };
     }
 
@@ -545,7 +545,7 @@
         var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
         
         // 如果是空行，不顯示刪除按鈕（但最後一個空行需要保護）
-        if (item.SelectedProduct != null)
+        if (item.SelectedItem != null)
         {
             <GenericButtonComponent 
                 IconClass="bi bi-trash text-white"
@@ -586,10 +586,10 @@
             // 只有一個可用庫位，直接選取
             target = item.AvailableWarehouseLocations[0];
         }
-        else if (item.ProductId.HasValue)
+        else if (item.ItemId.HasValue)
         {
             // 查詢歷史最後一次領料的庫位
-            var lastLocation = await MaterialIssueService.GetLastIssuedLocationForProductAsync(item.ProductId.Value);
+            var lastLocation = await MaterialIssueService.GetLastIssuedLocationForItemAsync(item.ItemId.Value);
             if (lastLocation.HasValue)
             {
                 target = item.AvailableWarehouseLocations.FirstOrDefault(d =>
@@ -614,11 +614,11 @@
         foreach (var item in DetailItems)
         {
             // 只有在有品項ID、有效倉庫ID（>0）、且領貨數量大於0時才加入
-            if (item.ProductId.HasValue && item.WarehouseId.HasValue && item.WarehouseId.Value > 0 && item.IssueQuantity > 0)
+            if (item.ItemId.HasValue && item.WarehouseId.HasValue && item.WarehouseId.Value > 0 && item.IssueQuantity > 0)
             {
                 Details.Add(new MaterialIssueDetail
                 {
-                    ProductId = item.ProductId.Value,
+                    ItemId = item.ItemId.Value,
                     WarehouseId = item.WarehouseId.Value,
                     WarehouseLocationId = item.WarehouseLocationId,
                     IssueQuantity = item.IssueQuantity,

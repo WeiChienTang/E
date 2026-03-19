@@ -1,4 +1,4 @@
-using ApexCharts;
+﻿using ApexCharts;
 using ERPCore2.Components.Shared.Table;
 using ERPCore2.Models.Charts;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,15 +11,15 @@ public static class SalesChartDefinitions
     {
         definitions.Add(new ChartDefinition
         {
-            ChartId            = ChartIds.SalesTopProductByAmount,
+            ChartId            = ChartIds.SalesTopItemByAmount,
             Title              = "依品項銷售金額排行 Top 10",
             Category           = ChartCategory.Sales,
             SortOrder          = 1,
             DefaultSeriesType  = SeriesType.Bar,
             AllowedSeriesTypes = new() { SeriesType.Bar, SeriesType.Treemap },
             IsMoneyChart       = true,
-            DataFetcher        = sp => sp.GetRequiredService<ISalesChartService>().GetTopProductsBySalesAmountAsync(),
-            DetailFetcher      = (sp, label) => sp.GetRequiredService<ISalesChartService>().GetDeliveryDetailsByProductAsync(label),
+            DataFetcher        = sp => sp.GetRequiredService<ISalesChartService>().GetTopItemsBySalesAmountAsync(),
+            DetailFetcher      = (sp, label) => sp.GetRequiredService<ISalesChartService>().GetDeliveryDetailsByItemAsync(label),
             DetailColumns      = new()
             {
                 new() { Title = "出貨日期", PropertyName = "Name",     ColumnType = InteractiveColumnType.Display },

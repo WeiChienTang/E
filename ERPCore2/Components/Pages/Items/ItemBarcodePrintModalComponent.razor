@@ -1,4 +1,4 @@
-@*
+﻿@*
     品項條碼列印 Modal 組件
     用於選擇品項並列印條碼
 *@
@@ -6,19 +6,19 @@
 @using ERPCore2.Data.Entities
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
-@inject IProductService ProductService
+@inject IItemService ItemService
 @inject IStringLocalizer<SharedResource> L
 
 <BaseModalComponent IsVisible="@IsVisible"
                    IsVisibleChanged="@IsVisibleChanged"
-                   Title="@L["Product.BarcodePrint"]"
+                   Title="@L["Item.BarcodePrint"]"
                    Icon="bi-upc-scan"
                    Size="BaseModalComponent.ModalSize.Desktop"
                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                    UseWhiteCloseButton="true"
                    BodyCssClass="p-4"
                    OnClose="@HandleClose"
-                   DebugComponentName="ProductBarcodePrintModalComponent">
+                   DebugComponentName="ItemBarcodePrintModalComponent">
 
     <HeaderButtons>
             
@@ -46,13 +46,13 @@
         {
             <div class="alert alert-info">
                 <i class="bi bi-info-circle me-2"></i>
-                @L["Product.NoBarcodeItems"]
+                @L["Item.NoBarcodeItems"]
             </div>
         }
         else
         {
             @* 品項列表表格 *@
-            <ProductBarcodePrintTable Items="@barcodeItems"
+            <ItemBarcodePrintTable Items="@barcodeItems"
                                     SelectedItems="@selectedItems"
                                     OnSelectionChanged="@HandleSelectionChanged"
                                     OnPrintQuantityChanged="@HandlePrintQuantityChanged"
@@ -76,19 +76,19 @@
                         
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" 
-                                   @bind="printSettings.ShowProductName" 
-                                   id="showProductName">
-                            <label class="form-check-label" for="showProductName">
-                                @L["Label.ShowProductName"]
+                                   @bind="printSettings.ShowItemName" 
+                                   id="showItemName">
+                            <label class="form-check-label" for="showItemName">
+                                @L["Label.ShowItemName"]
                             </label>
                         </div>
                         
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" 
-                                   @bind="printSettings.ShowProductCode" 
-                                   id="showProductCode">
-                            <label class="form-check-label" for="showProductCode">
-                                @L["Label.ShowProductCode"]
+                                   @bind="printSettings.ShowItemCode" 
+                                   id="showItemCode">
+                            <label class="form-check-label" for="showItemCode">
+                                @L["Label.ShowItemCode"]
                             </label>
                         </div>
                     </div>
@@ -96,7 +96,7 @@
                     @* 列印提示訊息 *@
                     <div class="alert alert-info mt-3 mb-0 d-flex align-items-center" role="alert">
                         <i class="bi bi-info-circle-fill me-2"></i>
-                        <span>@L["Product.A4BarcodeHint"]</span>
+                        <span>@L["Item.A4BarcodeHint"]</span>
                     </div>
                 </div>
             </div>
@@ -114,9 +114,9 @@
     
     // ===== 內部狀態 =====
     
-    private List<ProductBarcodeItem> barcodeItems = new();
+    private List<ItemBarcodeItem> barcodeItems = new();
     private BarcodePrintSettings printSettings = new();
-    private HashSet<ProductBarcodeItem> selectedItems = new(); // 改用 HashSet 儲存選取項目
+    private HashSet<ItemBarcodeItem> selectedItems = new(); // 改用 HashSet 儲存選取項目
     private int selectedCount = 0;
     private int totalPrintQuantity = 0;
     
@@ -131,7 +131,7 @@
         if (IsVisible && !_previousIsVisible)
         {
             // Modal 開啟時，重新載入所有品項並清空選取
-            await LoadAllProductsAsync();
+            await LoadAllItemsAsync();
             ClearSelection();
         }
         
@@ -143,23 +143,23 @@
     /// <summary>
     /// 從資料庫載入所有品項（不受 Index 篩選影響）
     /// </summary>
-    private async Task LoadAllProductsAsync()
+    private async Task LoadAllItemsAsync()
     {
         try
         {
-            var allProducts = await ProductService.GetAllAsync();
+            var allItems = await ItemService.GetAllAsync();
             
-            if (allProducts == null || !allProducts.Any())
+            if (allItems == null || !allItems.Any())
             {
                 barcodeItems = new();
                 return;
             }
             
-            barcodeItems = allProducts
+            barcodeItems = allItems
                 .Where(p => !string.IsNullOrWhiteSpace(p.Barcode))
-                .Select(p => new ProductBarcodeItem
+                .Select(p => new ItemBarcodeItem
                 {
-                    ProductId = p.Id,
+                    ItemId = p.Id,
                     Code = p.Code ?? "",
                     Name = p.Name ?? "",
                     Barcode = p.Barcode ?? "",
@@ -169,7 +169,7 @@
         }
         catch (Exception ex)
         {
-            await NotificationService.ShowErrorAsync(string.Format(L["Message.LoadProductDataFailed"], ex.Message));
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.LoadItemDataFailed"], ex.Message));
             barcodeItems = new();
         }
     }
@@ -189,7 +189,7 @@
     /// <summary>
     /// 處理選取狀態變更事件
     /// </summary>
-    private void HandleSelectionChanged(HashSet<ProductBarcodeItem> items)
+    private void HandleSelectionChanged(HashSet<ItemBarcodeItem> items)
     {
         selectedItems = items;
         UpdateStatistics();
@@ -199,7 +199,7 @@
     /// <summary>
     /// 取得行的 CSS 類別 - 為選取的行添加高亮樣式
     /// </summary>
-    private string GetRowCssClass(ProductBarcodeItem item, int index)
+    private string GetRowCssClass(ItemBarcodeItem item, int index)
     {
         return selectedItems.Contains(item) ? "table-row-selected" : "";
     }
@@ -207,7 +207,7 @@
     /// <summary>
     /// 處理列印數量變更事件
     /// </summary>
-    private void HandlePrintQuantityChanged((ProductBarcodeItem item, string? value) args)
+    private void HandlePrintQuantityChanged((ItemBarcodeItem item, string? value) args)
     {
         // 數值已經在 Table 元件中更新，這裡只需更新統計
         UpdateStatistics();
@@ -239,20 +239,20 @@
         {
             if (selectedCount == 0)
             {
-                await NotificationService.ShowWarningAsync(L["Message.SelectAtLeastOneProduct"]);
+                await NotificationService.ShowWarningAsync(L["Message.SelectAtLeastOneItem"]);
                 return;
             }
             
             // 組裝條碼列印條件
-            var criteria = new ProductBarcodePrintCriteria
+            var criteria = new ItemBarcodePrintCriteria
             {
-                ProductIds = selectedItems.Select(x => x.ProductId).ToList(),
+                ItemIds = selectedItems.Select(x => x.ItemId).ToList(),
                 BarcodeSize = BarcodeSize.Large, // 固定使用大尺寸
                 BarcodesPerPage = 20, // 使用預設值，實際不影響列印
-                ShowProductName = printSettings.ShowProductName,
-                ShowProductCode = printSettings.ShowProductCode,
+                ShowItemName = printSettings.ShowItemName,
+                ShowItemCode = printSettings.ShowItemCode,
                 OnlyWithBarcode = true,
-                PrintQuantities = selectedItems.ToDictionary(x => x.ProductId, x => x.PrintQuantity)
+                PrintQuantities = selectedItems.ToDictionary(x => x.ItemId, x => x.PrintQuantity)
             };
             
             

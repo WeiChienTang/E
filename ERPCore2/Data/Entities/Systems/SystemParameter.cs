@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ERPCore2.Models.Enums;
 
@@ -102,7 +102,7 @@ namespace ERPCore2.Data.Entities
         /// 新增品項時自動建立存貨子科目
         /// </summary>
         [Display(Name = "自動建立品項子科目")]
-        public bool AutoCreateProductSubAccount { get; set; } = false;
+        public bool AutoCreateItemSubAccount { get; set; } = false;
 
         /// <summary>
         /// 應收帳款統制科目代碼（客戶子科目的父層），預設 1191
@@ -165,7 +165,7 @@ namespace ERPCore2.Data.Entities
         /// </summary>
         [MaxLength(20)]
         [Display(Name = "品項存貨統制科目代碼")]
-        public string ProductSubAccountParentCode { get; set; } = "1231";
+        public string ItemSubAccountParentCode { get; set; } = "1231";
 
         /// <summary>
         /// 子科目代碼格式：Sequential（流水號）或 EntityCode（實體代碼）

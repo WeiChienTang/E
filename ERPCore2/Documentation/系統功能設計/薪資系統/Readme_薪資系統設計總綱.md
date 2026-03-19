@@ -1,7 +1,7 @@
 # 薪資系統設計總綱
 
 > 適用地區：中華民國台灣
-> 文件版本：v1.2（2026-03-17）
+> 文件版本：v1.3（2026-03-19）
 > ModuleKey：`Payroll`
 
 ---
@@ -67,15 +67,18 @@ CalculateEmployeeAsync(employeeId, periodId)
     ├─ 2. 計算應出勤天數（GetWorkDaysInMonth，排除週末）
     ├─ 3. 查詢 MonthlyAttendanceSummary（若有該月出勤記錄，以實際出勤資料覆蓋步驟 2）
     ├─ 4. 計算本薪（BaseSalary × 出勤比例）
-    ├─ 5. 加計職務加給（全額，不依出勤比例）
-    ├─ 6. 加計津貼（餐飲/交通，全額）
-    ├─ 7. 加計加班費（OT1 ×4/3、OT2 ×5/3、OT_HOLIDAY ×2）
-    ├─ 8. 計算勞保費（員工負擔：InsuredSalary × 費率）
-    ├─ 9. 計算健保費（員工負擔：HealthInsuredAmount × 費率 × 眷屬加乘）
-    ├─ 10. 計算勞退自提（BaseSalary × VoluntaryRetirementRate）
-    ├─ 11. 計算課稅所得 → 查 WithholdingTaxTable → 代扣所得稅
-    ├─ 12. 計算雇主負擔（勞保、健保、勞退強制，存入 PayrollRecord）
-    └─ 13. 寫入 PayrollRecord + PayrollRecordDetail
+    ├─ 5. 加計固定月付津貼（動態讀取 EmployeeSalaryItem，全額不依出勤比例）
+    ├─ 6. 加計平日加班費（OT1 前2hr ×4/3、OT2 後2hr ×5/3）— 勞基法第24條第1項
+    ├─ 7. 計算休息日加班費（OT_HOLIDAY：前2hr ×4/3、後續 ×5/3）— 勞基法第24條第2項
+    ├─ 8. 計算國定假日加班費（OT_NATIONAL：月薪已含假日薪，加給1倍時薪）— 勞基法第39條
+    ├─ 9. 曠職扣薪（ABSENT：日薪 × 曠職天數）
+    ├─ 10. 病假半薪扣除（SICK：日薪 × 0.5 × 病假天數）
+    ├─ 11. 計算勞保費（員工負擔：InsuredSalary × 費率）
+    ├─ 12. 計算健保費（員工負擔：HealthInsuredAmount × 費率 × 眷屬加乘）
+    ├─ 13. 計算勞退自提（BaseSalary × VoluntaryRetirementRate）
+    ├─ 14. 計算課稅所得（依 PayrollItem.IsTaxable 旗標，MEAL/TRANSPORT 有法定上限）→ 查 WithholdingTaxTable → 代扣所得稅
+    ├─ 15. 計算雇主負擔（勞保、健保、勞退強制，存入 PayrollRecord）
+    └─ 16. 寫入 PayrollRecord + PayrollRecordDetail
 ```
 
 > 步驟 8-9 的費率自 Phase 2 起從 InsuranceRate DB 讀取，常數為備援值。
@@ -95,6 +98,7 @@ CalculateEmployeeAsync(employeeId, periodId)
 | EmployeeSalary | `Data/Entities/Payroll/EmployeeSalary.cs` | ✅ |
 | PayrollRecord | `Data/Entities/Payroll/PayrollRecord.cs` | ✅ |
 | PayrollRecordDetail | `Data/Entities/Payroll/PayrollRecordDetail.cs` | ✅ |
+| EmployeeSalaryItem | `Data/Entities/Payroll/EmployeeSalaryItem.cs` | ✅（動態津貼關聯表，取代舊有硬寫欄位）|
 | EmployeeBankAccount | `Data/Entities/Payroll/EmployeeBankAccount.cs` | ✅ |
 | MinimumWage | `Data/Entities/Payroll/MinimumWage.cs` | ✅（種子資料已建立）|
 | LaborInsuranceGrade | `Data/Entities/Payroll/LaborInsuranceGrade.cs` | ✅（種子資料已建立）|
@@ -122,7 +126,7 @@ CalculateEmployeeAsync(employeeId, periodId)
 | PayrollPeriodEditModalComponent | — | 標準 Modal | ✅ |
 | EmployeeSalaryIndex | `/payroll/salary-config` | 標準 | ✅ |
 | EmployeeSalaryEditModalComponent | — | 標準 Modal | ✅ |
-| EmployeeBankAccountIndex | `/payroll/employee-bank-accounts` | 標準 | ✅ |
+| ~~EmployeeBankAccountIndex~~ | ~~`/payroll/employee-bank-accounts`~~ | ~~獨立頁面~~ | 🗑 已移除（整合至員工 EditModal 銀行帳號 Tab）|
 | EmployeeBankAccountEditModalComponent | — | 標準 Modal | ✅ |
 | PayrollItemIndex | `/payroll/items` | 標準 | ✅ ⚠ 見改進項目問題一 |
 | PayrollItemEditModalComponent | — | 標準 Modal | ✅ |
@@ -136,7 +140,7 @@ CalculateEmployeeAsync(employeeId, periodId)
 
 | 實體 | 檔案 | 狀態 |
 |------|------|------|
-| InsuranceRate | `Data/Entities/Payroll/InsuranceRate.cs` | ✅（種子資料已建立）|
+| InsuranceRate | `Data/Entities/Payroll/InsuranceRate.cs` | ✅（種子資料已建立；v1.3 新增 OvertimeRate1/2、RestDayRate1/2、NationalHolidayRate 5 欄位）|
 
 **服務層**
 
@@ -272,6 +276,9 @@ CalculateEmployeeAsync(employeeId, periodId)
 | 交通費免稅上限 | 依 InsuranceRate.TransportTaxFreeLimit | DB 讀取（Phase 2）|
 | 健保眷屬加乘 | `Min(DependentCount, 3) + 1` | 常數邏輯 |
 | 所得稅扣繳 | 查 WithholdingTaxTable | DB 查表 |
+| 平日加班費 | 依 InsuranceRate.OvertimeRate1/OvertimeRate2（法定4/3、5/3） | DB 讀取，含 fallback（v1.3）|
+| 休息日加班費 | 依 InsuranceRate.RestDayRate1/RestDayRate2（法定4/3、5/3） | DB 讀取，含 fallback（v1.3）|
+| 國定假日加班費 | 依 InsuranceRate.NationalHolidayRate（法定1.0，額外加給） | DB 讀取，含 fallback（v1.3）|
 
 ---
 

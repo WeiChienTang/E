@@ -5,26 +5,19 @@
 
 ---
 
-## 問題一：薪資項目（PayrollItem）與計算引擎脫節
+## 問題一：薪資項目（PayrollItem）與計算引擎脫節 ✅ 已完成
 
-### 現況描述
+> 完成時間：2026-03-19
 
-`/payroll/items` 薪資項目維護頁面目前實際用途極為有限：
+### 完成內容
 
-- 計算引擎（`PayrollCalculationService.DoCalculateAsync`）只使用 PayrollItem 的 **Code** 作為標籤對應，硬寫 13 個固定 Code（BASE、MEAL、TRANSPORT、LI_EE 等）
-- `IsTaxable`、`IsInsuranceBasis`、`IsRetirementBasis` 三個屬性**存在於資料表但計算引擎完全未讀取**，稅務規則全部 hardcode
-- 使用者在維護頁面新增的任何自訂項目，計算引擎**永遠不會使用**
-- 停用系統項目反而會導致計算結果缺少明細，是危險操作
+- `EmployeeSalaryItem` 關聯資料表已建立（`EmployeeSalaryId + PayrollItemId + Amount`）
+- `EmployeeSalary` 已移除硬寫的 `PositionAllowance`、`MealAllowance`、`TransportAllowance` 欄位，改由 `AllowanceItems` collection 取代
+- `EmployeeSalaryEditModalComponent` 已加入動態津貼項目 UI（從 PayrollItemCategory.Allowance 選取項目 + 填金額）
+- `PayrollCalculationService` 已改為讀取 `salary.AllowanceItems` 動態組合計算
+- `PayrollCalculationService` 課稅所得計算已改用 `PayrollItem.IsTaxable` 旗標（MEAL/TRANSPORT 仍套用法定免稅上限）
 
-### 根本原因
-
-`EmployeeSalaryEditModalComponent` 裡的加給、津貼欄位（`PositionAllowance`、`MealAllowance`、`TransportAllowance`）是**寫死的資料庫欄位**，無法讓使用者自訂新的固定薪資項目類型。PayrollItem 目錄原本應作為「可選的項目庫」，但實作時計算引擎繞過了它。
-
-### 改進方向
-
-**將 EmployeeSalary 的固定津貼欄位改為動態 PayrollItem 關聯**，讓使用者可從 PayrollItem 目錄選取項目並填入金額，取代現有 hardcode 欄位。
-
-#### 設計草案
+### 目前架構
 
 ```
 PayrollItem（管理員維護）
@@ -33,36 +26,22 @@ PayrollItem（管理員維護）
 EmployeeSalary（人事設定）
   ├─ BaseSalary（保留，有特殊出勤折算邏輯）
   ├─ 勞健保相關欄位（保留，有法規對應）
-  └─ 固定月付項目（新增，動態）：
-       EmployeeSalaryItem 關聯資料表
-         ├─ PayrollItemId（FK → PayrollItem）
-         └─ Amount（金額）
+  └─ AllowanceItems：List<EmployeeSalaryItem>（動態關聯）
+       ├─ PayrollItemId（FK → PayrollItem.Category = Allowance）
+       └─ Amount（每月固定金額）
 
 計算引擎
-  → 讀取 EmployeeSalaryItems 動態組合計算
-  → 依 PayrollItem.IsTaxable 決定是否計入課稅所得
-  → 依 PayrollItem.IsInsuranceBasis 決定是否計入投保基礎
+  → 讀取 AllowanceItems 動態組合計算
+  → 依 IsTaxable=false 決定免稅額（MEAL/TRANSPORT 有法定上限）
 ```
 
-#### 需要修改的範圍
+### 未完成：IsInsuranceBasis / IsRetirementBasis 尚未接入
 
-| 項目 | 說明 |
-|------|------|
-| 新增資料表 | `EmployeeSalaryItem`（EmployeeSalaryId + PayrollItemId + Amount）|
-| 修改 EmployeeSalary | 移除 `PositionAllowance`、`MealAllowance`、`TransportAllowance` 欄位，改由關聯表取代 |
-| 修改 Migration | 新增 EmployeeSalaryItem 資料表，移除舊欄位 |
-| 修改 EmployeeSalaryEditModalComponent | 加入動態項目選擇 UI（從 PayrollItem 目錄選 + 填金額）|
-| 修改 PayrollCalculationService | 改為讀取 EmployeeSalaryItems 動態計算，並依 PayrollItem 屬性決定稅務行為 |
-| 修改 PayrollItem 維護頁面 | 標示系統項目不可刪除，補充說明欄位用途 |
-
-#### 待討論問題
-
-- `BaseSalary` 是否也納入動態項目，或繼續保留為獨立欄位（建議保留，因為出勤折算邏輯特殊）
-- 現有已計算的 PayrollRecord 是否需要 Migration 補正
+`PayrollItem.IsInsuranceBasis` 和 `IsRetirementBasis` 兩個旗標目前尚未用於計算勞健保投保基礎。目前計算邏輯仍直接使用 `EmployeeSalary.LaborInsuredSalary` 和 `HealthInsuredAmount` 作為投保薪資，這符合台灣法規（投保薪資依分級表選取，非薪資項目加總）。兩個旗標暫保留供未來申報用途。
 
 ### 優先級
 
-中（不影響現有計算正確性，但影響系統可擴充性）
+✅ 主體已完成，IsInsuranceBasis/IsRetirementBasis 接入屬低優先度
 
 ---
 
@@ -73,18 +52,17 @@ EmployeeSalary（人事設定）
 使用者進入 `/payroll/items` 時，無法判斷：
 - 哪些項目是系統內建不可亂動的
 - 新增項目的實際效果是什麼
-- `IsTaxable` 等屬性目前是否有作用
 
 ### 改進方向
 
-在頁面加入提示說明，明確標示：
-- 系統項目（`IsSystemItem = true`）顯示鎖定 badge，禁止刪除
-- 頁面說明文字：「新增自訂項目後，可在員工薪資設定中選用為固定月付項目」（待問題一完成後才成立）
-- `IsTaxable` 等屬性在問題一完成前標示為「規劃中，尚未生效」
+在頁面加入提示說明（問題一已完成，此問題現可處理）：
+- 系統項目（`IsSystemItem = true`）顯示鎖定 badge，禁止刪除或修改 Code
+- 頁面說明文字：「自訂類別 = Allowance 的項目可在員工薪資設定中選用為固定月付項目；設定 IsTaxable=false 可使該項目計入課稅所得時的免稅額」
+- `IsInsuranceBasis`、`IsRetirementBasis` 說明：「保留欄位，目前不影響計算，供未來申報用途」
 
 ### 優先級
 
-低（待問題一完成後一併處理）
+低
 
 ---
 

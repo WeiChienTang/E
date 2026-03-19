@@ -1,4 +1,4 @@
-namespace ERPCore2.Models.Enums
+﻿namespace ERPCore2.Models.Enums
 {
     /// <summary>
     /// 相關單據類型
@@ -28,7 +28,7 @@ namespace ERPCore2.Models.Enums
         /// <summary>
         /// 品項物料清單（BOM 配方）
         /// </summary>
-        ProductComposition,
+        ItemComposition,
         
         /// <summary>
         /// 銷貨單/出貨單（從銷貨訂單產生）

@@ -1,4 +1,4 @@
-using ERPCore2.Data.Context;
+﻿using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Services;
@@ -27,13 +27,13 @@ namespace ERPCore2.Services
             return context.SalesReturnDetails
                 .Include(srd => srd.SalesReturn)
                     .ThenInclude(sr => sr.Customer)
-                .Include(srd => srd.Product)
+                .Include(srd => srd.Item)
                 .Include(srd => srd.SalesDeliveryDetail)
-                    .ThenInclude(sdd => sdd!.Product)
+                    .ThenInclude(sdd => sdd!.Item)
                 .Include(srd => srd.SalesDeliveryDetail)
                     .ThenInclude(sdd => sdd!.SalesDelivery)
                 .OrderBy(srd => srd.SalesReturnId)
-                .ThenBy(srd => srd.Product.Code);
+                .ThenBy(srd => srd.Item.Code);
         }
 
         public override async Task<SalesReturnDetail?> GetByIdAsync(int id)
@@ -44,9 +44,9 @@ namespace ERPCore2.Services
                 return await context.SalesReturnDetails
                     .Include(srd => srd.SalesReturn)
                         .ThenInclude(sr => sr.Customer)
-                    .Include(srd => srd.Product)
+                    .Include(srd => srd.Item)
                     .Include(srd => srd.SalesDeliveryDetail)
-                        .ThenInclude(sdd => sdd!.Product)
+                        .ThenInclude(sdd => sdd!.Item)
                     .Include(srd => srd.SalesDeliveryDetail)
                         .ThenInclude(sdd => sdd!.SalesDelivery)
                     .FirstOrDefaultAsync(srd => srd.Id == id);
@@ -76,18 +76,18 @@ namespace ERPCore2.Services
                 return await context.SalesReturnDetails
                     .Include(srd => srd.SalesReturn)
                         .ThenInclude(sr => sr.Customer)
-                    .Include(srd => srd.Product)
+                    .Include(srd => srd.Item)
                     .Include(srd => srd.SalesDeliveryDetail)
-                        .ThenInclude(sdd => sdd!.Product)
+                        .ThenInclude(sdd => sdd!.Item)
                     .Include(srd => srd.SalesDeliveryDetail)
                         .ThenInclude(sdd => sdd!.SalesDelivery)
-                    .Where(srd => ((srd.Product != null && srd.Product.Code != null && srd.Product.Code.ToLower().Contains(lowerSearchTerm)) ||
-                         (srd.Product != null && srd.Product.Name != null && srd.Product.Name.ToLower().Contains(lowerSearchTerm)) ||
+                    .Where(srd => ((srd.Item != null && srd.Item.Code != null && srd.Item.Code.ToLower().Contains(lowerSearchTerm)) ||
+                         (srd.Item != null && srd.Item.Name != null && srd.Item.Name.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.SalesReturn != null && srd.SalesReturn.Code != null && srd.SalesReturn.Code.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.SalesReturn != null && srd.SalesReturn.Customer != null && srd.SalesReturn.Customer.CompanyName != null && srd.SalesReturn.Customer.CompanyName.ToLower().Contains(lowerSearchTerm)) ||
                          (srd.Remarks != null && srd.Remarks.ToLower().Contains(lowerSearchTerm))))
                     .OrderBy(srd => srd.SalesReturnId)
-                    .ThenBy(srd => srd.Product.Code)
+                    .ThenBy(srd => srd.Item.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -111,7 +111,7 @@ namespace ERPCore2.Services
                 if (entity.SalesReturnId <= 0)
                     errors.Add("必須指定銷貨退回");
 
-                if (entity.ProductId <= 0)
+                if (entity.ItemId <= 0)
                     errors.Add("必須選擇品項");
 
                 if (entity.ReturnQuantity <= 0)
@@ -138,7 +138,7 @@ namespace ERPCore2.Services
                     ServiceType = GetType().Name,
                     EntityId = entity.Id,
                     SalesReturnId = entity.SalesReturnId,
-                    ProductId = entity.ProductId
+                    ItemId = entity.ItemId
                 });
                 return ServiceResult.Failure("驗證過程發生錯誤");
             }
@@ -150,13 +150,13 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
                 return await context.SalesReturnDetails
-                    .Include(srd => srd.Product)
+                    .Include(srd => srd.Item)
                     .Include(srd => srd.SalesDeliveryDetail)
-                        .ThenInclude(sdd => sdd!.Product)
+                        .ThenInclude(sdd => sdd!.Item)
                     .Include(srd => srd.SalesDeliveryDetail)
                         .ThenInclude(sdd => sdd!.SalesDelivery)
                     .Where(srd => srd.SalesReturnId == salesReturnId)
-                    .OrderBy(srd => srd.Product.Code)
+                    .OrderBy(srd => srd.Item.Code)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -171,7 +171,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public async Task<List<SalesReturnDetail>> GetByProductIdAsync(int productId)
+        public async Task<List<SalesReturnDetail>> GetByItemIdAsync(int productId)
         {
             try
             {
@@ -179,22 +179,22 @@ namespace ERPCore2.Services
                 return await context.SalesReturnDetails
                     .Include(srd => srd.SalesReturn)
                         .ThenInclude(sr => sr.Customer)
-                    .Include(srd => srd.Product)
+                    .Include(srd => srd.Item)
                     .Include(srd => srd.SalesDeliveryDetail)
-                        .ThenInclude(sdd => sdd!.Product)
+                        .ThenInclude(sdd => sdd!.Item)
                     .Include(srd => srd.SalesDeliveryDetail)
                         .ThenInclude(sdd => sdd!.SalesDelivery)
-                    .Where(srd => srd.ProductId == productId)
+                    .Where(srd => srd.ItemId == productId)
                     .OrderByDescending(srd => srd.SalesReturn.ReturnDate)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByProductIdAsync), GetType(), _logger, new
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetByItemIdAsync), GetType(), _logger, new
                 {
-                    Method = nameof(GetByProductIdAsync),
+                    Method = nameof(GetByItemIdAsync),
                     ServiceType = GetType().Name,
-                    ProductId = productId
+                    ItemId = productId
                 });
                 return new List<SalesReturnDetail>();
             }
@@ -208,9 +208,9 @@ namespace ERPCore2.Services
                 return await context.SalesReturnDetails
                     .Include(srd => srd.SalesReturn)
                         .ThenInclude(sr => sr.Customer)
-                    .Include(srd => srd.Product)
+                    .Include(srd => srd.Item)
                     .Include(srd => srd.SalesDeliveryDetail)
-                        .ThenInclude(sdd => sdd!.Product)
+                        .ThenInclude(sdd => sdd!.Item)
                     .Include(srd => srd.SalesDeliveryDetail)
                         .ThenInclude(sdd => sdd!.SalesDelivery)
                     .Where(srd => srd.SalesDeliveryDetailId == salesDeliveryDetailId)
@@ -304,9 +304,9 @@ namespace ERPCore2.Services
                     TotalDetails = details.Count,
                     TotalReturnQuantity = details.Sum(d => d.ReturnQuantity),
                     TotalReturnAmount = details.Sum(d => d.ReturnSubtotalAmount),
-                    ProductCount = details.Select(d => d.ProductId).Distinct().Count(),
-                    ProductReturnQuantities = details
-                        .GroupBy(d => d.ProductId)
+                    ItemCount = details.Select(d => d.ItemId).Distinct().Count(),
+                    ItemReturnQuantities = details
+                        .GroupBy(d => d.ItemId)
                         .ToDictionary(g => g.Key, g => g.Sum(d => d.ReturnQuantity))
                 };
 
