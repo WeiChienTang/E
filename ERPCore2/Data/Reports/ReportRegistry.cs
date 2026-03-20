@@ -18,6 +18,21 @@ public static class ReportRegistry
             // ==================== 客戶報表 ====================
             new ReportDefinition
             {
+                Id = ReportIds.AccountsReceivable,
+                Name = "應收帳款報表",
+                NameKey = "Report.AccountsReceivable",
+                Description = "依期間與客戶篩選應收帳款明細，顯示出貨金額、已收金額與未收餘額，可選擇包含已結清帳款或僅顯示逾期帳款",
+                DescriptionKey = "Report.AccountsReceivableDesc",
+                IconClass = "bi bi-cash-stack",
+                Category = ReportCategory.Customer,
+                ModuleKey = "Customers",
+                RequiredPermission = PermissionRegistry.Customer.Read,
+                ActionId = "OpenAccountsReceivableReport",
+                SortOrder = 1,
+                IsEnabled = false  // 尚未實作 IAccountsReceivableReportService
+            },
+            new ReportDefinition
+            {
                 Id = ReportIds.CustomerStatement,
                 Name = "客戶對帳單",
                 NameKey = "Report.CustomerStatement",
@@ -105,7 +120,7 @@ public static class ReportRegistry
                 RequiredPermission = PermissionRegistry.Customer.Read,
                 ActionId = "OpenCustomerVisitReport",
                 SortOrder = 7,
-                IsEnabled = true
+                IsEnabled = false  // 尚未實作 ICustomerVisitReportService
             },
             new ReportDefinition
             {

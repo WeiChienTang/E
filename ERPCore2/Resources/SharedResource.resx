@@ -699,6 +699,7 @@
   <data name="Report.NameColumn" xml:space="preserve"><value>報表名稱</value></data>
   <data name="Report.DescriptionColumn" xml:space="preserve"><value>說明</value></data>
   <data name="Report.SearchEmpty" xml:space="preserve"><value>找不到符合「{0}」的報表</value></data>
+  <data name="Report.AccountsReceivable" xml:space="preserve"><value>應收帳款報表</value></data>
   <data name="Report.CustomerStatement" xml:space="preserve"><value>客戶對帳單</value></data>
   <data name="Report.CustomerSalesAnalysis" xml:space="preserve"><value>客戶銷售分析</value></data>
   <data name="Report.CustomerTransaction" xml:space="preserve"><value>客戶交易明細</value></data>
@@ -1360,6 +1361,7 @@
   <data name="Field.BranchCode" xml:space="preserve"><value>分行代號</value></data>
   <data name="Field.BranchName" xml:space="preserve"><value>分行名稱</value></data>
   <data name="Field.AccountNumber" xml:space="preserve"><value>帳號</value></data>
+  <data name="Field.Purpose" xml:space="preserve"><value>用途說明</value></data>
   <data name="Field.BankAccountHolder" xml:space="preserve"><value>戶名</value></data>
   <data name="Field.IsPrimary" xml:space="preserve"><value>主要帳號</value></data>
   <data name="Payroll.PrimaryAccount" xml:space="preserve"><value>主要</value></data>
@@ -1983,6 +1985,7 @@
   <data name="Label.ShowItemCode" xml:space="preserve"><value>顯示品項編號</value></data>
   <data name="Message.LoadItemsFailed" xml:space="preserve"><value>載入品項資料失敗</value></data>
   <!-- ===== Report Description keys ===== -->
+  <data name="Report.AccountsReceivableDesc" xml:space="preserve"><value>依期間與客戶篩選應收帳款明細，顯示出貨金額、已收金額與未收餘額，可選擇包含已結清帳款或僅顯示逾期帳款</value></data>
   <data name="Report.CustomerStatementDesc" xml:space="preserve"><value>產生指定期間客戶對帳單，含出貨、退貨、收款明細及期初期末餘額</value></data>
   <data name="Report.CustomerSalesAnalysisDesc" xml:space="preserve"><value>按銷售額由高至低排列，分析客戶銷售金額佔比與排名</value></data>
   <data name="Report.CustomerTransactionDesc" xml:space="preserve"><value>查詢客戶出貨與退貨交易記錄明細，依客戶分組顯示</value></data>
@@ -2166,6 +2169,8 @@
   <data name="BatchDelete.CancelTooltip" xml:space="preserve"><value>取消並關閉</value></data>
   <data name="BatchDelete.Warning" xml:space="preserve"><value>警告：此操作無法還原！</value></data>
   <data name="BatchDelete.DefaultTitle" xml:space="preserve"><value>確認批次刪除</value></data>
+  <data name="BatchDelete.SelectAll" xml:space="preserve"><value>全部</value></data>
+  <data name="BatchDelete.SelectAllTooltip" xml:space="preserve"><value>選取或取消選取全部項目</value></data>
 
   <!-- ===== Shortcut 快捷鍵 ===== -->
   <data name="Shortcut.Title" xml:space="preserve"><value>快捷鍵說明</value></data>

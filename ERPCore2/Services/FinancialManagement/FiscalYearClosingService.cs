@@ -98,7 +98,19 @@ namespace ERPCore2.Services
                 if (result.OpenPeriodNumbers.Any())
                     result.Errors.Add($"以下月份仍開放中，請先關帳再執行年底結帳：{string.Join("、", result.OpenPeriodNumbers.Select(n => $"{n} 月"))}");
 
-                // 3. 計算預估本期損益
+                // 3. 確認無未過帳傳票（Draft 傳票不計入損益，會導致結帳數字不正確）
+                var draftCount = await context.JournalEntries
+                    .CountAsync(je =>
+                        je.CompanyId == companyId &&
+                        je.FiscalYear == year &&
+                        je.EntryType != JournalEntryType.Closing &&
+                        je.EntryType != JournalEntryType.OpeningBalance &&
+                        je.JournalEntryStatus == JournalEntryStatus.Draft);
+
+                if (draftCount > 0)
+                    result.Errors.Add($"存在 {draftCount} 筆尚未過帳的傳票（草稿狀態），請先全部過帳或作廢後再執行年底結帳");
+
+                // 4. 計算預估本期損益
                 result.EstimatedNetIncome = await CalculateNetIncomeAsync(context, year, companyId);
 
                 result.CanClose = !result.Errors.Any();

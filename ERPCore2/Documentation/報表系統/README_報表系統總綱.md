@@ -202,30 +202,70 @@ Components/
 
 | 服務 | 報表 ID | 狀態 |
 |------|---------|------|
-| PurchaseOrderReportService | PO001 | ✅ 完成 |
-| PurchaseReceivingReportService | PO002 | ✅ 完成 |
-| PurchaseReturnReportService | PO003 | ✅ 完成 |
-| QuotationReportService | SO001 | ✅ 完成 |
-| SalesOrderReportService | SO002 | ✅ 完成 |
-| SalesDeliveryReportService | SO004 | ✅ 完成 |
-| SalesReturnReportService | SO005 | ✅ 完成 |
-| AccountItemListReportService | FN005 | ✅ 完成 |
+| PurchaseOrderReportService | PO001 | ✅ |
+| PurchaseReceivingReportService | PO002 | ✅ |
+| PurchaseReturnReportService | PO003 | ✅ |
+| QuotationReportService | SO001 | ✅ |
+| SalesOrderReportService | SO002 | ✅ |
+| SalesDeliveryReportService | SO004 | ✅ |
+| SalesReturnReportService | SO005 | ✅ |
+| CustomerStatementReportService | AR002 | ✅ |
+| CustomerSalesAnalysisReportService | AR003 | ✅ |
+| CustomerTransactionReportService | AR004 | ✅ |
+| CustomerRosterReportService | AR005 | ✅ |
+| CustomerDetailReportService | AR006 | ✅ |
+| CustomerComplaintReportService | AR008 | ✅ |
+| SupplierStatementReportService | AP002 | ✅ |
+| SupplierRosterReportService | AP004 | ✅ |
+| SupplierDetailReportService | AP005 | ✅ |
+| ItemListReportService | PD001 | ✅ |
+| BOMReportService | PD002 | ✅ |
+| ItemBarcodeReportService | PD003 | ✅ |
+| ProductionScheduleReportService | PD004 | ✅ |
+| ItemDetailReportService | PD005 | ✅ |
+| MaterialScrapReportService | PD006 | ✅ |
+| MaterialRequirementsReportService | PD007 | ✅ |
+| InventoryStatusReportService | IV003 | ✅ |
+| StockTakingDifferenceReportService | IV002 | ✅ |
+| VehicleListReportService | VH001 | ✅ |
+| VehicleMaintenanceReportService | VH002 | ✅ |
+| EmployeeRosterReportService | HR001 | ✅ |
+| EmployeeDetailReportService | HR002 | ✅ |
+| ScaleRecordReportService | WL001 | ✅ |
+| SetoffDocumentReportService | FN003、FN004 | ✅ |
+| AccountItemListReportService | FN005 | ✅ |
+| TrialBalanceReportService | FN006 | ✅ |
+| IncomeStatementReportService | FN007 | ✅ |
+| BalanceSheetReportService | FN008 | ✅ |
+| GeneralLedgerReportService | FN009 | ✅ |
+| SubsidiaryLedgerReportService | FN010 | ✅ |
+| DetailAccountBalanceReportService | FN011 | ✅ |
+| ARAgingReportService | FN012 | ✅ |
+| APAgingReportService | FN013 | ✅ |
+| *(IAccountsReceivableReportService)* | AR001 | ⏳ 待實作 |
+| *(ICustomerVisitReportService)* | AR007 | ⏳ 待實作 |
+| *(ISupplierPurchaseAnalysisReportService)* | AP003 | ⏳ 待實作 |
+| *(IInventoryTransactionReportService)* | IV001 | ⏳ 待實作 |
 
 ### 篩選模板（全部使用 DynamicFilterTemplate 統一產生 UI）
 
 所有篩選功能由單一 `DynamicFilterTemplate.razor` 處理，透過讀取 Criteria 類別上的 `Filter*Attribute` 自動產生篩選 UI，不再需要為每個報表撰寫獨立的 FilterTemplate.razor。
 
-| 分類 | 數量 | 報表 ID | 狀態 |
-|------|------|---------|------|
-| 人資（HR） | 2 | HR001、HR002 | ✅ 完成 |
-| 客戶（AR） | 6 | AR001–AR006 | ✅ 完成 |
-| 廠商（AP） | 3 | AP002、AP004、AP005 | ✅ 完成 |
-| 銷售（SO） | 4 | SO001、SO002、SO004、SO005 | ✅ 完成 |
-| 採購（PO） | 3 | PO001–PO003 | ✅ 完成 |
-| 品項（PD） | 5 | PD001–PD005 | ✅ 完成 |
-| 庫存（IV） | 2 | IV002、IV003 | ✅ 完成 |
-| 車輛（VH） | 2 | VH001、VH002 | ✅ 完成 |
-| 財務（FN） | 3 | FN003、FN004、FN005 | ✅ 完成 |
+| 分類 | 報表 ID | 狀態 | 備註 |
+|------|---------|------|------|
+| 人資（HR） | HR001、HR002 | ✅ 完成 | |
+| 客戶（AR） | AR002–AR006、AR008 | ✅ 完成 | |
+| 客戶（AR） | AR001 | ⏳ 篩選模板已建，服務未實作 | `IAccountsReceivableReportService` 待實作 |
+| 客戶（AR） | AR007 | ⏳ 篩選模板已建，服務未實作 | `ICustomerVisitReportService` 待實作；ReportRegistry 已設 IsEnabled=false |
+| 廠商（AP） | AP002、AP004、AP005 | ✅ 完成 | |
+| 廠商（AP） | AP003 | ⏳ 篩選模板已建，服務未實作 | IsEnabled=false |
+| 銷售（SO） | SO001、SO002、SO004、SO005 | ✅ 完成 | |
+| 採購（PO） | PO001–PO003 | ✅ 完成 | |
+| 品項（PD） | PD001–PD007 | ✅ 完成 | |
+| 庫存（IV） | IV002、IV003 | ✅ 完成 | |
+| 庫存（IV） | IV001 | ⏳ 未實作 | IsEnabled=false |
+| 車輛（VH） | VH001、VH002 | ✅ 完成 | |
+| 財務（FN） | FN003–FN013 | ✅ 完成 | FN012/FN013 為 AR/AP 帳齡分析 |
 
 > 詳細清單請見 [README_報表篩選架構設計.md](README_報表篩選架構設計.md)
 

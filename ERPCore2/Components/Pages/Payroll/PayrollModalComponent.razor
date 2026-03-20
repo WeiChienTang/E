@@ -21,136 +21,35 @@
                     DebugComponentName="PayrollModalComponent">
 
     <BodyContent>
-        @* ===== Tab 導覽 ===== *@
-        <div class="form-tab-btn-group px-3 pt-2">
-            <button type="button" class="form-tab-btn @(activeTab == 0 ? "active" : "")" @onclick="() => SetTab(0)">
-                <i class="bi bi-calculator"></i>@L["Payroll.TabCalculation"]
-            </button>
-            @if (canRateTable)
-            {
-                <button type="button" class="form-tab-btn @(activeTab == 1 ? "active" : "")" @onclick="() => SetTab(1)">
-                    @L["Payroll.Tab.InsuranceRate"]
-                </button>
-                <button type="button" class="form-tab-btn @(activeTab == 2 ? "active" : "")" @onclick="() => SetTab(2)">
-                    @L["Payroll.Tab.LaborInsuranceGrade"]
-                </button>
-                <button type="button" class="form-tab-btn @(activeTab == 3 ? "active" : "")" @onclick="() => SetTab(3)">
-                    @L["Payroll.Tab.HealthInsuranceGrade"]
-                </button>
-                <button type="button" class="form-tab-btn @(activeTab == 4 ? "active" : "")" @onclick="() => SetTab(4)">
-                    @L["Payroll.Tab.WithholdingTaxTable"]
-                </button>
-            }
-            @if (canClose)
-            {
-                <button type="button" class="form-tab-btn @(activeTab == 5 ? "active" : "")" @onclick="() => SetTab(5)">
-                    @L["Payroll.Tab.PayrollPeriods"]
-                </button>
-            }
-            @if (canAttendance)
-            {
-                <button type="button" class="form-tab-btn @(activeTab == 6 ? "active" : "")" @onclick="() => SetTab(6)">
-                    @L["Payroll.Tab.Attendance"]
-                </button>
-            }
-        </div>
+        <div class="form-tab-container">
 
-        @* ===== Tab 0：薪資計算 ===== *@
-        @if (activeTab == 0)
-        {
-            <div class="px-3 pt-3 pb-2 border-bottom">
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <span class="fw-semibold text-nowrap">@L["Payroll.SelectPeriod"]：</span>
-                    @if (_isInitialLoading)
-                    {
-                        <span class="text-muted">
-                            <span class="spinner-border spinner-border-sm me-1"></span>@L["Label.Loading"]
-                        </span>
-                    }
-                    else if (periods.Any())
-                    {
-                        <select class="form-select form-select-sm w-auto" @onchange="OnPeriodChanged">
-                            @foreach (var p in periods)
-                            {
-                                <option value="@p.Id" selected="@(p.Id == selectedPeriodId)">
-                                    @p.Year 年 @p.Month 月 — @GetPeriodStatusLabel(p.PeriodStatus)
-                                </option>
-                            }
-                        </select>
-                        @if (selectedPeriod != null)
+            @* ===== Tab 按鈕（由 tabDefinitions 動態產生）===== *@
+            <div class="form-tab-btn-group">
+                @for (var i = 0; i < tabDefinitions.Count; i++)
+                {
+                    var index = i;
+                    var tab = tabDefinitions[i];
+                    <button type="button"
+                            class="form-tab-btn @(activeTabIndex == index ? "active" : "")"
+                            @onclick="() => SetTab(index)">
+                        @if (!string.IsNullOrEmpty(tab.Icon))
                         {
-                            <span class="badge @GetPeriodStatusBadgeCss(selectedPeriod.PeriodStatus)">
-                                @GetPeriodStatusLabel(selectedPeriod.PeriodStatus)
-                            </span>
+                            <i class="@tab.Icon"></i>
                         }
-                    }
-                </div>
+                        @tab.Label
+                    </button>
+                }
             </div>
 
-            @if (selectedPeriod != null)
-            {
-                <PayrollEmployeeTable RowViewModels="@rowViewModels"
-                                      IsLoading="@isLoading"
-                                      CanCalculate="@canCalculate"
-                                      CanConfirm="@canConfirm"
-                                      CanReadAmount="@canReadAmount"
-                                      CanViewPayslip="@canViewPayslip"
-                                      SelectedPeriod="@selectedPeriod"
-                                      CalculatingEmployeeId="@calculatingEmployeeId"
-                                      OnCalculateOne="@CalculateOneAsync"
-                                      OnConfirmRecord="@ConfirmRecordAsync"
-                                      OnUnconfirmRecord="@UnconfirmRecordAsync"
-                                      OnShowPayslip="@ShowPayslip" />
-            }
-        }
-
-        @* ===== Tab 1：保費費率 ===== *@
-        @if (activeTab == 1)
-        {
-            <div class="p-3">
-                <InsuranceRateTab />
+            @* ===== Tab 內容（只渲染目前 active 的 tab）===== *@
+            <div class="form-tab-content">
+                @if (tabDefinitions.Count > activeTabIndex)
+                {
+                    @tabDefinitions[activeTabIndex].CustomContent
+                }
             </div>
-        }
 
-        @* ===== Tab 2：勞保分級表 ===== *@
-        @if (activeTab == 2)
-        {
-            <div class="p-3">
-                <LaborInsuranceGradeTab />
-            </div>
-        }
-
-        @* ===== Tab 3：健保分級表 ===== *@
-        @if (activeTab == 3)
-        {
-            <div class="p-3">
-                <HealthInsuranceGradeTab />
-            </div>
-        }
-
-        @* ===== Tab 4：扣繳稅額表 ===== *@
-        @if (activeTab == 4)
-        {
-            <div class="p-3">
-                <WithholdingTaxTableTab />
-            </div>
-        }
-
-        @* ===== Tab 5：薪資週期 ===== *@
-        @if (activeTab == 5)
-        {
-            <div class="p-3">
-                <PayrollPeriodTab />
-            </div>
-        }
-
-        @* ===== Tab 6：出勤彙總 ===== *@
-        @if (activeTab == 6)
-        {
-            <div class="p-3">
-                <AttendanceTab Year="@(selectedPeriod?.Year ?? 0)" Month="@(selectedPeriod?.Month ?? 0)" />
-            </div>
-        }
+        </div>
     </BodyContent>
 
 </BaseModalComponent>
@@ -182,7 +81,8 @@
     private bool isLoading = false;
     private bool isCalculating = false;
     private int? calculatingEmployeeId;
-    private int activeTab = 0;
+    private int activeTabIndex = 0;
+    private List<FormTabDefinition> tabDefinitions = new();
 
     // ── 權限 ──────────────────────────────────────────────────────
     private bool canCalculate = false;
@@ -210,6 +110,7 @@
             canRateTable   = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.RateTable);
             canClose       = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.Close);
             canAttendance  = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.Payroll.Attendance);
+            BuildTabDefinitions();
         }
         catch (Exception ex)
         {
@@ -227,7 +128,7 @@
         else if (!IsVisible && _lastVisible)
         {
             _lastVisible = false;
-            activeTab = 0;
+            activeTabIndex = 0;
         }
     }
 
@@ -294,9 +195,112 @@
         }
     }
 
+    // ── Tab 定義（依權限動態建立，與 CustomerEditModalComponent 相同作法）──
+
+    private void BuildTabDefinitions()
+    {
+        tabDefinitions = new List<FormTabDefinition>
+        {
+            new() { Label = L["Payroll.TabCalculation"],       Icon = "bi bi-calculator",     CustomContent = CreateCalculationTabContent() }
+        };
+
+        if (canRateTable)
+        {
+            tabDefinitions.Add(new() { Label = L["Payroll.Tab.InsuranceRate"],        Icon = "bi bi-shield-check",    CustomContent = CreateInsuranceRateTabContent() });
+            tabDefinitions.Add(new() { Label = L["Payroll.Tab.LaborInsuranceGrade"], Icon = "bi bi-people",           CustomContent = CreateLaborInsuranceGradeTabContent() });
+            tabDefinitions.Add(new() { Label = L["Payroll.Tab.HealthInsuranceGrade"],Icon = "bi bi-heart-pulse",      CustomContent = CreateHealthInsuranceGradeTabContent() });
+            tabDefinitions.Add(new() { Label = L["Payroll.Tab.WithholdingTaxTable"], Icon = "bi bi-receipt-cutoff",   CustomContent = CreateWithholdingTaxTableTabContent() });
+        }
+
+        if (canClose)
+            tabDefinitions.Add(new() { Label = L["Payroll.Tab.PayrollPeriods"], Icon = "bi bi-calendar3",  CustomContent = CreatePayrollPeriodTabContent() });
+
+        if (canAttendance)
+            tabDefinitions.Add(new() { Label = L["Payroll.Tab.Attendance"],     Icon = "bi bi-clock",      CustomContent = CreateAttendanceTabContent() });
+    }
+
+    private RenderFragment CreateCalculationTabContent() => __builder =>
+    {
+        <div class="px-3 pt-3 pb-2 border-bottom">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="fw-semibold text-nowrap">@L["Payroll.SelectPeriod"]：</span>
+                @if (_isInitialLoading)
+                {
+                    <span class="text-muted">
+                        <span class="spinner-border spinner-border-sm me-1"></span>@L["Label.Loading"]
+                    </span>
+                }
+                else if (periods.Any())
+                {
+                    <select class="form-select form-select-sm w-auto" @onchange="OnPeriodChanged">
+                        @foreach (var p in periods)
+                        {
+                            <option value="@p.Id" selected="@(p.Id == selectedPeriodId)">
+                                @p.Year 年 @p.Month 月 — @GetPeriodStatusLabel(p.PeriodStatus)
+                            </option>
+                        }
+                    </select>
+                    @if (selectedPeriod != null)
+                    {
+                        <span class="badge @GetPeriodStatusBadgeCss(selectedPeriod.PeriodStatus)">
+                            @GetPeriodStatusLabel(selectedPeriod.PeriodStatus)
+                        </span>
+                    }
+                }
+            </div>
+        </div>
+        @if (selectedPeriod != null)
+        {
+            <PayrollEmployeeTable RowViewModels="@rowViewModels"
+                                  IsLoading="@isLoading"
+                                  CanCalculate="@canCalculate"
+                                  CanConfirm="@canConfirm"
+                                  CanReadAmount="@canReadAmount"
+                                  CanViewPayslip="@canViewPayslip"
+                                  SelectedPeriod="@selectedPeriod"
+                                  CalculatingEmployeeId="@calculatingEmployeeId"
+                                  OnCalculateOne="@CalculateOneAsync"
+                                  OnConfirmRecord="@ConfirmRecordAsync"
+                                  OnUnconfirmRecord="@UnconfirmRecordAsync"
+                                  OnShowPayslip="@ShowPayslip" />
+        }
+    };
+
+    private RenderFragment CreateInsuranceRateTabContent() => __builder =>
+    {
+        <div class="p-3"><InsuranceRateTab /></div>
+    };
+
+    private RenderFragment CreateLaborInsuranceGradeTabContent() => __builder =>
+    {
+        <div class="p-3"><LaborInsuranceGradeTab /></div>
+    };
+
+    private RenderFragment CreateHealthInsuranceGradeTabContent() => __builder =>
+    {
+        <div class="p-3"><HealthInsuranceGradeTab /></div>
+    };
+
+    private RenderFragment CreateWithholdingTaxTableTabContent() => __builder =>
+    {
+        <div class="p-3"><WithholdingTaxTableTab /></div>
+    };
+
+    private RenderFragment CreatePayrollPeriodTabContent() => __builder =>
+    {
+        <div class="p-3"><PayrollPeriodTab /></div>
+    };
+
+    private RenderFragment CreateAttendanceTabContent() => __builder =>
+    {
+        <div class="p-3">
+            <AttendanceTab Year="@(selectedPeriod?.Year ?? 0)" Month="@(selectedPeriod?.Month ?? 0)" />
+        </div>
+    };
+
     // ── Tab 切換 ─────────────────────────────────────────────────
 
-    private void SetTab(int index) => activeTab = index;
+    private void SetTab(int index) => activeTabIndex = index;
 
     // ── 事件處理 ─────────────────────────────────────────────────
 

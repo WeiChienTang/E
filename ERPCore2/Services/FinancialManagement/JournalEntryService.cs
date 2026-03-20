@@ -660,7 +660,7 @@ namespace ERPCore2.Services
                         je.FiscalYear == fiscalYear &&
                         je.CompanyId == companyId &&
                         je.EntryType == JournalEntryType.OpeningBalance)
-                    .OrderByDescending(je => je.Id)
+                    .OrderByDescending(je => je.EntryDate)
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
@@ -692,7 +692,7 @@ namespace ERPCore2.Services
                         je.FiscalYear == fiscalYear &&
                         je.CompanyId == companyId &&
                         je.EntryType == JournalEntryType.OpeningBalance)
-                    .OrderByDescending(je => je.Id)
+                    .OrderByDescending(je => je.EntryDate)
                     .FirstOrDefaultAsync();
 
                 if (existing != null)

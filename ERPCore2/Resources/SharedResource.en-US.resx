@@ -678,6 +678,7 @@
   <data name="Report.NameColumn" xml:space="preserve"><value>Report Name</value></data>
   <data name="Report.DescriptionColumn" xml:space="preserve"><value>Description</value></data>
   <data name="Report.SearchEmpty" xml:space="preserve"><value>No reports matching "{0}"</value></data>
+  <data name="Report.AccountsReceivable" xml:space="preserve"><value>Accounts Receivable Report</value></data>
   <data name="Report.CustomerStatement" xml:space="preserve"><value>Customer Statement</value></data>
   <data name="Report.CustomerSalesAnalysis" xml:space="preserve"><value>Customer Sales Analysis</value></data>
   <data name="Report.CustomerTransaction" xml:space="preserve"><value>Customer Transaction Detail</value></data>
@@ -1340,6 +1341,7 @@
   <data name="Field.BranchCode" xml:space="preserve"><value>Branch Code</value></data>
   <data name="Field.BranchName" xml:space="preserve"><value>Branch Name</value></data>
   <data name="Field.AccountNumber" xml:space="preserve"><value>Account Number</value></data>
+  <data name="Field.Purpose" xml:space="preserve"><value>Purpose</value></data>
   <data name="Field.BankAccountHolder" xml:space="preserve"><value>Account Holder Name</value></data>
   <data name="Field.IsPrimary" xml:space="preserve"><value>Primary Account</value></data>
   <data name="Payroll.PrimaryAccount" xml:space="preserve"><value>Primary</value></data>
@@ -1959,6 +1961,7 @@
   <data name="Label.ShowItemCode" xml:space="preserve"><value>Show Item Code</value></data>
   <data name="Message.LoadItemsFailed" xml:space="preserve"><value>Failed to load product data</value></data>
   <!-- ===== Report Description keys ===== -->
+  <data name="Report.AccountsReceivableDesc" xml:space="preserve"><value>Filter accounts receivable by period and customer, showing delivery amount, collected amount, and outstanding balance. Options to include settled receivables or show only overdue items.</value></data>
   <data name="Report.CustomerStatementDesc" xml:space="preserve"><value>Generate customer statement for a specified period, including delivery, return, and payment details with opening/closing balances</value></data>
   <data name="Report.CustomerSalesAnalysisDesc" xml:space="preserve"><value>Ranked by sales amount, analyzes customer sales share and ranking</value></data>
   <data name="Report.CustomerTransactionDesc" xml:space="preserve"><value>Query customer delivery and return transaction records grouped by customer</value></data>
@@ -2141,6 +2144,8 @@
   <data name="BatchDelete.CancelTooltip" xml:space="preserve"><value>Cancel and Close</value></data>
   <data name="BatchDelete.Warning" xml:space="preserve"><value>Warning: This operation cannot be undone!</value></data>
   <data name="BatchDelete.DefaultTitle" xml:space="preserve"><value>Confirm Batch Delete</value></data>
+  <data name="BatchDelete.SelectAll" xml:space="preserve"><value>All</value></data>
+  <data name="BatchDelete.SelectAllTooltip" xml:space="preserve"><value>Select or deselect all items</value></data>
 
   <!-- ===== Shortcut Keys ===== -->
   <data name="Shortcut.Title" xml:space="preserve"><value>Keyboard Shortcuts</value></data>

@@ -1170,7 +1170,7 @@ public static class NavigationConfig
                         Route = "/opening-balance",
                         IconClass = "",
                         Category = "會計管理",
-                        RequiredPermission = PermissionRegistry.JournalEntry.Read,
+                        RequiredPermission = PermissionRegistry.Accounting.OpeningBalance,
                         SearchKeywords = new List<string> { "期初餘額", "開帳", "期初", "opening balance", "期首残高", "期初余额" }
                     },
                     new NavigationItem

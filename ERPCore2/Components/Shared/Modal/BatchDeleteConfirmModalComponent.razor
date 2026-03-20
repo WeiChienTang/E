@@ -52,6 +52,11 @@
                                    IsLoading="@IsDeleting"
                                    OnClick="@HandleConfirmDelete"
                                    Title="@L["BatchDelete.ConfirmTooltip"]" />
+            <GenericButtonComponent Variant="ButtonVariant.Blue"
+                                   Text="@L["BatchDelete.SelectAll"]"
+                                   IsDisabled="@IsDeleting"
+                                   OnClick="@HandleSelectAll"
+                                   Title="@L["BatchDelete.SelectAllTooltip"]" />
             <GenericButtonComponent Variant="ButtonVariant.Gray"
                                    Text="@L["Button.Cancel"]"
                                    IsDisabled="@IsDeleting"
@@ -147,6 +152,16 @@
         _selectedItems = items;
         StateHasChanged();
         return Task.CompletedTask;
+    }
+
+    private void HandleSelectAll()
+    {
+        if (Items == null || IsDeleting) return;
+        if (_selectedItems.Count == Items.Count)
+            _selectedItems = new HashSet<TItem>();
+        else
+            _selectedItems = new HashSet<TItem>(Items);
+        StateHasChanged();
     }
 
     private async Task HandleConfirmDelete()

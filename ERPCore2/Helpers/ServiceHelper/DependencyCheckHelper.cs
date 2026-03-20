@@ -260,9 +260,9 @@ namespace ERPCore2.Helpers
                     result.DependentEntities.Add($"銷貨退回單({salesReturnCount}筆)");
                 }
 
-                // 檢查沖帳單
+                // 檢查沖帳單 (CustomerId 是 [NotMapped] 虛擬屬性，實際欄位為 RelatedPartyId + RelatedPartyType)
                 var setoffDocumentCount = await context.SetoffDocuments
-                    .CountAsync(sd => sd.CustomerId == customerId);
+                    .CountAsync(sd => sd.RelatedPartyType == "Customer" && sd.RelatedPartyId == customerId);
 
                 if (setoffDocumentCount > 0)
                 {
@@ -284,14 +284,14 @@ namespace ERPCore2.Helpers
             }
             catch (Exception)
             {
-                return new DependencyCheckResult 
-                { 
-                    CanDelete = false, 
-                    ErrorMessage = "檢查客戶依賴關係時發生錯誤" 
+                return new DependencyCheckResult
+                {
+                    CanDelete = false,
+                    ErrorMessage = "檢查客戶依賴關係時發生錯誤"
                 };
             }
         }
-        
+
         /// <summary>
         /// 檢查品項是否可以刪除
         /// </summary>

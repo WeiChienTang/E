@@ -678,6 +678,7 @@
   <data name="Report.NameColumn" xml:space="preserve"><value>レポート名</value></data>
   <data name="Report.DescriptionColumn" xml:space="preserve"><value>説明</value></data>
   <data name="Report.SearchEmpty" xml:space="preserve"><value>「{0}」に一致するレポートはありません</value></data>
+  <data name="Report.AccountsReceivable" xml:space="preserve"><value>売掛金レポート</value></data>
   <data name="Report.CustomerStatement" xml:space="preserve"><value>得意先照合書</value></data>
   <data name="Report.CustomerSalesAnalysis" xml:space="preserve"><value>得意先売上分析</value></data>
   <data name="Report.CustomerTransaction" xml:space="preserve"><value>得意先取引明細</value></data>
@@ -1340,6 +1341,7 @@
   <data name="Field.BranchCode" xml:space="preserve"><value>支店コード</value></data>
   <data name="Field.BranchName" xml:space="preserve"><value>支店名</value></data>
   <data name="Field.AccountNumber" xml:space="preserve"><value>口座番号</value></data>
+  <data name="Field.Purpose" xml:space="preserve"><value>用途説明</value></data>
   <data name="Field.BankAccountHolder" xml:space="preserve"><value>口座名義</value></data>
   <data name="Field.IsPrimary" xml:space="preserve"><value>メイン口座</value></data>
   <data name="Payroll.PrimaryAccount" xml:space="preserve"><value>メイン</value></data>
@@ -1959,6 +1961,7 @@
   <data name="Label.ShowItemCode" xml:space="preserve"><value>品目コードを表示</value></data>
   <data name="Message.LoadItemsFailed" xml:space="preserve"><value>品目データの読み込みに失敗しました</value></data>
   <!-- ===== Report Description keys ===== -->
+  <data name="Report.AccountsReceivableDesc" xml:space="preserve"><value>期間と得意先で売掛金明細を絞り込み、出荷金額・入金済み金額・未収残高を表示。決済済みを含む、または期日超過のみ表示のオプションあり。</value></data>
   <data name="Report.CustomerStatementDesc" xml:space="preserve"><value>指定期間の顧客対照表を生成し、出荷・返品・入金明細と期首・期末残高を含む</value></data>
   <data name="Report.CustomerSalesAnalysisDesc" xml:space="preserve"><value>売上金額の高い順に並び、顧客の売上金額比率とランキングを分析</value></data>
   <data name="Report.CustomerTransactionDesc" xml:space="preserve"><value>顧客別に出荷と返品の取引記録明細を照会・表示</value></data>
@@ -2141,6 +2144,8 @@
   <data name="BatchDelete.CancelTooltip" xml:space="preserve"><value>キャンセルして閉じる</value></data>
   <data name="BatchDelete.Warning" xml:space="preserve"><value>警告：この操作は元に戻せません！</value></data>
   <data name="BatchDelete.DefaultTitle" xml:space="preserve"><value>一括削除の確認</value></data>
+  <data name="BatchDelete.SelectAll" xml:space="preserve"><value>すべて</value></data>
+  <data name="BatchDelete.SelectAllTooltip" xml:space="preserve"><value>すべての項目を選択または選択解除</value></data>
 
   <!-- ===== Shortcut キーボードショートカット ===== -->
   <data name="Shortcut.Title" xml:space="preserve"><value>キーボードショートカット</value></data>

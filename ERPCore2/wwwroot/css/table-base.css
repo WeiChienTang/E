@@ -451,14 +451,16 @@
 
 /* --- 選取行 --- */
 .interactive-table tbody tr.row-selected td {
-    background-color: #fcd34d !important;
-    color: #92400e !important;
-    font-weight: 500;
+    background-color: var(--table-hover-bg-striped) !important;
+    color: var(--table-hover-text) !important;
+    font-weight: 600;
+    box-shadow: inset 3px 0 0 var(--table-hover-text);
 }
 
 .interactive-table tbody tr.row-selected:hover td {
-    background-color: #fbbf24 !important;
-    color: #78350f !important;
+    background-color: var(--table-hover-bg-striped) !important;
+    color: var(--table-hover-text) !important;
+    filter: brightness(0.92);
 }
 
 /* --- 鎖定行（唯讀/已確認/不可編輯）--- */
@@ -1068,11 +1070,14 @@ tr.dragging .drag-handle {
 [data-bs-theme=dark] .interactive-table tbody tr.row-selected td {
     background-color: var(--table-hover-bg-striped) !important;
     color: var(--table-hover-text) !important;
+    font-weight: 600;
+    box-shadow: inset 3px 0 0 var(--table-hover-text);
 }
 
 [data-bs-theme=dark] .interactive-table tbody tr.row-selected:hover td {
     background-color: var(--table-hover-bg-striped) !important;
     color: var(--table-hover-text) !important;
+    filter: brightness(1.15);
 }
 
 /* Interactive Striped */

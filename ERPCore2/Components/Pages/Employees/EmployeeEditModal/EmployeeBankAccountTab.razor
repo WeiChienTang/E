@@ -82,19 +82,18 @@ else
 }
 
 @* 銀行帳號編輯 Modal *@
-<EmployeeBankAccountEditModalComponent @ref="editModal"
-                                       IsVisible="@isModalVisible"
-                                       IsVisibleChanged="@((bool v) => isModalVisible = v)"
-                                       BankAccountId="@editingId"
-                                       PrefilledEmployeeId="@EmployeeId"
-                                       OnBankAccountSaved="@HandleSaved"
-                                       OnCancel="@(() => isModalVisible = false)" />
+<GenericBankAccountEditModalComponent EntityType="BankAccountEntityType.Employee"
+                                      EntityId="@EmployeeId"
+                                      BankAccountId="@editingId"
+                                      IsVisible="@isModalVisible"
+                                      IsVisibleChanged="@((bool v) => isModalVisible = v)"
+                                      OnSaved="@HandleSaved"
+                                      OnCancel="@(() => isModalVisible = false)" />
 
 @code {
     [Parameter] public int? EmployeeId { get; set; }
 
     private List<EmployeeBankAccount> accounts = new();
-    private EmployeeBankAccountEditModalComponent? editModal;
     private bool isModalVisible = false;
     private int? editingId = null;
     private int _lastLoadedId;
@@ -165,7 +164,7 @@ else
         }
     }
 
-    private async Task HandleSaved(EmployeeBankAccount saved)
+    private async Task HandleSaved()
     {
         isModalVisible = false;
         if (EmployeeId.HasValue)

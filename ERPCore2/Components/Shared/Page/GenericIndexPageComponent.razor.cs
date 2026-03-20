@@ -520,13 +520,27 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     /// <summary>
     /// 取得有效的批次刪除欄位定義。
     /// 若頁面已設定 BatchDeleteColumnDefinitions 則直接使用；
-    /// 否則（SuperAdmin 預設）提供含 Id 的最小欄位集。
+    /// 否則（SuperAdmin 預設）提供 Id + Code（若有）+ 顯示名稱的最小欄位集。
     /// </summary>
-    private List<InteractiveColumnDefinition> GetEffectiveBatchDeleteColumns() =>
-        BatchDeleteColumnDefinitions ?? new List<InteractiveColumnDefinition>
+    private List<InteractiveColumnDefinition> GetEffectiveBatchDeleteColumns()
+    {
+        if (BatchDeleteColumnDefinitions != null)
+            return BatchDeleteColumnDefinitions;
+
+        // SuperAdmin fallback：Id + Code（若存在且非空）+ GetEntityDisplayName
+        return new List<InteractiveColumnDefinition>
         {
-            new() { Title = "ID", PropertyName = nameof(BaseEntity.Id), Width = "80px" }
+            new() { Title = "ID", PropertyName = nameof(BaseEntity.Id), Width = "60px", TextAlign = "center" },
+            new() { Title = "Code", PropertyName = nameof(BaseEntity.Code), Width = "120px" },
+            new()
+            {
+                Title = EntityName ?? "項目",
+                PropertyName = nameof(BaseEntity.Id), // 只作欄定義用途，不影響 DisplayFormatter
+                DisplayFormatter = item => item is TEntity e ? GetEntityDisplayName(e) : ""
+            },
+            new() { Title = "建立時間", PropertyName = nameof(BaseEntity.CreatedAt), Width = "140px" }
         };
+    }
 
     // ===== 智能文字產生 =====
 

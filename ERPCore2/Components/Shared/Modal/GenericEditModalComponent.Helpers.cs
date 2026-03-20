@@ -179,6 +179,8 @@ public partial class GenericEditModalComponent<TEntity, TService>
         IsRejecting = false;
         _cachedModalTitle = null;
         _cachedModalIcon = null;
+        _currentId = null;
+        _lastId = null;
         ResetStatusMessage();
     }
 

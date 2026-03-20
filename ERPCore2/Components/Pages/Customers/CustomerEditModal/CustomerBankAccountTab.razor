@@ -1,6 +1,5 @@
 @* 客戶銀行帳號 Tab - 管理客戶的銀行帳戶資訊 *@
 @inject ICustomerBankAccountService BankAccountService
-@inject IBankService BankService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 
@@ -83,19 +82,18 @@ else
 }
 
 @* 銀行帳號編輯 Modal *@
-<CustomerBankAccountEditModalComponent @ref="editModal"
-                                       IsVisible="@isModalVisible"
-                                       IsVisibleChanged="@((bool v) => isModalVisible = v)"
-                                       BankAccountId="@editingId"
-                                       PrefilledCustomerId="@CustomerId"
-                                       OnSaved="@HandleSaved"
-                                       OnCancel="@(() => isModalVisible = false)" />
+<GenericBankAccountEditModalComponent EntityType="BankAccountEntityType.Customer"
+                                      EntityId="@CustomerId"
+                                      BankAccountId="@editingId"
+                                      IsVisible="@isModalVisible"
+                                      IsVisibleChanged="@((bool v) => isModalVisible = v)"
+                                      OnSaved="@HandleSaved"
+                                      OnCancel="@(() => isModalVisible = false)" />
 
 @code {
     [Parameter] public int? CustomerId { get; set; }
 
     private List<CustomerBankAccount> accounts = new();
-    private CustomerBankAccountEditModalComponent? editModal;
     private bool isModalVisible = false;
     private int? editingId = null;
     private int _lastLoadedId;
@@ -166,7 +164,7 @@ else
         }
     }
 
-    private async Task HandleSaved(CustomerBankAccount saved)
+    private async Task HandleSaved()
     {
         isModalVisible = false;
         if (CustomerId.HasValue)

@@ -1,0 +1,292 @@
+@* 通用銀行帳號編輯 Modal - 支援廠商/客戶/員工/公司 *@
+@inject ISupplierBankAccountService SupplierBankAccountService
+@inject ICustomerBankAccountService CustomerBankAccountService
+@inject IEmployeeBankAccountService EmployeeBankAccountService
+@inject ICompanyBankAccountService CompanyBankAccountService
+@inject IBankService BankService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+@if (EntityType == BankAccountEntityType.Supplier)
+{
+    <GenericEditModalComponent TEntity="SupplierBankAccount"
+                               TService="ISupplierBankAccountService"
+                               IsVisible="@IsVisible"
+                               IsVisibleChanged="@IsVisibleChanged"
+                               Id="@BankAccountId"
+                               Service="@SupplierBankAccountService"
+                               EntityName="@entityName"
+                               EntityNamePlural="@entityName"
+                               ModalTitle="@modalTitle"
+                               UseGenericForm="true"
+                               FormFields="@formFields"
+                               FormSections="@formSections"
+                               DataLoader="@LoadSupplierData"
+                               AdditionalDataLoader="@LoadBanksAsync"
+                               UseGenericSave="true"
+                               SaveSuccessMessage="@saveSuccessMessage"
+                               SaveFailureMessage="@saveFailureMessage"
+                               RequiredPermission="@PermissionRegistry.Supplier.Read"
+                               OnEntitySaved="@((SupplierBankAccount _) => HandleSaved())"
+                               OnCancel="@OnCancel"
+                               ComponentName="GenericBankAccountEditModalComponent" />
+}
+else if (EntityType == BankAccountEntityType.Customer)
+{
+    <GenericEditModalComponent TEntity="CustomerBankAccount"
+                               TService="ICustomerBankAccountService"
+                               IsVisible="@IsVisible"
+                               IsVisibleChanged="@IsVisibleChanged"
+                               Id="@BankAccountId"
+                               Service="@CustomerBankAccountService"
+                               EntityName="@entityName"
+                               EntityNamePlural="@entityName"
+                               ModalTitle="@modalTitle"
+                               UseGenericForm="true"
+                               FormFields="@formFields"
+                               FormSections="@formSections"
+                               DataLoader="@LoadCustomerData"
+                               AdditionalDataLoader="@LoadBanksAsync"
+                               UseGenericSave="true"
+                               SaveSuccessMessage="@saveSuccessMessage"
+                               SaveFailureMessage="@saveFailureMessage"
+                               RequiredPermission="@PermissionRegistry.Customer.Read"
+                               OnEntitySaved="@((CustomerBankAccount _) => HandleSaved())"
+                               OnCancel="@OnCancel"
+                               ComponentName="GenericBankAccountEditModalComponent" />
+}
+else if (EntityType == BankAccountEntityType.Employee)
+{
+    <GenericEditModalComponent TEntity="EmployeeBankAccount"
+                               TService="IEmployeeBankAccountService"
+                               IsVisible="@IsVisible"
+                               IsVisibleChanged="@IsVisibleChanged"
+                               Id="@BankAccountId"
+                               Service="@EmployeeBankAccountService"
+                               EntityName="@entityName"
+                               EntityNamePlural="@entityName"
+                               ModalTitle="@modalTitle"
+                               UseGenericForm="true"
+                               FormFields="@formFields"
+                               FormSections="@formSections"
+                               DataLoader="@LoadEmployeeData"
+                               AdditionalDataLoader="@LoadBanksAsync"
+                               UseGenericSave="true"
+                               SaveSuccessMessage="@saveSuccessMessage"
+                               SaveFailureMessage="@saveFailureMessage"
+                               RequiredPermission="@PermissionRegistry.Employee.Read"
+                               OnEntitySaved="@((EmployeeBankAccount _) => HandleSaved())"
+                               OnCancel="@OnCancel"
+                               ComponentName="GenericBankAccountEditModalComponent" />
+}
+else if (EntityType == BankAccountEntityType.Company)
+{
+    <GenericEditModalComponent TEntity="CompanyBankAccount"
+                               TService="ICompanyBankAccountService"
+                               IsVisible="@IsVisible"
+                               IsVisibleChanged="@IsVisibleChanged"
+                               Id="@BankAccountId"
+                               Service="@CompanyBankAccountService"
+                               EntityName="@entityName"
+                               EntityNamePlural="@entityName"
+                               ModalTitle="@modalTitle"
+                               UseGenericForm="true"
+                               FormFields="@formFields"
+                               FormSections="@formSections"
+                               DataLoader="@LoadCompanyData"
+                               AdditionalDataLoader="@LoadBanksAsync"
+                               UseGenericSave="true"
+                               SaveSuccessMessage="@saveSuccessMessage"
+                               SaveFailureMessage="@saveFailureMessage"
+                               RequiredPermission="@PermissionRegistry.Company.Read"
+                               OnEntitySaved="@((CompanyBankAccount _) => HandleSaved())"
+                               OnCancel="@OnCancel"
+                               ComponentName="GenericBankAccountEditModalComponent" />
+}
+
+@code {
+    [Parameter] public BankAccountEntityType EntityType { get; set; }
+    [Parameter] public int? EntityId { get; set; }
+    [Parameter] public int? BankAccountId { get; set; }
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<Bank> availableBanks = new();
+
+    private string entityName => EntityType switch
+    {
+        BankAccountEntityType.Supplier => L["Entity.SupplierBankAccount"].ToString(),
+        BankAccountEntityType.Customer => L["Entity.CustomerBankAccount"].ToString(),
+        BankAccountEntityType.Employee => L["Entity.EmployeeBankAccount"].ToString(),
+        BankAccountEntityType.Company  => L["Entity.CompanyBankAccount"].ToString(),
+        _ => L["Entity.SupplierBankAccount"].ToString()
+    };
+
+    private string modalTitle => BankAccountId.HasValue
+        ? L["Message.EditTitle", entityName].ToString()
+        : L["Message.CreateTitle", entityName].ToString();
+
+    private string saveSuccessMessage => BankAccountId.HasValue
+        ? L["Message.UpdateSuccess", entityName].ToString()
+        : L["Message.CreateSuccess", entityName].ToString();
+
+    private string saveFailureMessage => L["Message.SaveFailure", entityName].ToString();
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+            InitializeFormFields();
+    }
+
+    private async Task LoadBanksAsync()
+    {
+        try
+        {
+            availableBanks = await BankService.GetAllAsync();
+            InitializeFormFields();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(LoadBanksAsync), GetType());
+            await NotificationService.ShowErrorAsync(L["Message.LoadFailed", L["Field.Bank"]].ToString());
+        }
+    }
+
+    private void InitializeFormFields()
+    {
+        var hintKey = EntityType switch
+        {
+            BankAccountEntityType.Supplier => "Hint.OnePrimaryPerSupplier",
+            BankAccountEntityType.Customer => "Hint.OnePrimaryPerCustomer",
+            BankAccountEntityType.Employee => "Hint.OnePrimaryPerEmployee",
+            BankAccountEntityType.Company  => "Hint.OnePrimaryPerCompany",
+            _ => "Hint.OnePrimaryPerSupplier"
+        };
+
+        formFields = new List<FormFieldDefinition>
+        {
+            new()
+            {
+                PropertyName = "BankId",
+                Label = L["Field.Bank"],
+                FieldType = FormFieldType.Select,
+                IsRequired = true,
+                Options = availableBanks.Select(b => new SelectOption
+                {
+                    Value = b.Id.ToString(),
+                    Text = b.BankName
+                }).Prepend(new SelectOption { Value = "", Text = $"-- {L["Label.NotSet"]} --" }).ToList()
+            },
+            new()
+            {
+                PropertyName = "BranchCode",
+                Label = L["Field.BranchCode"],
+                FieldType = FormFieldType.Text,
+                Placeholder = L["Placeholder.PleaseInput", L["Field.BranchCode"]],
+                MaxLength = 10
+            },
+            new()
+            {
+                PropertyName = "BranchName",
+                Label = L["Field.BranchName"],
+                FieldType = FormFieldType.Text,
+                Placeholder = L["Placeholder.PleaseInput", L["Field.BranchName"]],
+                MaxLength = 50
+            },
+            new()
+            {
+                PropertyName = "AccountNumber",
+                Label = L["Field.AccountNumber"],
+                FieldType = FormFieldType.Text,
+                Placeholder = L["Placeholder.PleaseInput", L["Field.AccountNumber"]],
+                IsRequired = true,
+                MaxLength = 30,
+                AutoCompleteAttribute = "off"
+            },
+            new()
+            {
+                PropertyName = "AccountName",
+                Label = L["Field.BankAccountHolder"],
+                FieldType = FormFieldType.Text,
+                Placeholder = L["Placeholder.PleaseInput", L["Field.BankAccountHolder"]],
+                IsRequired = true,
+                MaxLength = 50
+            },
+        };
+
+        if (EntityType == BankAccountEntityType.Company)
+        {
+            formFields.Add(new()
+            {
+                PropertyName = "Purpose",
+                Label = L["Field.Purpose"],
+                FieldType = FormFieldType.Text,
+                Placeholder = L["Placeholder.PleaseInput", L["Field.Purpose"]],
+                MaxLength = 100
+            });
+        }
+
+        formFields.Add(new()
+        {
+            PropertyName = "IsPrimary",
+            Label = L["Field.IsPrimary"],
+            FieldType = FormFieldType.Checkbox,
+            HelpText = L[hintKey].ToString()
+        });
+
+        formFields.Add(FormFieldConfigurationHelper.CreateRemarksField<BaseEntity>(l: L));
+
+        formSections = new Dictionary<string, string>
+        {
+            { "BankId",        FormSectionNames.BasicInfo },
+            { "BranchCode",    FormSectionNames.BasicInfo },
+            { "BranchName",    FormSectionNames.BasicInfo },
+            { "AccountNumber", FormSectionNames.BasicInfo },
+            { "AccountName",   FormSectionNames.BasicInfo },
+        };
+
+        if (EntityType == BankAccountEntityType.Company)
+            formSections["Purpose"] = FormSectionNames.BasicInfo;
+
+        formSections["IsPrimary"] = FormSectionNames.BasicInfo;
+        formSections["Remarks"]   = FormSectionNames.AdditionalData;
+    }
+
+    private Task<SupplierBankAccount?> LoadSupplierData() =>
+        EditDataLoaderHelper.LoadOrCreateAsync<SupplierBankAccount, ISupplierBankAccountService>(
+            BankAccountId, SupplierBankAccountService, NotificationService,
+            L["Entity.SupplierBankAccount"].ToString(), string.Empty,
+            EntityId.HasValue ? new Dictionary<string, object?> { { "SupplierId", EntityId.Value } } : null,
+            b => b.IsPrimary = true);
+
+    private Task<CustomerBankAccount?> LoadCustomerData() =>
+        EditDataLoaderHelper.LoadOrCreateAsync<CustomerBankAccount, ICustomerBankAccountService>(
+            BankAccountId, CustomerBankAccountService, NotificationService,
+            L["Entity.CustomerBankAccount"].ToString(), string.Empty,
+            EntityId.HasValue ? new Dictionary<string, object?> { { "CustomerId", EntityId.Value } } : null,
+            b => b.IsPrimary = true);
+
+    private Task<EmployeeBankAccount?> LoadEmployeeData() =>
+        EditDataLoaderHelper.LoadOrCreateAsync<EmployeeBankAccount, IEmployeeBankAccountService>(
+            BankAccountId, EmployeeBankAccountService, NotificationService,
+            L["Entity.EmployeeBankAccount"].ToString(), string.Empty,
+            EntityId.HasValue ? new Dictionary<string, object?> { { "EmployeeId", EntityId.Value } } : null,
+            b => b.IsPrimary = true);
+
+    private Task<CompanyBankAccount?> LoadCompanyData() =>
+        EditDataLoaderHelper.LoadOrCreateAsync<CompanyBankAccount, ICompanyBankAccountService>(
+            BankAccountId, CompanyBankAccountService, NotificationService,
+            L["Entity.CompanyBankAccount"].ToString(), string.Empty,
+            EntityId.HasValue ? new Dictionary<string, object?> { { "CompanyId", EntityId.Value } } : null,
+            b => b.IsPrimary = true);
+
+    private async Task HandleSaved()
+    {
+        await OnSaved.InvokeAsync();
+    }
+}
