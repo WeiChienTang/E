@@ -839,13 +839,20 @@ namespace ERPCore2.Services
                 if (!doc.IsConfirmed)
                     return (false, "領料單尚未確認，無法轉傳票");
 
+                // 確認所有明細均已設定單位成本（避免部分 null 導致傳票金額不完整）
+                var missingCostDetails = doc.MaterialIssueDetails
+                    .Where(d => !d.UnitCost.HasValue || d.UnitCost.Value <= 0)
+                    .ToList();
+
+                if (missingCostDetails.Any())
+                    return (false, $"領料單有 {missingCostDetails.Count} 筆明細尚未設定單位成本（或成本為零），無法建立傳票。請先確認所有明細的單位成本後再轉傳票");
+
                 // 計算總成本（UnitCost × IssueQuantity）
                 var totalCost = doc.MaterialIssueDetails
-                    .Where(d => d.UnitCost.HasValue)
                     .Sum(d => d.UnitCost!.Value * d.IssueQuantity);
 
                 if (totalCost <= 0)
-                    return (false, "領料單各明細的 UnitCost 均未設定或為零，無法計算傳票金額。請先確認各明細的單位成本");
+                    return (false, "領料單總成本為零，無法建立傳票");
 
                 // 依用途決定借方科目
                 var inventory = await _accountItemService.GetByCodeAsync(InventoryCode);

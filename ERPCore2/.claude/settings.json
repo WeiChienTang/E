@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "additionalDirectories": [
+      "c:\\Users\\cses3\\source\\repos\\ERPCore2\\ERPCore2\\publish"
+    ]
+  }
+}

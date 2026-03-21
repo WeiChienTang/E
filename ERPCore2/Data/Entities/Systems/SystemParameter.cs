@@ -112,25 +112,25 @@ namespace ERPCore2.Data.Entities
         public string CustomerSubAccountParentCode { get; set; } = "1191";
 
         /// <summary>
-        /// 應收票據統制科目代碼（客戶票據子科目的父層），預設 1131
+        /// 應收票據統制科目代碼（客戶票據子科目的父層），預設 1181
         /// </summary>
         [MaxLength(20)]
         [Display(Name = "應收票據統制科目代碼")]
-        public string CustomerNoteSubAccountParentCode { get; set; } = "1131";
+        public string CustomerNoteSubAccountParentCode { get; set; } = "1181";
 
         /// <summary>
-        /// 銷貨退回統制科目代碼（客戶退回子科目的父層），預設 4191
+        /// 銷貨退回統制科目代碼（客戶退回子科目的父層），預設 4113
         /// </summary>
         [MaxLength(20)]
         [Display(Name = "銷貨退回統制科目代碼")]
-        public string CustomerReturnSubAccountParentCode { get; set; } = "4191";
+        public string CustomerReturnSubAccountParentCode { get; set; } = "4113";
 
         /// <summary>
-        /// 預收款項統制科目代碼（客戶預收子科目的父層），預設 2163
+        /// 預收款項統制科目代碼（客戶預收子科目的父層），預設 2221
         /// </summary>
         [MaxLength(20)]
         [Display(Name = "預收款項統制科目代碼")]
-        public string CustomerAdvanceSubAccountParentCode { get; set; } = "2163";
+        public string CustomerAdvanceSubAccountParentCode { get; set; } = "2221";
 
         /// <summary>
         /// 應付帳款統制科目代碼（廠商子科目的父層），預設 2171
@@ -140,25 +140,25 @@ namespace ERPCore2.Data.Entities
         public string SupplierSubAccountParentCode { get; set; } = "2171";
 
         /// <summary>
-        /// 應付票據統制科目代碼（廠商票據子科目的父層），預設 2131
+        /// 應付票據統制科目代碼（廠商票據子科目的父層），預設 2161
         /// </summary>
         [MaxLength(20)]
         [Display(Name = "應付票據統制科目代碼")]
-        public string SupplierNoteSubAccountParentCode { get; set; } = "2131";
+        public string SupplierNoteSubAccountParentCode { get; set; } = "2161";
 
         /// <summary>
-        /// 進貨退出統制科目代碼（廠商退回子科目的父層），預設 5111
+        /// 進貨退出統制科目代碼（廠商退回子科目的父層），預設 5123
         /// </summary>
         [MaxLength(20)]
         [Display(Name = "進貨退出統制科目代碼")]
-        public string SupplierReturnSubAccountParentCode { get; set; } = "5111";
+        public string SupplierReturnSubAccountParentCode { get; set; } = "5123";
 
         /// <summary>
-        /// 預付款項統制科目代碼（廠商預付子科目的父層），預設 1161
+        /// 預付款項統制科目代碼（廠商預付子科目的父層），預設 1266
         /// </summary>
         [MaxLength(20)]
         [Display(Name = "預付款項統制科目代碼")]
-        public string SupplierAdvanceSubAccountParentCode { get; set; } = "1161";
+        public string SupplierAdvanceSubAccountParentCode { get; set; } = "1266";
 
         /// <summary>
         /// 品項存貨統制科目代碼（品項子科目的父層），預設 1231

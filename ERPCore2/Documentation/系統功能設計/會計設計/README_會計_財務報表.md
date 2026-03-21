@@ -1,13 +1,13 @@
-# 會計財務報表設計（FN005–FN011）
+# 會計財務報表設計（FN005–FN015）
 
 ## 更新日期
-2026-03-17
+2026-03-21
 
 ---
 
 ## 概述
 
-會計模組提供七份財務報表，從科目表查詢（FN005）到完整帳冊（FN011），均整合至報表系統，透過報表中心（Alt+R 或選單）進行篩選、預覽與列印。
+會計模組提供十一份財務報表（FN005–FN015），均整合至報表系統，透過報表中心（Alt+R 或選單）進行篩選、預覽與列印。
 
 ---
 
@@ -19,7 +19,7 @@
 | 呼叫方式 | `GenericReportFilterModalComponent` 透過反射呼叫 |
 | 入口點 | 報表中心（Alt+R 或選單）→ 搜尋 → 篩選 → 預覽 → 列印 |
 | DI 注冊 | `AddScoped<IXxxReportService, XxxReportService>()` in `ServiceRegistration.cs` |
-| 報表定義 | `ReportRegistry.cs`，FN005~FN011 Category = `ReportCategory.Accounting`，Permission = `JournalEntry.Read` |
+| 報表定義 | `ReportRegistry.cs`，FN005~FN015 Category = `ReportCategory.Accounting`（FN005 為 Financial），Permission = `JournalEntry.Read`（FN015 為 `BankStatement.Read`） |
 | 篩選模板 | `FilterTemplateRegistry.cs`，使用 `DynamicFilterTemplate` |
 
 ### 導覽入口
@@ -262,9 +262,70 @@
 
 ---
 
+## FN012 — 應收帳款帳齡分析
+
+> 詳細設計請見 [README_會計_Phase4_進階功能.md] Phase 3-A 章節（已整合至 Phase 4 文件）。
+
+| 檔案 | 路徑 |
+|------|------|
+| `ArAgingCriteria.cs` | `Models/Reports/FilterCriteria/` |
+| `IArAgingReportService.cs` | `Services/Reports/Interfaces/` |
+| `ArAgingReportService.cs` | `Services/Reports/` |
+
+**資料來源：** `SalesDelivery`（銷貨出貨單），帳齡 = 截止日 − 交貨日 − `Customer.PaymentDays`
+
+**報表區間：** 0-30 / 31-60 / 61-90 / 91-120 / 121+ 天
+
+---
+
+## FN013 — 應付帳款帳齡分析
+
+| 檔案 | 路徑 |
+|------|------|
+| `ApAgingCriteria.cs` | `Models/Reports/FilterCriteria/` |
+| `IApAgingReportService.cs` | `Services/Reports/Interfaces/` |
+| `ApAgingReportService.cs` | `Services/Reports/` |
+
+**資料來源：** `PurchaseReceiving`（進貨入庫單），帳齡 = 截止日 − 入庫日 − `Supplier.PaymentDays`
+
+---
+
+## FN014 — 現金流量表
+
+> 詳細設計請見 [README_會計_Phase4_進階功能.md](README_會計_Phase4_進階功能.md) P4-A 章節。
+
+| 檔案 | 路徑 |
+|------|------|
+| `CashFlowCriteria.cs` | `Models/Reports/FilterCriteria/` |
+| `ICashFlowReportService.cs` | `Services/Reports/Interfaces/` |
+| `CashFlowReportService.cs` | `Services/Reports/` |
+
+**方法：** 間接法（IAS 7）。依 `AccountItem.CashFlowCategory` 分類彙總。
+
+**⚠️ 使用前提：** 需先在會計科目表為各科目設定 `CashFlowCategory`（尤其是現金科目標記為 `Cash`）。若未設定，報表頂端會顯示警告提示。
+
+---
+
+## FN015 — 銀行存款餘額調節表
+
+> 詳細設計請見 [README_會計_Phase4_進階功能.md](README_會計_Phase4_進階功能.md) P4-C 章節。
+
+| 檔案 | 路徑 |
+|------|------|
+| `BankReconciliationCriteria.cs` | `Models/Reports/FilterCriteria/` |
+| `IBankReconciliationReportService.cs` | `Services/Reports/Interfaces/` |
+| `BankReconciliationReportService.cs` | `Services/Reports/` |
+
+**報表區塊：** 對帳單概況 → 配對狀況摘要 → 已配對明細（含傳票編號） → 未配對明細 → 差異分析
+
+**權限：** `BankStatement.Read`
+
+---
+
 ## 相關文件
 
 - [README_會計設計總綱.md](README_會計設計總綱.md)
 - [README_會計_傳票系統.md](README_會計_傳票系統.md)（報表資料來源：JournalEntry / JournalEntryLine，以及期初餘額機制）
 - [README_會計_會計期間管理.md](README_會計_會計期間管理.md)（FiscalPeriod，影響試算表期初餘額計算）
+- [README_會計_Phase4_進階功能.md](README_會計_Phase4_進階功能.md)（FN014 現金流量表、FN015 銀行對帳表詳細設計）
 - [報表系統總綱](../../報表系統/README_報表系統總綱.md)（報表架構與通用元件）

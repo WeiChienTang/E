@@ -63,7 +63,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = "ParentItem.Name",
                             FilterPropertyName = nameof(ItemComposition.ParentItemId),
-                            DisplayName = Dn("Field.Item", "品項"),
+                            DisplayName = Dn("Entity.Item", "品項"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
                             Options = _products.Select(p => new SelectOption 

@@ -27,24 +27,14 @@ public partial class GenericEditModalComponent<TEntity, TService>
     /// </summary>
     protected override bool ShouldRender() => IsVisible || _renderedVisible;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         editContext = new EditContext(Entity);
 
-        // 載入使用者的「離開未儲存表單時詢問」偏好設定
-        try
-        {
-            var employeeId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
-            if (employeeId.HasValue)
-            {
-                var pref = await EmployeePreferenceService.GetByEmployeeIdAsync(employeeId.Value);
-                _prefUnsavedWarning = pref.ShowUnsavedChangesWarning;
-            }
-        }
-        catch
-        {
-            // 無法取得偏好設定時，維持預設值（詢問）
-        }
+        // 從 Circuit-scoped IUserPreferenceContext 讀取（由 MainLayout 於登入後寫入，無需 DB 查詢）
+        _prefUnsavedWarning = UserPreferenceContext.ShowUnsavedChangesWarning;
+
+        return Task.CompletedTask;
     }
 
     protected override async Task OnParametersSetAsync()

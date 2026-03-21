@@ -108,7 +108,7 @@
 /* 精緻分隔線 */
 .header-divider {
     border-top: 1px solid var(--border-light);
-    margin: 0.5rem 0 0.75rem 0;
+    margin: 0.25rem 0 0.5rem 0;
 }
 
 /* 動作按鈕容器 */

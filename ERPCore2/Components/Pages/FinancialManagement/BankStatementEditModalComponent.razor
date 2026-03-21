@@ -1,0 +1,335 @@
+@* 銀行對帳單編輯組件 *@
+
+@inject IBankStatementService BankStatementService
+@inject ICompanyService CompanyService
+@inject ICompanyBankAccountService CompanyBankAccountService
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Services.Systems
+@using ERPCore2.Data.Entities.Systems
+
+<BankStatementCsvImportModal IsVisible="@showCsvImportModal"
+                             IsVisibleChanged="@(v => { showCsvImportModal = v; StateHasChanged(); })"
+                             BankStatementId="@BankStatementId"
+                             OnImportSuccess="@HandleCsvImportSuccess" />
+
+<GenericEditModalComponent TEntity="BankStatement"
+                          TService="IBankStatementService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@BankStatementId"
+                          Service="@BankStatementService"
+                          EntityName="@L["Entity.BankStatement"]"
+                          EntityNamePlural="@L["Entity.BankStatement"]"
+                          ModalTitle="@(BankStatementId.HasValue ? L["Message.EditTitle", L["Entity.BankStatement"]].ToString() : L["Message.CreateTitle", L["Entity.BankStatement"]].ToString())"
+                          Size="GenericEditModalComponent<BankStatement, IBankStatementService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          DataLoader="@LoadDataAsync"
+                          AdditionalDataLoader="@LoadAdditionalDataAsync"
+                          SaveHandler="@SaveAsync"
+                          SaveSuccessMessage="@(BankStatementId.HasValue ? L["Message.UpdateSuccess", L["Entity.BankStatement"]].ToString() : L["Message.CreateSuccess", L["Entity.BankStatement"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.BankStatement"]]"
+                          RequiredPermission="@PermissionRegistry.BankStatement.Read"
+                          OnEntitySaved="@OnBankStatementSaved"
+                          OnCancel="@OnCancel"
+                          OnFieldChanged="@HandleFieldChanged"
+                          CustomModules="@GetCustomModules()"
+                          ComponentName="BankStatementEditModalComponent">
+</GenericEditModalComponent>
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? BankStatementId { get; set; }
+    [Parameter] public EventCallback<BankStatement> OnBankStatementSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<BankStatement, IBankStatementService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    // 查閱資料
+    private List<Company> companies = new();
+    private List<CompanyBankAccount> bankAccounts = new();
+    private bool isDataLoaded = false;
+    private string currentUser = "System";
+
+    // 明細行
+    private BankStatementLineTable? lineTableComponent;
+    private List<BankStatementLine> statementLines = new();
+    private int _detailsDataVersion = 0;
+
+    // CSV 匯入
+    private bool showCsvImportModal = false;
+
+    // ===== 資料載入 =====
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        if (isDataLoaded) return;
+        currentUser = await CurrentUserHelper.GetCurrentUserFullNameAsync(AuthenticationStateProvider);
+        companies = await CompanyService.GetActiveCompaniesAsync();
+        isDataLoaded = true;
+    }
+
+    private async Task<BankStatement?> LoadDataAsync()
+    {
+        BankStatement? entity;
+
+        if (BankStatementId.HasValue)
+        {
+            entity = await BankStatementService.GetWithLinesAsync(BankStatementId.Value);
+            if (entity != null)
+            {
+                statementLines = entity.Lines.ToList();
+                await LoadBankAccountsAsync(entity.CompanyId);
+            }
+        }
+        else
+        {
+            var primaryCompany = await CompanyService.GetPrimaryCompanyAsync();
+            var companyId = primaryCompany?.Id ?? (companies.FirstOrDefault()?.Id ?? 0);
+            await LoadBankAccountsAsync(companyId);
+
+            var today = DateTime.Today;
+            entity = new BankStatement
+            {
+                CompanyId = companyId,
+                CompanyBankAccountId = bankAccounts.FirstOrDefault()?.Id ?? 0,
+                StatementDate = new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month)),
+                PeriodStart = new DateTime(today.Year, today.Month, 1),
+                PeriodEnd = new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month)),
+                StatementStatus = BankStatementStatus.Draft
+            };
+            statementLines = new List<BankStatementLine>();
+        }
+
+        _detailsDataVersion++;
+        InitializeFormFields(entity);
+        return entity;
+    }
+
+    private async Task LoadBankAccountsAsync(int companyId)
+    {
+        if (companyId > 0)
+            bankAccounts = await CompanyBankAccountService.GetByCompanyIdAsync(companyId);
+        else
+            bankAccounts = new List<CompanyBankAccount>();
+    }
+
+    // ===== 表單欄位初始化 =====
+
+    private void InitializeFormFields(BankStatement? entity)
+    {
+        if (entity == null)
+        {
+            formFields = new();
+            formSections = new();
+            return;
+        }
+
+        formFields = new List<FormFieldDefinition>
+        {
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(BankStatement.CompanyId),
+                Label = L["Entity.Company"].ToString(),
+                FieldType = FormFieldType.Select,
+                IsRequired = true,
+                Options = companies.Select(c => new SelectOption
+                {
+                    Value = c.Id.ToString(),
+                    Text = c.CompanyName ?? c.Code ?? c.Id.ToString()
+                }).ToList()
+            },
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(BankStatement.CompanyBankAccountId),
+                Label = L["Entity.BankAccount"].ToString(),
+                FieldType = FormFieldType.Select,
+                IsRequired = true,
+                Options = bankAccounts.Select(ba => new SelectOption
+                {
+                    Value = ba.Id.ToString(),
+                    Text = $"{ba.Bank?.BankName ?? ""} {ba.AccountNumber} ({ba.AccountName})"
+                }).ToList()
+            },
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(BankStatement.StatementDate),
+                Label = L["Field.StatementDate"].ToString(),
+                FieldType = FormFieldType.Date,
+                IsRequired = true
+            },
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(BankStatement.PeriodStart),
+                Label = L["Field.PeriodStart"].ToString(),
+                FieldType = FormFieldType.Date,
+                IsRequired = true
+            },
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(BankStatement.PeriodEnd),
+                Label = L["Field.PeriodEnd"].ToString(),
+                FieldType = FormFieldType.Date,
+                IsRequired = true
+            },
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(BankStatement.OpeningBalance),
+                Label = L["Field.OpeningBalance"].ToString(),
+                FieldType = FormFieldType.Number,
+                IsRequired = false
+            },
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(BankStatement.ClosingBalance),
+                Label = L["Field.ClosingBalance"].ToString(),
+                FieldType = FormFieldType.Number,
+                IsRequired = false
+            },
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(BankStatement.StatementStatus),
+                Label = L["Field.Status"].ToString(),
+                FieldType = FormFieldType.Select,
+                IsRequired = true,
+                Options = new List<SelectOption>
+                {
+                    new SelectOption { Value = ((int)BankStatementStatus.Draft).ToString(), Text = L["BankStatement.Draft"].ToString() },
+                    new SelectOption { Value = ((int)BankStatementStatus.InProgress).ToString(), Text = L["BankStatement.InProgress"].ToString() },
+                    new SelectOption { Value = ((int)BankStatementStatus.Completed).ToString(), Text = L["BankStatement.Completed"].ToString() }
+                }
+            },
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(BankStatement.Remarks),
+                Label = L["Label.Remarks"].ToString(),
+                FieldType = FormFieldType.TextArea,
+                Placeholder = ""
+            }
+        };
+
+        formSections = FormSectionHelper<BankStatement>.Create()
+            .AddToSection(FormSectionNames.BasicInfo,
+                bs => bs.CompanyId,
+                bs => bs.CompanyBankAccountId,
+                bs => bs.StatementDate,
+                bs => bs.PeriodStart,
+                bs => bs.PeriodEnd)
+            .AddToSection(FormSectionNames.AmountInfo,
+                bs => bs.OpeningBalance,
+                bs => bs.ClosingBalance)
+            .AddToSection(FormSectionNames.OtherInfo,
+                bs => bs.StatementStatus,
+                bs => bs.Remarks)
+            .Build();
+    }
+
+    // ===== 欄位異動 =====
+
+    private async Task HandleFieldChanged((string PropertyName, object? Value) args)
+    {
+        if (args.PropertyName == nameof(BankStatement.CompanyId) && args.Value is string companyIdStr)
+        {
+            if (int.TryParse(companyIdStr, out var companyId))
+            {
+                await LoadBankAccountsAsync(companyId);
+                // 重新建立表單以更新銀行帳號清單
+                var entity = editModalComponent?.Entity;
+                if (entity != null)
+                {
+                    entity.CompanyBankAccountId = bankAccounts.FirstOrDefault()?.Id ?? 0;
+                    InitializeFormFields(entity);
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+
+    // ===== 自訂模組（明細行表格）=====
+
+    private List<GenericEditModalComponent<BankStatement, IBankStatementService>.CustomModule> GetCustomModules()
+    {
+        return CustomModuleHelper.CreateSingle(editModalComponent, CreateLineTableContent());
+    }
+
+    private RenderFragment CreateLineTableContent() => __builder =>
+    {
+        if (editModalComponent?.Entity != null)
+        {
+            @if (BankStatementId.HasValue)
+            {
+                <div class="d-flex justify-content-end mb-2">
+                    <button class="btn btn-sm btn-outline-secondary"
+                            @onclick="@(() => { showCsvImportModal = true; StateHasChanged(); })">
+                        <i class="bi bi-file-earmark-spreadsheet me-1"></i>@L["CsvImport.OpenButton"]
+                    </button>
+                </div>
+            }
+            <BankStatementLineTable @ref="lineTableComponent"
+                                    ExistingLines="@statementLines"
+                                    DataVersion="@_detailsDataVersion"
+                                    IsReadOnly="false"
+                                    IsParentLoading="@(editModalComponent?.IsLoading ?? false)"
+                                    OnLinesChanged="@HandleLinesChanged" />
+        }
+        else
+        {
+            <div class="text-center py-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">@L["Label.Loading"]</span>
+                </div>
+            </div>
+        }
+    };
+
+    private Task HandleLinesChanged(List<BankStatementLine> lines)
+    {
+        statementLines = lines;
+        return Task.CompletedTask;
+    }
+
+    // ===== CSV 匯入 =====
+
+    private async Task HandleCsvImportSuccess()
+    {
+        if (!BankStatementId.HasValue) return;
+        var entity = await BankStatementService.GetWithLinesAsync(BankStatementId.Value);
+        if (entity != null)
+        {
+            statementLines = entity.Lines.ToList();
+            _detailsDataVersion++;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 儲存 =====
+
+    private async Task<bool> SaveAsync(BankStatement entity)
+    {
+        try
+        {
+            var lines = lineTableComponent?.GetLines() ?? statementLines;
+            var result = await BankStatementService.SaveWithLinesAsync(entity, lines, currentUser);
+            if (!result.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.SaveFailure", L["Entity.BankStatement"]].ToString());
+                return false;
+            }
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveAsync), GetType());
+            return false;
+        }
+    }
+}

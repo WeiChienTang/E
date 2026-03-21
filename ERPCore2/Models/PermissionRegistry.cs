@@ -102,6 +102,11 @@ public static class PermissionRegistry
         public const string ChartRead = "CustomerChart.Read";
     }
 
+    public static class CrmLead
+    {
+        public const string Read = "CrmLead.Read";
+    }
+
     public static class CustomerComplaint
     {
         public const string Read = "CustomerComplaint.Read";
@@ -196,6 +201,21 @@ public static class PermissionRegistry
         public const string Read = "VehicleMaintenance.Read";
     }
 
+    public static class EquipmentCategory
+    {
+        public const string Read = "EquipmentCategory.Read";
+    }
+
+    public static class Equipment
+    {
+        public const string Read = "Equipment.Read";
+    }
+
+    public static class EquipmentMaintenance
+    {
+        public const string Read = "EquipmentMaintenance.Read";
+    }
+
     public static class Warehouse
     {
         public const string Read = "Warehouse.Read";
@@ -262,6 +282,11 @@ public static class PermissionRegistry
     public static class Bank
     {
         public const string Read = "Bank.Read";
+    }
+
+    public static class BankStatement
+    {
+        public const string Read = "BankStatement.Read";
     }
 
     public static class Currency
@@ -456,6 +481,11 @@ public static class PermissionRegistry
         new(VehicleMaintenance.Read,"檢視保養紀錄", PermissionLevel.Normal, "檢視車輛保養紀錄與維修歷史",         "Nav.VehicleGroup"),
         new(Vehicle.ChartRead,      "檢視車輛圖表", PermissionLevel.Normal, "檢視車輛統計分析圖表（主管層級）",   "Nav.VehicleGroup"),
 
+        // ===== 一般權限：設備 =====
+        new(EquipmentCategory.Read,    "檢視設備類別", PermissionLevel.Normal, "檢視設備類別基本資料",                 "Nav.EquipmentGroup"),
+        new(Equipment.Read,            "檢視設備",     PermissionLevel.Normal, "檢視設備基本資料與保養狀態",           "Nav.EquipmentGroup"),
+        new(EquipmentMaintenance.Read, "檢視保養維修", PermissionLevel.Normal, "檢視設備保養維修記錄",                 "Nav.EquipmentGroup"),
+
         // ===== 一般權限：倉庫 =====
         new(Warehouse.Read,             "檢視倉庫",         PermissionLevel.Normal, "檢視倉庫基本資料與儲位設定",     "Nav.InventoryGroup"),
         new(Inventory.Read,             "檢視庫存",         PermissionLevel.Normal, "檢視庫存數量與庫存狀況",         "Nav.InventoryGroup"),
@@ -478,6 +508,7 @@ public static class PermissionRegistry
         new(PaymentMethod.Read, "檢視付款方式", PermissionLevel.Normal, "檢視系統付款方式設定",           "Nav.FinanceGroup"),
         new(Bank.Read,          "檢視銀行",     PermissionLevel.Normal, "檢視銀行基本資料與相關資訊",     "Nav.FinanceGroup"),
         new(Currency.Read,      "檢視貨幣",     PermissionLevel.Normal, "檢視貨幣基本資料與匯率設定",     "Nav.FinanceGroup"),
+        new(BankStatement.Read, "檢視銀行對帳", PermissionLevel.Normal, "檢視銀行對帳單與配對傳票分錄",   "Nav.AccountingGroup"),
 
         // ===== 一般權限：銷貨 =====
         new(Quotation.Read,         "檢視報價單",       PermissionLevel.Normal, "檢視報價單與客戶交易紀錄",       "Nav.SalesGroup"),

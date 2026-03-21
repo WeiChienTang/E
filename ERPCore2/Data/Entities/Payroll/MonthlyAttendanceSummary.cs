@@ -43,6 +43,10 @@ namespace ERPCore2.Data.Entities.Payroll
         [Display(Name = "病假天數（半薪）")]
         public decimal SickLeaveDays { get; set; }
 
+        [Column(TypeName = "decimal(5,1)")]
+        [Display(Name = "事假天數（無薪）")]
+        public decimal PersonalLeaveDays { get; set; }
+
         // ── 加班時數 ─────────────────────────────────────────────────
 
         [Column(TypeName = "decimal(6,2)")]

@@ -1,0 +1,88 @@
+@page "/equipments"
+@inject IEquipmentService EquipmentService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="Equipment"
+                          TService="IEquipmentService"
+                          Service="@EquipmentService"
+                          EntityBasePath="/equipments"
+                          PageTitle="@L["Page.EquipmentTitle"]"
+                          PageSubtitle="@L["Page.EquipmentSubtitle"]"
+                          EntityName="@L["Entity.Equipment"]"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          ServerDataLoader="@ServerLoadEquipmentsAsync"
+                          GetEntityDisplayName="@(e => $"{e.Code} - {e.Name}")"
+                          RequiredPermission="@PermissionRegistry.Equipment.Read"
+                          RequiredModule="Equipment"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          ShowDraftTab="true"
+                          DebugPageName="EquipmentIndex"
+                          @ref="indexComponent" />
+
+<EquipmentEditModalComponent IsVisible="@showEditModal"
+                             IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                             EquipmentId="@editingEquipmentId"
+                             OnEquipmentSaved="@modalHandler.OnEntitySavedAsync"
+                             OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    private GenericIndexPageComponent<Equipment, IEquipmentService> indexComponent = default!;
+
+    private bool showEditModal = false;
+    private int? editingEquipmentId = null;
+
+    private ModalHandler<Equipment, GenericIndexPageComponent<Equipment, IEquipmentService>> modalHandler = default!;
+
+    private EquipmentFieldConfiguration fieldConfiguration = default!;
+
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalHandler = ModalHelper.CreateModalHandler<Equipment, GenericIndexPageComponent<Equipment, IEquipmentService>>(
+                id => editingEquipmentId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            fieldConfiguration = new EquipmentFieldConfiguration(NotificationService);
+            fieldConfiguration.SetLocalizer(L);
+
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化設備頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化設備頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("設備管理", "設備維護", "#", NotificationService, GetType());
+
+    private Task<(List<Equipment> Items, int TotalCount)> ServerLoadEquipmentsAsync(
+        SearchFilterModel filter, int page, int pageSize)
+    {
+        return EquipmentService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadEquipmentsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
+    }
+}

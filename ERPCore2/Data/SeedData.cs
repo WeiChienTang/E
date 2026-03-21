@@ -4,6 +4,7 @@ using ERPCore2.Data.SeedDataManager.Seeders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Configuration;
 
 namespace ERPCore2.Data
 {
@@ -24,6 +25,9 @@ namespace ERPCore2.Data
             // 確保資料庫存在並執行遷移（智慧初始化，支援全新資料庫）
             await EnsureDatabaseSchemaAsync(context);
 
+            // 從設定檔讀取是否啟用測試資料
+            var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+
             // EnableRetryOnFailure 需要透過 CreateExecutionStrategy 包裝 user-initiated transaction
             var strategy = context.Database.CreateExecutionStrategy();
             await strategy.ExecuteAsync(async () =>
@@ -33,7 +37,7 @@ namespace ERPCore2.Data
                 try
                 {
                     // 取得所有種子器並按順序執行
-                    var seeders = GetAllSeeders().OrderBy(s => s.Order).ToList();
+                    var seeders = GetAllSeeders(configuration).OrderBy(s => s.Order).ToList();
 
                     foreach (var seeder in seeders)
                     {
@@ -88,6 +92,14 @@ namespace ERPCore2.Data
         /// </summary>
         private static async Task SyncMigrationHistoryAsync(AppDbContext context)
         {
+            // 修正：ProductVersion 曾被全域 Product→Item 替換誤改為 ItemVersion，此處修復現有資料庫
+            await context.Database.ExecuteSqlRawAsync(@"
+                IF EXISTS (
+                    SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_NAME = '__EFMigrationsHistory' AND COLUMN_NAME = 'ItemVersion'
+                )
+                EXEC sp_rename '[__EFMigrationsHistory].[ItemVersion]', 'ProductVersion', 'COLUMN'");
+
             // 建立 Migration 歷史表（若不存在）
             await context.Database.ExecuteSqlRawAsync(@"
                 IF NOT EXISTS (
@@ -96,7 +108,7 @@ namespace ERPCore2.Data
                 )
                 CREATE TABLE [__EFMigrationsHistory] (
                     [MigrationId]    nvarchar(150) NOT NULL,
-                    [ItemVersion] nvarchar(32)  NOT NULL,
+                    [ProductVersion] nvarchar(32)  NOT NULL,
                     CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
                 )");
 
@@ -106,45 +118,60 @@ namespace ERPCore2.Data
             {
                 await context.Database.ExecuteSqlRawAsync(
                     "IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory] WHERE [MigrationId] = {0}) " +
-                    "INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ItemVersion]) VALUES ({0}, {1})",
+                    "INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES ({0}, {1})",
                     migrationId, "9.0.0");
             }
-
         }
 
         /// <summary>
         /// 取得所有種子器
         /// </summary>
         /// <returns>種子器集合</returns>
-        private static IEnumerable<IDataSeeder> GetAllSeeders()
+        private static IEnumerable<IDataSeeder> GetAllSeeders(IConfiguration configuration)
         {
             bool isTest = true;
 
+            // 從 appsettings.json 讀取（Development = true，Production = false，預設 false）
+            bool enableTestData = configuration.GetValue<bool>("SeedData:EnableTestData", false);
+
             if (isTest)
             {
-                return new List<IDataSeeder>
-                {        
-                    new SystemParameterSeeder(),    
+                var seeders = new List<IDataSeeder>
+                {
+                    new SystemParameterSeeder(),
                     new CompanyModuleSeeder(),              // 公司模組（從 NavigationConfig 自動衍生）
-                    new PermissionSeeder(),                    
+                    new PermissionSeeder(),
                     new RoleSeeder(),
                     new RolePermissionSeeder(),     // 在 Role 和 Permission 之後執行
-                    new PaymentMethodSeeder(),      
-                    new PrepaymentTypeSeeder(),     
+                    new PaymentMethodSeeder(),
+                    new PrepaymentTypeSeeder(),
                     new EmployeeSeeder(),
-                    new UnitSeeder(),      
+                    new UnitSeeder(),
                     new InventorySeeder(),
                     new SalesReturnReasonSeeder(),
                     new PurchaseReturnReasonSeeder(),
-                    new CurrencySeeder(),          
+                    new CurrencySeeder(),
                     new PaperSettingSeeder(),
                     new ReportPrintConfigurationSeeder(),  // 報表列印配置（在紙張設定之後）
                     new VehicleTypeSeeder(),               // 車輛類型（車型基礎資料）
                     new AccountItemSeeder(),               // 會計科目表（商業會計項目表 112 年度）
+                    new AccountItemCashFlowCategorySeeder(), // 設定會計科目現金流量分類（FN014 間接法）
+                    new BankSeeder(),                      // 台灣金融機構代碼（30 家主要銀行）
                     new DocumentCategorySeeder(),          // 檔案分類（政府公文、廠商合約等）
                     new PayrollItemSeeder(),               // 薪資項目（16個預設項目）
                     new InsuranceRateSeeder(),             // 保費費率（114年費率）
                 };
+
+                if (enableTestData)
+                {
+                    seeders.Add(new TestEmployeeSeeder());  // 測試員工 20 筆（EMP001-EMP020）
+                    seeders.Add(new TestCustomerSeeder());  // 測試客戶 20 筆（TC001-TC020）
+                    seeders.Add(new TestSupplierSeeder());  // 測試廠商 20 筆（TS001-TS020）
+                    seeders.Add(new TestItemSeeder());             // 測試品項 20 筆 + 5 個分類（P001-P020）
+                    seeders.Add(new TestItemCompositionSeeder()); // 測試 BOM 2 筆（依賴 TestItemSeeder）
+                }
+
+                return seeders;
             }
 
             return new List<IDataSeeder>
@@ -155,6 +182,7 @@ namespace ERPCore2.Data
                 new RoleSeeder(),
                 new RolePermissionSeeder(),
                 new PaymentMethodSeeder(),
+                new BankSeeder(),                       // 台灣金融機構代碼
                 new DocumentCategorySeeder(),           // 檔案分類
             };
         }

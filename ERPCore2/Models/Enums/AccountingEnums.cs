@@ -141,6 +141,57 @@ namespace ERPCore2.Models.Enums
     }
 
     /// <summary>
+    /// 現金流量表分類（IAS 7）
+    /// 用於間接法現金流量表：指定科目餘額變動應歸入哪個現金流量類別
+    /// Null = 未設定（不影響現金流量表計算，報表產生時可跳過或另行處理）
+    /// </summary>
+    public enum CashFlowCategory
+    {
+        /// <summary>
+        /// 現金及約當現金（現金流量表的加總目標，如 1111、1112、1113）
+        /// </summary>
+        [Description("現金及約當現金")]
+        [Display(Name = "現金及約當現金")]
+        Cash = 1,
+
+        /// <summary>
+        /// 營業活動—流動資金調整（應收帳款、存貨、應付帳款等）
+        /// 餘額增加 → 現金減少；餘額減少 → 現金增加
+        /// </summary>
+        [Description("營業活動—流動資金")]
+        [Display(Name = "營業活動—流動資金")]
+        OperatingWorkingCapital = 2,
+
+        /// <summary>
+        /// 營業活動—非現金費用（折舊、攤銷、ECL 提列等，加回淨利）
+        /// </summary>
+        [Description("營業活動—非現金費用")]
+        [Display(Name = "營業活動—非現金費用")]
+        OperatingNonCash = 3,
+
+        /// <summary>
+        /// 投資活動（長期資產取得/處分，如 PP&E、長期投資）
+        /// </summary>
+        [Description("投資活動")]
+        [Display(Name = "投資活動")]
+        Investing = 4,
+
+        /// <summary>
+        /// 籌資活動（長期借款、股本、租賃負債等）
+        /// </summary>
+        [Description("籌資活動")]
+        [Display(Name = "籌資活動")]
+        Financing = 5,
+
+        /// <summary>
+        /// 排除（不計入現金流量表，如結帳科目、損益轉保留盈餘等）
+        /// </summary>
+        [Description("排除")]
+        [Display(Name = "排除")]
+        Excluded = 6
+    }
+
+    /// <summary>
     /// 會計科目層級（用於報表篩選）
     /// </summary>
     public enum AccountLevelFilter

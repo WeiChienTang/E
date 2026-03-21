@@ -7,6 +7,8 @@
 @inject ICompanyService CompanyService
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJournalEntryAttachmentService AttachmentService
+@inject IWebHostEnvironment Environment
 @inject IStringLocalizer<SharedResource> L
 
 <GenericEditModalComponent TEntity="JournalEntry"
@@ -74,6 +76,11 @@
     private bool isSaving = false;
     private string saveAction = "";
     private string currentUser = "System";
+
+    // 附件管理
+    private List<JournalEntryAttachment> attachments = new();
+    private bool isUploadingAttachment = false;
+    private string? attachmentErrorMessage;
 
     private bool IsReadOnly => editModalComponent?.Entity?.JournalEntryStatus is
         JournalEntryStatus.Posted or JournalEntryStatus.Cancelled or JournalEntryStatus.Reversed;
@@ -231,11 +238,29 @@
     // ===== 自訂模組 =====
 
     /// <summary>
-    /// 配置自訂模組（分錄行表格）
+    /// 配置自訂模組（分錄行表格 + 附件區塊）
     /// </summary>
     private List<GenericEditModalComponent<JournalEntry, IJournalEntryService>.CustomModule> GetCustomModules()
     {
-        return CustomModuleHelper.CreateSingle(editModalComponent, CreateLineTableContent());
+        if (editModalComponent == null)
+            return new List<GenericEditModalComponent<JournalEntry, IJournalEntryService>.CustomModule>();
+
+        return new List<GenericEditModalComponent<JournalEntry, IJournalEntryService>.CustomModule>
+        {
+            new GenericEditModalComponent<JournalEntry, IJournalEntryService>.CustomModule
+            {
+                Order     = 1,
+                IsVisible = true,
+                Content   = CreateLineTableContent()
+            },
+            new GenericEditModalComponent<JournalEntry, IJournalEntryService>.CustomModule
+            {
+                Title     = L["Attachment.Title"],
+                Order     = 2,
+                IsVisible = JournalEntryId.HasValue,
+                Content   = CreateAttachmentContent()
+            }
+        };
     }
 
     /// <summary>
@@ -263,6 +288,143 @@
             </div>
         }
     };
+
+    /// <summary>
+    /// 創建附件區塊的 RenderFragment
+    /// </summary>
+    private RenderFragment CreateAttachmentContent() => __builder =>
+    {
+        <div class="journal-attachment-section">
+            @if (!string.IsNullOrEmpty(attachmentErrorMessage))
+            {
+                <div class="alert alert-danger py-2 mb-2">@attachmentErrorMessage</div>
+            }
+
+            @* 上傳按鈕 *@
+            <div class="mb-3">
+                <InputFile OnChange="HandleAttachmentUpload"
+                           accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                           id="attachmentFileInput"
+                           class="d-none"
+                           disabled="@isUploadingAttachment" />
+                <label for="attachmentFileInput" class="btn btn-outline-primary btn-sm @(isUploadingAttachment ? "disabled" : "")">
+                    @if (isUploadingAttachment)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                        @L["Attachment.Uploading"]
+                    }
+                    else
+                    {
+                        <i class="bi bi-upload me-1"></i>
+                        @L["Attachment.Upload"]
+                    }
+                </label>
+                <small class="text-muted ms-2">@L["Attachment.AllowedFormats"]</small>
+            </div>
+
+            @* 附件清單 *@
+            @if (attachments.Any())
+            {
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>@L["Attachment.FileName"]</th>
+                            <th class="text-end">@L["Attachment.FileSize"]</th>
+                            <th>@L["Attachment.UploadedBy"]</th>
+                            <th>@L["Attachment.UploadedAt"]</th>
+                            <th class="text-center">@L["Label.Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var attachment in attachments)
+                        {
+                            <tr>
+                                <td>
+                                    <a href="@attachment.StoredFilePath" target="_blank" class="text-decoration-none">
+                                        <i class="bi @GetAttachmentIcon(attachment) me-1"></i>
+                                        @attachment.FileName
+                                    </a>
+                                </td>
+                                <td class="text-end text-muted small">@FileUploadHelper.GetFileSizeString(attachment.FileSize)</td>
+                                <td class="text-muted small">@(attachment.UploadedByEmployee?.Name ?? "-")</td>
+                                <td class="text-muted small">@attachment.UploadedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                                <td class="text-center">
+                                    <button class="btn btn-outline-danger btn-sm"
+                                            @onclick="() => HandleDeleteAttachment(attachment.Id)"
+                                            title="@L["Button.Delete"]">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="text-muted small">@L["Attachment.Empty"]</div>
+            }
+        </div>
+    };
+
+    private string GetAttachmentIcon(JournalEntryAttachment attachment) => attachment switch
+    {
+        { IsPdf: true }   => "bi-file-pdf text-danger",
+        { IsImage: true } => "bi-file-image text-info",
+        _ when attachment.Extension is ".xls" or ".xlsx" => "bi-file-excel text-success",
+        _ when attachment.Extension is ".doc" or ".docx" => "bi-file-word text-primary",
+        _                 => "bi-file-earmark"
+    };
+
+    private async Task HandleAttachmentUpload(InputFileChangeEventArgs e)
+    {
+        if (!JournalEntryId.HasValue) return;
+        attachmentErrorMessage = null;
+        isUploadingAttachment = true;
+        StateHasChanged();
+
+        try
+        {
+            var employeeId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
+            var (success, message, attachment) = await AttachmentService.UploadAsync(
+                JournalEntryId.Value, e.File, employeeId, Environment);
+
+            if (success && attachment != null)
+            {
+                attachments.Add(attachment);
+                await NotificationService.ShowSuccessAsync(L["Attachment.UploadSuccess"]);
+            }
+            else
+            {
+                attachmentErrorMessage = message;
+            }
+        }
+        catch (Exception ex)
+        {
+            attachmentErrorMessage = $"{L["Attachment.UploadFailed"]}：{ex.Message}";
+        }
+        finally
+        {
+            isUploadingAttachment = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleDeleteAttachment(int attachmentId)
+    {
+        attachmentErrorMessage = null;
+        var (success, message) = await AttachmentService.DeleteAsync(attachmentId, Environment);
+        if (success)
+        {
+            attachments.RemoveAll(a => a.Id == attachmentId);
+            await NotificationService.ShowSuccessAsync(L["Attachment.DeleteSuccess"]);
+        }
+        else
+        {
+            attachmentErrorMessage = message;
+        }
+        StateHasChanged();
+    }
 
     // ===== 自訂按鈕 =====
 
@@ -371,6 +533,10 @@
         // 重新初始化表單欄位（狀態可能因導航而改變）
         if (editModalComponent?.Entity != null)
             InitializeFormFields(editModalComponent.Entity);
+
+        // 載入附件清單
+        attachments = await AttachmentService.GetByJournalEntryAsync(loadedEntityId);
+        attachmentErrorMessage = null;
 
         totalDebit = 0;
         totalCredit = 0;

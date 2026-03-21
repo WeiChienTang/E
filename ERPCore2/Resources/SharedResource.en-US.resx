@@ -262,6 +262,21 @@
   <data name="Preference.SaveTooltip" xml:space="preserve">
     <value>Save settings</value>
   </data>
+  <data name="Preference.ExportSettings" xml:space="preserve">
+    <value>Export Settings</value>
+  </data>
+  <data name="Preference.ExportSettingsTooltip" xml:space="preserve">
+    <value>Export preferences to a JSON file</value>
+  </data>
+  <data name="Preference.ImportSettings" xml:space="preserve">
+    <value>Import Settings</value>
+  </data>
+  <data name="Preference.ImportSettingsTooltip" xml:space="preserve">
+    <value>Import preferences from a JSON file</value>
+  </data>
+  <data name="Preference.ImportSuccess" xml:space="preserve">
+    <value>Settings imported. Click Save to apply.</value>
+  </data>
   <data name="Preference.SaveSuccess" xml:space="preserve">
     <value>Settings saved</value>
   </data>
@@ -399,8 +414,128 @@
   <data name="Nav.CustomerComplaints" xml:space="preserve">
     <value>Complaints</value>
   </data>
+  <data name="Nav.CrmLeads" xml:space="preserve">
+    <value>CRM Leads</value>
+  </data>
   <data name="Nav.CustomerCharts" xml:space="preserve">
     <value>Customer Charts</value>
+  </data>
+  <data name="Page.CrmLeadTitle" xml:space="preserve">
+    <value>CRM Lead Management</value>
+  </data>
+  <data name="Page.CrmLeadSubtitle" xml:space="preserve">
+    <value>Manage lead development pipeline and follow-up records</value>
+  </data>
+  <data name="Entity.CrmLead" xml:space="preserve">
+    <value>Lead</value>
+  </data>
+  <data name="Entity.CrmLeadFollowUp" xml:space="preserve">
+    <value>Follow-Up Record</value>
+  </data>
+  <data name="Field.Industry" xml:space="preserve">
+    <value>Industry</value>
+  </data>
+  <data name="Field.LeadStage" xml:space="preserve">
+    <value>Stage</value>
+  </data>
+  <data name="Field.LeadSource" xml:space="preserve">
+    <value>Lead Source</value>
+  </data>
+  <data name="Field.EstimatedValue" xml:space="preserve">
+    <value>Estimated Value</value>
+  </data>
+  <data name="Field.AssignedEmployee" xml:space="preserve">
+    <value>Assigned Salesperson</value>
+  </data>
+  <data name="Field.ConvertedCustomer" xml:space="preserve">
+    <value>Converted</value>
+  </data>
+  <data name="Field.FollowUpDate" xml:space="preserve">
+    <value>Follow-Up Date</value>
+  </data>
+  <data name="Field.FollowUpType" xml:space="preserve">
+    <value>Follow-Up Method</value>
+  </data>
+  <data name="Field.FollowUpContent" xml:space="preserve">
+    <value>Follow-Up Content</value>
+  </data>
+  <data name="Field.Conclusion" xml:space="preserve">
+    <value>Conclusion</value>
+  </data>
+  <data name="LeadStage.Cold" xml:space="preserve">
+    <value>Cold Contact</value>
+  </data>
+  <data name="LeadStage.Interested" xml:space="preserve">
+    <value>Interested</value>
+  </data>
+  <data name="LeadStage.Quoting" xml:space="preserve">
+    <value>Quoting</value>
+  </data>
+  <data name="LeadStage.Won" xml:space="preserve">
+    <value>Won</value>
+  </data>
+  <data name="LeadStage.Lost" xml:space="preserve">
+    <value>Lost</value>
+  </data>
+  <data name="LeadSource.BusinessDevelopment" xml:space="preserve">
+    <value>Business Development</value>
+  </data>
+  <data name="LeadSource.Referral" xml:space="preserve">
+    <value>Referral</value>
+  </data>
+  <data name="LeadSource.Exhibition" xml:space="preserve">
+    <value>Exhibition</value>
+  </data>
+  <data name="LeadSource.Internet" xml:space="preserve">
+    <value>Internet</value>
+  </data>
+  <data name="LeadSource.Other" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="Tab.LeadInfo" xml:space="preserve">
+    <value>Lead Info</value>
+  </data>
+  <data name="Tab.FollowUpRecords" xml:space="preserve">
+    <value>Follow-Ups</value>
+  </data>
+  <data name="Section.DevelopmentInfo" xml:space="preserve">
+    <value>Development Info</value>
+  </data>
+  <data name="Button.ConvertToCustomer" xml:space="preserve">
+    <value>Convert to Customer</value>
+  </data>
+  <data name="Message.ConvertToCustomerConfirm" xml:space="preserve">
+    <value>Are you sure you want to convert this lead to a formal customer? A customer record will be created automatically.</value>
+  </data>
+  <data name="Message.ConvertToCustomerSuccess" xml:space="preserve">
+    <value>Successfully converted to customer</value>
+  </data>
+  <data name="Message.ConvertToCustomerFailed" xml:space="preserve">
+    <value>Conversion failed</value>
+  </data>
+  <data name="Message.AlreadyConverted" xml:space="preserve">
+    <value>This lead has already been converted to a customer</value>
+  </data>
+  <data name="Message.NoFollowUpRecords" xml:space="preserve">
+    <value>No follow-up records yet</value>
+  </data>
+  <data name="Message.FollowUpDeleted" xml:space="preserve">
+    <value>Follow-up record deleted</value>
+  </data>
+  <data name="Button.AddFollowUpRecord" xml:space="preserve">
+    <value>Add Follow-Up</value>
+  </data>
+  <data name="Modal.DeleteFollowUpRecord" xml:space="preserve">
+    <value>Delete Follow-Up Record</value>
+  </data>
+  <data name="Modal.ConfirmDeleteFollowUpRecord" xml:space="preserve">
+    <value>Are you sure you want to delete this follow-up record? This action cannot be undone.</value>
+  </data>
+  <data name="Report.CrmLeadReport" xml:space="preserve">
+    <value>CRM Lead Report</value>
+  </data>
+  <data name="Report.CrmLeadReportDesc" xml:space="preserve">
+    <value>Print CRM lead development report with stage, source, assigned salesperson and estimated value</value>
   </data>
   <data name="Nav.SupplierCharts" xml:space="preserve">
     <value>Supplier Charts</value>
@@ -542,6 +677,21 @@
   </data>
   <data name="Nav.VehicleReportIndex" xml:space="preserve">
     <value>Vehicle Reports</value>
+  </data>
+  <data name="Nav.EquipmentGroup" xml:space="preserve">
+    <value>Equipment Management</value>
+  </data>
+  <data name="Nav.Equipments" xml:space="preserve">
+    <value>Equipment</value>
+  </data>
+  <data name="Nav.EquipmentCategories" xml:space="preserve">
+    <value>Equipment Categories</value>
+  </data>
+  <data name="Nav.EquipmentMaintenances" xml:space="preserve">
+    <value>Maintenance Records</value>
+  </data>
+  <data name="Nav.EquipmentReportIndex" xml:space="preserve">
+    <value>Equipment Reports</value>
   </data>
   <data name="Nav.WasteGroup" xml:space="preserve">
     <value>Scale Management</value>
@@ -711,6 +861,8 @@
   <data name="Report.InventoryCount" xml:space="preserve"><value>Inventory Count Variance</value></data>
   <data name="Report.VehicleList" xml:space="preserve"><value>Vehicle List</value></data>
   <data name="Report.VehicleMaintenance" xml:space="preserve"><value>Vehicle Maintenance</value></data>
+  <data name="Report.EquipmentList" xml:space="preserve"><value>Equipment List</value></data>
+  <data name="Report.EquipmentMaintenanceRecord" xml:space="preserve"><value>Equipment Maintenance Record</value></data>
   <data name="Report.EmployeeRoster" xml:space="preserve"><value>Employee Roster</value></data>
   <data name="Report.EmployeeDetail" xml:space="preserve"><value>Employee Detail</value></data>
   <data name="Report.ScaleRecord" xml:space="preserve"><value>Scale Record</value></data>
@@ -725,6 +877,7 @@
   <data name="Report.DetailAccountBalance" xml:space="preserve"><value>Account Balance Summary</value></data>
   <data name="Report.ARAgingAnalysis" xml:space="preserve"><value>AR Aging Analysis</value></data>
   <data name="Report.APAgingAnalysis" xml:space="preserve"><value>AP Aging Analysis</value></data>
+  <data name="Report.CashFlow" xml:space="preserve"><value>Cash Flow Statement</value></data>
   <data name="Label.DocumentPreview" xml:space="preserve"><value>{0} Preview</value></data>
   <data name="Message.EditTitle" xml:space="preserve"><value>Edit {0}</value></data>
   <data name="Message.CreateTitle" xml:space="preserve"><value>Create {0}</value></data>
@@ -791,6 +944,9 @@
   <data name="Entity.Vehicle" xml:space="preserve"><value>Vehicle</value></data>
   <data name="Entity.VehicleType" xml:space="preserve"><value>Vehicle Type</value></data>
   <data name="Entity.VehicleMaintenance" xml:space="preserve"><value>Maintenance Record</value></data>
+  <data name="Entity.Equipment" xml:space="preserve"><value>Equipment</value></data>
+  <data name="Entity.EquipmentCategory" xml:space="preserve"><value>Equipment Category</value></data>
+  <data name="Entity.EquipmentMaintenance" xml:space="preserve"><value>Maintenance Record</value></data>
   <data name="Entity.WasteRecord" xml:space="preserve"><value>Scale Record</value></data>
   <data name="Entity.WasteType" xml:space="preserve"><value>Scale Type</value></data>
   <data name="Entity.Company" xml:space="preserve"><value>Company</value></data>
@@ -973,6 +1129,10 @@
   <data name="Tab.VehicleInfo" xml:space="preserve"><value>Vehicle Info</value></data>
   <data name="Tab.PersonalTools" xml:space="preserve"><value>Personal Tools</value></data>
   <data name="Tab.Training" xml:space="preserve"><value>Training</value></data>
+  <data name="Tab.PurchaseInfo" xml:space="preserve"><value>Purchase Info</value></data>
+  <data name="Tab.MaintenanceInfo" xml:space="preserve"><value>Maintenance Info</value></data>
+  <data name="Tab.MaintenanceDetail" xml:space="preserve"><value>Maintenance Detail</value></data>
+  <data name="Tab.ScheduleInfo" xml:space="preserve"><value>Schedule Info</value></data>
   <data name="Tab.Permissions" xml:space="preserve"><value>Permissions</value></data>
   <!-- ===== Employee Label keys ===== -->
   <data name="Label.TrainingRecords" xml:space="preserve"><value>Training Records</value></data>
@@ -1261,6 +1421,10 @@
   <!-- ===== Section keys ===== -->
   <data name="Section.AutoGenerateSetting" xml:space="preserve"><value>Auto Generate Setting</value></data>
   <data name="Section.ControlAccountCode" xml:space="preserve"><value>Control Account Code</value></data>
+  <data name="Section.CustomerSubAccount" xml:space="preserve"><value>Customer Sub-Account Settings</value></data>
+  <data name="Section.SupplierSubAccount" xml:space="preserve"><value>Supplier Sub-Account Settings</value></data>
+  <data name="Section.ItemSubAccount" xml:space="preserve"><value>Item Sub-Account Settings</value></data>
+  <data name="Section.GeneralSetting" xml:space="preserve"><value>General Settings</value></data>
   <data name="Section.FeeInfo" xml:space="preserve"><value>Fee Information</value></data>
   <data name="Section.TaxSettings" xml:space="preserve"><value>Tax Settings</value></data>
   <!-- ===== Tab additional keys ===== -->
@@ -1572,6 +1736,30 @@
   <data name="Field.VehicleTypeCode" xml:space="preserve"><value>Vehicle Type Code</value></data>
   <data name="Field.VehicleTypeDescription" xml:space="preserve"><value>Vehicle Type Description</value></data>
   <data name="Field.VehicleTypeName" xml:space="preserve"><value>Vehicle Type Name</value></data>
+  <data name="Field.EquipmentCategoryCode" xml:space="preserve"><value>Category Code</value></data>
+  <data name="Field.EquipmentCategoryName" xml:space="preserve"><value>Category Name</value></data>
+  <data name="Field.EquipmentCategoryDescription" xml:space="preserve"><value>Category Description</value></data>
+  <data name="Field.EquipmentCode" xml:space="preserve"><value>Equipment Code</value></data>
+  <data name="Field.EquipmentName" xml:space="preserve"><value>Equipment Name</value></data>
+  <data name="Field.EquipmentCategory" xml:space="preserve"><value>Equipment Category</value></data>
+  <data name="Field.EquipmentSerialNumber" xml:space="preserve"><value>Serial Number</value></data>
+  <data name="Field.EquipmentBrand" xml:space="preserve"><value>Brand</value></data>
+  <data name="Field.EquipmentModel" xml:space="preserve"><value>Model</value></data>
+  <data name="Field.EquipmentPurchaseDate" xml:space="preserve"><value>Purchase Date</value></data>
+  <data name="Field.EquipmentPurchaseCost" xml:space="preserve"><value>Purchase Cost</value></data>
+  <data name="Field.EquipmentLocation" xml:space="preserve"><value>Location</value></data>
+  <data name="Field.EquipmentMaintenanceCycleMonths" xml:space="preserve"><value>Maintenance Cycle (Months)</value></data>
+  <data name="Field.EquipmentLastMaintenanceDate" xml:space="preserve"><value>Last Maintenance Date</value></data>
+  <data name="Field.EquipmentNextMaintenanceDate" xml:space="preserve"><value>Next Maintenance Date</value></data>
+  <data name="Field.EquipmentResponsibleEmployee" xml:space="preserve"><value>Responsible Employee</value></data>
+  <data name="Field.EquipmentMaintenanceCode" xml:space="preserve"><value>Record Code</value></data>
+  <data name="Field.Equipment" xml:space="preserve"><value>Equipment</value></data>
+  <data name="Field.EquipmentMaintenanceType" xml:space="preserve"><value>Maintenance Type</value></data>
+  <data name="Field.EquipmentMaintenanceDate" xml:space="preserve"><value>Maintenance Date</value></data>
+  <data name="Field.EquipmentMaintenanceDescription" xml:space="preserve"><value>Maintenance Description</value></data>
+  <data name="Field.EquipmentMaintenanceCost" xml:space="preserve"><value>Maintenance Cost</value></data>
+  <data name="Field.EquipmentServiceProvider" xml:space="preserve"><value>Service Provider</value></data>
+  <data name="Field.EquipmentPerformedByEmployee" xml:space="preserve"><value>Performed By</value></data>
   <data name="Tab.BasicData" xml:space="preserve"><value>Basic Info</value></data>
   <data name="Tab.OrderSource" xml:space="preserve"><value>Order Source</value></data>
   <!-- ===== Approval Settings Tab keys ===== -->
@@ -1707,6 +1895,27 @@
   <data name="Supplier.CopyToCustomerTitle" xml:space="preserve"><value>Copy to Customer</value></data>
   <data name="Supplier.CopyToCustomerMessage" xml:space="preserve"><value>Are you sure you want to copy this supplier&apos;s data as a new customer?</value></data>
   <data name="Supplier.CopyToCustomerSummary" xml:space="preserve"><value>A new record will be created in the customer list after copying.</value></data>
+  <data name="CsvImport.Title" xml:space="preserve"><value>Import Statement Lines from CSV</value></data>
+  <data name="CsvImport.FormatTitle" xml:space="preserve"><value>CSV Format</value></data>
+  <data name="CsvImport.FormatDesc" xml:space="preserve"><value>Columns: Transaction Date, Description, Debit, Credit, Bank Reference (optional), Balance After (optional). Date format: yyyy/MM/dd or yyyy-MM-dd.</value></data>
+  <data name="CsvImport.DownloadTemplate" xml:space="preserve"><value>Download Template</value></data>
+  <data name="CsvImport.SelectFile" xml:space="preserve"><value>Select CSV File</value></data>
+  <data name="CsvImport.Parsing" xml:space="preserve"><value>Parsing, please wait…</value></data>
+  <data name="CsvImport.TotalRows" xml:space="preserve"><value>{0} rows total</value></data>
+  <data name="CsvImport.ValidRows" xml:space="preserve"><value>{0} valid</value></data>
+  <data name="CsvImport.InvalidRows" xml:space="preserve"><value>{0} invalid</value></data>
+  <data name="CsvImport.HasInvalidWarning" xml:space="preserve"><value>Some rows have errors (shown in red). Only valid rows will be imported.</value></data>
+  <data name="CsvImport.ColDate" xml:space="preserve"><value>Date</value></data>
+  <data name="CsvImport.ColDesc" xml:space="preserve"><value>Description</value></data>
+  <data name="CsvImport.ColDebit" xml:space="preserve"><value>Debit</value></data>
+  <data name="CsvImport.ColCredit" xml:space="preserve"><value>Credit</value></data>
+  <data name="CsvImport.ColBankRef" xml:space="preserve"><value>Bank Ref.</value></data>
+  <data name="CsvImport.ColBalance" xml:space="preserve"><value>Balance After</value></data>
+  <data name="CsvImport.ColStatus" xml:space="preserve"><value>Status</value></data>
+  <data name="CsvImport.Importing" xml:space="preserve"><value>Importing…</value></data>
+  <data name="CsvImport.ConfirmImport" xml:space="preserve"><value>Confirm Import ({0} rows)</value></data>
+  <data name="CsvImport.ReSelect" xml:space="preserve"><value>Re-select File</value></data>
+  <data name="CsvImport.OpenButton" xml:space="preserve"><value>Import from CSV</value></data>
   <data name="Customer.AutoSyncNote" xml:space="preserve"><value>Item list is auto-synced from sales orders, delete only</value></data>
   <data name="Customer.DeleteItemButtonTitle" xml:space="preserve"><value>Remove product link</value></data>
   <data name="Customer.NoItems" xml:space="preserve"><value>No customer products found for this customer</value></data>
@@ -1990,6 +2199,8 @@
   <data name="Report.InventoryCountDesc" xml:space="preserve"><value>Grouped by stocktake, shows system stock, actual count, and variance amount per product; supports filtering by variance items only</value></data>
   <data name="Report.VehicleListDesc" xml:space="preserve"><value>Print vehicle basic data list including plate number, vehicle name, model, brand, person in charge, and insurance expiry</value></data>
   <data name="Report.VehicleMaintenanceDesc" xml:space="preserve"><value>Print vehicle maintenance records including maintenance type, date, mileage, cost, and service shop details</value></data>
+  <data name="Report.EquipmentListDesc" xml:space="preserve"><value>Print equipment basic data list including equipment code, name, category, brand, model, location, responsible employee, and next maintenance date</value></data>
+  <data name="Report.EquipmentMaintenanceRecordDesc" xml:space="preserve"><value>Print equipment maintenance records including maintenance type, date, cost, service provider, and performed by employee details</value></data>
   <data name="Report.EmployeeRosterDesc" xml:space="preserve"><value>Print employee basic data list including employee code, name, department, position, hire date, and employment status</value></data>
   <data name="Report.EmployeeDetailDesc" xml:space="preserve"><value>Print complete employee details including contact info, emergency contacts, and employment information, one block per employee</value></data>
   <data name="Report.ScaleRecordDesc" xml:space="preserve"><value>Print scale record list grouped by scale type, including plate number, customer, warehouse, weight, and cost details</value></data>
@@ -2004,6 +2215,7 @@
   <data name="Report.DetailAccountBalanceDesc" xml:space="preserve"><value>Summarize opening balance, period debit/credit amounts, and closing balance for each account without transaction details, for quick review of balance changes</value></data>
   <data name="Report.ARAgingAnalysisDesc" xml:space="preserve"><value>Calculate due dates from delivery date + customer payment days, then summarize outstanding amounts by aging bucket (current / 1-30 / 31-60 / 61-90 / 91-120 / 121+ days overdue), grouped by customer</value></data>
   <data name="Report.APAgingAnalysisDesc" xml:space="preserve"><value>Calculate due dates from receipt date + supplier payment days, then summarize outstanding amounts by aging bucket (current / 1-30 / 31-60 / 61-90 / 91-120 / 121+ days overdue), grouped by supplier</value></data>
+  <data name="Report.CashFlowDesc" xml:space="preserve"><value>Prepare a cash flow statement using the indirect method per IAS 7, starting from net income and adjusting for non-cash items, working capital changes, investing and financing activities</value></data>
   <data name="Column.TaxRate" xml:space="preserve"><value>Tax Rate</value></data>
   <data name="Column.IsReceivingCompleted" xml:space="preserve"><value>Fully Received</value></data>
   <data name="Placeholder.SelectWarehouseFirst" xml:space="preserve"><value>Please select a warehouse first</value></data>
@@ -3385,6 +3597,12 @@
   <data name="Page.VehicleMaintenanceSubtitle" xml:space="preserve"><value>Manage vehicle maintenance and repair records</value></data>
   <data name="Page.VehicleTypeTitle" xml:space="preserve"><value>Vehicle Types</value></data>
   <data name="Page.VehicleTypeSubtitle" xml:space="preserve"><value>Manage vehicle type classification data</value></data>
+  <data name="Page.EquipmentTitle" xml:space="preserve"><value>Equipment Management</value></data>
+  <data name="Page.EquipmentSubtitle" xml:space="preserve"><value>Manage equipment basic data</value></data>
+  <data name="Page.EquipmentCategoryTitle" xml:space="preserve"><value>Equipment Category Management</value></data>
+  <data name="Page.EquipmentCategorySubtitle" xml:space="preserve"><value>Manage equipment type classification data</value></data>
+  <data name="Page.EquipmentMaintenanceTitle" xml:space="preserve"><value>Maintenance Record Management</value></data>
+  <data name="Page.EquipmentMaintenanceSubtitle" xml:space="preserve"><value>Manage equipment maintenance and repair records</value></data>
   <data name="Page.InventoryStockTitle" xml:space="preserve"><value>Inventory</value></data>
   <data name="Page.InventoryStockSubtitle" xml:space="preserve"><value>Manage product inventory and warehouse locations</value></data>
   <data name="Page.InventoryTransactionTitle" xml:space="preserve"><value>Inventory Transactions</value></data>
@@ -3411,6 +3629,13 @@
   <data name="AccountType.Expense" xml:space="preserve"><value>Operating Expense</value></data>
   <data name="AccountType.NonOperating" xml:space="preserve"><value>Non-Operating Income and Expense</value></data>
   <data name="AccountType.ComprehensiveIncome" xml:space="preserve"><value>Total Comprehensive Income</value></data>
+  <data name="Field.CashFlowCategory" xml:space="preserve"><value>Cash Flow Category</value></data>
+  <data name="CashFlowCategory.Cash" xml:space="preserve"><value>Cash &amp; Cash Equivalents</value></data>
+  <data name="CashFlowCategory.OperatingWorkingCapital" xml:space="preserve"><value>Operating — Working Capital</value></data>
+  <data name="CashFlowCategory.OperatingNonCash" xml:space="preserve"><value>Operating — Non-Cash</value></data>
+  <data name="CashFlowCategory.Investing" xml:space="preserve"><value>Investing Activities</value></data>
+  <data name="CashFlowCategory.Financing" xml:space="preserve"><value>Financing Activities</value></data>
+  <data name="CashFlowCategory.Excluded" xml:space="preserve"><value>Excluded</value></data>
   <data name="AccountDirection.Debit" xml:space="preserve"><value>Debit</value></data>
   <data name="AccountDirection.Credit" xml:space="preserve"><value>Credit</value></data>
   <data name="AccountLevel.L1" xml:space="preserve"><value>Level 1 (Major Category)</value></data>
@@ -3622,4 +3847,51 @@
   <data name="Production.Paused" xml:space="preserve"><value>Paused</value></data>
   <data name="Production.Completed" xml:space="preserve"><value>Completed</value></data>
   <data name="Production.Aborted" xml:space="preserve"><value>Aborted</value></data>
+  <!-- BankStatement module -->
+  <data name="Nav.BankStatements" xml:space="preserve"><value>Bank Reconciliation</value></data>
+  <data name="Entity.BankStatement" xml:space="preserve"><value>Bank Statement</value></data>
+  <data name="Entity.BankAccount" xml:space="preserve"><value>Bank Account</value></data>
+  <data name="Page.BankStatementTitle" xml:space="preserve"><value>Bank Reconciliation</value></data>
+  <data name="Page.BankStatementSubtitle" xml:space="preserve"><value>Manage bank statements and journal entry matching</value></data>
+  <data name="BankStatement.Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="BankStatement.InProgress" xml:space="preserve"><value>In Progress</value></data>
+  <data name="BankStatement.Completed" xml:space="preserve"><value>Completed</value></data>
+  <data name="BankStatement.Lines" xml:space="preserve"><value>Lines</value></data>
+  <data name="BankStatement.Debit" xml:space="preserve"><value>Debit</value></data>
+  <data name="BankStatement.Credit" xml:space="preserve"><value>Credit</value></data>
+  <data name="BankStatement.Matched" xml:space="preserve"><value>Matched</value></data>
+  <data name="BankStatement.NoLines" xml:space="preserve"><value>No statement lines yet</value></data>
+  <data name="BankStatement.MatchedCount" xml:space="preserve"><value>Matched {0}/{1}</value></data>
+  <data name="BankStatement.TotalDebit" xml:space="preserve"><value>Total Debit</value></data>
+  <data name="BankStatement.TotalCredit" xml:space="preserve"><value>Total Credit</value></data>
+  <data name="BankStatement.NetAmount" xml:space="preserve"><value>Net Amount</value></data>
+  <data name="BankStatement.Unmatched" xml:space="preserve"><value>Unmatched</value></data>
+  <data name="Field.StatementDate" xml:space="preserve"><value>Statement Date</value></data>
+  <data name="Field.PeriodStart" xml:space="preserve"><value>Period From</value></data>
+  <data name="Field.PeriodEnd" xml:space="preserve"><value>Period To</value></data>
+  <data name="Field.OpeningBalance" xml:space="preserve"><value>Opening Balance</value></data>
+  <data name="Field.ClosingBalance" xml:space="preserve"><value>Closing Balance</value></data>
+  <data name="Field.MatchStatus" xml:space="preserve"><value>Match Status</value></data>
+  <data name="Field.StatementStatus" xml:space="preserve"><value>Statement Status</value></data>
+  <data name="Field.ReconciliationPeriod" xml:space="preserve"><value>Period</value></data>
+  <data name="Report.BankReconciliation" xml:space="preserve"><value>Bank Reconciliation Statement</value></data>
+  <data name="Report.BankReconciliationDesc" xml:space="preserve"><value>Query bank statements by period, display matched and unmatched lines to reconcile book balance with bank statement balance</value></data>
+  <data name="Attachment.Title" xml:space="preserve"><value>Attachments</value></data>
+  <data name="Attachment.Upload" xml:space="preserve"><value>Upload Attachment</value></data>
+  <data name="Attachment.Uploading" xml:space="preserve"><value>Uploading...</value></data>
+  <data name="Attachment.AllowedFormats" xml:space="preserve"><value>Supported: PDF, Word, Excel, Images (max 20MB)</value></data>
+  <data name="Attachment.FileName" xml:space="preserve"><value>File Name</value></data>
+  <data name="Attachment.FileSize" xml:space="preserve"><value>Size</value></data>
+  <data name="Attachment.UploadedBy" xml:space="preserve"><value>Uploaded By</value></data>
+  <data name="Attachment.UploadedAt" xml:space="preserve"><value>Upload Time</value></data>
+  <data name="Attachment.Empty" xml:space="preserve"><value>No attachments yet</value></data>
+  <data name="Attachment.UploadSuccess" xml:space="preserve"><value>Attachment uploaded successfully</value></data>
+  <data name="Attachment.UploadFailed" xml:space="preserve"><value>Attachment upload failed</value></data>
+  <data name="Attachment.DeleteSuccess" xml:space="preserve"><value>Attachment deleted</value></data>
+  <data name="MaintenanceType.RegularMaintenance" xml:space="preserve"><value>Regular Maintenance</value></data>
+  <data name="MaintenanceType.Repair" xml:space="preserve"><value>Repair</value></data>
+  <data name="MaintenanceType.Calibration" xml:space="preserve"><value>Calibration</value></data>
+  <data name="MaintenanceType.Inspection" xml:space="preserve"><value>Inspection</value></data>
+  <data name="MaintenanceType.Other" xml:space="preserve"><value>Other</value></data>
+  <data name="Label.Uncategorized" xml:space="preserve"><value>Uncategorized</value></data>
 </root>

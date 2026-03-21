@@ -1,0 +1,88 @@
+@page "/equipment-maintenances"
+@inject IEquipmentMaintenanceService EquipmentMaintenanceService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="EquipmentMaintenance"
+                          TService="IEquipmentMaintenanceService"
+                          Service="@EquipmentMaintenanceService"
+                          EntityBasePath="/equipment-maintenances"
+                          PageTitle="@L["Page.EquipmentMaintenanceTitle"]"
+                          PageSubtitle="@L["Page.EquipmentMaintenanceSubtitle"]"
+                          EntityName="@L["Entity.EquipmentMaintenance"]"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          ServerDataLoader="@ServerLoadEquipmentMaintenancesAsync"
+                          GetEntityDisplayName="@(em => $"{em.Equipment?.Name ?? ""} - {em.MaintenanceDate:yyyy/MM/dd}")"
+                          RequiredPermission="@PermissionRegistry.EquipmentMaintenance.Read"
+                          RequiredModule="Equipment"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          ShowDraftTab="true"
+                          DebugPageName="EquipmentMaintenanceIndex"
+                          @ref="indexComponent" />
+
+<EquipmentMaintenanceEditModalComponent IsVisible="@showEditModal"
+                                        IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                        EquipmentMaintenanceId="@editingEquipmentMaintenanceId"
+                                        OnEquipmentMaintenanceSaved="@modalHandler.OnEntitySavedAsync"
+                                        OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    private GenericIndexPageComponent<EquipmentMaintenance, IEquipmentMaintenanceService> indexComponent = default!;
+
+    private bool showEditModal = false;
+    private int? editingEquipmentMaintenanceId = null;
+
+    private ModalHandler<EquipmentMaintenance, GenericIndexPageComponent<EquipmentMaintenance, IEquipmentMaintenanceService>> modalHandler = default!;
+
+    private EquipmentMaintenanceFieldConfiguration fieldConfiguration = default!;
+
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalHandler = ModalHelper.CreateModalHandler<EquipmentMaintenance, GenericIndexPageComponent<EquipmentMaintenance, IEquipmentMaintenanceService>>(
+                id => editingEquipmentMaintenanceId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            fieldConfiguration = new EquipmentMaintenanceFieldConfiguration(NotificationService);
+            fieldConfiguration.SetLocalizer(L);
+
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化保養維修記錄頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化保養維修記錄頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("設備管理", "保養維修記錄", "#", NotificationService, GetType());
+
+    private Task<(List<EquipmentMaintenance> Items, int TotalCount)> ServerLoadEquipmentMaintenancesAsync(
+        SearchFilterModel filter, int page, int pageSize)
+    {
+        return EquipmentMaintenanceService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadEquipmentMaintenancesAsync), GetType());
+                return q;
+            },
+            page, pageSize);
+    }
+}

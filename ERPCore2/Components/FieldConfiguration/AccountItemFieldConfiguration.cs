@@ -3,6 +3,7 @@ using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
+using Microsoft.AspNetCore.Components;
 
 namespace ERPCore2.FieldConfiguration
 {
@@ -164,6 +165,64 @@ namespace ERPCore2.FieldConfiguration
                                     ? "badge bg-success"
                                     : "badge bg-secondary");
                                 builder.AddContent(2, account.IsDetailAccount ? "是" : "否");
+                                builder.CloseElement();
+                            }
+                        }
+                    },
+                    {
+                        nameof(AccountItem.CashFlowCategory),
+                        new FieldDefinition<AccountItem>
+                        {
+                            PropertyName = nameof(AccountItem.CashFlowCategory),
+                            DisplayName = Dn("Field.CashFlowCategory", "現金流量分類"),
+                            TableOrder = 7,
+                            FilterType = SearchFilterType.Select,
+                            Options = new List<SelectOption>
+                            {
+                                new SelectOption { Text = Nd("Label.NotSet", "未設定"), Value = "" },
+                                new SelectOption { Text = L?["CashFlowCategory.Cash"].ToString() ?? "現金及約當現金",            Value = ((int)CashFlowCategory.Cash).ToString() },
+                                new SelectOption { Text = L?["CashFlowCategory.OperatingWorkingCapital"].ToString() ?? "營業活動—流動資金", Value = ((int)CashFlowCategory.OperatingWorkingCapital).ToString() },
+                                new SelectOption { Text = L?["CashFlowCategory.OperatingNonCash"].ToString() ?? "營業活動—非現金費用", Value = ((int)CashFlowCategory.OperatingNonCash).ToString() },
+                                new SelectOption { Text = L?["CashFlowCategory.Investing"].ToString() ?? "投資活動",             Value = ((int)CashFlowCategory.Investing).ToString() },
+                                new SelectOption { Text = L?["CashFlowCategory.Financing"].ToString() ?? "籌資活動",             Value = ((int)CashFlowCategory.Financing).ToString() },
+                                new SelectOption { Text = L?["CashFlowCategory.Excluded"].ToString() ?? "排除",                  Value = ((int)CashFlowCategory.Excluded).ToString() }
+                            },
+                            FilterFunction = (model, query) =>
+                            {
+                                var filterValue = model.GetFilterValue(nameof(AccountItem.CashFlowCategory))?.ToString();
+                                if (string.IsNullOrWhiteSpace(filterValue))
+                                    return query;
+                                if (int.TryParse(filterValue, out var cfcValue) && Enum.IsDefined(typeof(CashFlowCategory), cfcValue))
+                                {
+                                    var cfc = (CashFlowCategory)cfcValue;
+                                    return query.Where(a => a.CashFlowCategory == cfc);
+                                }
+                                return query;
+                            },
+                            CustomTemplate = item => builder =>
+                            {
+                                var account = (AccountItem)item;
+                                if (account.CashFlowCategory == null)
+                                {
+                                    builder.OpenElement(0, "span");
+                                    builder.AddAttribute(1, "class", "text-muted small");
+                                    builder.AddContent(2, "—");
+                                    builder.CloseElement();
+                                    return;
+                                }
+                                var (text, cssClass) = account.CashFlowCategory switch
+                                {
+                                    CashFlowCategory.Cash                    => ("現金", "badge bg-primary"),
+                                    CashFlowCategory.OperatingWorkingCapital => ("營業流動", "badge bg-success"),
+                                    CashFlowCategory.OperatingNonCash        => ("營業非現金", "badge bg-info text-dark"),
+                                    CashFlowCategory.Investing               => ("投資", "badge bg-warning text-dark"),
+                                    CashFlowCategory.Financing               => ("籌資", "badge bg-secondary"),
+                                    CashFlowCategory.Excluded                => ("排除", "badge bg-light text-dark border"),
+                                    _                                        => (account.CashFlowCategory.ToString()!, "badge bg-secondary")
+                                };
+                                builder.OpenElement(0, "span");
+                                builder.AddAttribute(1, "class", cssClass);
+                                builder.AddContent(2, text);
                                 builder.CloseElement();
                             }
                         }

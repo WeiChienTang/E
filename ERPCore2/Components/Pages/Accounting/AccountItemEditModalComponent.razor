@@ -191,6 +191,24 @@
                 },
                 new()
                 {
+                    PropertyName = nameof(AccountItem.CashFlowCategory),
+                    Label = L["Field.CashFlowCategory"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    HelpText = "IAS 7 現金流量表分類，用於 FN014 間接法報表。未設定時不影響現有功能",
+                    Options = new List<SelectOption>
+                    {
+                        new SelectOption { Text = L["Label.NotSet"],                            Value = "" },
+                        new SelectOption { Text = L["CashFlowCategory.Cash"],                   Value = ((int)ERPCore2.Models.Enums.CashFlowCategory.Cash).ToString() },
+                        new SelectOption { Text = L["CashFlowCategory.OperatingWorkingCapital"],Value = ((int)ERPCore2.Models.Enums.CashFlowCategory.OperatingWorkingCapital).ToString() },
+                        new SelectOption { Text = L["CashFlowCategory.OperatingNonCash"],       Value = ((int)ERPCore2.Models.Enums.CashFlowCategory.OperatingNonCash).ToString() },
+                        new SelectOption { Text = L["CashFlowCategory.Investing"],              Value = ((int)ERPCore2.Models.Enums.CashFlowCategory.Investing).ToString() },
+                        new SelectOption { Text = L["CashFlowCategory.Financing"],              Value = ((int)ERPCore2.Models.Enums.CashFlowCategory.Financing).ToString() },
+                        new SelectOption { Text = L["CashFlowCategory.Excluded"],               Value = ((int)ERPCore2.Models.Enums.CashFlowCategory.Excluded).ToString() }
+                    }
+                },
+                new()
+                {
                     PropertyName = nameof(AccountItem.SortOrder),
                     Label = L["Field.SortOrder"],
                     FieldType = FormFieldType.Number,
@@ -236,6 +254,7 @@
                     a => a.AccountLevel,
                     a => a.ParentId,
                     a => a.IsDetailAccount,
+                    a => a.CashFlowCategory,
                     a => a.SortOrder)
                 .AddToSection(FormSectionNames.AdditionalData,
                     a => a.Description,

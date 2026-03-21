@@ -1,4 +1,5 @@
 ﻿@* 可重用的公司編輯組件 - 可在任何頁面中嵌入 *@
+@using ERPCore2.Models.Enums
 @inject ICompanyService CompanyService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
@@ -44,6 +45,7 @@
     private Dictionary<string, string> formSections = new();
     private List<FormTabDefinition>? tabDefinitions;
     private CompanyLogoTab? logoTab;
+    private GenericBankAccountTabComponent? bankAccountTab;
 
     // 資料載入狀態標記
     private bool isDataLoaded = false;
@@ -272,6 +274,7 @@
                     FormSectionNames.ContactInfo,
                     FormSectionNames.AdditionalData)
                 .GroupIntoCustomTab(L["Tab.CompanyLogo"].ToString(), "bi-image", CreateLogoTabContent(), "CompanyLogoTab")
+                .GroupIntoCustomTab(L["Tab.BankAccounts"].ToString(), "bi-bank", CreateBankAccountTabContent(), nameof(GenericBankAccountTabComponent))
                 .BuildAll();
 
             formSections = layout.FieldSections;
@@ -290,6 +293,13 @@
         <CompanyLogoTab @ref="logoTab"
                         CompanyId="@CompanyId"
                         InitialLogoPath="@editModalComponent?.Entity?.LogoPath" />
+    };
+
+    private RenderFragment CreateBankAccountTabContent() => __builder =>
+    {
+        <GenericBankAccountTabComponent @ref="bankAccountTab"
+                                        EntityType="BankAccountEntityType.Company"
+                                        EntityId="@CompanyId" />
     };
     
     /// <summary>

@@ -22,6 +22,20 @@
 
     <HeaderButtons>
         <div class="d-flex gap-2 align-items-center">
+            <GenericButtonComponent Variant="ButtonVariant.Gray"
+                                  Size="ButtonSize.Small"
+                                  Text="@L["Preference.ExportSettings"]"
+                                  Icon="bi bi-box-arrow-up"
+                                  OnClick="HandleExportPreferences"
+                                  IsDisabled="@(isLoading || !currentEmployeeId.HasValue)"
+                                  Title="@L["Preference.ExportSettingsTooltip"]" />
+            <GenericButtonComponent Variant="ButtonVariant.Gray"
+                                  Size="ButtonSize.Small"
+                                  Text="@L["Preference.ImportSettings"]"
+                                  Icon="bi bi-box-arrow-in-down"
+                                  OnClick="HandleImportPreferences"
+                                  IsDisabled="@(isLoading || !currentEmployeeId.HasValue)"
+                                  Title="@L["Preference.ImportSettingsTooltip"]" />
             <GenericButtonComponent Variant="ButtonVariant.Green"
                                   Size="ButtonSize.Small"
                                   Text="@L["Button.Save"]"
@@ -212,8 +226,14 @@
 
             if (currentEmployeeId.HasValue)
             {
-                // 載入語言偏好，並記錄原始值供儲存後比對
+                // 從 DB 取得（主要為讀取 Language）
                 employeePreference = await EmployeePreferenceService.GetByEmployeeIdAsync(currentEmployeeId.Value);
+
+                // 其他偏好從 localStorage 覆蓋（DB 僅作首次備援）
+                var json = await JSRuntime.InvokeAsync<string?>("PreferenceHelper.getJson", currentEmployeeId.Value);
+                if (!string.IsNullOrEmpty(json))
+                    ERPCore2.Models.UserPreferenceDto.FromJson(json).ApplyTo(employeePreference);
+
                 _originalLanguage = employeePreference.Language;
                 _originalZoom = employeePreference.Zoom;
                 _originalTheme = employeePreference.Theme;
@@ -261,7 +281,11 @@
             isLoading = true;
             StateHasChanged();
 
-            // 1. 儲存語言偏好
+            // 1a. 非語言偏好儲存至 localStorage
+            var dto = ERPCore2.Models.UserPreferenceDto.FromEntity(employeePreference);
+            await JSRuntime.InvokeVoidAsync("PreferenceHelper.saveJson", currentEmployeeId.Value, dto.ToJson());
+
+            // 1b. Language 儲存至 DB（其餘欄位 SavePreferenceAsync 已不再寫入）
             var preferenceResult = await EmployeePreferenceService.SavePreferenceAsync(currentEmployeeId.Value, employeePreference);
 
             if (!preferenceResult.IsSuccess)
@@ -365,6 +389,42 @@
         {
             isLoading = false;
             StateHasChanged();
+        }
+    }
+
+    private async Task HandleExportPreferences()
+    {
+        if (!currentEmployeeId.HasValue) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("PreferenceHelper.exportToFile", currentEmployeeId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync(L["Error.ExportFailed", ex.Message]);
+        }
+    }
+
+    private async Task HandleImportPreferences()
+    {
+        if (!currentEmployeeId.HasValue) return;
+        try
+        {
+            var json = await JSRuntime.InvokeAsync<string?>("PreferenceHelper.importFromFile");
+            if (string.IsNullOrEmpty(json)) return;
+
+            var dto = ERPCore2.Models.UserPreferenceDto.FromJson(json);
+            dto.ApplyTo(employeePreference);
+
+            // 立即寫入 localStorage
+            await JSRuntime.InvokeVoidAsync("PreferenceHelper.saveJson", currentEmployeeId.Value, dto.ToJson());
+
+            await NotificationService.ShowSuccessAsync(L["Preference.ImportSuccess"]);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync(L["Error.ImportFailed", ex.Message]);
         }
     }
 

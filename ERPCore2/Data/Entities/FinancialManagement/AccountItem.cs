@@ -112,6 +112,14 @@ namespace ERPCore2.Data.Entities
         public Item? LinkedItem { get; set; }
 
         /// <summary>
+        /// 現金流量表分類（IAS 7）
+        /// 用於 FN014 間接法現金流量表，指定此科目餘額變動歸入哪個類別。
+        /// Null = 未設定（不影響現有功能；FN014 產生時跳過未設定的科目）
+        /// </summary>
+        [Display(Name = "現金流量分類")]
+        public CashFlowCategory? CashFlowCategory { get; set; }
+
+        /// <summary>
         /// 是否由系統自動產生（透過 SubAccountService 建立）
         /// </summary>
         [Display(Name = "系統自動產生")]

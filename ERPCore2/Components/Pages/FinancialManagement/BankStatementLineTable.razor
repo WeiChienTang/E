@@ -1,0 +1,214 @@
+@* 銀行對帳單明細行管理組件 *@
+
+@using ERPCore2.Helpers
+@inject IStringLocalizer<SharedResource> L
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-light py-2">
+        <div class="d-flex align-items-center justify-content-between">
+            <h6 class="mb-0 fw-semibold">
+                <i class="bi bi-list-ul me-1"></i>@L["BankStatement.Lines"]
+            </h6>
+            <small class="text-muted">
+                @L["BankStatement.MatchedCount", MatchedCount, TotalCount]
+            </small>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <GenericInteractiveTableComponent @ref="tableComponent"
+                                          TItem="BankStatementLineItem"
+                                          Items="@lineItems"
+                                          ColumnDefinitions="@lineColumns"
+                                          IsReadOnly="@IsReadOnly"
+                                          EnableAutoEmptyRow="@(!IsReadOnly)"
+                                          CreateEmptyItem="@(() => new BankStatementLineItem { TransactionDate = DateTime.Today })"
+                                          ShowBuiltInActions="@(!IsReadOnly)"
+                                          OnItemDelete="@HandleLineDelete"
+                                          DataLoadCompleted="@_dataLoadCompleted"
+                                          ShowRowNumbers="true"
+                                          EmptyMessage="@L["BankStatement.NoLines"]" />
+    </div>
+
+    @* 合計列 *@
+    <div class="card-footer">
+        <div class="d-flex align-items-center gap-3 justify-content-end flex-wrap">
+            <span class="text-danger fw-semibold">@L["BankStatement.TotalDebit"] @TotalDebit.ToString("N2")</span>
+            <span class="text-success fw-semibold">@L["BankStatement.TotalCredit"] @TotalCredit.ToString("N2")</span>
+            <span class="fw-semibold @(NetAmount >= 0 ? "text-success" : "text-danger")">
+                @L["BankStatement.NetAmount"] @NetAmount.ToString("N2")
+            </span>
+        </div>
+    </div>
+</div>
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public List<BankStatementLine> ExistingLines { get; set; } = new();
+    [Parameter] public EventCallback<List<BankStatementLine>> OnLinesChanged { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+    [Parameter] public bool IsParentLoading { get; set; } = false;
+    [Parameter] public int DataVersion { get; set; } = 0;
+
+    // ===== 公開屬性 =====
+    public decimal TotalDebit => lineItems.Sum(l => l.DebitAmount);
+    public decimal TotalCredit => lineItems.Sum(l => l.CreditAmount);
+    public decimal NetAmount => TotalCredit - TotalDebit;
+    public int TotalCount => lineItems.Count(l => !l.IsEmpty);
+    public int MatchedCount => lineItems.Count(l => l.IsMatched && !l.IsEmpty);
+
+    // ===== 內部狀態 =====
+    private GenericInteractiveTableComponent<BankStatementLineItem>? tableComponent;
+    private List<BankStatementLineItem> lineItems = new();
+    private List<InteractiveColumnDefinition> lineColumns = new();
+    private bool _dataLoadCompleted = true;
+    private int _previousDataVersion = 0;
+
+    // ===== ViewModel =====
+    public class BankStatementLineItem
+    {
+        public int Id { get; set; } = 0;
+        public DateTime TransactionDate { get; set; } = DateTime.Today;
+        public string Description { get; set; } = string.Empty;
+        public decimal DebitAmount { get; set; } = 0;
+        public decimal CreditAmount { get; set; } = 0;
+        public bool IsMatched { get; set; } = false;
+        public int? MatchedJournalEntryLineId { get; set; }
+        public int SortOrder { get; set; } = 0;
+
+        // 日期字串橋接（GenericInteractiveTableComponent DatePicker 使用）
+        public string TransactionDateStr
+        {
+            get => TransactionDate.ToString("yyyy-MM-dd");
+            set { if (DateTime.TryParse(value, out var d)) TransactionDate = d; }
+        }
+
+        public bool IsEmpty => string.IsNullOrWhiteSpace(Description) && DebitAmount == 0 && CreditAmount == 0;
+    }
+
+    // ===== 生命週期 =====
+    protected override void OnInitialized()
+    {
+        InitializeColumns();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (DataVersion != _previousDataVersion)
+        {
+            _previousDataVersion = DataVersion;
+            LoadLines();
+        }
+    }
+
+    private void LoadLines()
+    {
+        lineItems = ExistingLines.Select((l, i) => new BankStatementLineItem
+        {
+            Id = l.Id,
+            TransactionDate = l.TransactionDate,
+            Description = l.Description,
+            DebitAmount = l.DebitAmount,
+            CreditAmount = l.CreditAmount,
+            IsMatched = l.IsMatched,
+            MatchedJournalEntryLineId = l.MatchedJournalEntryLineId,
+            SortOrder = i
+        }).ToList();
+        _dataLoadCompleted = true;
+    }
+
+    private void InitializeColumns()
+    {
+        lineColumns = new List<InteractiveColumnDefinition>
+        {
+            new InteractiveColumnDefinition
+            {
+                PropertyName = nameof(BankStatementLineItem.TransactionDateStr),
+                Title = L["Field.TransactionDate"].ToString(),
+                ColumnType = InteractiveColumnType.Input,
+                Width = "130px"
+            },
+            new InteractiveColumnDefinition
+            {
+                PropertyName = nameof(BankStatementLineItem.Description),
+                Title = L["Field.Description"].ToString(),
+                ColumnType = InteractiveColumnType.Input,
+                Placeholder = L["Placeholder.PleaseInput", L["Field.Description"]].ToString()
+            },
+            new InteractiveColumnDefinition
+            {
+                PropertyName = nameof(BankStatementLineItem.DebitAmount),
+                Title = L["BankStatement.Debit"].ToString(),
+                ColumnType = InteractiveColumnType.Number,
+                Width = "120px",
+                TextAlign = "end"
+            },
+            new InteractiveColumnDefinition
+            {
+                PropertyName = nameof(BankStatementLineItem.CreditAmount),
+                Title = L["BankStatement.Credit"].ToString(),
+                ColumnType = InteractiveColumnType.Number,
+                Width = "120px",
+                TextAlign = "end"
+            },
+            new InteractiveColumnDefinition
+            {
+                PropertyName = nameof(BankStatementLineItem.IsMatched),
+                Title = L["BankStatement.Matched"].ToString(),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "80px",
+                DisplayFormatter = item =>
+                {
+                    if (item is BankStatementLineItem line)
+                        return line.IsMatched
+                            ? "<span class='badge bg-success'><i class='bi bi-check-circle'></i></span>"
+                            : "<span class='badge bg-secondary'><i class='bi bi-dash-circle'></i></span>";
+                    return "-";
+                }
+            }
+        };
+    }
+
+    // ===== 事件處理 =====
+    private async Task HandleLineDelete(BankStatementLineItem item)
+    {
+        lineItems.Remove(item);
+        await NotifyChanged();
+    }
+
+    private async Task NotifyChanged()
+    {
+        var lines = lineItems
+            .Where(l => !l.IsEmpty)
+            .Select((l, i) => new BankStatementLine
+            {
+                Id = l.Id,
+                TransactionDate = l.TransactionDate,
+                Description = l.Description,
+                DebitAmount = l.DebitAmount,
+                CreditAmount = l.CreditAmount,
+                IsMatched = l.IsMatched,
+                MatchedJournalEntryLineId = l.MatchedJournalEntryLineId,
+                SortOrder = i
+            }).ToList();
+        await OnLinesChanged.InvokeAsync(lines);
+    }
+
+    // ===== 公開方法 =====
+    /// <summary>取得目前所有有效的明細行（供儲存用）</summary>
+    public List<BankStatementLine> GetLines()
+    {
+        return lineItems
+            .Where(l => !l.IsEmpty)
+            .Select((l, i) => new BankStatementLine
+            {
+                Id = l.Id,
+                TransactionDate = l.TransactionDate,
+                Description = l.Description,
+                DebitAmount = l.DebitAmount,
+                CreditAmount = l.CreditAmount,
+                IsMatched = l.IsMatched,
+                MatchedJournalEntryLineId = l.MatchedJournalEntryLineId,
+                SortOrder = i
+            }).ToList();
+    }
+}

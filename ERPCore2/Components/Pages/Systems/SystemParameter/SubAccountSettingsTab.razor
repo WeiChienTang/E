@@ -93,15 +93,29 @@
 
     protected override void OnInitialized()
     {
-        var autoGenerateSection = L["Section.AutoGenerateSetting"].ToString();
-        var controlAccountSection = L["Section.ControlAccountCode"].ToString();
+        var customerSection = L["Section.CustomerSubAccount"].ToString();
+        var supplierSection = L["Section.SupplierSubAccount"].ToString();
+        var itemSection     = L["Section.ItemSubAccount"].ToString();
+        var generalSection  = L["Section.GeneralSetting"].ToString();
 
         allFields = new List<FormFieldDefinition>
         {
-            // ===== 子科目自動產生開關 =====
-            new FormFieldDefinition { PropertyName = "AutoCreateCustomerSubAccount", Label = L["Field.CustomerSubAccount"], FieldType = FormFieldType.Checkbox },
-            new FormFieldDefinition { PropertyName = "AutoCreateSupplierSubAccount", Label = L["Field.SupplierSubAccount"], FieldType = FormFieldType.Checkbox },
-            new FormFieldDefinition { PropertyName = "AutoCreateItemSubAccount",  Label = L["Field.ItemSubAccount"],  FieldType = FormFieldType.Checkbox },
+            // ===== 客戶子科目設定 =====
+            new FormFieldDefinition { PropertyName = "AutoCreateCustomerSubAccount",        Label = L["Field.CustomerSubAccount"],       FieldType = FormFieldType.Checkbox },
+            new FormFieldDefinition { PropertyName = "CustomerSubAccountParentCode",        Label = L["Field.CustomerReceivableAccount"], FieldType = FormFieldType.Text, Placeholder = "預設：1191", MaxLength = 20 },
+            new FormFieldDefinition { PropertyName = "CustomerNoteSubAccountParentCode",    Label = L["Field.CustomerNoteAccount"],       FieldType = FormFieldType.Text, Placeholder = "預設：1181", MaxLength = 20 },
+            new FormFieldDefinition { PropertyName = "CustomerReturnSubAccountParentCode",  Label = L["Field.CustomerReturnAccount"],     FieldType = FormFieldType.Text, Placeholder = "預設：4113", MaxLength = 20 },
+            new FormFieldDefinition { PropertyName = "CustomerAdvanceSubAccountParentCode", Label = L["Field.CustomerAdvanceAccount"],    FieldType = FormFieldType.Text, Placeholder = "預設：2221", MaxLength = 20 },
+            // ===== 廠商子科目設定 =====
+            new FormFieldDefinition { PropertyName = "AutoCreateSupplierSubAccount",        Label = L["Field.SupplierSubAccount"],       FieldType = FormFieldType.Checkbox },
+            new FormFieldDefinition { PropertyName = "SupplierSubAccountParentCode",        Label = L["Field.SupplierPayableAccount"],   FieldType = FormFieldType.Text, Placeholder = "預設：2171", MaxLength = 20 },
+            new FormFieldDefinition { PropertyName = "SupplierNoteSubAccountParentCode",    Label = L["Field.SupplierNoteAccount"],      FieldType = FormFieldType.Text, Placeholder = "預設：2161", MaxLength = 20 },
+            new FormFieldDefinition { PropertyName = "SupplierReturnSubAccountParentCode",  Label = L["Field.SupplierReturnAccount"],    FieldType = FormFieldType.Text, Placeholder = "預設：5123", MaxLength = 20 },
+            new FormFieldDefinition { PropertyName = "SupplierAdvanceSubAccountParentCode", Label = L["Field.SupplierAdvanceAccount"],   FieldType = FormFieldType.Text, Placeholder = "預設：1266", MaxLength = 20 },
+            // ===== 品項子科目設定 =====
+            new FormFieldDefinition { PropertyName = "AutoCreateItemSubAccount",            Label = L["Field.ItemSubAccount"],           FieldType = FormFieldType.Checkbox },
+            new FormFieldDefinition { PropertyName = "ItemSubAccountParentCode",            Label = L["Field.ItemInventoryAccount"],     FieldType = FormFieldType.Text, Placeholder = "預設：1231", MaxLength = 20 },
+            // ===== 通用設定 =====
             new FormFieldDefinition
             {
                 PropertyName = "SubAccountCodeFormat",
@@ -118,35 +132,27 @@
                     new() { Title = "實體編碼", Description = "使用客戶/廠商/品項的代碼作為後綴，例：1191.C0001。一眼可辨認對應實體，適合代碼有意義的場景。" }
                 }
             },
-            // ===== 統制科目代碼（客戶）=====
-            new FormFieldDefinition { PropertyName = "CustomerSubAccountParentCode",        Label = L["Field.CustomerReceivableAccount"], FieldType = FormFieldType.Text, Placeholder = "預設：1191", MaxLength = 20 },
-            new FormFieldDefinition { PropertyName = "CustomerNoteSubAccountParentCode",    Label = L["Field.CustomerNoteAccount"],       FieldType = FormFieldType.Text, Placeholder = "預設：1131", MaxLength = 20 },
-            new FormFieldDefinition { PropertyName = "CustomerReturnSubAccountParentCode",  Label = L["Field.CustomerReturnAccount"],     FieldType = FormFieldType.Text, Placeholder = "預設：4191", MaxLength = 20 },
-            new FormFieldDefinition { PropertyName = "CustomerAdvanceSubAccountParentCode", Label = L["Field.CustomerAdvanceAccount"],    FieldType = FormFieldType.Text, Placeholder = "預設：2163", MaxLength = 20 },
-            // ===== 統制科目代碼（廠商）=====
-            new FormFieldDefinition { PropertyName = "SupplierSubAccountParentCode",        Label = L["Field.SupplierPayableAccount"],   FieldType = FormFieldType.Text, Placeholder = "預設：2171", MaxLength = 20 },
-            new FormFieldDefinition { PropertyName = "SupplierNoteSubAccountParentCode",    Label = L["Field.SupplierNoteAccount"],      FieldType = FormFieldType.Text, Placeholder = "預設：2131", MaxLength = 20 },
-            new FormFieldDefinition { PropertyName = "SupplierReturnSubAccountParentCode",  Label = L["Field.SupplierReturnAccount"],    FieldType = FormFieldType.Text, Placeholder = "預設：5111", MaxLength = 20 },
-            new FormFieldDefinition { PropertyName = "SupplierAdvanceSubAccountParentCode", Label = L["Field.SupplierAdvanceAccount"],   FieldType = FormFieldType.Text, Placeholder = "預設：1161", MaxLength = 20 },
-            // ===== 統制科目代碼（品項）=====
-            new FormFieldDefinition { PropertyName = "ItemSubAccountParentCode",         Label = L["Field.ItemInventoryAccount"],  FieldType = FormFieldType.Text, Placeholder = "預設：1231", MaxLength = 20 }
         };
 
         fieldSections = new Dictionary<string, string>
         {
-            { "AutoCreateCustomerSubAccount", autoGenerateSection },
-            { "AutoCreateSupplierSubAccount", autoGenerateSection },
-            { "AutoCreateItemSubAccount",  autoGenerateSection },
-            { "SubAccountCodeFormat",         autoGenerateSection },
-            { "CustomerSubAccountParentCode",        controlAccountSection },
-            { "CustomerNoteSubAccountParentCode",    controlAccountSection },
-            { "CustomerReturnSubAccountParentCode",  controlAccountSection },
-            { "CustomerAdvanceSubAccountParentCode", controlAccountSection },
-            { "SupplierSubAccountParentCode",        controlAccountSection },
-            { "SupplierNoteSubAccountParentCode",    controlAccountSection },
-            { "SupplierReturnSubAccountParentCode",  controlAccountSection },
-            { "SupplierAdvanceSubAccountParentCode", controlAccountSection },
-            { "ItemSubAccountParentCode",         controlAccountSection }
+            // 客戶
+            { "AutoCreateCustomerSubAccount",        customerSection },
+            { "CustomerSubAccountParentCode",        customerSection },
+            { "CustomerNoteSubAccountParentCode",    customerSection },
+            { "CustomerReturnSubAccountParentCode",  customerSection },
+            { "CustomerAdvanceSubAccountParentCode", customerSection },
+            // 廠商
+            { "AutoCreateSupplierSubAccount",        supplierSection },
+            { "SupplierSubAccountParentCode",        supplierSection },
+            { "SupplierNoteSubAccountParentCode",    supplierSection },
+            { "SupplierReturnSubAccountParentCode",  supplierSection },
+            { "SupplierAdvanceSubAccountParentCode", supplierSection },
+            // 品項
+            { "AutoCreateItemSubAccount",            itemSection },
+            { "ItemSubAccountParentCode",            itemSection },
+            // 通用
+            { "SubAccountCodeFormat",                generalSection },
         };
     }
 

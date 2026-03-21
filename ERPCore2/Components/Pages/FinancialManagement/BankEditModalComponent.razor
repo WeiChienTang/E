@@ -99,35 +99,6 @@
                     HelpText = "國際銀行匯款使用的SWIFT編號"
                 },
                 
-                // 聯絡資訊區段
-                new()
-                {
-                    PropertyName = nameof(Bank.Phone),
-                    Label = L["Field.Phone"],
-                    FieldType = FormFieldType.Text,
-                    Placeholder = L["Placeholder.PleaseInput", L["Field.Phone"]],
-                    IsRequired = false,
-                    HelpText = "銀行的聯絡電話"
-                },
-                new()
-                {
-                    PropertyName = nameof(Bank.Fax),
-                    Label = L["Field.Fax"],
-                    FieldType = FormFieldType.Text,
-                    Placeholder = L["Placeholder.PleaseInput", L["Field.Fax"]],
-                    IsRequired = false,
-                    HelpText = "銀行的傳真號碼"
-                },
-                new()
-                {
-                    PropertyName = nameof(Bank.Address),
-                    Label = L["Field.Address"],
-                    FieldType = FormFieldType.Text,
-                    Placeholder = L["Placeholder.PleaseInput", L["Field.Address"]],
-                    IsRequired = false,
-                    HelpText = "銀行的地址",
-                    ContainerCssClass = "col-6"
-                },
                 FormFieldConfigurationHelper.CreateRemarksField<Bank>()
             };
 
@@ -137,10 +108,6 @@
                     b => b.BankName,
                     b => b.BankNameEn,
                     b => b.SwiftCode)
-                .AddToSection(FormSectionNames.ContactInfo,
-                    b => b.Phone,
-                    b => b.Fax,
-                    b => b.Address)
                 .AddToSection(FormSectionNames.AdditionalData,
                     b => b.Remarks)
                 .Build();

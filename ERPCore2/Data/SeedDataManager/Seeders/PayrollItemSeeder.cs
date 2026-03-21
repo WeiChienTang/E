@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ERPCore2.Data.SeedDataManager.Seeders
 {
     /// <summary>
-    /// 薪資項目種子資料 — 16 個預設項目
+    /// 薪資項目種子資料 — 17 個預設項目
     /// </summary>
     public class PayrollItemSeeder : IDataSeeder
     {
@@ -22,9 +22,10 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
             // OT2 原命名為「休息日加班費」但實際用於平日加班後2小時；OT_HOLIDAY 原命名為「例假日加班費」
             var nameFixes = new Dictionary<string, (string Name, bool IsSystemItem)>
             {
-                { "OT2",        ("平日加班費（後2小時）", true) },
-                { "OT_HOLIDAY", ("休息日加班費",          true) },
-                { "ABSENT",     ("曠職扣款",               true) },  // 計算引擎依賴此項目，應標為系統項目
+                { "OT2",           ("平日加班費（後2小時）", true) },
+                { "OT_HOLIDAY",    ("休息日加班費",          true) },
+                { "ABSENT",        ("曠職扣款",               true) },  // 計算引擎依賴此項目，應標為系統項目
+                { "PERSONAL_LEAVE",("事假扣款",               true) },  // 計算引擎依賴此項目，應標為系統項目
             };
             bool anyFixed = false;
             foreach (var (code, (newName, isSystem)) in nameFixes)
@@ -257,6 +258,20 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
                     IsRetirementBasis = false,
                     IsSystemItem = true,
                     SortOrder = 21,
+                    Status = EntityStatus.Active,
+                    CreatedAt = now
+                },
+                new PayrollItem
+                {
+                    Code = "PERSONAL_LEAVE",
+                    Name = "事假扣款",                // 勞基法第43條：事假無薪，全額扣薪
+                    ItemType = PayrollItemType.Deduction,
+                    Category = PayrollItemCategory.Other,
+                    IsTaxable = false,
+                    IsInsuranceBasis = false,
+                    IsRetirementBasis = false,
+                    IsSystemItem = true,              // 計算引擎直接依賴此項目，不可刪除
+                    SortOrder = 22,
                     Status = EntityStatus.Active,
                     CreatedAt = now
                 },

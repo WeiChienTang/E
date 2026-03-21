@@ -403,11 +403,12 @@
             {
                 try
                 {
-                    var preference = await EmployeePreferenceService.GetByEmployeeIdAsync(_currentEmployeeId);
+                    var preference = await LoadPreferenceAsync(_currentEmployeeId);
                     _currentPreference = preference;
                     await JSRuntime.InvokeVoidAsync("setContentZoom", (int)preference.Zoom);
                     await JSRuntime.InvokeVoidAsync("setAppTheme", (int)preference.Theme);
                     UserPreferenceContext.DefaultPageSize = preference.DefaultPageSize;
+                    UserPreferenceContext.ShowUnsavedChangesWarning = preference.ShowUnsavedChangesWarning;
 
                     // 套用使用者自訂 Toast 訊息顯示時長
                     await JSRuntime.InvokeVoidAsync("setToastDelays", new
@@ -466,6 +467,34 @@
             // 預算允許目前使用者查看的報表 ID 集合（供同步 SearchReports 使用）
             await BuildAllowedReportIdsAsync();
         }
+    }
+
+    /// <summary>
+    /// 載入使用者偏好設定：優先讀取 localStorage，首次登入時自動從 DB 遷移並寫入 localStorage。
+    /// Language 欄位永遠從 DB 取得（由 culture middleware 管理，不存入 localStorage）。
+    /// </summary>
+    private async Task<EmployeePreference> LoadPreferenceAsync(int employeeId)
+    {
+        // 1. 從 DB 取得（主要為讀取 Language，其他欄位作為遷移備援）
+        var dbPref = await EmployeePreferenceService.GetByEmployeeIdAsync(employeeId);
+
+        // 2. 嘗試從 localStorage 讀取
+        var hasLocal = await JSRuntime.InvokeAsync<bool>("PreferenceHelper.hasData", employeeId);
+        if (hasLocal)
+        {
+            var json = await JSRuntime.InvokeAsync<string?>("PreferenceHelper.getJson", employeeId);
+            if (!string.IsNullOrEmpty(json))
+            {
+                // 將 localStorage 的值寫回 entity（Language 來自 DB，其餘來自 localStorage）
+                UserPreferenceDto.FromJson(json).ApplyTo(dbPref);
+                return dbPref;
+            }
+        }
+
+        // 3. localStorage 無資料 → 一次性從 DB 遷移
+        var dto = UserPreferenceDto.FromEntity(dbPref);
+        await JSRuntime.InvokeVoidAsync("PreferenceHelper.saveJson", employeeId, dto.ToJson());
+        return dbPref;
     }
 
     /// <summary>

@@ -1,0 +1,219 @@
+@* 通用銀行帳號 Tab — 支援客戶、廠商、員工、公司；根據 EntityType 動態載入對應銀行帳號 *@
+@using ERPCore2.Models.Enums
+@inject ICustomerBankAccountService CustomerBankAccountService
+@inject ISupplierBankAccountService SupplierBankAccountService
+@inject IEmployeeBankAccountService EmployeeBankAccountService
+@inject ICompanyBankAccountService CompanyBankAccountService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<div class="d-flex justify-content-between align-items-center mb-2 px-1">
+    <div class="d-flex gap-2">
+        <GenericButtonComponent IconClass="bi bi-plus-circle"
+                                Variant="ButtonVariant.DarkBlue"
+                                Size="ButtonSize.Small"
+                                Text="@L["Button.AddBankAccount"]"
+                                OnClick="@HandleAdd"
+                                IsDisabled="@(!EntityId.HasValue)" />
+    </div>
+</div>
+
+@if (accounts.Count == 0)
+{
+    <div class="text-center py-4 text-muted">
+        <i class="bi bi-bank fs-3 d-block mb-2"></i>
+        <span>@L["Message.NoBankAccounts"]</span>
+    </div>
+}
+else
+{
+    <div class="table-responsive px-3 pt-2">
+        <table class="table table-sm table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>@L["Field.BankName"]</th>
+                    <th>@L["Field.BranchName"]</th>
+                    <th>@L["Field.AccountNumber"]</th>
+                    <th>@L["Field.AccountName"]</th>
+                    @if (EntityType == BankAccountEntityType.Company)
+                    {
+                        <th>@L["Field.Purpose"]</th>
+                    }
+                    <th class="text-center">@L["Field.IsPrimary"]</th>
+                    <th class="text-center" style="width:100px">@L["Label.Actions"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var acc in accounts)
+                {
+                    <tr>
+                        <td>@acc.BankName</td>
+                        <td>@acc.BranchName</td>
+                        <td>@acc.AccountNumber</td>
+                        <td>@acc.AccountName</td>
+                        @if (EntityType == BankAccountEntityType.Company)
+                        {
+                            <td>@acc.Purpose</td>
+                        }
+                        <td class="text-center">
+                            @if (acc.IsPrimary)
+                            {
+                                <span class="badge bg-primary">@L["Label.Primary"]</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <div class="d-flex gap-1 justify-content-center">
+                                <GenericButtonComponent IconClass="bi bi-pencil"
+                                                       Variant="ButtonVariant.OutlineDarkBlue"
+                                                       Size="ButtonSize.Small"
+                                                       Title="@L["Button.Edit"]"
+                                                       OnClick="@(() => HandleEdit(acc.Id))"
+                                                       CssClass="btn-square" />
+                                @if (!acc.IsPrimary)
+                                {
+                                    <GenericButtonComponent IconClass="bi bi-star"
+                                                           Variant="ButtonVariant.OutlineGray"
+                                                           Size="ButtonSize.Small"
+                                                           Title="@L["Button.SetPrimary"]"
+                                                           OnClick="@(() => HandleSetPrimary(acc.Id))"
+                                                           CssClass="btn-square" />
+                                }
+                                <GenericButtonComponent IconClass="bi bi-trash"
+                                                       Variant="ButtonVariant.OutlineRed"
+                                                       Size="ButtonSize.Small"
+                                                       Title="@L["Button.Delete"]"
+                                                       OnClick="@(() => HandleDelete(acc.Id))"
+                                                       CssClass="btn-square" />
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@* 銀行帳號編輯 Modal *@
+<GenericBankAccountEditModalComponent EntityType="@EntityType"
+                                      EntityId="@EntityId"
+                                      BankAccountId="@editingId"
+                                      IsVisible="@isModalVisible"
+                                      IsVisibleChanged="@((bool v) => isModalVisible = v)"
+                                      OnSaved="@HandleSaved"
+                                      OnCancel="@(() => isModalVisible = false)" />
+
+@code {
+    [Parameter] public BankAccountEntityType EntityType { get; set; }
+    [Parameter] public int? EntityId { get; set; }
+
+    private record BankAccountRow(int Id, string? BankName, string? BranchName, string AccountNumber, string AccountName, bool IsPrimary, string? Purpose);
+
+    private List<BankAccountRow> accounts = new();
+    private bool isModalVisible = false;
+    private int? editingId = null;
+    private int _lastLoadedId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var newId = EntityId ?? 0;
+        if (newId > 0 && newId != _lastLoadedId)
+            await LoadAsync(newId);
+        else if (newId <= 0 && _lastLoadedId > 0)
+            Clear();
+    }
+
+    public async Task LoadAsync(int entityId)
+    {
+        _lastLoadedId = entityId;
+        accounts = EntityType switch
+        {
+            BankAccountEntityType.Customer =>
+                (await CustomerBankAccountService.GetByCustomerIdAsync(entityId))
+                    .Select(a => new BankAccountRow(a.Id, a.Bank?.BankName, a.BranchName, a.AccountNumber, a.AccountName, a.IsPrimary, null))
+                    .ToList(),
+            BankAccountEntityType.Supplier =>
+                (await SupplierBankAccountService.GetBySupplierIdAsync(entityId))
+                    .Select(a => new BankAccountRow(a.Id, a.Bank?.BankName, a.BranchName, a.AccountNumber, a.AccountName, a.IsPrimary, null))
+                    .ToList(),
+            BankAccountEntityType.Employee =>
+                (await EmployeeBankAccountService.GetByEmployeeIdAsync(entityId))
+                    .Select(a => new BankAccountRow(a.Id, a.Bank?.BankName, a.BranchName, a.AccountNumber, a.AccountName, a.IsPrimary, null))
+                    .ToList(),
+            BankAccountEntityType.Company =>
+                (await CompanyBankAccountService.GetByCompanyIdAsync(entityId))
+                    .Select(a => new BankAccountRow(a.Id, a.Bank?.BankName, a.BranchName, a.AccountNumber, a.AccountName, a.IsPrimary, a.Purpose))
+                    .ToList(),
+            _ => new()
+        };
+        StateHasChanged();
+    }
+
+    public void Clear()
+    {
+        _lastLoadedId = 0;
+        accounts = new();
+        StateHasChanged();
+    }
+
+    private void HandleAdd()
+    {
+        editingId = null;
+        isModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleEdit(int id)
+    {
+        editingId = id;
+        isModalVisible = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleDelete(int id)
+    {
+        var result = EntityType switch
+        {
+            BankAccountEntityType.Customer => await CustomerBankAccountService.DeleteAsync(id),
+            BankAccountEntityType.Supplier => await SupplierBankAccountService.DeleteAsync(id),
+            BankAccountEntityType.Employee => await EmployeeBankAccountService.DeleteAsync(id),
+            BankAccountEntityType.Company  => await CompanyBankAccountService.DeleteAsync(id),
+            _ => ServiceResult.Failure("Unknown entity type")
+        };
+
+        if (result.IsSuccess)
+        {
+            accounts.RemoveAll(a => a.Id == id);
+            await NotificationService.ShowSuccessAsync(L["Message.DeleteSuccess"].ToString());
+            StateHasChanged();
+        }
+        else
+        {
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.DeleteFailed"].ToString());
+        }
+    }
+
+    private async Task HandleSetPrimary(int id)
+    {
+        if (!EntityId.HasValue) return;
+        var result = EntityType switch
+        {
+            BankAccountEntityType.Customer => await CustomerBankAccountService.SetPrimaryAsync(id, EntityId.Value),
+            BankAccountEntityType.Supplier => await SupplierBankAccountService.SetPrimaryAsync(id, EntityId.Value),
+            BankAccountEntityType.Employee => await EmployeeBankAccountService.SetPrimaryAsync(id, EntityId.Value),
+            BankAccountEntityType.Company  => await CompanyBankAccountService.SetPrimaryAsync(id, EntityId.Value),
+            _ => ServiceResult.Failure("Unknown entity type")
+        };
+
+        if (result.IsSuccess)
+            await LoadAsync(EntityId.Value);
+        else
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? L["Message.SaveFailed"].ToString());
+    }
+
+    private async Task HandleSaved()
+    {
+        isModalVisible = false;
+        if (EntityId.HasValue)
+            await LoadAsync(EntityId.Value);
+    }
+}

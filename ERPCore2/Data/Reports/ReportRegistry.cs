@@ -138,6 +138,22 @@ public static class ReportRegistry
                 IsEnabled = true
             },
 
+            new ReportDefinition
+            {
+                Id = ReportIds.CrmLeadReport,
+                Name = "潛在客戶開發報告",
+                NameKey = "Report.CrmLeadReport",
+                Description = "列印潛在客戶開發進度報告，含開發階段、來源、負責業務員及預估商機金額統計",
+                DescriptionKey = "Report.CrmLeadReportDesc",
+                IconClass = "bi bi-person-plus",
+                Category = ReportCategory.Customer,
+                ModuleKey = "Customers",
+                RequiredPermission = PermissionRegistry.CrmLead.Read,
+                ActionId = "OpenCrmLeadReport",
+                SortOrder = 9,
+                IsEnabled = false  // 報表服務尚未實作
+            },
+
             // ==================== 廠商報表 ====================
             new ReportDefinition
             {
@@ -511,6 +527,38 @@ public static class ReportRegistry
                 IsEnabled = true
             },
 
+            // ==================== 設備報表 ====================
+            new ReportDefinition
+            {
+                Id = ReportIds.EquipmentList,
+                Name = "設備清單",
+                NameKey = "Report.EquipmentList",
+                Description = "列印設備基本資料清單，含設備編號、名稱、類別、品牌、型號、放置地點、負責人員、下次保養日期等",
+                DescriptionKey = "Report.EquipmentListDesc",
+                IconClass = "bi bi-gear-wide-connected",
+                Category = ReportCategory.Equipment,
+                ModuleKey = "Equipment",
+                RequiredPermission = PermissionRegistry.Equipment.Read,
+                ActionId = "OpenEquipmentListReport",
+                SortOrder = 1,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = ReportIds.EquipmentMaintenanceRecord,
+                Name = "設備保養維修記錄",
+                NameKey = "Report.EquipmentMaintenanceRecord",
+                Description = "列印設備保養維修記錄，含維修類型、保養日期、費用、服務廠商、執行人員等明細",
+                DescriptionKey = "Report.EquipmentMaintenanceRecordDesc",
+                IconClass = "bi bi-wrench-adjustable",
+                Category = ReportCategory.Equipment,
+                ModuleKey = "Equipment",
+                RequiredPermission = PermissionRegistry.EquipmentMaintenance.Read,
+                ActionId = "OpenEquipmentMaintenanceRecordReport",
+                SortOrder = 2,
+                IsEnabled = true
+            },
+
             // ==================== 人力報表 ====================
             new ReportDefinition
             {
@@ -727,6 +775,36 @@ public static class ReportRegistry
                 SortOrder = 9,
                 IsEnabled = true
             },
+            new ReportDefinition
+            {
+                Id = ReportIds.CashFlow,
+                Name = "現金流量表",
+                NameKey = "Report.CashFlow",
+                Description = "依 IAS 7 間接法編製現金流量表，從本期淨利出發，加回非現金調整、計算流動資金變動，彙整營業/投資/籌資活動現金流量",
+                DescriptionKey = "Report.CashFlowDesc",
+                IconClass = "bi bi-cash-coin",
+                Category = ReportCategory.Accounting,
+                ModuleKey = "Accounting",
+                RequiredPermission = PermissionRegistry.JournalEntry.Read,
+                ActionId = "OpenCashFlowReport",
+                SortOrder = 10,
+                IsEnabled = true
+            },
+            new ReportDefinition
+            {
+                Id = ReportIds.BankReconciliation,
+                Name = "銀行存款餘額調節表",
+                NameKey = "Report.BankReconciliation",
+                Description = "依對帳期間查詢銀行對帳單，顯示已配對與未配對明細，協助核對帳面餘額與銀行對帳單餘額，符合內部控制要求",
+                DescriptionKey = "Report.BankReconciliationDesc",
+                IconClass = "bi bi-bank",
+                Category = ReportCategory.Accounting,
+                ModuleKey = "Accounting",
+                RequiredPermission = PermissionRegistry.BankStatement.Read,
+                ActionId = "OpenBankReconciliationReport",
+                SortOrder = 11,
+                IsEnabled = true
+            },
         };
     }
     
@@ -811,6 +889,14 @@ public static class ReportRegistry
     public static List<ReportDefinition> GetHRReports()
     {
         return GetReportsByCategory(ReportCategory.HR);
+    }
+
+    /// <summary>
+    /// 取得設備相關報表
+    /// </summary>
+    public static List<ReportDefinition> GetEquipmentReports()
+    {
+        return GetReportsByCategory(ReportCategory.Equipment);
     }
 
     /// <summary>

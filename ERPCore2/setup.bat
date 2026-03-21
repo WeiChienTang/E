@@ -1,5 +1,6 @@
 @echo off
 chcp 65001 >nul
+set ASPNETCORE_ENVIRONMENT=Production
 echo ========================================
 echo    ERP系統 - 資料庫設定工具
 echo ========================================

@@ -1,0 +1,397 @@
+@* 可重用的潛在客戶編輯組件 *@
+@using ERPCore2.Services.Crm
+@using ERPCore2.Models.Enums
+@inject ICrmLeadService CrmLeadService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject ActionButtonHelper ActionButtonHelper
+@inject IStringLocalizer<SharedResource> L
+
+<GenericEditModalComponent TEntity="CrmLead"
+                          TService="ICrmLeadService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@CrmLeadId"
+                          Service="@CrmLeadService"
+                          EntityName="@L["Entity.CrmLead"]"
+                          EntityNamePlural="@L["Entity.CrmLead"]"
+                          ModalTitle="@(CrmLeadId.HasValue ? L["Message.EditTitle", L["Entity.CrmLead"]].ToString() : L["Message.CreateTitle", L["Entity.CrmLead"]].ToString())"
+                          Size="GenericEditModalComponent<CrmLead, ICrmLeadService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          TabDefinitions="@tabDefinitions"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
+                          ModalManagers="@modalManagers?.AsDictionary()"
+                          DataLoader="@LoadLeadData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(CrmLeadId.HasValue ? L["Message.UpdateSuccess", L["Entity.CrmLead"]].ToString() : L["Message.CreateSuccess", L["Entity.CrmLead"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.CrmLead"]]"
+                          RequiredPermission="@PermissionRegistry.CrmLead.Read"
+                          OnEntitySaved="@OnCrmLeadSaved"
+                          OnCancel="@OnCancel"
+                          OnEntityLoaded="@HandleEntityLoadedById"
+                          CustomFooterButtons="@GetConvertButton()"
+                          ComponentName="CrmLeadEditModalComponent" />
+
+@* 員工編輯 Modal *@
+<EmployeeEditModalComponent @ref="employeeEditModal"
+                           IsVisible="@employeeModalManager.IsModalVisible"
+                           IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
+                           EmployeeId="@employeeModalManager.SelectedEntityId"
+                           OnEmployeeSaved="@employeeModalManager.OnSavedAsync"
+                           OnCancel="@employeeModalManager.HandleModalCancelAsync" />
+
+@* 轉換確認 Modal *@
+<GenericConfirmModalComponent IsVisible="@showConvertModal"
+                              IsVisibleChanged="@((bool v) => showConvertModal = v)"
+                              Title="@L["Button.ConvertToCustomer"]"
+                              Icon="bi-person-check"
+                              Message="@L["Message.ConvertToCustomerConfirm"]"
+                              ConfirmButtonText="@L["Button.Confirm"]"
+                              CancelButtonText="@L["Button.Cancel"]"
+                              ConfirmButtonVariant="ButtonVariant.Green"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Success"
+                              OnConfirm="@HandleConfirmConvert"
+                              OnCancel="@(() => showConvertModal = false)" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? CrmLeadId { get; set; }
+    [Parameter] public EventCallback<CrmLead> OnCrmLeadSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<CrmLead, ICrmLeadService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
+    private AutoCompleteConfig? autoCompleteConfig;
+
+    private CrmLead? currentLead;
+    private bool showConvertModal = false;
+
+    private List<Employee> availableEmployees = new();
+
+    // Tab 元件參考
+    private CrmLeadFollowUpTab? followUpTab;
+
+    // Modal Managers
+    private ModalManagerCollection? modalManagers;
+    private EmployeeEditModalComponent? employeeEditModal;
+    private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+
+    private bool isDataLoaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalManagers = ModalManagerInitHelper.CreateBuilder<CrmLead, ICrmLeadService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<Employee>(nameof(CrmLead.AssignedEmployeeId), "員工")
+                .Build();
+
+            employeeModalManager = modalManagers.Get<Employee>(nameof(CrmLead.AssignedEmployeeId));
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化潛在客戶編輯組件時發生錯誤");
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+            currentLead = null;
+        }
+    }
+
+    private async Task<CrmLead?> LoadLeadData()
+    {
+        try
+        {
+            if (!CrmLeadId.HasValue)
+            {
+                return new CrmLead
+                {
+                    LeadStage  = LeadStage.Cold,
+                    LeadSource = LeadSource.BusinessDevelopment,
+                    Status     = EntityStatus.Active
+                };
+            }
+            return await CrmLeadService.GetByIdAsync(CrmLeadId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入潛在客戶資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task HandleEntityLoadedById(int entityId)
+    {
+        if (entityId > 0)
+        {
+            currentLead = await CrmLeadService.GetByIdAsync(entityId);
+            followUpTab?.LoadAsync(entityId);
+        }
+        StateHasChanged();
+    }
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                // ===== 基本資料 =====
+                new()
+                {
+                    PropertyName = nameof(CrmLead.CompanyName),
+                    Label = L["Field.CompanyName"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.CompanyName"]],
+                    IsRequired = true,
+                    MaxLength = 200
+                },
+                new()
+                {
+                    PropertyName = nameof(CrmLead.ContactPerson),
+                    Label = L["Field.ContactPerson"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ContactPerson"]],
+                    IsRequired = false,
+                    MaxLength = 100
+                },
+                new()
+                {
+                    PropertyName = nameof(CrmLead.ContactPhone),
+                    Label = L["Field.ContactPhone"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ContactPhone"]],
+                    IsRequired = false,
+                    MaxLength = 50
+                },
+                new()
+                {
+                    PropertyName = nameof(CrmLead.Email),
+                    Label = L["Field.Email"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Email"]],
+                    IsRequired = false,
+                    MaxLength = 200
+                },
+                new()
+                {
+                    PropertyName = nameof(CrmLead.Industry),
+                    Label = L["Field.Industry"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Industry"]],
+                    IsRequired = false,
+                    MaxLength = 100
+                },
+                // ===== 開發資訊 =====
+                new()
+                {
+                    PropertyName = nameof(CrmLead.LeadSource),
+                    Label = L["Field.LeadSource"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = Enum.GetValues(typeof(LeadSource))
+                        .Cast<LeadSource>()
+                        .Select(e => new SelectOption
+                        {
+                            Text = e switch
+                            {
+                                LeadSource.BusinessDevelopment => L["LeadSource.BusinessDevelopment"],
+                                LeadSource.Referral            => L["LeadSource.Referral"],
+                                LeadSource.Exhibition          => L["LeadSource.Exhibition"],
+                                LeadSource.Internet            => L["LeadSource.Internet"],
+                                LeadSource.Other               => L["LeadSource.Other"],
+                                _                              => e.ToString()
+                            },
+                            Value = ((int)e).ToString()
+                        })
+                        .ToList()
+                },
+                new()
+                {
+                    PropertyName = nameof(CrmLead.LeadStage),
+                    Label = L["Field.LeadStage"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = Enum.GetValues(typeof(LeadStage))
+                        .Cast<LeadStage>()
+                        .Select(e => new SelectOption
+                        {
+                            Text = e switch
+                            {
+                                LeadStage.Cold       => L["LeadStage.Cold"],
+                                LeadStage.Interested => L["LeadStage.Interested"],
+                                LeadStage.Quoting    => L["LeadStage.Quoting"],
+                                LeadStage.Won        => L["LeadStage.Won"],
+                                LeadStage.Lost       => L["LeadStage.Lost"],
+                                _                    => e.ToString()
+                            },
+                            Value = ((int)e).ToString()
+                        })
+                        .ToList()
+                },
+                new()
+                {
+                    PropertyName = nameof(CrmLead.AssignedEmployeeId),
+                    Label = L["Field.AssignedEmployee"],
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.AssignedEmployee"]],
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    ActionButtons = await GetEmployeeActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(CrmLead.EstimatedValue),
+                    Label = L["Field.EstimatedValue"],
+                    FieldType = FormFieldType.Number,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.EstimatedValue"]],
+                    IsRequired = false,
+                    HelpText = "預估商機金額（選填）"
+                },
+                FormFieldConfigurationHelper.CreateRemarksField<CrmLead>()
+            };
+
+            // 建立 Tab 佈局（基本資料 Tab + 跟進紀錄 Tab）
+            var builder = FormSectionHelper<CrmLead>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    v => v.CompanyName,
+                    v => v.ContactPerson,
+                    v => v.ContactPhone,
+                    v => v.Email,
+                    v => v.Industry)
+                .AddToSection(L["Section.DevelopmentInfo"].ToString(),
+                    v => v.LeadSource,
+                    v => v.LeadStage,
+                    v => v.AssignedEmployeeId,
+                    v => v.EstimatedValue)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    v => v.Remarks)
+                .GroupIntoTab(L["Tab.LeadInfo"].ToString(), "bi-person-lines-fill",
+                    FormSectionNames.BasicInfo,
+                    L["Section.DevelopmentInfo"].ToString(),
+                    FormSectionNames.OtherInfo)
+                .GroupIntoCustomTab(L["Tab.FollowUpRecords"].ToString(), "bi-journal-text",
+                    CreateFollowUpTabContent(), nameof(CrmLeadFollowUpTab));
+
+            var layout = builder.BuildAll();
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化潛在客戶表單欄位時發生錯誤");
+        }
+    }
+
+    private RenderFragment CreateFollowUpTabContent()
+    {
+        return __builder =>
+        {
+            <CrmLeadFollowUpTab @ref="followUpTab"
+                                CrmLeadId="@(currentLead?.Id > 0 ? currentLead.Id : null)" />
+        };
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            var allEmployees = await EmployeeService.GetAllAsync();
+            availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
+
+            autoCompleteConfig = new AutoCompleteConfigBuilder<CrmLead>()
+                .AddField(nameof(CrmLead.AssignedEmployeeId), "Name", availableEmployees)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("載入潛在客戶編輯相關資料時發生錯誤");
+            availableEmployees = new List<Employee>();
+        }
+    }
+
+    private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            employeeModalManager,
+            nameof(CrmLead.AssignedEmployeeId)
+        );
+    }
+
+    // ===== 轉換為正式客戶 =====
+
+    private RenderFragment? GetConvertButton()
+    {
+        // 僅在編輯現有 Lead 且尚未轉換時顯示
+        if (currentLead == null || currentLead.Id <= 0 || currentLead.ConvertedCustomerId.HasValue)
+            return null;
+
+        return __builder =>
+        {
+            <GenericButtonComponent Text="@L["Button.ConvertToCustomer"]"
+                                    IconClass="bi bi-person-check"
+                                    Variant="ButtonVariant.Green"
+                                    Size="ButtonSize.Normal"
+                                    OnClick="@ShowConvertModal"
+                                    Title="@L["Button.ConvertToCustomer"]" />
+        };
+    }
+
+    private void ShowConvertModal()
+    {
+        showConvertModal = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleConfirmConvert()
+    {
+        showConvertModal = false;
+        try
+        {
+            var result = await CrmLeadService.ConvertToCustomerAsync(currentLead!.Id);
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync(L["Message.ConvertToCustomerSuccess"]);
+                // 重新載入以顯示最新狀態
+                currentLead = await CrmLeadService.GetByIdAsync(currentLead!.Id);
+                StateHasChanged();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"{L["Message.ConvertToCustomerFailed"]}：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"轉換時發生錯誤：{ex.Message}");
+        }
+    }
+}

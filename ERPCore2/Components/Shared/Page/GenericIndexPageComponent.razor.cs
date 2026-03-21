@@ -270,6 +270,9 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     // 手機版篩選 sidebar 狀態
     private bool _mobileFilterOpen = false;
 
+    // Desktop 篩選折疊狀態
+    private bool _desktopFilterCollapsed = false;
+
     /// <summary>計算目前有幾個作用中的篩選條件（用於書籤把手 badge）</summary>
     private int _activeFilterCount =>
         searchModel.TextFilters.Values.Count(v => !string.IsNullOrEmpty(v)) +

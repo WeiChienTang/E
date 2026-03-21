@@ -1,0 +1,150 @@
+@* 可重用的跟進紀錄列表面板 - 用於 CrmLead EditModal 的 Tab 頁籤中 *@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Models.Enums
+@using ERPCore2.Services.Crm
+@inject IStringLocalizer<SharedResource> L
+
+<div class="crm-followup-table-panel">
+    @* 工具列 *@
+    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+        @if (!IsReadOnly)
+        {
+            <GenericButtonComponent Text="@L["Button.AddFollowUpRecord"]"
+                                    Variant="ButtonVariant.DarkBlue"
+                                    Size="ButtonSize.Small"
+                                    OnClick="@HandleAddFollowUp"
+                                    Title="@L["Button.AddFollowUpRecord"]" />
+        }
+        else
+        {
+            <span></span>
+        }
+    </div>
+
+    @* 跟進紀錄表格 *@
+    <GenericInteractiveTableComponent TItem="CrmLeadFollowUp"
+                              Items="@(FollowUps ?? new List<CrmLeadFollowUp>())"
+                              ColumnDefinitions="@GetColumnDefinitions()"
+                              ShowHeader="true"
+                              ShowRowNumbers="true"
+                              IsStriped="true"
+                              IsHoverable="true"
+                              IsBordered="true"
+                              IsReadOnly="true"
+                              ShowBuiltInActions="@(!IsReadOnly)"
+                              ShowBuiltInDeleteButton="false"
+                              EnableAutoEmptyRow="false"
+                              EmptyMessage="@L["Message.NoFollowUpRecords"]"
+                              CustomActionsTemplate="@GetActionsTemplate()"
+                              ActionsColumnWidth="80px" />
+</div>
+
+@code {
+    [Parameter] public List<CrmLeadFollowUp>? FollowUps { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; } = false;
+    [Parameter] public EventCallback OnAddFollowUp { get; set; }
+    [Parameter] public EventCallback<CrmLeadFollowUp> OnEditFollowUp { get; set; }
+    [Parameter] public EventCallback<CrmLeadFollowUp> OnDeleteFollowUp { get; set; }
+
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new InteractiveColumnDefinition
+            {
+                Title = L["Field.FollowUpDate"],
+                PropertyName = nameof(CrmLeadFollowUp.FollowUpDate),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "110px",
+                DisplayFormatter = item =>
+                {
+                    if (item is CrmLeadFollowUp f)
+                        return f.FollowUpDate.ToString("yyyy-MM-dd");
+                    return "-";
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = L["Field.FollowUpType"],
+                PropertyName = nameof(CrmLeadFollowUp.FollowUpType),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "90px",
+                DisplayFormatter = item =>
+                {
+                    if (item is CrmLeadFollowUp f)
+                        return f.FollowUpType switch
+                        {
+                            VisitType.Phone           => L["VisitType.Phone"],
+                            VisitType.OnSite          => L["VisitType.OnSite"],
+                            VisitType.VideoConference  => L["VisitType.VideoConference"],
+                            VisitType.Email           => L["VisitType.Email"],
+                            VisitType.Other           => L["VisitType.Other"],
+                            _                         => "-"
+                        };
+                    return "-";
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = L["Field.SalesPerson"],
+                PropertyName = nameof(CrmLeadFollowUp.EmployeeId),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "90px",
+                DisplayFormatter = item =>
+                {
+                    if (item is CrmLeadFollowUp f && f.Employee != null)
+                        return f.Employee.Name ?? "-";
+                    return "-";
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = L["Field.FollowUpContent"],
+                PropertyName = nameof(CrmLeadFollowUp.Content),
+                ColumnType = InteractiveColumnType.Display,
+                NullDisplayText = "-"
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = L["Field.NextFollowUpDate"],
+                PropertyName = nameof(CrmLeadFollowUp.NextFollowUpDate),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "110px",
+                DisplayFormatter = item =>
+                {
+                    if (item is CrmLeadFollowUp f && f.NextFollowUpDate.HasValue)
+                        return f.NextFollowUpDate.Value.ToString("yyyy-MM-dd");
+                    return "-";
+                }
+            }
+        };
+    }
+
+    private RenderFragment<CrmLeadFollowUp>? GetActionsTemplate()
+    {
+        if (IsReadOnly) return null;
+
+        return followUp => __builder =>
+        {
+            <div class="d-flex gap-1">
+                <GenericButtonComponent IconClass="bi bi-pencil-square text-white"
+                                        Variant="ButtonVariant.DarkBlue"
+                                        Size="ButtonSize.Large"
+                                        OnClick="@(() => OnEditFollowUp.InvokeAsync(followUp))"
+                                        Title="編輯此筆紀錄"
+                                        CssClass="btn-square" />
+                <GenericButtonComponent IconClass="bi bi-trash text-white"
+                                        Variant="ButtonVariant.Red"
+                                        Size="ButtonSize.Large"
+                                        OnClick="@(() => OnDeleteFollowUp.InvokeAsync(followUp))"
+                                        Title="刪除此筆紀錄"
+                                        CssClass="btn-square" />
+            </div>
+        };
+    }
+
+    private async Task HandleAddFollowUp()
+    {
+        await OnAddFollowUp.InvokeAsync();
+    }
+}

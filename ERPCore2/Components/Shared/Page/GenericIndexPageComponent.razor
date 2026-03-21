@@ -45,7 +45,6 @@ else
 
 @* 頁面標題 *@
 <GenericHeaderComponent Title="@PageTitle"
-                       Subtitle="@PageSubtitle"
                        HeadingLevel="h1"
                        BreadcrumbItems="@BreadcrumbItems"
                        IsLoading="@IsLoading"
@@ -100,15 +99,6 @@ else
 @* 主要內容區域 *@
 <div class="row">
     <div class="col-12">
-        <div class="card section-card">
-            @* 桌機顯示篩選標題列，手機隱藏（篩選改為書籤模式） *@
-            <div class="card-header section-header-primary d-none d-md-block">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-search me-2"></i>
-                    @GetSearchSectionTitle()
-                </h5>
-            </div>
-            <div class="card-body">
                 @* 手機版：篩選書籤把手（桌機由 CSS 隱藏） *@
                 @if (_cachedFilterDefinitions.Any())
                 {
@@ -131,8 +121,33 @@ else
                     }
                 }
 
+                @* Desktop 篩選折疊控制列（手機隱藏） *@
+                @if (_cachedFilterDefinitions.Any())
+                {
+                    <div class="filter-desktop-toggle d-none d-md-flex align-items-center justify-content-between">
+                        <span class="small text-muted">
+                            @if (_activeFilterCount > 0 && _desktopFilterCollapsed)
+                            {
+                                <span class="badge bg-primary me-1">@_activeFilterCount</span>
+                                <span>個活躍篩選</span>
+                            }
+                        </span>
+                        <button class="btn btn-link btn-sm p-0 text-muted text-decoration-none filter-toggle-btn"
+                                @onclick="() => _desktopFilterCollapsed = !_desktopFilterCollapsed">
+                            @if (_desktopFilterCollapsed)
+                            {
+                                <i class="bi bi-funnel me-1"></i><span>顯示篩選</span><i class="bi bi-chevron-down ms-1"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-funnel-fill me-1"></i><span>收合篩選</span><i class="bi bi-chevron-up ms-1"></i>
+                            }
+                        </button>
+                    </div>
+                }
+
                 @* 篩選面板（桌機正常流；手機版 slide-in overlay） *@
-                <div class="filter-mobile-panel @(_mobileFilterOpen ? "mobile-open" : "")">
+                <div class="filter-mobile-panel @(_mobileFilterOpen ? "mobile-open" : "") @(_desktopFilterCollapsed ? "filter-desktop-collapsed" : "")">
                     @* 手機版面板標題列（含關閉按鈕），桌機由 CSS 隱藏 *@
                     <div class="filter-panel-header">
                         <span><i class="bi bi-funnel me-2"></i>@GetSearchSectionTitle()</span>
@@ -176,7 +191,7 @@ else
                 }
 
                 @* 列表表格 *@
-                <div class="pt-3">
+                <div class="pt-2">
                     @* 多選操作列（選取任一項目後顯示） *@
                     @if (EnableMultiSelect && _selectedItems.Count > 0)
                     {
@@ -227,8 +242,6 @@ else
                                                    ShowPageSizeSelector="@ShowPageSizeSelector" />
                     }
                 </div>
-            </div>
-        </div>
     </div>
 </div>
 </PagePermissionCheck>

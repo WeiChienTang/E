@@ -1,0 +1,294 @@
+@* 銀行對帳單 CSV 匯入預覽確認 Modal *@
+@using ERPCore2.Models.Import
+
+@inject IBankStatementImportService ImportService
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IStringLocalizer<SharedResource> L
+@inject IJSRuntime JS
+
+@if (IsVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+
+                @* 標題列 *@
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-file-earmark-spreadsheet me-2"></i>
+                        @L["CsvImport.Title"]
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="HandleClose" disabled="@isImporting"></button>
+                </div>
+
+                @* 主體 *@
+                <div class="modal-body">
+
+                    @* 說明 + 範本下載 *@
+                    @if (importResult == null)
+                    {
+                        <div class="alert alert-info mb-3">
+                            <strong>@L["CsvImport.FormatTitle"]</strong><br />
+                            @L["CsvImport.FormatDesc"]
+                            <br />
+                            <button class="btn btn-sm btn-outline-secondary mt-2" @onclick="DownloadTemplate">
+                                <i class="bi bi-download me-1"></i>@L["CsvImport.DownloadTemplate"]
+                            </button>
+                        </div>
+
+                        @* 衝突提示 *@
+                        @if (!string.IsNullOrEmpty(blockReason))
+                        {
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                @blockReason
+                            </div>
+                        }
+
+                        @* 選擇檔案 *@
+                        @if (string.IsNullOrEmpty(blockReason))
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">@L["CsvImport.SelectFile"]</label>
+                                <InputFile OnChange="HandleFileSelected"
+                                           accept=".csv"
+                                           class="form-control"
+                                           disabled="@isParsing" />
+                                @if (isParsing)
+                                {
+                                    <div class="mt-2 text-muted">
+                                        <span class="spinner-border spinner-border-sm me-1"></span>
+                                        @L["CsvImport.Parsing"]
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+
+                    @* 解析結果預覽 *@
+                    @if (importResult != null)
+                    {
+                        @* 整體錯誤 *@
+                        @if (!importResult.Success)
+                        {
+                            <div class="alert alert-danger">
+                                <i class="bi bi-x-circle-fill me-2"></i>
+                                @importResult.ErrorMessage
+                            </div>
+                        }
+                        else
+                        {
+                            @* 統計摘要 *@
+                            <div class="row g-2 mb-3">
+                                <div class="col-auto">
+                                    <span class="badge bg-primary fs-6">
+                                        @L["CsvImport.TotalRows", importResult.Rows.Count]
+                                    </span>
+                                </div>
+                                <div class="col-auto">
+                                    <span class="badge bg-success fs-6">
+                                        @L["CsvImport.ValidRows", importResult.ValidRowCount]
+                                    </span>
+                                </div>
+                                @if (importResult.HasInvalidRows)
+                                {
+                                    <div class="col-auto">
+                                        <span class="badge bg-danger fs-6">
+                                            @L["CsvImport.InvalidRows", importResult.InvalidRowCount]
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+
+                            @if (importResult.HasInvalidRows)
+                            {
+                                <div class="alert alert-warning py-2 mb-2">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    @L["CsvImport.HasInvalidWarning"]
+                                </div>
+                            }
+
+                            @* 預覽表格 *@
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered table-hover mb-0" style="font-size:0.85rem">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="text-center" style="width:50px">#</th>
+                                            <th style="width:100px">@L["CsvImport.ColDate"]</th>
+                                            <th>@L["CsvImport.ColDesc"]</th>
+                                            <th class="text-end" style="width:110px">@L["CsvImport.ColDebit"]</th>
+                                            <th class="text-end" style="width:110px">@L["CsvImport.ColCredit"]</th>
+                                            <th style="width:120px">@L["CsvImport.ColBankRef"]</th>
+                                            <th class="text-end" style="width:110px">@L["CsvImport.ColBalance"]</th>
+                                            <th class="text-center" style="width:70px">@L["CsvImport.ColStatus"]</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var row in importResult.Rows)
+                                        {
+                                            <tr class="@(row.IsValid ? "" : "table-danger")">
+                                                <td class="text-center text-muted">@row.RowNumber</td>
+                                                <td>@(row.TransactionDate == default ? "-" : row.TransactionDate.ToString("yyyy/MM/dd"))</td>
+                                                <td>@row.Description</td>
+                                                <td class="text-end">@(row.DebitAmount > 0 ? row.DebitAmount.ToString("N2") : "")</td>
+                                                <td class="text-end">@(row.CreditAmount > 0 ? row.CreditAmount.ToString("N2") : "")</td>
+                                                <td class="text-muted small">@row.BankReference</td>
+                                                <td class="text-end text-muted small">@(row.BalanceAfter.HasValue ? row.BalanceAfter.Value.ToString("N2") : "")</td>
+                                                <td class="text-center">
+                                                    @if (row.IsValid)
+                                                    {
+                                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span title="@row.ErrorMessage">
+                                                            <i class="bi bi-x-circle-fill text-danger"></i>
+                                                        </span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                            @if (!row.IsValid && !string.IsNullOrEmpty(row.ErrorMessage))
+                                            {
+                                                <tr class="table-danger">
+                                                    <td colspan="8" class="py-1 ps-4 text-danger small">
+                                                        <i class="bi bi-exclamation-circle me-1"></i>第 @row.RowNumber 列：@row.ErrorMessage
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    }
+                </div>
+
+                @* 底部按鈕 *@
+                <div class="modal-footer">
+                    @if (importResult?.Success == true && importResult.ValidRowCount > 0)
+                    {
+                        <button class="btn btn-success"
+                                @onclick="HandleConfirmImport"
+                                disabled="@isImporting">
+                            @if (isImporting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                                @L["CsvImport.Importing"]
+                            }
+                            else
+                            {
+                                <i class="bi bi-cloud-upload me-1"></i>
+                                @L["CsvImport.ConfirmImport", importResult.ValidRowCount]
+                            }
+                        </button>
+                        <button class="btn btn-outline-secondary"
+                                @onclick="ResetToFileSelection"
+                                disabled="@isImporting">
+                            @L["CsvImport.ReSelect"]
+                        </button>
+                    }
+                    <button class="btn btn-secondary"
+                            @onclick="HandleClose"
+                            disabled="@isImporting">
+                        @L["Button.Cancel"]
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? BankStatementId { get; set; }
+    [Parameter] public EventCallback OnImportSuccess { get; set; }
+
+    private BankStatementImportResult? importResult;
+    private bool isParsing = false;
+    private bool isImporting = false;
+    private string? blockReason;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && BankStatementId.HasValue && importResult == null && blockReason == null)
+        {
+            var (canImport, reason) = await ImportService.ValidatePreConditionAsync(BankStatementId.Value);
+            blockReason = canImport ? null : reason;
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        importResult = null;
+        isParsing = true;
+        StateHasChanged();
+
+        try
+        {
+            importResult = await ImportService.ParseCsvAsync(e.File);
+        }
+        finally
+        {
+            isParsing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleConfirmImport()
+    {
+        if (!BankStatementId.HasValue || importResult == null) return;
+
+        isImporting = true;
+        StateHasChanged();
+
+        try
+        {
+            var operatorName = await CurrentUserHelper.GetCurrentUserFullNameAsync(AuthenticationStateProvider);
+            var (success, message, count) = await ImportService.ImportAsync(
+                BankStatementId.Value, importResult.Rows, operatorName);
+
+            if (success)
+            {
+                await NotificationService.ShowSuccessAsync(message);
+                await OnImportSuccess.InvokeAsync();
+                await HandleClose();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(message);
+            }
+        }
+        finally
+        {
+            isImporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DownloadTemplate()
+    {
+        var csv = ImportService.GenerateTemplateCsv();
+        var bytes = System.Text.Encoding.UTF8.GetPreamble()
+            .Concat(System.Text.Encoding.UTF8.GetBytes(csv))
+            .ToArray();
+        var base64 = Convert.ToBase64String(bytes);
+        await JS.InvokeVoidAsync("downloadFileFromBase64",
+            "bank_statement_template.csv", "text/csv", base64);
+    }
+
+    private void ResetToFileSelection()
+    {
+        importResult = null;
+        StateHasChanged();
+    }
+
+    private async Task HandleClose()
+    {
+        importResult = null;
+        blockReason = null;
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+}

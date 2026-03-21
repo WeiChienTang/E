@@ -26,6 +26,8 @@ namespace ERPCore2.Data.Context
       public DbSet<Customer> Customers { get; set; }
       public DbSet<CustomerVisit> CustomerVisits { get; set; }
       public DbSet<CustomerComplaint> CustomerComplaints { get; set; }
+      public DbSet<CrmLead> CrmLeads { get; set; }
+      public DbSet<CrmLeadFollowUp> CrmLeadFollowUps { get; set; }
       public DbSet<PaymentMethod> PaymentMethods { get; set; }
       public DbSet<Bank> Banks { get; set; }            
       public DbSet<Employee> Employees { get; set; }
@@ -110,6 +112,9 @@ namespace ERPCore2.Data.Context
       public DbSet<VehicleType> VehicleTypes { get; set; }
       public DbSet<Vehicle> Vehicles { get; set; }
       public DbSet<VehicleMaintenance> VehicleMaintenances { get; set; }
+      public DbSet<EquipmentCategory> EquipmentCategories { get; set; }
+      public DbSet<Equipment> Equipments { get; set; }
+      public DbSet<EquipmentMaintenance> EquipmentMaintenances { get; set; }
       public DbSet<ScaleType> ScaleTypes { get; set; }
       public DbSet<ScaleRecord> ScaleRecords { get; set; }
       public DbSet<AccountItem> AccountItems { get; set; }
@@ -145,6 +150,9 @@ namespace ERPCore2.Data.Context
       public DbSet<CustomerBankAccount> CustomerBankAccounts { get; set; }
       public DbSet<SupplierBankAccount> SupplierBankAccounts { get; set; }
       public DbSet<CompanyBankAccount> CompanyBankAccounts { get; set; }
+      public DbSet<BankStatement> BankStatements { get; set; }
+      public DbSet<BankStatementLine> BankStatementLines { get; set; }
+      public DbSet<JournalEntryAttachment> JournalEntryAttachments { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
@@ -169,6 +177,32 @@ namespace ERPCore2.Data.Context
                               .OnDelete(DeleteBehavior.SetNull);
                   });
 
+                  // 潛在客戶相關
+                  modelBuilder.Entity<CrmLead>(entity =>
+                  {
+                        entity.Property(e => e.EstimatedValue).HasPrecision(18, 2);
+                        entity.HasOne(c => c.AssignedEmployee)
+                              .WithMany()
+                              .HasForeignKey(c => c.AssignedEmployeeId)
+                              .OnDelete(DeleteBehavior.SetNull);
+                        entity.HasOne(c => c.ConvertedCustomer)
+                              .WithMany()
+                              .HasForeignKey(c => c.ConvertedCustomerId)
+                              .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  modelBuilder.Entity<CrmLeadFollowUp>(entity =>
+                  {
+                        entity.HasOne(f => f.CrmLead)
+                              .WithMany(c => c.FollowUps)
+                              .HasForeignKey(f => f.CrmLeadId)
+                              .OnDelete(DeleteBehavior.Cascade);
+                        entity.HasOne(f => f.Employee)
+                              .WithMany()
+                              .HasForeignKey(f => f.EmployeeId)
+                              .OnDelete(DeleteBehavior.SetNull);
+                  });
+
                   // 供應商相關
                   modelBuilder.Entity<Supplier>(entity =>
                   {
@@ -182,6 +216,33 @@ namespace ERPCore2.Data.Context
                         entity.HasOne(v => v.Supplier)
                               .WithMany(s => s.Vehicles)
                               .HasForeignKey(v => v.SupplierId)
+                              .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  // 設備相關
+                  modelBuilder.Entity<Equipment>(entity =>
+                  {
+                        entity.HasOne(e => e.Employee)
+                              .WithMany()
+                              .HasForeignKey(e => e.ResponsibleEmployeeId)
+                              .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(e => e.EquipmentCategory)
+                              .WithMany(c => c.Equipments)
+                              .HasForeignKey(e => e.EquipmentCategoryId)
+                              .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  modelBuilder.Entity<EquipmentMaintenance>(entity =>
+                  {
+                        entity.HasOne(em => em.Equipment)
+                              .WithMany(e => e.EquipmentMaintenances)
+                              .HasForeignKey(em => em.EquipmentId)
+                              .OnDelete(DeleteBehavior.SetNull);
+
+                        entity.HasOne(em => em.Employee)
+                              .WithMany()
+                              .HasForeignKey(em => em.PerformedByEmployeeId)
                               .OnDelete(DeleteBehavior.SetNull);
                   });
 
@@ -1684,6 +1745,45 @@ namespace ERPCore2.Data.Context
                               .WithMany()
                               .HasForeignKey(e => e.SalesOrderId)
                               .OnDelete(DeleteBehavior.Cascade);
+                  });
+
+                  // 銀行對帳單
+                  modelBuilder.Entity<BankStatement>(entity =>
+                  {
+                        entity.HasOne(e => e.Company)
+                              .WithMany()
+                              .HasForeignKey(e => e.CompanyId)
+                              .OnDelete(DeleteBehavior.Restrict);
+                        entity.HasOne(e => e.CompanyBankAccount)
+                              .WithMany()
+                              .HasForeignKey(e => e.CompanyBankAccountId)
+                              .OnDelete(DeleteBehavior.Restrict);
+                  });
+
+                  // 銀行對帳單明細
+                  modelBuilder.Entity<BankStatementLine>(entity =>
+                  {
+                        entity.HasOne(e => e.BankStatement)
+                              .WithMany(bs => bs.Lines)
+                              .HasForeignKey(e => e.BankStatementId)
+                              .OnDelete(DeleteBehavior.Cascade);
+                        entity.HasOne(e => e.MatchedJournalEntryLine)
+                              .WithMany()
+                              .HasForeignKey(e => e.MatchedJournalEntryLineId)
+                              .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  // 傳票附件
+                  modelBuilder.Entity<JournalEntryAttachment>(entity =>
+                  {
+                        entity.HasOne(e => e.JournalEntry)
+                              .WithMany()
+                              .HasForeignKey(e => e.JournalEntryId)
+                              .OnDelete(DeleteBehavior.Cascade);
+                        entity.HasOne(e => e.UploadedByEmployee)
+                              .WithMany()
+                              .HasForeignKey(e => e.UploadedByEmployeeId)
+                              .OnDelete(DeleteBehavior.SetNull);
                   });
 
             }

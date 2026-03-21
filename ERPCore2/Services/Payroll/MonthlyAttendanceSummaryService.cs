@@ -257,12 +257,14 @@ namespace ERPCore2.Services.Payroll
                     .ToListAsync();
 
                 // 彙總各項數字
+                // ActualWorkDays 固定等於 ScheduledWorkDays（比例維持 1），
+                // 由各假別的明細扣款欄位處理薪資減項，避免比例計算與明細扣款雙重扣薪。
+                // 部分月（月中到職/離職）應由使用者手動調整 ScheduledWorkDays。
                 int scheduledDays = GetWorkDaysInMonth(adYear, month);
-                decimal actualWorkDays = daily.Count(r =>
-                    r.Status == DailyAttendanceStatus.Present ||
-                    r.Status == DailyAttendanceStatus.MakeUpWork);
+                decimal actualWorkDays = scheduledDays;
                 decimal absentDays = daily.Count(r => r.Status == DailyAttendanceStatus.Absent);
                 decimal sickLeaveDays = daily.Count(r => r.Status == DailyAttendanceStatus.SickLeave);
+                decimal personalLeaveDays = daily.Count(r => r.Status == DailyAttendanceStatus.PersonalLeave);
                 decimal ot1 = daily.Sum(r => r.OvertimeHours1);
                 decimal ot2 = daily.Sum(r => r.OvertimeHours2);
                 decimal holidayOt = daily.Sum(r => r.HolidayOvertimeHours);
@@ -293,6 +295,7 @@ namespace ERPCore2.Services.Payroll
                 existing.ActualWorkDays = actualWorkDays;
                 existing.AbsentDays = absentDays;
                 existing.SickLeaveDays = sickLeaveDays;
+                existing.PersonalLeaveDays = personalLeaveDays;
                 existing.OvertimeHours1 = ot1;
                 existing.OvertimeHours2 = ot2;
                 existing.HolidayOvertimeHours = holidayOt;

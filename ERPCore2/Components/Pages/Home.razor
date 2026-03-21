@@ -833,7 +833,6 @@
             primaryCompany.IsDefault = true;
 
             showCompanyEditModal = false;
-            await NotificationService.ShowSuccessAsync(L["Message.CompanySetupComplete"]);
             StateHasChanged();
         }
         catch (Exception ex)

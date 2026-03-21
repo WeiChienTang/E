@@ -1,0 +1,313 @@
+@* 可重用的設備保養維修記錄編輯組件 - 可在任何頁面中嵌入 *@
+@inject IEquipmentMaintenanceService EquipmentMaintenanceService
+@inject IEquipmentService EquipmentService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject ActionButtonHelper ActionButtonHelper
+@inject IStringLocalizer<SharedResource> L
+
+<GenericEditModalComponent TEntity="EquipmentMaintenance"
+                          TService="IEquipmentMaintenanceService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@EquipmentMaintenanceId"
+                          Service="@EquipmentMaintenanceService"
+                          EntityName="@L["Entity.EquipmentMaintenance"]"
+                          EntityNamePlural="@L["Entity.EquipmentMaintenance"]"
+                          ModalTitle="@(EquipmentMaintenanceId.HasValue ? L["Message.EditTitle", L["Entity.EquipmentMaintenance"]].ToString() : L["Message.CreateTitle", L["Entity.EquipmentMaintenance"]].ToString())"
+                          Size="GenericEditModalComponent<EquipmentMaintenance, IEquipmentMaintenanceService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
+                          ModalManagers="@modalManagers?.AsDictionary()"
+                          DataLoader="@LoadMaintenanceData"
+                          UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.EquipmentMaintenance"]]"
+                          SaveSuccessMessage="@(EquipmentMaintenanceId.HasValue ? L["Message.UpdateSuccess", L["Entity.EquipmentMaintenance"]].ToString() : L["Message.CreateSuccess", L["Entity.EquipmentMaintenance"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.EquipmentMaintenance"]]"
+                          RequiredPermission="@PermissionRegistry.EquipmentMaintenance.Read"
+                          OnEntitySaved="@OnEquipmentMaintenanceSaved"
+                          OnCancel="@OnCancel"
+                          ComponentName="EquipmentMaintenanceEditModalComponent" />
+
+@* 設備編輯 Modal *@
+<EquipmentEditModalComponent @ref="equipmentEditModal"
+                             IsVisible="@equipmentModalManager.IsModalVisible"
+                             IsVisibleChanged="@equipmentModalManager.HandleModalVisibilityChangedAsync"
+                             EquipmentId="@equipmentModalManager.SelectedEntityId"
+                             OnEquipmentSaved="@equipmentModalManager.OnSavedAsync"
+                             OnCancel="@equipmentModalManager.HandleModalCancelAsync" />
+
+@* 員工編輯 Modal *@
+<EmployeeEditModalComponent @ref="employeeEditModal"
+                           IsVisible="@employeeModalManager.IsModalVisible"
+                           IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
+                           EmployeeId="@employeeModalManager.SelectedEntityId"
+                           OnEmployeeSaved="@employeeModalManager.OnSavedAsync"
+                           OnCancel="@employeeModalManager.HandleModalCancelAsync" />
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? EquipmentMaintenanceId { get; set; }
+    [Parameter] public EventCallback<EquipmentMaintenance> OnEquipmentMaintenanceSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    private GenericEditModalComponent<EquipmentMaintenance, IEquipmentMaintenanceService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    private AutoCompleteConfig? autoCompleteConfig;
+
+    private List<Equipment> availableEquipments = new();
+    private List<Employee> availableEmployees = new();
+
+    private ModalManagerCollection? modalManagers;
+
+    private EquipmentEditModalComponent? equipmentEditModal;
+    private RelatedEntityModalManager<Equipment> equipmentModalManager = default!;
+
+    private EmployeeEditModalComponent? employeeEditModal;
+    private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+
+    private bool isDataLoaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalManagers = ModalManagerInitHelper.CreateBuilder<EquipmentMaintenance, IEquipmentMaintenanceService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<Equipment>(nameof(EquipmentMaintenance.EquipmentId), "設備")
+                .AddManager<Employee>(nameof(EquipmentMaintenance.PerformedByEmployeeId), "員工")
+                .Build();
+
+            equipmentModalManager = modalManagers.Get<Equipment>(nameof(EquipmentMaintenance.EquipmentId));
+            employeeModalManager = modalManagers.Get<Employee>(nameof(EquipmentMaintenance.PerformedByEmployeeId));
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化保養維修記錄編輯組件時發生錯誤");
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+    }
+
+    private async Task<EquipmentMaintenance?> LoadMaintenanceData()
+    {
+        try
+        {
+            if (!EquipmentMaintenanceId.HasValue)
+            {
+                var newMaintenance = new EquipmentMaintenance
+                {
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<EquipmentMaintenance, IEquipmentMaintenanceService>(EquipmentMaintenanceService, "EM"),
+                    MaintenanceDate = DateTime.Today,
+                    MaintenanceType = EquipmentMaintenanceType.RegularMaintenance,
+                    Status = EntityStatus.Active
+                };
+
+                if (PrefilledValues != null && PrefilledValues.TryGetValue(nameof(EquipmentMaintenance.EquipmentId), out var equipmentId))
+                    newMaintenance.EquipmentId = equipmentId as int?;
+
+                return newMaintenance;
+            }
+
+            return await EquipmentMaintenanceService.GetByIdAsync(EquipmentMaintenanceId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入保養維修記錄資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(EquipmentMaintenance.Code),
+                    Label = L["Field.MaintenanceRecordCode"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.MaintenanceRecordCode"]],
+                    IsRequired = true,
+                    MaxLength = 50,
+                    HelpText = "保養維修記錄的唯一識別編號"
+                },
+                new()
+                {
+                    PropertyName = nameof(EquipmentMaintenance.EquipmentId),
+                    Label = L["Field.Equipment"],
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.Equipment"]],
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    HelpText = "選擇進行保養維修的設備",
+                    ActionButtons = await GetEquipmentActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(EquipmentMaintenance.MaintenanceType),
+                    Label = L["Field.MaintenanceType"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    HelpText = "保養或維修的類型",
+                    Options = Enum.GetValues(typeof(EquipmentMaintenanceType))
+                        .Cast<EquipmentMaintenanceType>()
+                        .Select(e => new SelectOption
+                        {
+                            Text = EnumHelper.GetDisplayName(e),
+                            Value = ((int)e).ToString()
+                        })
+                        .ToList()
+                },
+                new()
+                {
+                    PropertyName = nameof(EquipmentMaintenance.MaintenanceDate),
+                    Label = L["Field.MaintenanceDate"],
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "進行保養維修的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(EquipmentMaintenance.Description),
+                    Label = L["Field.MaintenanceDescription"],
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.MaintenanceDescription"]],
+                    IsRequired = false,
+                    MaxLength = 500,
+                    HelpText = "詳細記錄此次保養維修的工作內容"
+                },
+                new()
+                {
+                    PropertyName = nameof(EquipmentMaintenance.Cost),
+                    Label = L["Field.MaintenanceFee"],
+                    FieldType = FormFieldType.Number,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.MaintenanceFee"]],
+                    IsRequired = false,
+                    HelpText = "此次保養維修的費用"
+                },
+                new()
+                {
+                    PropertyName = nameof(EquipmentMaintenance.ServiceProvider),
+                    Label = L["Field.ServiceProvider"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ServiceProvider"]],
+                    IsRequired = false,
+                    MaxLength = 100,
+                    HelpText = "執行保養維修的廠商或服務商"
+                },
+                new()
+                {
+                    PropertyName = nameof(EquipmentMaintenance.NextMaintenanceDate),
+                    Label = L["Field.NextMaintenanceDate"],
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "預計下次保養維修的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(EquipmentMaintenance.PerformedByEmployeeId),
+                    Label = L["Field.PerformedByEmployee"],
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.PerformedByEmployee"]],
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "執行保養維修的人員",
+                    ActionButtons = await GetEmployeeActionButtonsAsync()
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<EquipmentMaintenance>()
+            };
+
+            formSections = FormSectionHelper<EquipmentMaintenance>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    em => em.Code,
+                    em => em.EquipmentId,
+                    em => em.MaintenanceType,
+                    em => em.MaintenanceDate)
+                .AddToSection(L["Tab.MaintenanceDetail"].ToString(),
+                    em => em.Description,
+                    em => em.Cost,
+                    em => em.ServiceProvider,
+                    em => em.PerformedByEmployeeId)
+                .AddToSection(L["Tab.ScheduleInfo"].ToString(),
+                    em => em.NextMaintenanceDate)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    em => em.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化保養維修記錄表單欄位時發生錯誤");
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            availableEquipments = await EquipmentService.GetActiveEquipmentsAsync();
+
+            var allEmployees = await EmployeeService.GetAllAsync();
+            availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
+
+            autoCompleteConfig = new AutoCompleteConfigBuilder<EquipmentMaintenance>()
+                .AddField(nameof(EquipmentMaintenance.EquipmentId), "Name", availableEquipments)
+                .AddField(nameof(EquipmentMaintenance.PerformedByEmployeeId), "Name", availableEmployees)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("載入保養維修記錄編輯相關資料時發生錯誤");
+            availableEquipments = new List<Equipment>();
+            availableEmployees = new List<Employee>();
+        }
+    }
+
+    private async Task<List<FieldActionButton>> GetEquipmentActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            equipmentModalManager,
+            nameof(EquipmentMaintenance.EquipmentId)
+        );
+    }
+
+    private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            employeeModalManager,
+            nameof(EquipmentMaintenance.PerformedByEmployeeId)
+        );
+    }
+}

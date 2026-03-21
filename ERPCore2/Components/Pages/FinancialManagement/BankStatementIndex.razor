@@ -1,0 +1,84 @@
+@page "/bank-statements"
+@inject IBankStatementService BankStatementService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="BankStatement"
+                           TService="IBankStatementService"
+                           Service="@BankStatementService"
+                           EntityBasePath="/bank-statements"
+                           PageTitle="@L["Page.BankStatementTitle"]"
+                           PageSubtitle="@L["Page.BankStatementSubtitle"]"
+                           ServerDataLoader="@ServerLoadAsync"
+                           BreadcrumbItems="@breadcrumbItems"
+                           FilterDefinitions="@filterDefinitions"
+                           ColumnDefinitions="@columnDefinitions"
+                           EntityName="@L["Entity.BankStatement"]"
+                           GetEntityDisplayName="@(bs => $"{bs.CompanyBankAccount?.AccountNumber ?? ""} {bs.StatementDate:yyyy/MM}")"
+                           RequiredPermission="@PermissionRegistry.BankStatement.Read"
+                           RequiredModule="FinancialManagement"
+                           OnAddClick="@modalHandler.ShowAddModalAsync"
+                           OnRowClick="@modalHandler.ShowEditModalAsync"
+                           DebugPageName="BankStatementIndex"
+                           @ref="indexComponent" />
+
+<BankStatementEditModalComponent IsVisible="@showEditModal"
+                                 IsVisibleChanged="@((bool v) => showEditModal = v)"
+                                 BankStatementId="@editingId"
+                                 OnBankStatementSaved="@modalHandler.OnEntitySavedAsync"
+                                 OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    private GenericIndexPageComponent<BankStatement, IBankStatementService> indexComponent = default!;
+    private bool showEditModal = false;
+    private int? editingId = null;
+    private ModalHandler<BankStatement, GenericIndexPageComponent<BankStatement, IBankStatementService>> modalHandler = default!;
+    private BankStatementFieldConfiguration fieldConfiguration = default!;
+    private List<BreadcrumbItem> breadcrumbItems = new();
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalHandler = ModalHelper.CreateModalHandler<BankStatement, GenericIndexPageComponent<BankStatement, IBankStatementService>>(
+                id => editingId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            fieldConfiguration = new BankStatementFieldConfiguration(NotificationService);
+            fieldConfiguration.SetLocalizer(L);
+
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化銀行對帳單頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() =>
+        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("會計管理", "銀行對帳", null, NotificationService, GetType());
+
+    private Task<(List<BankStatement> Items, int TotalCount)> ServerLoadAsync(
+        SearchFilterModel filter, int page, int pageSize)
+    {
+        return BankStatementService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadAsync), GetType());
+                return q;
+            },
+            page, pageSize);
+    }
+}

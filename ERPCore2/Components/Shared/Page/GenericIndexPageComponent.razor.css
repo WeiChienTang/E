@@ -1,25 +1,5 @@
 /* 通用 Index 頁面組件樣式 */
 
-/* 區段標題樣式 - 使用左側色條強調 */
-.section-header-primary {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    border-bottom: 1px solid var(--border-light);
-    border-left: 3px solid var(--primary-blue);
-    padding: 0.6rem 1.25rem;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-}
-
-.section-header-primary .card-title {
-    margin-bottom: 0;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.section-header-primary .card-title i {
-    color: var(--primary-blue);
-}
-
 /* 搜尋與表格分隔線 */
 .search-table-divider {
     border-top: 1px solid var(--border-light);
@@ -27,13 +7,32 @@
     opacity: 0.5;
 }
 
-/* 區段卡片樣式 */
-.section-card {
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
-    transition: box-shadow 0.2s ease-in-out;
+/* ===== Desktop 篩選折疊控制列 ===== */
+.filter-desktop-toggle {
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 0.35rem;
+    margin-bottom: 0.5rem;
+}
+
+.filter-toggle-btn {
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+
+.filter-toggle-btn:hover {
+    color: var(--primary-blue) !important;
+}
+
+/* Desktop 篩選折疊：隱藏面板 */
+.filter-mobile-panel.filter-desktop-collapsed {
+    display: none;
+}
+
+/* 手機版恢復（fixed overlay 機制不受影響） */
+@media (max-width: 767px) {
+    .filter-mobile-panel.filter-desktop-collapsed {
+        display: block;
+    }
 }
 
 /* 操作按鈕樣式 - 覆蓋 Bootstrap 的預設樣式 */

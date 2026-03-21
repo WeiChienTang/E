@@ -30,6 +30,9 @@ namespace ERPCore2.Data.Entities.Payroll
         [Column(TypeName = "decimal(5,1)")]
         [Display(Name = "病假天數（半薪）")] public decimal SickLeaveDays { get; set; }
 
+        [Column(TypeName = "decimal(5,1)")]
+        [Display(Name = "事假天數（無薪）")] public decimal PersonalLeaveDays { get; set; }
+
         [Column(TypeName = "decimal(6,2)")]
         [Display(Name = "平日加班-前2hr")] public decimal OvertimeHours1 { get; set; }
 

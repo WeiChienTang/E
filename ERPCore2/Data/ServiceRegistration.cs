@@ -68,6 +68,10 @@ namespace ERPCore2.Data
             services.AddScoped<ICustomerComplaintService, CustomerComplaintService>();
             services.AddScoped<ICustomerBankAccountService, CustomerBankAccountService>();
 
+            // CRM 潛在客戶服務
+            services.AddScoped<ERPCore2.Services.Crm.ICrmLeadService, ERPCore2.Services.Crm.CrmLeadService>();
+            services.AddScoped<ERPCore2.Services.Crm.ICrmLeadFollowUpService, ERPCore2.Services.Crm.CrmLeadFollowUpService>();
+
             // 員工工具配給服務
             services.AddScoped<IEmployeeToolService, EmployeeToolService>();
 
@@ -93,11 +97,14 @@ namespace ERPCore2.Data
             services.AddScoped<IFiscalPeriodService, FiscalPeriodService>();
             services.AddScoped<ICurrencyService, CurrencyService>();
             services.AddScoped<IBankService, BankService>();
+            services.AddScoped<IBankStatementService, BankStatementService>();
             services.AddScoped<IAccountItemService, AccountItemService>();
             services.AddScoped<IJournalEntryService, JournalEntryService>();
             services.AddScoped<ISubAccountService, SubAccountService>();
             services.AddScoped<IJournalEntryAutoGenerationService, JournalEntryAutoGenerationService>();
             services.AddScoped<IFiscalYearClosingService, FiscalYearClosingService>();
+            services.AddScoped<IJournalEntryAttachmentService, JournalEntryAttachmentService>();
+            services.AddScoped<IBankStatementImportService, BankStatementImportService>();
             services.AddScoped<ISetoffDocumentService, SetoffDocumentService>();
             services.AddScoped<ISetoffItemDetailService, SetoffItemDetailService>();
             services.AddScoped<ISetoffPaymentService, SetoffPaymentService>();
@@ -192,6 +199,11 @@ namespace ERPCore2.Data
             services.AddScoped<IVehicleTypeService, VehicleTypeService>();
             services.AddScoped<IVehicleService, VehicleService>();
             services.AddScoped<IVehicleMaintenanceService, VehicleMaintenanceService>();
+
+            // 設備管理服務
+            services.AddScoped<IEquipmentCategoryService, EquipmentCategoryService>();
+            services.AddScoped<IEquipmentService, EquipmentService>();
+            services.AddScoped<IEquipmentMaintenanceService, EquipmentMaintenanceService>();
 
             // 磅秤管理服務
             services.AddScoped<IScaleRecordService, ScaleRecordService>();
@@ -311,6 +323,10 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IVehicleListReportService, VehicleListReportService>();
             // 車輛保養表報表服務（VH002）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IVehicleMaintenanceReportService, VehicleMaintenanceReportService>();
+            // 設備清單報表服務（EQ001）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IEquipmentListReportService, EquipmentListReportService>();
+            // 設備保養維修記錄報表服務（EQ002）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IEquipmentMaintenanceReportService, EquipmentMaintenanceReportService>();
             // 員工名冊表報表服務（HR001）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IEmployeeRosterReportService, EmployeeRosterReportService>();
             // 員工詳細資料報表服務（HR002）
@@ -338,6 +354,10 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IDetailAccountBalanceReportService, DetailAccountBalanceReportService>();
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IARAgingReportService, ARAgingReportService>();
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IAPAgingReportService, APAgingReportService>();
+            // 現金流量表報表服務（FN014）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.ICashFlowReportService, CashFlowReportService>();
+            // 銀行存款餘額調節表報表服務（FN015）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IBankReconciliationReportService, BankReconciliationReportService>();
             // 條碼生成服務
             services.AddSingleton<ERPCore2.Services.Reports.Interfaces.IBarcodeGeneratorService, BarcodeGeneratorService>();
 

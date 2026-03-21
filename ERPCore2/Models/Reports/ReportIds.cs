@@ -32,6 +32,9 @@ public static class ReportIds
     /// <summary>客訴報告</summary>
     public const string CustomerComplaintReport = "AR008";
 
+    /// <summary>潛在客戶開發報告</summary>
+    public const string CrmLeadReport = "AR009";
+
     // ==================== 廠商報表 (AP) ====================
 
     /// <summary>應付帳款報表</summary>
@@ -119,6 +122,14 @@ public static class ReportIds
     /// <summary>車輛保養表</summary>
     public const string VehicleMaintenance = "VH002";
 
+    // ==================== 設備報表 (EQ) ====================
+
+    /// <summary>設備清單</summary>
+    public const string EquipmentList = "EQ001";
+
+    /// <summary>設備保養維修記錄</summary>
+    public const string EquipmentMaintenanceRecord = "EQ002";
+
     // ==================== 人力報表 (HR) ====================
 
     /// <summary>員工名冊表</summary>
@@ -167,6 +178,12 @@ public static class ReportIds
 
     /// <summary>應付帳款帳齡分析</summary>
     public const string APAgingAnalysis = "FN013";
+
+    /// <summary>現金流量表（IAS 7 間接法）</summary>
+    public const string CashFlow = "FN014";
+
+    /// <summary>銀行存款餘額調節表</summary>
+    public const string BankReconciliation = "FN015";
 
     // ==================== 製令單報表 (MO) ====================
 

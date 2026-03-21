@@ -283,6 +283,21 @@
   <data name="Preference.SaveTooltip" xml:space="preserve">
     <value>儲存個人化設定</value>
   </data>
+  <data name="Preference.ExportSettings" xml:space="preserve">
+    <value>匯出設定</value>
+  </data>
+  <data name="Preference.ExportSettingsTooltip" xml:space="preserve">
+    <value>將個人化設定匯出為 JSON 檔案</value>
+  </data>
+  <data name="Preference.ImportSettings" xml:space="preserve">
+    <value>匯入設定</value>
+  </data>
+  <data name="Preference.ImportSettingsTooltip" xml:space="preserve">
+    <value>從 JSON 檔案匯入個人化設定</value>
+  </data>
+  <data name="Preference.ImportSuccess" xml:space="preserve">
+    <value>設定已匯入，按儲存後生效</value>
+  </data>
   <data name="Preference.SaveSuccess" xml:space="preserve">
     <value>個人化設定已儲存</value>
   </data>
@@ -419,6 +434,126 @@
   </data>
   <data name="Nav.CustomerComplaints" xml:space="preserve">
     <value>客訴管理</value>
+  </data>
+  <data name="Nav.CrmLeads" xml:space="preserve">
+    <value>潛在客戶</value>
+  </data>
+  <data name="Page.CrmLeadTitle" xml:space="preserve">
+    <value>潛在客戶管理</value>
+  </data>
+  <data name="Page.CrmLeadSubtitle" xml:space="preserve">
+    <value>管理潛在客戶開發進度與跟進紀錄</value>
+  </data>
+  <data name="Entity.CrmLead" xml:space="preserve">
+    <value>潛在客戶</value>
+  </data>
+  <data name="Entity.CrmLeadFollowUp" xml:space="preserve">
+    <value>跟進紀錄</value>
+  </data>
+  <data name="Field.Industry" xml:space="preserve">
+    <value>行業</value>
+  </data>
+  <data name="Field.LeadStage" xml:space="preserve">
+    <value>開發階段</value>
+  </data>
+  <data name="Field.LeadSource" xml:space="preserve">
+    <value>來源</value>
+  </data>
+  <data name="Field.EstimatedValue" xml:space="preserve">
+    <value>預估商機金額</value>
+  </data>
+  <data name="Field.AssignedEmployee" xml:space="preserve">
+    <value>負責業務員</value>
+  </data>
+  <data name="Field.ConvertedCustomer" xml:space="preserve">
+    <value>已轉換</value>
+  </data>
+  <data name="Field.FollowUpDate" xml:space="preserve">
+    <value>跟進日期</value>
+  </data>
+  <data name="Field.FollowUpType" xml:space="preserve">
+    <value>跟進方式</value>
+  </data>
+  <data name="Field.FollowUpContent" xml:space="preserve">
+    <value>跟進內容</value>
+  </data>
+  <data name="Field.Conclusion" xml:space="preserve">
+    <value>本次結論</value>
+  </data>
+  <data name="LeadStage.Cold" xml:space="preserve">
+    <value>冷接觸</value>
+  </data>
+  <data name="LeadStage.Interested" xml:space="preserve">
+    <value>有意願</value>
+  </data>
+  <data name="LeadStage.Quoting" xml:space="preserve">
+    <value>報價中</value>
+  </data>
+  <data name="LeadStage.Won" xml:space="preserve">
+    <value>成交</value>
+  </data>
+  <data name="LeadStage.Lost" xml:space="preserve">
+    <value>流失</value>
+  </data>
+  <data name="LeadSource.BusinessDevelopment" xml:space="preserve">
+    <value>業務開發</value>
+  </data>
+  <data name="LeadSource.Referral" xml:space="preserve">
+    <value>客戶推薦</value>
+  </data>
+  <data name="LeadSource.Exhibition" xml:space="preserve">
+    <value>展覽</value>
+  </data>
+  <data name="LeadSource.Internet" xml:space="preserve">
+    <value>網路</value>
+  </data>
+  <data name="LeadSource.Other" xml:space="preserve">
+    <value>其他來源</value>
+  </data>
+  <data name="Tab.LeadInfo" xml:space="preserve">
+    <value>基本資料</value>
+  </data>
+  <data name="Tab.FollowUpRecords" xml:space="preserve">
+    <value>跟進紀錄</value>
+  </data>
+  <data name="Section.DevelopmentInfo" xml:space="preserve">
+    <value>開發資訊</value>
+  </data>
+  <data name="Button.ConvertToCustomer" xml:space="preserve">
+    <value>轉為正式客戶</value>
+  </data>
+  <data name="Message.ConvertToCustomerConfirm" xml:space="preserve">
+    <value>確定要將此潛在客戶轉為正式客戶嗎？轉換後將自動建立客戶資料。</value>
+  </data>
+  <data name="Message.ConvertToCustomerSuccess" xml:space="preserve">
+    <value>已成功轉為正式客戶</value>
+  </data>
+  <data name="Message.ConvertToCustomerFailed" xml:space="preserve">
+    <value>轉換失敗</value>
+  </data>
+  <data name="Message.AlreadyConverted" xml:space="preserve">
+    <value>此潛在客戶已轉為正式客戶</value>
+  </data>
+  <data name="Message.NoFollowUpRecords" xml:space="preserve">
+    <value>尚無跟進紀錄</value>
+  </data>
+  <data name="Message.FollowUpDeleted" xml:space="preserve">
+    <value>跟進紀錄已刪除</value>
+  </data>
+  <data name="Button.AddFollowUpRecord" xml:space="preserve">
+    <value>新增跟進紀錄</value>
+  </data>
+  <data name="Modal.DeleteFollowUpRecord" xml:space="preserve">
+    <value>刪除跟進紀錄</value>
+  </data>
+  <data name="Modal.ConfirmDeleteFollowUpRecord" xml:space="preserve">
+    <value>確定要刪除此筆跟進紀錄嗎？此操作無法復原。</value>
+  </data>
+  <data name="Report.CrmLeadReport" xml:space="preserve">
+    <value>潛在客戶開發報告</value>
+  </data>
+  <data name="Report.CrmLeadReportDesc" xml:space="preserve">
+    <value>列印潛在客戶開發進度報告，含開發階段、來源、負責業務員及預估商機金額統計</value>
   </data>
   <data name="Nav.CustomerCharts" xml:space="preserve">
     <value>客戶圖表</value>
@@ -563,6 +698,21 @@
   </data>
   <data name="Nav.VehicleReportIndex" xml:space="preserve">
     <value>車輛報表集</value>
+  </data>
+  <data name="Nav.EquipmentGroup" xml:space="preserve">
+    <value>設備管理</value>
+  </data>
+  <data name="Nav.Equipments" xml:space="preserve">
+    <value>設備</value>
+  </data>
+  <data name="Nav.EquipmentCategories" xml:space="preserve">
+    <value>設備類別</value>
+  </data>
+  <data name="Nav.EquipmentMaintenances" xml:space="preserve">
+    <value>保養維修紀錄</value>
+  </data>
+  <data name="Nav.EquipmentReportIndex" xml:space="preserve">
+    <value>設備報表集</value>
   </data>
   <data name="Nav.WasteGroup" xml:space="preserve">
     <value>磅秤管理</value>
@@ -732,6 +882,8 @@
   <data name="Report.InventoryCount" xml:space="preserve"><value>盤點差異表</value></data>
   <data name="Report.VehicleList" xml:space="preserve"><value>車輛管理表</value></data>
   <data name="Report.VehicleMaintenance" xml:space="preserve"><value>車輛保養表</value></data>
+  <data name="Report.EquipmentList" xml:space="preserve"><value>設備清單</value></data>
+  <data name="Report.EquipmentMaintenanceRecord" xml:space="preserve"><value>設備保養維修記錄</value></data>
   <data name="Report.EmployeeRoster" xml:space="preserve"><value>員工名冊表</value></data>
   <data name="Report.EmployeeDetail" xml:space="preserve"><value>員工詳細資料</value></data>
   <data name="Report.ScaleRecord" xml:space="preserve"><value>磅秤紀錄表</value></data>
@@ -746,6 +898,7 @@
   <data name="Report.DetailAccountBalance" xml:space="preserve"><value>明細科目餘額表</value></data>
   <data name="Report.ARAgingAnalysis" xml:space="preserve"><value>應收帳款帳齡分析</value></data>
   <data name="Report.APAgingAnalysis" xml:space="preserve"><value>應付帳款帳齡分析</value></data>
+  <data name="Report.CashFlow" xml:space="preserve"><value>現金流量表</value></data>
 
   <!-- ===== 業務實體名稱 ===== -->
   <data name="Entity.PurchaseOrder" xml:space="preserve"><value>採購單</value></data>
@@ -807,6 +960,9 @@
   <data name="Entity.Vehicle" xml:space="preserve"><value>車輛</value></data>
   <data name="Entity.VehicleType" xml:space="preserve"><value>車型</value></data>
   <data name="Entity.VehicleMaintenance" xml:space="preserve"><value>保養紀錄</value></data>
+  <data name="Entity.Equipment" xml:space="preserve"><value>設備</value></data>
+  <data name="Entity.EquipmentCategory" xml:space="preserve"><value>設備類別</value></data>
+  <data name="Entity.EquipmentMaintenance" xml:space="preserve"><value>保養維修紀錄</value></data>
   <data name="Entity.WasteRecord" xml:space="preserve"><value>磅秤紀錄</value></data>
   <data name="Entity.WasteType" xml:space="preserve"><value>磅秤類型</value></data>
   <data name="Entity.Company" xml:space="preserve"><value>公司</value></data>
@@ -991,6 +1147,10 @@
   <data name="Tab.VehicleInfo" xml:space="preserve"><value>車輛資訊</value></data>
   <data name="Tab.PersonalTools" xml:space="preserve"><value>個人工具</value></data>
   <data name="Tab.Training" xml:space="preserve"><value>教育訓練</value></data>
+  <data name="Tab.PurchaseInfo" xml:space="preserve"><value>購入資訊</value></data>
+  <data name="Tab.MaintenanceInfo" xml:space="preserve"><value>保養資訊</value></data>
+  <data name="Tab.MaintenanceDetail" xml:space="preserve"><value>保養詳細</value></data>
+  <data name="Tab.ScheduleInfo" xml:space="preserve"><value>排程資訊</value></data>
   <data name="Tab.Permissions" xml:space="preserve"><value>權限</value></data>
   <!-- ===== Employee Label keys ===== -->
   <data name="Label.TrainingRecords" xml:space="preserve"><value>受訓紀錄</value></data>
@@ -1279,6 +1439,10 @@
   <!-- ===== Section keys ===== -->
   <data name="Section.AutoGenerateSetting" xml:space="preserve"><value>自動產生設定</value></data>
   <data name="Section.ControlAccountCode" xml:space="preserve"><value>控制科目代碼</value></data>
+  <data name="Section.CustomerSubAccount" xml:space="preserve"><value>客戶子科目設定</value></data>
+  <data name="Section.SupplierSubAccount" xml:space="preserve"><value>廠商子科目設定</value></data>
+  <data name="Section.ItemSubAccount" xml:space="preserve"><value>品項子科目設定</value></data>
+  <data name="Section.GeneralSetting" xml:space="preserve"><value>通用設定</value></data>
   <data name="Section.FeeInfo" xml:space="preserve"><value>費用資訊</value></data>
   <data name="Section.TaxSettings" xml:space="preserve"><value>稅務設定</value></data>
   <!-- ===== Tab additional keys ===== -->
@@ -1605,6 +1769,30 @@
   <data name="Field.VehicleTypeCode" xml:space="preserve"><value>車型代碼</value></data>
   <data name="Field.VehicleTypeDescription" xml:space="preserve"><value>車型說明</value></data>
   <data name="Field.VehicleTypeName" xml:space="preserve"><value>車型名稱</value></data>
+  <data name="Field.EquipmentCategoryCode" xml:space="preserve"><value>類別代碼</value></data>
+  <data name="Field.EquipmentCategoryName" xml:space="preserve"><value>類別名稱</value></data>
+  <data name="Field.EquipmentCategoryDescription" xml:space="preserve"><value>類別說明</value></data>
+  <data name="Field.EquipmentCode" xml:space="preserve"><value>設備編號</value></data>
+  <data name="Field.EquipmentName" xml:space="preserve"><value>設備名稱</value></data>
+  <data name="Field.EquipmentCategory" xml:space="preserve"><value>設備類別</value></data>
+  <data name="Field.EquipmentSerialNumber" xml:space="preserve"><value>序號</value></data>
+  <data name="Field.EquipmentBrand" xml:space="preserve"><value>品牌</value></data>
+  <data name="Field.EquipmentModel" xml:space="preserve"><value>型號</value></data>
+  <data name="Field.EquipmentPurchaseDate" xml:space="preserve"><value>購入日期</value></data>
+  <data name="Field.EquipmentPurchaseCost" xml:space="preserve"><value>購入費用</value></data>
+  <data name="Field.EquipmentLocation" xml:space="preserve"><value>放置地點</value></data>
+  <data name="Field.EquipmentMaintenanceCycleMonths" xml:space="preserve"><value>保養週期（月）</value></data>
+  <data name="Field.EquipmentLastMaintenanceDate" xml:space="preserve"><value>上次保養日期</value></data>
+  <data name="Field.EquipmentNextMaintenanceDate" xml:space="preserve"><value>下次保養日期</value></data>
+  <data name="Field.EquipmentResponsibleEmployee" xml:space="preserve"><value>負責人員</value></data>
+  <data name="Field.EquipmentMaintenanceCode" xml:space="preserve"><value>記錄編號</value></data>
+  <data name="Field.Equipment" xml:space="preserve"><value>設備</value></data>
+  <data name="Field.EquipmentMaintenanceType" xml:space="preserve"><value>維修類型</value></data>
+  <data name="Field.EquipmentMaintenanceDate" xml:space="preserve"><value>保養日期</value></data>
+  <data name="Field.EquipmentMaintenanceDescription" xml:space="preserve"><value>保養說明</value></data>
+  <data name="Field.EquipmentMaintenanceCost" xml:space="preserve"><value>維修費用</value></data>
+  <data name="Field.EquipmentServiceProvider" xml:space="preserve"><value>服務廠商</value></data>
+  <data name="Field.EquipmentPerformedByEmployee" xml:space="preserve"><value>執行人員</value></data>
   <!-- ===== FormSectionNames keys ===== -->
   <data name="Section.BasicInfo" xml:space="preserve"><value>基本資訊</value></data>
   <data name="Section.FilterConditions" xml:space="preserve"><value>篩選條件</value></data>
@@ -1731,6 +1919,27 @@
   <data name="Supplier.CopyToCustomerTitle" xml:space="preserve"><value>複製至客戶</value></data>
   <data name="Supplier.CopyToCustomerMessage" xml:space="preserve"><value>確定要將此廠商的資料複製為新客戶嗎？</value></data>
   <data name="Supplier.CopyToCustomerSummary" xml:space="preserve"><value>複製後將在客戶清單中建立一筆新資料</value></data>
+  <data name="CsvImport.Title" xml:space="preserve"><value>從 CSV 匯入對帳單明細</value></data>
+  <data name="CsvImport.FormatTitle" xml:space="preserve"><value>CSV 格式說明</value></data>
+  <data name="CsvImport.FormatDesc" xml:space="preserve"><value>格式：交易日期, 交易說明, 支出金額, 收入金額, 銀行流水號（選填）, 交易後餘額（選填）。日期格式：yyyy/MM/dd 或 yyyy-MM-dd。</value></data>
+  <data name="CsvImport.DownloadTemplate" xml:space="preserve"><value>下載範本</value></data>
+  <data name="CsvImport.SelectFile" xml:space="preserve"><value>選擇 CSV 檔案</value></data>
+  <data name="CsvImport.Parsing" xml:space="preserve"><value>解析中，請稍候…</value></data>
+  <data name="CsvImport.TotalRows" xml:space="preserve"><value>共 {0} 筆</value></data>
+  <data name="CsvImport.ValidRows" xml:space="preserve"><value>有效 {0} 筆</value></data>
+  <data name="CsvImport.InvalidRows" xml:space="preserve"><value>無效 {0} 筆</value></data>
+  <data name="CsvImport.HasInvalidWarning" xml:space="preserve"><value>部分列資料有誤（紅色標示），確認匯入時將僅匯入有效列。</value></data>
+  <data name="CsvImport.ColDate" xml:space="preserve"><value>交易日期</value></data>
+  <data name="CsvImport.ColDesc" xml:space="preserve"><value>交易說明</value></data>
+  <data name="CsvImport.ColDebit" xml:space="preserve"><value>支出</value></data>
+  <data name="CsvImport.ColCredit" xml:space="preserve"><value>收入</value></data>
+  <data name="CsvImport.ColBankRef" xml:space="preserve"><value>銀行流水號</value></data>
+  <data name="CsvImport.ColBalance" xml:space="preserve"><value>交易後餘額</value></data>
+  <data name="CsvImport.ColStatus" xml:space="preserve"><value>狀態</value></data>
+  <data name="CsvImport.Importing" xml:space="preserve"><value>匯入中…</value></data>
+  <data name="CsvImport.ConfirmImport" xml:space="preserve"><value>確認匯入（{0} 筆）</value></data>
+  <data name="CsvImport.ReSelect" xml:space="preserve"><value>重新選擇</value></data>
+  <data name="CsvImport.OpenButton" xml:space="preserve"><value>從 CSV 匯入</value></data>
   <data name="Customer.AutoSyncNote" xml:space="preserve"><value>品項清單由銷售單自動同步，僅可刪除</value></data>
   <data name="Customer.DeleteItemButtonTitle" xml:space="preserve"><value>移除此品項關聯</value></data>
   <data name="Customer.NoItems" xml:space="preserve"><value>此客戶尚無銷售品項記錄</value></data>
@@ -2014,6 +2223,8 @@
   <data name="Report.InventoryCountDesc" xml:space="preserve"><value>依盤點單分組顯示各品項系統庫存、實盤數量及差異金額，支援僅差異項目篩選</value></data>
   <data name="Report.VehicleListDesc" xml:space="preserve"><value>列印車輛基本資料清單，含車牌號碼、車輛名稱、車型、廠牌、負責人、保險到期日等</value></data>
   <data name="Report.VehicleMaintenanceDesc" xml:space="preserve"><value>列印車輛保養紀錄，含保養類型、保養日期、里程數、費用、維修廠等明細</value></data>
+  <data name="Report.EquipmentListDesc" xml:space="preserve"><value>列印設備基本資料清單，含設備編號、名稱、類別、品牌、型號、放置地點、負責人員、下次保養日期等</value></data>
+  <data name="Report.EquipmentMaintenanceRecordDesc" xml:space="preserve"><value>列印設備保養維修記錄，含維修類型、保養日期、費用、服務廠商、執行人員等明細</value></data>
   <data name="Report.EmployeeRosterDesc" xml:space="preserve"><value>列印員工基本資料清單，含員工編號、姓名、部門、職位、到職日期、在職狀態等</value></data>
   <data name="Report.EmployeeDetailDesc" xml:space="preserve"><value>列印員工完整詳細資料，含聯絡資訊、緊急聯絡人、任職資訊等，每位員工各佔一區塊</value></data>
   <data name="Report.ScaleRecordDesc" xml:space="preserve"><value>列印磅秤紀錄清單，依磅秤類型分組，含車牌號碼、客戶、入庫倉庫、重量及費用明細</value></data>
@@ -2028,6 +2239,7 @@
   <data name="Report.DetailAccountBalanceDesc" xml:space="preserve"><value>彙總各科目的期初餘額、本期借方發生額、本期貸方發生額及期末餘額，無逐筆明細，適合快速掌握各科目餘額變動</value></data>
   <data name="Report.ARAgingAnalysisDesc" xml:space="preserve"><value>依出貨日 + 客戶付款天數計算到期日，彙總各帳齡區間（未到期/逾期1-30/31-60/61-90/91-120/121+天）的未收金額，依客戶分組顯示</value></data>
   <data name="Report.APAgingAnalysisDesc" xml:space="preserve"><value>依收貨日 + 廠商付款天數計算到期日，彙總各帳齡區間（未到期/逾期1-30/31-60/61-90/91-120/121+天）的未付金額，依廠商分組顯示</value></data>
+  <data name="Report.CashFlowDesc" xml:space="preserve"><value>依 IAS 7 間接法編製現金流量表，從本期淨利出發，加回非現金調整、計算流動資金變動，彙整營業/投資/籌資活動現金流量及期末現金餘額</value></data>
   <!-- ===== 缺失 keys 補充 ===== -->
   <data name="Column.TaxRate" xml:space="preserve"><value>稅率</value></data>
   <data name="Column.IsReceivingCompleted" xml:space="preserve"><value>已收完</value></data>
@@ -3432,6 +3644,12 @@
   <data name="Page.VehicleMaintenanceSubtitle" xml:space="preserve"><value>管理車輛保養與維修紀錄</value></data>
   <data name="Page.VehicleTypeTitle" xml:space="preserve"><value>車型維護</value></data>
   <data name="Page.VehicleTypeSubtitle" xml:space="preserve"><value>管理車輛類型分類資料</value></data>
+  <data name="Page.EquipmentTitle" xml:space="preserve"><value>設備維護</value></data>
+  <data name="Page.EquipmentSubtitle" xml:space="preserve"><value>管理設備基本資料</value></data>
+  <data name="Page.EquipmentCategoryTitle" xml:space="preserve"><value>設備類別維護</value></data>
+  <data name="Page.EquipmentCategorySubtitle" xml:space="preserve"><value>管理設備類型分類資料</value></data>
+  <data name="Page.EquipmentMaintenanceTitle" xml:space="preserve"><value>保養維修維護</value></data>
+  <data name="Page.EquipmentMaintenanceSubtitle" xml:space="preserve"><value>管理設備保養與維修紀錄</value></data>
   <data name="Page.InventoryStockTitle" xml:space="preserve"><value>庫存查詢</value></data>
   <data name="Page.InventoryStockSubtitle" xml:space="preserve"><value>管理品項庫存與倉庫位置</value></data>
   <data name="Page.InventoryTransactionTitle" xml:space="preserve"><value>庫存異動記錄</value></data>
@@ -3458,6 +3676,13 @@
   <data name="AccountType.Expense" xml:space="preserve"><value>營業費用</value></data>
   <data name="AccountType.NonOperating" xml:space="preserve"><value>營業外收益及費損</value></data>
   <data name="AccountType.ComprehensiveIncome" xml:space="preserve"><value>綜合損益總額</value></data>
+  <data name="Field.CashFlowCategory" xml:space="preserve"><value>現金流量分類</value></data>
+  <data name="CashFlowCategory.Cash" xml:space="preserve"><value>現金及約當現金</value></data>
+  <data name="CashFlowCategory.OperatingWorkingCapital" xml:space="preserve"><value>營業活動—流動資金</value></data>
+  <data name="CashFlowCategory.OperatingNonCash" xml:space="preserve"><value>營業活動—非現金費用</value></data>
+  <data name="CashFlowCategory.Investing" xml:space="preserve"><value>投資活動</value></data>
+  <data name="CashFlowCategory.Financing" xml:space="preserve"><value>籌資活動</value></data>
+  <data name="CashFlowCategory.Excluded" xml:space="preserve"><value>排除</value></data>
   <data name="AccountDirection.Debit" xml:space="preserve"><value>借方（Debit）</value></data>
   <data name="AccountDirection.Credit" xml:space="preserve"><value>貸方（Credit）</value></data>
   <data name="AccountLevel.L1" xml:space="preserve"><value>第1層（大分類）</value></data>
@@ -3686,4 +3911,52 @@
   <data name="Production.Paused" xml:space="preserve"><value>已暫停</value></data>
   <data name="Production.Completed" xml:space="preserve"><value>已完成</value></data>
   <data name="Production.Aborted" xml:space="preserve"><value>已終止</value></data>
+  <!-- BankStatement module -->
+  <data name="Nav.BankStatements" xml:space="preserve"><value>銀行對帳</value></data>
+  <data name="Entity.BankStatement" xml:space="preserve"><value>銀行對帳單</value></data>
+  <data name="Entity.BankAccount" xml:space="preserve"><value>銀行帳號</value></data>
+  <data name="Page.BankStatementTitle" xml:space="preserve"><value>銀行對帳</value></data>
+  <data name="Page.BankStatementSubtitle" xml:space="preserve"><value>管理銀行對帳單與傳票配對</value></data>
+  <data name="BankStatement.Draft" xml:space="preserve"><value>草稿</value></data>
+  <data name="BankStatement.InProgress" xml:space="preserve"><value>對帳中</value></data>
+  <data name="BankStatement.Completed" xml:space="preserve"><value>已完成</value></data>
+  <data name="BankStatement.Lines" xml:space="preserve"><value>明細行</value></data>
+  <data name="BankStatement.Debit" xml:space="preserve"><value>借方</value></data>
+  <data name="BankStatement.Credit" xml:space="preserve"><value>貸方</value></data>
+  <data name="BankStatement.Matched" xml:space="preserve"><value>已配對</value></data>
+  <data name="BankStatement.NoLines" xml:space="preserve"><value>尚無明細行</value></data>
+  <data name="BankStatement.MatchedCount" xml:space="preserve"><value>已配對 {0}/{1}</value></data>
+  <data name="BankStatement.TotalDebit" xml:space="preserve"><value>借方合計</value></data>
+  <data name="BankStatement.TotalCredit" xml:space="preserve"><value>貸方合計</value></data>
+  <data name="BankStatement.NetAmount" xml:space="preserve"><value>淨額</value></data>
+  <data name="BankStatement.Unmatched" xml:space="preserve"><value>未配對</value></data>
+  <data name="Field.StatementDate" xml:space="preserve"><value>對帳日期</value></data>
+  <data name="Field.PeriodStart" xml:space="preserve"><value>期間起</value></data>
+  <data name="Field.PeriodEnd" xml:space="preserve"><value>期間訖</value></data>
+  <data name="Field.OpeningBalance" xml:space="preserve"><value>期初餘額</value></data>
+  <data name="Field.ClosingBalance" xml:space="preserve"><value>期末餘額</value></data>
+  <data name="Field.MatchStatus" xml:space="preserve"><value>配對狀態</value></data>
+  <data name="Field.StatementStatus" xml:space="preserve"><value>對帳狀態</value></data>
+  <data name="Field.ReconciliationPeriod" xml:space="preserve"><value>對帳期間</value></data>
+  <data name="Report.BankReconciliation" xml:space="preserve"><value>銀行存款餘額調節表</value></data>
+  <data name="Report.BankReconciliationDesc" xml:space="preserve"><value>依對帳期間查詢銀行對帳單，顯示已配對與未配對明細，協助核對帳面餘額與銀行對帳單餘額</value></data>
+  <data name="Attachment.Title" xml:space="preserve"><value>附件</value></data>
+  <data name="Attachment.Upload" xml:space="preserve"><value>上傳附件</value></data>
+  <data name="Attachment.Uploading" xml:space="preserve"><value>上傳中...</value></data>
+  <data name="Attachment.AllowedFormats" xml:space="preserve"><value>支援 PDF、Word、Excel、圖片（最大 20MB）</value></data>
+  <data name="Attachment.FileName" xml:space="preserve"><value>檔案名稱</value></data>
+  <data name="Attachment.FileSize" xml:space="preserve"><value>大小</value></data>
+  <data name="Attachment.UploadedBy" xml:space="preserve"><value>上傳人員</value></data>
+  <data name="Attachment.UploadedAt" xml:space="preserve"><value>上傳時間</value></data>
+  <data name="Attachment.Empty" xml:space="preserve"><value>尚無附件</value></data>
+  <data name="Attachment.UploadSuccess" xml:space="preserve"><value>附件上傳成功</value></data>
+  <data name="Attachment.UploadFailed" xml:space="preserve"><value>附件上傳失敗</value></data>
+  <data name="Attachment.DeleteSuccess" xml:space="preserve"><value>附件已刪除</value></data>
+  <!-- ===== Equipment MaintenanceType enum keys ===== -->
+  <data name="MaintenanceType.RegularMaintenance" xml:space="preserve"><value>定期保養</value></data>
+  <data name="MaintenanceType.Repair" xml:space="preserve"><value>維修</value></data>
+  <data name="MaintenanceType.Calibration" xml:space="preserve"><value>校驗</value></data>
+  <data name="MaintenanceType.Inspection" xml:space="preserve"><value>檢查</value></data>
+  <data name="MaintenanceType.Other" xml:space="preserve"><value>其他</value></data>
+  <data name="Label.Uncategorized" xml:space="preserve"><value>未分類</value></data>
 </root>

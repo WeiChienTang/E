@@ -1,0 +1,88 @@
+@page "/equipment-categories"
+@inject IEquipmentCategoryService EquipmentCategoryService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="EquipmentCategory"
+                          TService="IEquipmentCategoryService"
+                          Service="@EquipmentCategoryService"
+                          EntityBasePath="/equipment-categories"
+                          PageTitle="@L["Page.EquipmentCategoryTitle"]"
+                          PageSubtitle="@L["Page.EquipmentCategorySubtitle"]"
+                          EntityName="@L["Entity.EquipmentCategory"]"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          ServerDataLoader="@ServerLoadEquipmentCategoriesAsync"
+                          GetEntityDisplayName="@(ec => ec.Name)"
+                          RequiredPermission="@PermissionRegistry.EquipmentCategory.Read"
+                          RequiredModule="Equipment"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          ShowDraftTab="true"
+                          DebugPageName="EquipmentCategoryIndex"
+                          @ref="indexComponent" />
+
+<EquipmentCategoryEditModalComponent IsVisible="@showEditModal"
+                                     IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                     EquipmentCategoryId="@editingEquipmentCategoryId"
+                                     OnEquipmentCategorySaved="@modalHandler.OnEntitySavedAsync"
+                                     OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    private GenericIndexPageComponent<EquipmentCategory, IEquipmentCategoryService> indexComponent = default!;
+
+    private bool showEditModal = false;
+    private int? editingEquipmentCategoryId = null;
+
+    private ModalHandler<EquipmentCategory, GenericIndexPageComponent<EquipmentCategory, IEquipmentCategoryService>> modalHandler = default!;
+
+    private EquipmentCategoryFieldConfiguration fieldConfiguration = default!;
+
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalHandler = ModalHelper.CreateModalHandler<EquipmentCategory, GenericIndexPageComponent<EquipmentCategory, IEquipmentCategoryService>>(
+                id => editingEquipmentCategoryId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            fieldConfiguration = new EquipmentCategoryFieldConfiguration(NotificationService);
+            fieldConfiguration.SetLocalizer(L);
+
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化設備類別頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化設備類別頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync("設備管理", "設備類別維護", "#", NotificationService, GetType());
+
+    private Task<(List<EquipmentCategory> Items, int TotalCount)> ServerLoadEquipmentCategoriesAsync(
+        SearchFilterModel filter, int page, int pageSize)
+    {
+        return EquipmentCategoryService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(x => x.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadEquipmentCategoriesAsync), GetType());
+                return q;
+            },
+            page, pageSize);
+    }
+}

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using ERPCore2.Data.Entities.Customers;
+using ERPCore2.Data.Entities.Payroll;
 using ERPCore2.Data.Entities.Suppliers;
 using ERPCore2.Data.Entities.Systems;
 using ERPCore2.Models.Enums;
@@ -7,7 +8,8 @@ using ERPCore2.Models.Enums;
 namespace ERPCore2.Data.Entities
 {
     /// <summary>
-    /// 銀行別 - 管理銀行基本資料（公司、客戶、廠商的往來銀行）
+    /// 銀行別 - 台灣金融機構代碼對照表（機構層級，非分行層級）
+    /// Code 欄位存放金融機構代碼（3碼，如 004=台灣銀行）
     /// </summary>
     public class Bank : BaseEntity
     {
@@ -20,18 +22,6 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "英文名稱")]
         public string? BankNameEn { get; set; }
 
-        [MaxLength(200, ErrorMessage = "地址不可超過200個字元")]
-        [Display(Name = "地址")]
-        public string? Address { get; set; }
-
-        [MaxLength(50, ErrorMessage = "電話不可超過50個字元")]
-        [Display(Name = "電話")]
-        public string? Phone { get; set; }
-
-        [MaxLength(50, ErrorMessage = "傳真不可超過50個字元")]
-        [Display(Name = "傳真")]
-        public string? Fax { get; set; }
-
         [MaxLength(20, ErrorMessage = "SWIFT編號不可超過20個字元")]
         [Display(Name = "SWIFT編號")]
         public string? SwiftCode { get; set; }
@@ -40,5 +30,6 @@ namespace ERPCore2.Data.Entities
         public ICollection<CustomerBankAccount> CustomerBankAccounts { get; set; } = new List<CustomerBankAccount>();
         public ICollection<SupplierBankAccount> SupplierBankAccounts { get; set; } = new List<SupplierBankAccount>();
         public ICollection<CompanyBankAccount> CompanyBankAccounts { get; set; } = new List<CompanyBankAccount>();
+        public ICollection<EmployeeBankAccount> EmployeeBankAccounts { get; set; } = new List<EmployeeBankAccount>();
     }
 }

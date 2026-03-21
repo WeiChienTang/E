@@ -14,6 +14,12 @@ namespace ERPCore2.Services.Reports
     /// <summary>
     /// 損益表報表服務實作
     /// 彙總指定期間的 Revenue/Cost/Expense/NonOperating 科目，計算毛利、營業損益、稅前損益
+    ///
+    /// 其他綜合損益（OCI）處理方式（IAS 1 / IFRS）：
+    ///   若有 AccountType.ComprehensiveIncome 科目有餘額，
+    ///   則在「稅前損益」後顯示「其他綜合損益」區塊，
+    ///   並合計「本期綜合損益總額」。
+    ///   若無 OCI 科目有餘額，則僅顯示稅前損益，版面不變。
     /// </summary>
     public class IncomeStatementReportService : IIncomeStatementReportService
     {
@@ -173,6 +179,7 @@ namespace ERPCore2.Services.Reports
             var costLines      = accountLines.Where(l => l.AccountType == AccountType.Cost).ToList();
             var expenseLines   = accountLines.Where(l => l.AccountType == AccountType.Expense).ToList();
             var nonOpLines     = accountLines.Where(l => l.AccountType == AccountType.NonOperatingIncomeAndExpense).ToList();
+            var ociLines       = accountLines.Where(l => l.AccountType == AccountType.ComprehensiveIncome).ToList();
 
             var totalRevenue    = revenueLines.Sum(l => l.Balance);
             var totalCost       = costLines.Sum(l => l.Balance);
@@ -187,6 +194,13 @@ namespace ERPCore2.Services.Reports
             var nonOpExpense = nonOpLines.Where(l => l.NormalDirection == AccountDirection.Debit).Sum(l => l.Balance);
             var netNonOp     = nonOpIncome - nonOpExpense;
             var preTaxIncome = operatingIncome + netNonOp;
+
+            // 其他綜合損益（OCI）：IAS 1 要求在稅前損益後單獨揭露
+            // 收益類（Credit-normal）為正，費損類（Debit-normal）為負
+            var ociIncome  = ociLines.Where(l => l.NormalDirection == AccountDirection.Credit).Sum(l => l.Balance);
+            var ociExpense = ociLines.Where(l => l.NormalDirection == AccountDirection.Debit).Sum(l => l.Balance);
+            var totalOci   = ociIncome - ociExpense;
+            var totalComprehensiveIncome = preTaxIncome + totalOci;
 
             // 建立科目明細表格（helper lambda）
             void AddAccountTable(List<AccountSummaryLine> items, string header, decimal total, bool isDeduction)
@@ -270,6 +284,37 @@ namespace ERPCore2.Services.Reports
             doc.AddKeyValueRow(("稅前損益", $"{preTaxIncome:N2}"));
             doc.AddSpacing(5);
 
+            // 五、其他綜合損益（OCI）— 有餘額時才顯示（IAS 1）
+            if (ociLines.Any())
+            {
+                var ociIncomeLines  = ociLines.Where(l => l.NormalDirection == AccountDirection.Credit).ToList();
+                var ociExpenseLines = ociLines.Where(l => l.NormalDirection == AccountDirection.Debit).ToList();
+
+                doc.AddKeyValueRow(("五、其他綜合損益（OCI）", $"{totalOci:N2}"));
+                doc.AddSpacing(2);
+
+                doc.AddTable(table =>
+                {
+                    table.AddColumn(string.Empty, 0.30f, Models.Reports.TextAlignment.Left)
+                         .AddColumn("科目代碼", 0.70f, Models.Reports.TextAlignment.Left)
+                         .AddColumn("科目名稱", 1.80f, Models.Reports.TextAlignment.Left)
+                         .AddColumn("金額", 0.90f, Models.Reports.TextAlignment.Right)
+                         .ShowBorder(false)
+                         .ShowHeaderBackground(false)
+                         .ShowHeaderSeparator(false)
+                         .SetRowHeight(18);
+
+                    foreach (var item in ociIncomeLines)
+                        table.AddRow(string.Empty, item.Code, item.Name, $"+{item.Balance:N2}");
+                    foreach (var item in ociExpenseLines)
+                        table.AddRow(string.Empty, item.Code, item.Name, $"-{item.Balance:N2}");
+                });
+                doc.AddSpacing(5);
+
+                doc.AddKeyValueRow(("本期綜合損益總額", $"{totalComprehensiveIncome:N2}"));
+                doc.AddSpacing(5);
+            }
+
             // === 頁尾 ===
             doc.BeginFooter(footer =>
             {
@@ -283,8 +328,13 @@ namespace ERPCore2.Services.Reports
                     $"營業費用：{totalExpense:N2}",
                     $"營業損益：{operatingIncome:N2}",
                     $"稅前損益：{preTaxIncome:N2}",
-                    ""
                 };
+                if (ociLines.Any())
+                {
+                    summaryLines.Add($"其他綜合損益：{totalOci:N2}");
+                    summaryLines.Add($"本期綜合損益總額：{totalComprehensiveIncome:N2}");
+                }
+                summaryLines.Add(string.Empty);
 
                 footer.AddTwoColumnSection(
                     leftContent: summaryLines,

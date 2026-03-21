@@ -49,4 +49,14 @@ namespace ERPCore2.Models.Enums
         [Display(Name = "試算中")] Draft = 1,
         [Display(Name = "已確認")] Confirmed = 2
     }
+
+    /// <summary>逐日出勤記錄批次初始化模式</summary>
+    public enum AttendanceInitMode
+    {
+        /// <summary>工作日設出勤、週末設休息日（月薪固定班制適用）</summary>
+        [Display(Name = "工作日出勤模式")] WorkdaysAsPresent = 1,
+
+        /// <summary>全部設為休息日，由 HR 逐日填入（時薪不規則班制適用）</summary>
+        [Display(Name = "全休息日模式")] AllAsRestDay = 2,
+    }
 }

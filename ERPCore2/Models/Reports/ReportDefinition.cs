@@ -92,5 +92,6 @@
         public const string Vehicle = "Vehicle";
         public const string Scale = "Scale";
     public const string Accounting = "Accounting";
+    public const string Equipment = "Equipment";
     }
 }

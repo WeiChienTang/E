@@ -1,0 +1,141 @@
+@* 跟進紀錄 Tab - 自包含元件，嵌入於 CrmLeadEditModalComponent 的 Tab 頁籤中 *@
+@using ERPCore2.Services.Crm
+@inject ICrmLeadFollowUpService CrmLeadFollowUpService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+@* 跟進紀錄列表 *@
+<CrmLeadFollowUpTable FollowUps="@followUps"
+                      OnAddFollowUp="@HandleAddFollowUp"
+                      OnEditFollowUp="@HandleEditFollowUp"
+                      OnDeleteFollowUp="@HandleDeleteFollowUpRequest" />
+
+@* 跟進紀錄編輯 Modal *@
+<CrmLeadFollowUpEditModalComponent IsVisible="@isFollowUpModalVisible"
+                                   IsVisibleChanged="@HandleFollowUpModalVisibilityChanged"
+                                   CrmLeadFollowUpId="@editingFollowUpId"
+                                   PrefilledCrmLeadId="@CrmLeadId"
+                                   OnFollowUpSaved="@OnFollowUpSavedWrapper"
+                                   OnCancel="@HandleFollowUpModalCancel" />
+
+@* 刪除確認 Modal *@
+<GenericConfirmModalComponent IsVisible="@showDeleteModal"
+                              IsVisibleChanged="@((bool v) => showDeleteModal = v)"
+                              Title="@L["Modal.DeleteFollowUpRecord"]"
+                              Icon="bi-trash"
+                              Message="@L["Modal.ConfirmDeleteFollowUpRecord"]"
+                              ConfirmButtonText="@L["Button.ConfirmDelete"]"
+                              CancelButtonText="@L["Button.Cancel"]"
+                              ConfirmButtonVariant="ButtonVariant.Red"
+                              HeaderColor="BaseModalComponent.HeaderVariant.Danger"
+                              OnConfirm="@HandleConfirmDelete"
+                              OnCancel="@(() => showDeleteModal = false)" />
+
+@code {
+    [Parameter] public int? CrmLeadId { get; set; }
+
+    private List<CrmLeadFollowUp> followUps = new();
+    private bool isFollowUpModalVisible = false;
+    private int? editingFollowUpId = null;
+    private bool showDeleteModal = false;
+    private CrmLeadFollowUp? deletingFollowUp = null;
+    private int? _loadedLeadId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (CrmLeadId != _loadedLeadId)
+        {
+            _loadedLeadId = CrmLeadId;
+            if (CrmLeadId.HasValue && CrmLeadId.Value > 0)
+                await LoadAsync(CrmLeadId.Value);
+            else
+                Clear();
+        }
+    }
+
+    public async Task LoadAsync(int leadId)
+    {
+        followUps = await CrmLeadFollowUpService.GetByLeadAsync(leadId);
+        StateHasChanged();
+    }
+
+    public void Clear()
+    {
+        followUps = new();
+        StateHasChanged();
+    }
+
+    private void HandleAddFollowUp()
+    {
+        editingFollowUpId = null;
+        isFollowUpModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleEditFollowUp(CrmLeadFollowUp followUp)
+    {
+        editingFollowUpId = followUp.Id;
+        isFollowUpModalVisible = true;
+        StateHasChanged();
+    }
+
+    private void HandleDeleteFollowUpRequest(CrmLeadFollowUp followUp)
+    {
+        deletingFollowUp = followUp;
+        showDeleteModal = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleConfirmDelete()
+    {
+        if (deletingFollowUp == null) return;
+
+        try
+        {
+            var result = await CrmLeadFollowUpService.DeleteAsync(deletingFollowUp.Id);
+            if (result.IsSuccess)
+            {
+                followUps.RemoveAll(f => f.Id == deletingFollowUp.Id);
+                await NotificationService.ShowSuccessAsync(L["Message.FollowUpDeleted"]);
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"刪除失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"刪除跟進紀錄時發生錯誤：{ex.Message}");
+        }
+        finally
+        {
+            deletingFollowUp = null;
+            showDeleteModal = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnFollowUpSavedWrapper(CrmLeadFollowUp savedFollowUp)
+    {
+        var existingIndex = followUps.FindIndex(f => f.Id == savedFollowUp.Id);
+        if (existingIndex >= 0)
+            followUps[existingIndex] = savedFollowUp;
+        else
+            followUps.Insert(0, savedFollowUp);
+
+        isFollowUpModalVisible = false;
+        StateHasChanged();
+    }
+
+    private void HandleFollowUpModalVisibilityChanged(bool isVisible)
+    {
+        isFollowUpModalVisible = isVisible;
+        StateHasChanged();
+    }
+
+    private void HandleFollowUpModalCancel()
+    {
+        isFollowUpModalVisible = false;
+        StateHasChanged();
+    }
+}

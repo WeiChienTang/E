@@ -3,16 +3,6 @@ using ERPCore2.Models.Enums;
 
 namespace ERPCore2.Services.Payroll
 {
-    /// <summary>批次初始化模式</summary>
-    public enum AttendanceInitMode
-    {
-        /// <summary>工作日設出勤、週末設休息（月薪固定班制適用）</summary>
-        WorkdaysAsPresent = 1,
-
-        /// <summary>全部設為休息日，由 HR 逐日填入出勤（時薪不規則班制適用）</summary>
-        AllAsRestDay = 2,
-    }
-
     public interface IAttendanceDailyRecordService
     {
         /// <summary>取得指定員工某月所有逐日記錄，依日期排序</summary>

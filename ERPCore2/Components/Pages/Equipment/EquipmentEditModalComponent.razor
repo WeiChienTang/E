@@ -1,0 +1,341 @@
+@* 可重用的設備編輯組件 - 可在任何頁面中嵌入 *@
+@inject IEquipmentService EquipmentService
+@inject IEquipmentCategoryService EquipmentCategoryService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject ActionButtonHelper ActionButtonHelper
+@inject IStringLocalizer<SharedResource> L
+
+<GenericEditModalComponent TEntity="Equipment"
+                          TService="IEquipmentService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@EquipmentId"
+                          Service="@EquipmentService"
+                          EntityName="@L["Entity.Equipment"]"
+                          EntityNamePlural="@L["Entity.Equipment"]"
+                          ModalTitle="@(EquipmentId.HasValue ? L["Message.EditTitle", L["Entity.Equipment"]].ToString() : L["Message.CreateTitle", L["Entity.Equipment"]].ToString())"
+                          Size="GenericEditModalComponent<Equipment, IEquipmentService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
+                          ModalManagers="@modalManagers?.AsDictionary()"
+                          DataLoader="@LoadEquipmentData"
+                          UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.Equipment"]]"
+                          SaveSuccessMessage="@(EquipmentId.HasValue ? L["Message.UpdateSuccess", L["Entity.Equipment"]].ToString() : L["Message.CreateSuccess", L["Entity.Equipment"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.Equipment"]]"
+                          RequiredPermission="@PermissionRegistry.Equipment.Read"
+                          OnEntitySaved="@OnEquipmentSaved"
+                          OnCancel="@OnCancel"
+                          ComponentName="EquipmentEditModalComponent" />
+
+@* 設備類別編輯 Modal *@
+<EquipmentCategoryEditModalComponent @ref="equipmentCategoryEditModal"
+                                     IsVisible="@equipmentCategoryModalManager.IsModalVisible"
+                                     IsVisibleChanged="@equipmentCategoryModalManager.HandleModalVisibilityChangedAsync"
+                                     EquipmentCategoryId="@equipmentCategoryModalManager.SelectedEntityId"
+                                     OnEquipmentCategorySaved="@equipmentCategoryModalManager.OnSavedAsync"
+                                     OnCancel="@equipmentCategoryModalManager.HandleModalCancelAsync" />
+
+@* 員工編輯 Modal *@
+<EmployeeEditModalComponent @ref="employeeEditModal"
+                           IsVisible="@employeeModalManager.IsModalVisible"
+                           IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
+                           EmployeeId="@employeeModalManager.SelectedEntityId"
+                           OnEmployeeSaved="@employeeModalManager.OnSavedAsync"
+                           OnCancel="@employeeModalManager.HandleModalCancelAsync" />
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? EquipmentId { get; set; }
+    [Parameter] public EventCallback<Equipment> OnEquipmentSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    private GenericEditModalComponent<Equipment, IEquipmentService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    private AutoCompleteConfig? autoCompleteConfig;
+
+    private List<EquipmentCategory> availableCategories = new();
+    private List<Employee> availableEmployees = new();
+
+    private ModalManagerCollection? modalManagers;
+
+    private EquipmentCategoryEditModalComponent? equipmentCategoryEditModal;
+    private RelatedEntityModalManager<EquipmentCategory> equipmentCategoryModalManager = default!;
+
+    private EmployeeEditModalComponent? employeeEditModal;
+    private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+
+    private bool isDataLoaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalManagers = ModalManagerInitHelper.CreateBuilder<Equipment, IEquipmentService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<EquipmentCategory>(nameof(Equipment.EquipmentCategoryId), "設備類別")
+                .AddManager<Employee>(nameof(Equipment.ResponsibleEmployeeId), "員工")
+                .Build();
+
+            equipmentCategoryModalManager = modalManagers.Get<EquipmentCategory>(nameof(Equipment.EquipmentCategoryId));
+            employeeModalManager = modalManagers.Get<Employee>(nameof(Equipment.ResponsibleEmployeeId));
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化設備編輯組件時發生錯誤");
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+    }
+
+    private async Task<Equipment?> LoadEquipmentData()
+    {
+        try
+        {
+            if (!EquipmentId.HasValue)
+            {
+                var newEquipment = new Equipment
+                {
+                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Equipment, IEquipmentService>(EquipmentService, "EQ"),
+                    Status = EntityStatus.Active
+                };
+                return newEquipment;
+            }
+            return await EquipmentService.GetByIdAsync(EquipmentId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入設備資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(Equipment.Code),
+                    Label = L["Field.EquipmentCode"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.EquipmentCode"]],
+                    IsRequired = true,
+                    MaxLength = 50,
+                    HelpText = "設備的唯一識別編號"
+                },
+                new()
+                {
+                    PropertyName = nameof(Equipment.Name),
+                    Label = L["Field.EquipmentName"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.EquipmentName"]],
+                    IsRequired = true,
+                    MaxLength = 100,
+                    HelpText = "設備的完整名稱"
+                },
+                new()
+                {
+                    PropertyName = nameof(Equipment.EquipmentCategoryId),
+                    Label = L["Field.EquipmentCategory"],
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.EquipmentCategory"]],
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "選擇設備所屬類別",
+                    ActionButtons = await GetEquipmentCategoryActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(Equipment.SerialNumber),
+                    Label = L["Field.SerialNumber"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.SerialNumber"]],
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "設備的出廠序號"
+                },
+                new()
+                {
+                    PropertyName = nameof(Equipment.Brand),
+                    Label = L["Field.Brand"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Brand"]],
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "設備品牌"
+                },
+                new()
+                {
+                    PropertyName = nameof(Equipment.Model),
+                    Label = L["Field.EquipmentModel"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.EquipmentModel"]],
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "設備型號"
+                },
+                new()
+                {
+                    PropertyName = nameof(Equipment.PurchaseDate),
+                    Label = L["Field.PurchaseDate"],
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "設備的購入日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(Equipment.PurchaseCost),
+                    Label = L["Field.PurchaseCost"],
+                    FieldType = FormFieldType.Number,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.PurchaseCost"]],
+                    IsRequired = false,
+                    HelpText = "設備的購入金額"
+                },
+                new()
+                {
+                    PropertyName = nameof(Equipment.Location),
+                    Label = L["Field.Location"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Location"]],
+                    IsRequired = false,
+                    MaxLength = 100,
+                    HelpText = "設備目前的放置地點"
+                },
+                new()
+                {
+                    PropertyName = nameof(Equipment.MaintenanceCycleMonths),
+                    Label = L["Field.MaintenanceCycleMonths"],
+                    FieldType = FormFieldType.Number,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.MaintenanceCycleMonths"]],
+                    IsRequired = false,
+                    HelpText = "建議保養週期（月數）"
+                },
+                new()
+                {
+                    PropertyName = nameof(Equipment.LastMaintenanceDate),
+                    Label = L["Field.LastMaintenanceDate"],
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "上次進行保養的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(Equipment.NextMaintenanceDate),
+                    Label = L["Field.NextMaintenanceDate"],
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "預計下次保養的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(Equipment.ResponsibleEmployeeId),
+                    Label = L["Field.ResponsibleEmployee"],
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.ResponsibleEmployee"]],
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    HelpText = "負責管理此設備的人員",
+                    ActionButtons = await GetEmployeeActionButtonsAsync()
+                },
+
+                FormFieldConfigurationHelper.CreateRemarksField<Equipment>()
+            };
+
+            formSections = FormSectionHelper<Equipment>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    e => e.Code,
+                    e => e.Name,
+                    e => e.EquipmentCategoryId,
+                    e => e.SerialNumber,
+                    e => e.Brand,
+                    e => e.Model)
+                .AddToSection(L["Tab.PurchaseInfo"].ToString(),
+                    e => e.PurchaseDate,
+                    e => e.PurchaseCost,
+                    e => e.Location,
+                    e => e.ResponsibleEmployeeId)
+                .AddToSection(L["Tab.MaintenanceInfo"].ToString(),
+                    e => e.MaintenanceCycleMonths,
+                    e => e.LastMaintenanceDate,
+                    e => e.NextMaintenanceDate)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    e => e.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化設備表單欄位時發生錯誤");
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            availableCategories = await EquipmentCategoryService.GetActiveEquipmentCategoriesAsync();
+
+            var allEmployees = await EmployeeService.GetAllAsync();
+            availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
+
+            autoCompleteConfig = new AutoCompleteConfigBuilder<Equipment>()
+                .AddField(nameof(Equipment.EquipmentCategoryId), "Name", availableCategories)
+                .AddField(nameof(Equipment.ResponsibleEmployeeId), "Name", availableEmployees)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("載入設備編輯相關資料時發生錯誤");
+            availableCategories = new List<EquipmentCategory>();
+            availableEmployees = new List<Employee>();
+        }
+    }
+
+    private async Task<List<FieldActionButton>> GetEquipmentCategoryActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            equipmentCategoryModalManager,
+            nameof(Equipment.EquipmentCategoryId)
+        );
+    }
+
+    private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            employeeModalManager,
+            nameof(Equipment.ResponsibleEmployeeId)
+        );
+    }
+}

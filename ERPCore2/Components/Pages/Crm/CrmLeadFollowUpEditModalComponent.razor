@@ -1,0 +1,269 @@
+@* 可重用的跟進紀錄編輯組件 - 用於 CrmLead EditModal 的 Tab 頁籤中 *@
+@using ERPCore2.Services.Crm
+@inject ICrmLeadFollowUpService CrmLeadFollowUpService
+@inject ICrmLeadService CrmLeadService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+@inject ActionButtonHelper ActionButtonHelper
+@inject IStringLocalizer<SharedResource> L
+
+<GenericEditModalComponent TEntity="CrmLeadFollowUp"
+                          TService="ICrmLeadFollowUpService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@CrmLeadFollowUpId"
+                          Service="@CrmLeadFollowUpService"
+                          EntityName="@L["Entity.CrmLeadFollowUp"]"
+                          EntityNamePlural="@L["Entity.CrmLeadFollowUp"]"
+                          ModalTitle="@(CrmLeadFollowUpId.HasValue ? L["Message.EditTitle", L["Entity.CrmLeadFollowUp"]].ToString() : L["Message.CreateTitle", L["Entity.CrmLeadFollowUp"]].ToString())"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
+                          AutoCompleteCollections="@autoCompleteConfig?.Collections"
+                          AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
+                          AutoCompleteValueProperties="@autoCompleteConfig?.ValueProperties"
+                          ModalManagers="@modalManagers?.AsDictionary()"
+                          DataLoader="@LoadFollowUpData"
+                          UseGenericSave="true"
+                          SaveSuccessMessage="@(CrmLeadFollowUpId.HasValue ? L["Message.UpdateSuccess", L["Entity.CrmLeadFollowUp"]].ToString() : L["Message.CreateSuccess", L["Entity.CrmLeadFollowUp"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.CrmLeadFollowUp"]]"
+                          RequiredPermission="@PermissionRegistry.CrmLead.Read"
+                          OnEntitySaved="@OnFollowUpSaved"
+                          OnCancel="@OnCancel"
+                          ComponentName="CrmLeadFollowUpEditModalComponent" />
+
+@* 員工編輯 Modal *@
+<EmployeeEditModalComponent @ref="employeeEditModal"
+                           IsVisible="@employeeModalManager.IsModalVisible"
+                           IsVisibleChanged="@employeeModalManager.HandleModalVisibilityChangedAsync"
+                           EmployeeId="@employeeModalManager.SelectedEntityId"
+                           OnEmployeeSaved="@employeeModalManager.OnSavedAsync"
+                           OnCancel="@employeeModalManager.HandleModalCancelAsync" />
+
+@code {
+    // ===== 必要參數 =====
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? CrmLeadFollowUpId { get; set; }
+    [Parameter] public int? PrefilledCrmLeadId { get; set; }
+    [Parameter] public EventCallback<CrmLeadFollowUp> OnFollowUpSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 內部狀態 =====
+    private GenericEditModalComponent<CrmLeadFollowUp, ICrmLeadFollowUpService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private AutoCompleteConfig? autoCompleteConfig;
+
+    private List<CrmLead> availableLeads = new();
+    private List<Employee> availableEmployees = new();
+
+    private ModalManagerCollection? modalManagers;
+    private EmployeeEditModalComponent? employeeEditModal;
+    private RelatedEntityModalManager<Employee> employeeModalManager = default!;
+
+    private bool isDataLoaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalManagers = ModalManagerInitHelper.CreateBuilder<CrmLeadFollowUp, ICrmLeadFollowUpService>(
+                    () => editModalComponent,
+                    NotificationService,
+                    StateHasChanged,
+                    LoadAdditionalDataAsync,
+                    InitializeFormFieldsAsync)
+                .AddManager<Employee>(nameof(CrmLeadFollowUp.EmployeeId), "員工")
+                .Build();
+
+            employeeModalManager = modalManagers.Get<Employee>(nameof(CrmLeadFollowUp.EmployeeId));
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化跟進紀錄編輯組件時發生錯誤");
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await LoadAdditionalDataAsync();
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+    }
+
+    private async Task<CrmLeadFollowUp?> LoadFollowUpData()
+    {
+        try
+        {
+            if (!CrmLeadFollowUpId.HasValue)
+            {
+                var newFollowUp = new CrmLeadFollowUp
+                {
+                    FollowUpDate = DateTime.Today,
+                    FollowUpType = VisitType.Phone,
+                    Status = EntityStatus.Active
+                };
+
+                if (PrefilledCrmLeadId.HasValue)
+                    newFollowUp.CrmLeadId = PrefilledCrmLeadId.Value;
+
+                return newFollowUp;
+            }
+
+            return await CrmLeadFollowUpService.GetByIdAsync(CrmLeadFollowUpId.Value);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入跟進紀錄資料時發生錯誤：{ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(CrmLeadFollowUp.CrmLeadId),
+                    Label = L["Entity.CrmLead"],
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Entity.CrmLead"]],
+                    IsRequired = true,
+                    MinSearchLength = 0,
+                    IsVisible = !PrefilledCrmLeadId.HasValue
+                },
+                new()
+                {
+                    PropertyName = nameof(CrmLeadFollowUp.FollowUpDate),
+                    Label = L["Field.FollowUpDate"],
+                    FieldType = FormFieldType.Date,
+                    IsRequired = true,
+                    HelpText = "跟進的日期"
+                },
+                new()
+                {
+                    PropertyName = nameof(CrmLeadFollowUp.FollowUpType),
+                    Label = L["Field.FollowUpType"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    Options = Enum.GetValues(typeof(VisitType))
+                        .Cast<VisitType>()
+                        .Select(e => new SelectOption
+                        {
+                            Text = e switch
+                            {
+                                VisitType.Phone           => L["VisitType.Phone"],
+                                VisitType.OnSite          => L["VisitType.OnSite"],
+                                VisitType.VideoConference  => L["VisitType.VideoConference"],
+                                VisitType.Email           => L["VisitType.Email"],
+                                VisitType.Other           => L["VisitType.Other"],
+                                _                         => e.ToString()
+                            },
+                            Value = ((int)e).ToString()
+                        })
+                        .ToList()
+                },
+                new()
+                {
+                    PropertyName = nameof(CrmLeadFollowUp.EmployeeId),
+                    Label = L["Field.SalesPerson"],
+                    FieldType = FormFieldType.AutoComplete,
+                    Placeholder = L["Placeholder.PleaseInputOrSelect", L["Field.SalesPerson"]],
+                    IsRequired = false,
+                    MinSearchLength = 0,
+                    ActionButtons = await GetEmployeeActionButtonsAsync()
+                },
+                new()
+                {
+                    PropertyName = nameof(CrmLeadFollowUp.Content),
+                    Label = L["Field.FollowUpContent"],
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.FollowUpContent"]],
+                    IsRequired = false,
+                    MaxLength = 1000
+                },
+                new()
+                {
+                    PropertyName = nameof(CrmLeadFollowUp.Conclusion),
+                    Label = L["Field.Conclusion"],
+                    FieldType = FormFieldType.TextArea,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Conclusion"]],
+                    IsRequired = false,
+                    MaxLength = 500,
+                    HelpText = "本次跟進的結論或後續行動"
+                },
+                new()
+                {
+                    PropertyName = nameof(CrmLeadFollowUp.NextFollowUpDate),
+                    Label = L["Field.NextFollowUpDate"],
+                    FieldType = FormFieldType.Date,
+                    IsRequired = false,
+                    HelpText = "預計下次跟進的日期"
+                },
+                FormFieldConfigurationHelper.CreateRemarksField<CrmLeadFollowUp>()
+            };
+
+            formSections = FormSectionHelper<CrmLeadFollowUp>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    v => v.CrmLeadId,
+                    v => v.FollowUpDate,
+                    v => v.FollowUpType,
+                    v => v.EmployeeId)
+                .AddToSection(L["Tab.FollowUpRecords"].ToString(),
+                    v => v.Content,
+                    v => v.Conclusion,
+                    v => v.NextFollowUpDate)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    v => v.Remarks)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化跟進紀錄表單欄位時發生錯誤");
+        }
+    }
+
+    private async Task LoadAdditionalDataAsync()
+    {
+        try
+        {
+            availableLeads = await CrmLeadService.GetAllAsync();
+
+            var allEmployees = await EmployeeService.GetAllAsync();
+            availableEmployees = allEmployees.Where(e => !e.IsSuperAdmin).ToList();
+
+            autoCompleteConfig = new AutoCompleteConfigBuilder<CrmLeadFollowUp>()
+                .AddField(nameof(CrmLeadFollowUp.CrmLeadId), "CompanyName", availableLeads)
+                .AddField(nameof(CrmLeadFollowUp.EmployeeId), "Name", availableEmployees)
+                .Build();
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("載入跟進紀錄編輯相關資料時發生錯誤");
+            availableLeads = new List<CrmLead>();
+            availableEmployees = new List<Employee>();
+        }
+    }
+
+    private async Task<List<FieldActionButton>> GetEmployeeActionButtonsAsync()
+    {
+        return await ActionButtonHelper.GenerateFieldActionButtonsAsync(
+            editModalComponent,
+            employeeModalManager,
+            nameof(CrmLeadFollowUp.EmployeeId)
+        );
+    }
+}

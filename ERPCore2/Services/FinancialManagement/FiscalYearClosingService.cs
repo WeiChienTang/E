@@ -11,15 +11,15 @@ namespace ERPCore2.Services
     /// 年底結帳服務
     ///
     /// 分錄邏輯：
-    ///   Step 1 — 損益科目歸零（轉入本期損益 3351）
+    ///   Step 1 — 損益科目歸零（轉入本期損益 3353）
     ///     收入類（AccountType = Revenue/NonOperating，淨貸方）：
     ///       借：各收入科目  / 貸：本期損益
     ///     成本/費用類（AccountType = Cost/Expense，淨借方）：
     ///       借：本期損益    / 貸：各成本費用科目
     ///
-    ///   Step 2 — 本期損益轉保留盈餘（3361）
-    ///     盈利：借 本期損益 / 貸 保留盈餘
-    ///     虧損：借 保留盈餘 / 貸 本期損益
+    ///   Step 2 — 本期損益轉累積盈虧（3351）
+    ///     盈利：借 本期損益 / 貸 累積盈虧
+    ///     虧損：借 累積盈虧 / 貸 本期損益
     /// </summary>
     public class FiscalYearClosingService : IFiscalYearClosingService
     {
@@ -30,9 +30,9 @@ namespace ERPCore2.Services
         private readonly ICompanyService _companyService;
         private readonly ILogger<FiscalYearClosingService> _logger;
 
-        // 結帳用科目代碼
-        private const string CurrentPeriodIncomeCode = "3351"; // 本期損益
-        private const string RetainedEarningsCode    = "3361"; // 保留盈餘（法定盈餘公積）
+        // 結帳用科目代碼（對應種子資料 AccountItemSeeder）
+        private const string CurrentPeriodIncomeCode = "3353"; // 本期損益（Income Summary — 損益科目的中間彙總帳）
+        private const string RetainedEarningsCode    = "3351"; // 累積盈虧（Accumulated P&L — 最終累積保留盈餘帳）
 
         // 需歸零的科目類型（損益表科目）
         private static readonly AccountType[] IncomeStatementTypes =
@@ -146,10 +146,10 @@ namespace ERPCore2.Services
                 if (incomeAccount == null)
                     return (false, $"找不到「本期損益」科目（代碼 {CurrentPeriodIncomeCode}），請確認科目種子資料已正確載入");
 
-                // 取得保留盈餘科目
+                // 取得累積盈虧科目
                 var retainedAccount = await _accountItemService.GetByCodeAsync(RetainedEarningsCode);
                 if (retainedAccount == null)
-                    return (false, $"找不到「保留盈餘」科目（代碼 {RetainedEarningsCode}），請確認科目種子資料已正確載入");
+                    return (false, $"找不到「累積盈虧」科目（代碼 {RetainedEarningsCode}），請確認科目種子資料已正確載入");
 
                 // ===== Step 1：損益科目歸零，轉入本期損益 =====
                 var balances = await GetIncomeStatementBalancesAsync(context, year, companyId);

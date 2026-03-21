@@ -600,6 +600,44 @@ public static class FilterTemplateRegistry
             }
         });
 
+        // ==================== 設備報表 ====================
+
+        // 設備清單（依類別分組顯示設備基本資料）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.EquipmentList,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(EquipmentCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IEquipmentListReportService),
+            PreviewTitle = "設備清單預覽",
+            FilterTitle = "設備清單篩選條件",
+            IconClass = "bi-gear-wide-connected",
+            GetDocumentName = criteria =>
+            {
+                return $"設備清單-{DateTime.Now:yyyyMMddHHmm}";
+            }
+        });
+
+        // 設備保養維修記錄
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.EquipmentMaintenanceRecord,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(EquipmentMaintenanceCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IEquipmentMaintenanceReportService),
+            PreviewTitle = "設備保養維修記錄預覽",
+            FilterTitle = "設備保養維修記錄篩選條件",
+            IconClass = "bi-wrench-adjustable",
+            GetDocumentName = criteria =>
+            {
+                var c = (EquipmentMaintenanceCriteria)criteria;
+                var dateRange = c.MaintenanceDateStart.HasValue && c.MaintenanceDateEnd.HasValue
+                    ? $"{c.MaintenanceDateStart:yyyyMMdd}-{c.MaintenanceDateEnd:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"設備保養維修記錄-{dateRange}";
+            }
+        });
+
         // ==================== 人力報表 ====================
 
         // 員工名冊表（依部門分組顯示員工基本資料）
@@ -862,6 +900,46 @@ public static class FilterTemplateRegistry
                 var c = (APAgingCriteria)criteria;
                 var date = c.AsOfDate?.ToString("yyyyMMdd") ?? DateTime.Now.ToString("yyyyMMdd");
                 return $"應付帳款帳齡分析-{date}";
+            }
+        });
+
+        // FN014 - 現金流量表（IAS 7 間接法）
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.CashFlow,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(CashFlowCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ICashFlowReportService),
+            PreviewTitle = "現金流量表預覽",
+            FilterTitle = "現金流量表篩選條件",
+            IconClass = "bi-cash-coin",
+            GetDocumentName = criteria =>
+            {
+                var c = (CashFlowCriteria)criteria;
+                var dateRange = c.StartDate.HasValue && c.EndDate.HasValue
+                    ? $"{c.StartDate:yyyyMMdd}-{c.EndDate:yyyyMMdd}"
+                    : DateTime.Now.ToString("yyyyMMdd");
+                return $"現金流量表-{dateRange}";
+            }
+        });
+
+        // FN015 - 銀行存款餘額調節表
+        RegisterConfig(new ReportFilterConfig
+        {
+            ReportId = ReportIds.BankReconciliation,
+            FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
+            CriteriaType = typeof(ERPCore2.Models.Reports.FilterCriteria.BankReconciliationCriteria),
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IBankReconciliationReportService),
+            PreviewTitle = "銀行存款餘額調節表預覽",
+            FilterTitle = "銀行存款餘額調節表篩選條件",
+            IconClass = "bi-bank",
+            GetDocumentName = criteria =>
+            {
+                var c = (ERPCore2.Models.Reports.FilterCriteria.BankReconciliationCriteria)criteria;
+                var period = c.PeriodStart.HasValue
+                    ? c.PeriodStart.Value.ToString("yyyyMM")
+                    : DateTime.Now.ToString("yyyyMM");
+                return $"銀行存款餘額調節表-{period}";
             }
         });
 

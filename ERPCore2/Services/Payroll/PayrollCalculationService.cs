@@ -109,6 +109,7 @@ namespace ERPCore2.Services.Payroll
                     record.ActualWorkDays = attendance.ActualWorkDays;
                     record.AbsentDays = attendance.AbsentDays;
                     record.SickLeaveDays = attendance.SickLeaveDays;
+                    record.PersonalLeaveDays = attendance.PersonalLeaveDays;
                     record.OvertimeHours1 = attendance.OvertimeHours1;
                     record.OvertimeHours2 = attendance.OvertimeHours2;
                     record.HolidayOvertimeHours = attendance.HolidayOvertimeHours;
@@ -483,6 +484,15 @@ namespace ERPCore2.Services.Payroll
                 decimal sickDeduct = Math.Round(record.SickLeaveDays * dailyRateForDeduct * 0.5m, 0);
                 AddDetail(details, items, "SICK", record.SickLeaveDays, dailyRateForDeduct * 0.5m, -sickDeduct,
                     $"病假 {record.SickLeaveDays}天 × 日薪半薪 = -{sickDeduct:N0}");
+            }
+
+            // ── 8b. 事假全薪扣除（負數）— 月薪制才適用；勞基法第43條，事假無薪 ──
+            if (salary.SalaryType != SalaryType.Hourly && record.PersonalLeaveDays > 0)
+            {
+                decimal dailyRateForDeduct = salary.BaseSalary / 30m;
+                decimal personalLeaveDeduct = Math.Round(record.PersonalLeaveDays * dailyRateForDeduct, 0);
+                AddDetail(details, items, "PERSONAL_LEAVE", record.PersonalLeaveDays, dailyRateForDeduct, -personalLeaveDeduct,
+                    $"事假 {record.PersonalLeaveDays}天 × 日薪 {dailyRateForDeduct:N2} = -{personalLeaveDeduct:N0}");
             }
 
             // ── 9. 計算應發總額（含投保基礎計算）──────────────────────

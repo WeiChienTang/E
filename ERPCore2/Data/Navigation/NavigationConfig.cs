@@ -261,6 +261,19 @@ public static class NavigationConfig
                     },
                     new NavigationItem
                     {
+                        Name = "潛在客戶",
+                        NameKey = "Nav.CrmLeads",
+                        Description = "管理潛在客戶開發進度與跟進紀錄",
+                        Route = "/crm/leads",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "客戶關係管理",
+                        RequiredPermission = PermissionRegistry.CrmLead.Read,
+                        SearchKeywords = new List<string> { "潛在客戶", "開發", "CRM", "leads", "prospect", "商機", "潜在顾客", "見込み客", "リード" },
+                        QuickActionId = "NewCrmLead",
+                        QuickActionName = "新增潛在客戶"
+                    },
+                    new NavigationItem
+                    {
                         Name = "客訴記錄",
                         NameKey = "Nav.CustomerComplaints",
                         Description = "記錄與追蹤客戶投訴事件及處理狀態",
@@ -948,6 +961,80 @@ public static class NavigationConfig
                 }
             },
 
+            // ==================== 設備管理 ====================
+            new NavigationItem
+            {
+                Name = "設備管理",
+                NameKey = "Nav.EquipmentGroup",
+                Description = "設備與保養維修管理",
+                Route = "#",
+                IconClass = "bi bi-gear-wide-connected",
+                Category = "設備管理",
+                IsParent = true,
+                MenuKey = "equipment_management",
+                ModuleKey = "Equipment",
+                SearchKeywords = new List<string> { "設備", "設備管理", "機台", "equipment", "machinery", "保養", "維修", "设备", "设备管理", "機器", "設備管理" },
+                Children = new List<NavigationItem>
+                {
+                    new NavigationItem
+                    {
+                        Name = "設備",
+                        NameKey = "Nav.Equipments",
+                        Description = "管理設備基本資料與保養狀態",
+                        Route = "/equipments",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "設備管理",
+                        RequiredPermission = PermissionRegistry.Equipment.Read,
+                        SearchKeywords = new List<string> { "設備", "機台", "equipment", "machinery", "设备", "機器", "生產設備" },
+                        QuickActionId = "NewEquipment",
+                        QuickActionName = "新增設備"
+                    },
+                    new NavigationItem
+                    {
+                        Name = "設備類別",
+                        NameKey = "Nav.EquipmentCategories",
+                        Description = "管理設備類別設定",
+                        Route = "/equipment-categories",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "設備管理",
+                        RequiredPermission = PermissionRegistry.EquipmentCategory.Read,
+                        SearchKeywords = new List<string> { "設備類別", "設備分類", "equipment category", "设备类别", "設備種別" },
+                        QuickActionId = "NewEquipmentCategory",
+                        QuickActionName = "新增設備類別"
+                    },
+                    new NavigationItem
+                    {
+                        Name = "保養維修記錄",
+                        NameKey = "Nav.EquipmentMaintenances",
+                        Description = "管理設備保養與維修記錄",
+                        Route = "/equipment-maintenances",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "設備管理",
+                        RequiredPermission = PermissionRegistry.EquipmentMaintenance.Read,
+                        SearchKeywords = new List<string> { "保養記錄", "維修記錄", "equipment maintenance", "保养记录", "维修记录", "設備保養", "機台維修", "点検記録" },
+                        QuickActionId = "NewEquipmentMaintenance",
+                        QuickActionName = "新增保養維修記錄"
+                    },
+
+                    // 分隔線
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+
+                    NavigationActionHelper.CreateActionItem(
+                        name: "設備報表集",
+                        description: "查看和列印所有設備相關報表",
+                        iconClass: "bi bi-printer-fill",
+                        actionId: "OpenEquipmentReportIndex",
+                        category: "設備管理",
+                        requiredPermission: "Equipment.Read",
+                        searchKeywords: new List<string> { "設備報表", "設備報表集", "equipment report", "保養報表", "设备报表", "設備レポート" },
+                        nameKey: "Nav.EquipmentReportIndex"
+                    ),
+                }
+            },
+
             // ==================== 磅秤管理 ====================
             new NavigationItem
             {
@@ -1199,6 +1286,20 @@ public static class NavigationConfig
                     },
 
 
+                    new NavigationItem
+                    {
+                        Name = "銀行對帳",
+                        NameKey = "Nav.BankStatements",
+                        Description = "輸入銀行對帳單並與傳票分錄進行手動配對核對",
+                        Route = "/bank-statements",
+                        IconClass = "bi bi-bank",
+                        Category = "會計管理",
+                        RequiredPermission = PermissionRegistry.BankStatement.Read,
+                        SearchKeywords = new List<string> { "銀行對帳", "對帳單", "bank reconciliation", "bank statement", "银行对账", "銀行調節", "銀行照合", "残高証明" },
+                        QuickActionId = "NewBankStatement",
+                        QuickActionName = "新增對帳單"
+                    },
+
                     // 分隔線 - 區分資料維護與報表
                     new NavigationItem
                     {
@@ -1265,6 +1366,17 @@ public static class NavigationConfig
                         Category = "薪資管理",
                         RequiredPermission = PermissionRegistry.Payroll.RateTable,
                         SearchKeywords = new List<string> { "薪資項目", "薪資科目", "payroll item", "薪资项目", "給与項目", "加給", "扣除項目", "薪資明細" }
+                    },
+                    new NavigationItem
+                    {
+                        Name = "基本工資維護",
+                        NameKey = "Nav.MinimumWage",
+                        Description = "維護歷年基本工資月薪與時薪",
+                        Route = "/payroll/minimum-wages",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "薪資管理",
+                        RequiredPermission = PermissionRegistry.Payroll.RateTable,
+                        SearchKeywords = new List<string> { "基本工資", "最低工資", "minimum wage", "时薪", "月薪", "最低賃金", "最低工资" }
                     },
                     new NavigationItem
                     {

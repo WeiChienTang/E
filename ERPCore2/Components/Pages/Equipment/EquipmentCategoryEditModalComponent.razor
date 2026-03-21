@@ -1,0 +1,103 @@
+@* 可重用的設備類別編輯組件 - 可在任何頁面中嵌入 *@
+@inject IEquipmentCategoryService EquipmentCategoryService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<GenericEditModalComponent TEntity="EquipmentCategory"
+                          TService="IEquipmentCategoryService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@EquipmentCategoryId"
+                          Service="@EquipmentCategoryService"
+                          EntityName="@L["Entity.EquipmentCategory"]"
+                          EntityNamePlural="@L["Entity.EquipmentCategory"]"
+                          ModalTitle="@(EquipmentCategoryId.HasValue ? L["Message.EditTitle", L["Entity.EquipmentCategory"]].ToString() : L["Message.CreateTitle", L["Entity.EquipmentCategory"]].ToString())"
+                          Size="GenericEditModalComponent<EquipmentCategory, IEquipmentCategoryService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          DataLoader="@LoadEquipmentCategoryData"
+                          UseGenericSave="true"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="@L["Message.DraftSuccess", L["Entity.EquipmentCategory"]]"
+                          SaveSuccessMessage="@(EquipmentCategoryId.HasValue ? L["Message.UpdateSuccess", L["Entity.EquipmentCategory"]].ToString() : L["Message.CreateSuccess", L["Entity.EquipmentCategory"]].ToString())"
+                          SaveFailureMessage="@L["Message.SaveFailure", L["Entity.EquipmentCategory"]]"
+                          RequiredPermission="@PermissionRegistry.EquipmentCategory.Read"
+                          OnEntitySaved="@OnEquipmentCategorySaved"
+                          OnCancel="@OnCancel"
+                          ComponentName="EquipmentCategoryEditModalComponent" />
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? EquipmentCategoryId { get; set; }
+    [Parameter] public EventCallback<EquipmentCategory> OnEquipmentCategorySaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    private GenericEditModalComponent<EquipmentCategory, IEquipmentCategoryService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+
+    private Task<EquipmentCategory?> LoadEquipmentCategoryData()
+        => EditDataLoaderHelper.LoadOrCreateAsync<EquipmentCategory, IEquipmentCategoryService>(
+            EquipmentCategoryId, EquipmentCategoryService, NotificationService, "設備類別", "EC", PrefilledValues,
+            ec => ec.Name = string.Empty);
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            InitializeFormFields();
+        }
+    }
+
+    private void InitializeFormFields()
+    {
+        formFields = new List<FormFieldDefinition>
+        {
+            new()
+            {
+                PropertyName = nameof(EquipmentCategory.Code),
+                Label = L["Field.EquipmentCategoryCode"],
+                FieldType = FormFieldType.Text,
+                Placeholder = L["Placeholder.PleaseInput", L["Field.EquipmentCategoryCode"]],
+                IsRequired = true,
+                MaxLength = 50,
+                HelpText = "唯一識別此類別的編號，最多50個字元"
+            },
+            new()
+            {
+                PropertyName = nameof(EquipmentCategory.Name),
+                Label = L["Field.EquipmentCategoryName"],
+                FieldType = FormFieldType.Text,
+                Placeholder = L["Placeholder.PleaseInput", L["Field.EquipmentCategoryName"]],
+                IsRequired = true,
+                MaxLength = 50,
+                HelpText = "顯示用的類別名稱，最多50個字元"
+            },
+            new()
+            {
+                PropertyName = nameof(EquipmentCategory.Description),
+                Label = L["Field.Description"],
+                FieldType = FormFieldType.TextArea,
+                Placeholder = L["Placeholder.PleaseInput", L["Field.Description"]],
+                IsRequired = false,
+                MaxLength = 200,
+                HelpText = "類別的詳細說明，最多200個字元"
+            },
+
+            FormFieldConfigurationHelper.CreateRemarksField<EquipmentCategory>()
+        };
+
+        formSections = FormSectionHelper<EquipmentCategory>.Create()
+            .AddToSection(FormSectionNames.BasicInfo,
+                ec => ec.Code,
+                ec => ec.Name)
+            .AddToSection(FormSectionNames.AdditionalInfo,
+                ec => ec.Description,
+                ec => ec.Remarks)
+            .Build();
+    }
+}

@@ -35,6 +35,16 @@
     <PackageReference Include="System.Management" Version="9.0.0" />
   </ItemGroup>
 
+  <!-- Publish 時排除環境特定設定檔，客戶只需維護 appsettings.json -->
+  <ItemGroup>
+    <Content Update="appsettings.Development.json">
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
+    <Content Update="appsettings.Production.json">
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
   <!-- 確保 Resources 資料夾在 publish 時被複製 -->
   <ItemGroup>
     <None Include="Resources\**" Exclude="Resources\*.resx;Resources\*.cs" CopyToOutputDirectory="PreserveNewest" />

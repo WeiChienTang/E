@@ -16,22 +16,22 @@
 | 主要呈現是格式化文件（唯讀）？ | — | ✓ |
 | 資料按時間週期組織（而非按實體）？ | — | ✓ |
 
-### 元件分類總表（Phase 1 實際實作）
+### 元件分類總表（Phase 1 實際實作；含後續版本路由異動紀錄）
 
 | 元件 | 分類 | 路由 / 位置 | 狀態 |
 |------|------|-----------|------|
 | PayrollIndex | 客製（工作流程型） | `/payroll` | ✅ |
 | PayslipModalComponent | 客製（文件呈現型） | — | ✅ |
-| EmployeeSalaryIndex | 標準 | `/employee-salaries` | ✅ |
+| EmployeeSalaryIndex | 標準 | `/payroll/salary-config`（原 `/employee-salaries`，v1.2 更名） | ✅ |
 | EmployeeSalaryEditModalComponent | 標準 Modal | — | ✅ |
-| EmployeeBankAccountIndex | 標準 | `/employee-bank-accounts` | ✅ |
+| ~~EmployeeBankAccountIndex~~ | ~~標準~~ | ~~`/employee-bank-accounts`~~ | 🗑 已移除（v1.2 整合至員工 EditModal 銀行帳號 Tab）|
 | EmployeeBankAccountEditModalComponent | 標準 Modal | — | ✅ |
-| PayrollItemIndex | 標準 | `/payroll-items` | ✅ |
+| PayrollItemIndex | 標準 | `/payroll/items`（原 `/payroll-items`，v1.2 更名） | ✅ |
 | PayrollItemEditModalComponent | 標準 Modal | — | ✅ |
-| PayrollPeriodIndex | 標準 + 自訂按鈕 | `/payroll-periods` | ✅ |
+| ~~PayrollPeriodIndex~~ | ~~標準 + 自訂按鈕~~ | ~~`/payroll-periods`~~ | 🗑 已移除（v1.2 整合至 PayrollModalComponent Tab 5）|
 | PayrollPeriodEditModalComponent | 標準 Modal + 自訂關帳按鈕 | — | ✅ |
 | EmployeePayrollTab | 嵌入 Tab（唯讀） | Employee EditModal | ✅ |
-| PayrollSettingsTab | 系統參數 Tab 擴充 | SystemParameter Modal | ⏳ Phase 2 |
+| PayrollSettingsTab | 系統參數 Tab 擴充（嵌入型） | SystemParameterSettingsModal | ✅（依 `Payroll.RateTable` 權限動態加入；存放公司層級的薪資預設參數）|
 
 ---
 
@@ -118,17 +118,19 @@
 
 ---
 
-## 五、Navigation 設定
+## 五、Navigation 設定（現況，已更新至 v1.5）
 
 實際設定於 `Data/Navigation/NavigationConfig.cs`，Payroll 父節點包含：
 
-| 子項目 | 路由 | 權限 |
-|--------|------|------|
-| 薪資計算作業 | `/payroll` | `Payroll.Calculate` |
-| 員工薪資設定 | `/employee-salaries` | `Payroll.SalaryConfig` |
-| 員工銀行帳戶 | `/employee-bank-accounts` | `Payroll.SalaryConfig` |
-| 薪資項目設定 | `/payroll-items` | `Payroll.RateTable` |
-| 薪資週期管理 | `/payroll-periods` | `Payroll.Close` |
+| 子項目 | 路由 / 類型 | 權限 | 備注 |
+|--------|------------|------|------|
+| 薪資計算作業 | `/payroll` | `Payroll.Calculate` | Phase 1 |
+| 員工薪資設定 | `/payroll/salary-config` | `Payroll.SalaryConfig` | 原 `/employee-salaries`，v1.2 更名 |
+| 薪資項目設定 | `/payroll/items` | `Payroll.RateTable` | 原 `/payroll-items`，v1.2 更名 |
+| 基本工資維護 | `/payroll/minimum-wages` | `Payroll.RateTable` | Phase 2；v1.5 補加導覽項目 |
+| 薪資圖表 | Action → Modal | `Payroll.ChartRead` | Phase 1 後加；ModuleKey="Charts" |
+| ~~員工銀行帳戶~~ | ~~`/employee-bank-accounts`~~ | — | 🗑 v1.2 移除（整合至員工 EditModal）|
+| ~~薪資週期管理~~ | ~~`/payroll-periods`~~ | — | 🗑 v1.2 移除（整合至 Modal Tab 5）|
 
 ---
 

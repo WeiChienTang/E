@@ -25,99 +25,36 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "介面語言")]
         public UILanguage Language { get; set; } = UILanguage.ZhTW;
 
-        /// <summary>
-        /// 字型縮放級別
-        /// </summary>
-        [Display(Name = "字型大小")]
-        public ContentZoom Zoom { get; set; } = ContentZoom.Medium;
+        // ===== 以下欄位由 localStorage 管理，不寫入 DB =====
+        // 由 MainLayout.LoadPreferenceAsync 從 localStorage 讀取後寫入此 entity，作為記憶體載體
 
-        /// <summary>
-        /// 介面主題
-        /// </summary>
-        [Display(Name = "主題")]
-        public AppTheme Theme { get; set; } = AppTheme.Light;
+        [NotMapped] public ContentZoom Zoom { get; set; } = ContentZoom.Medium;
+        [NotMapped] public AppTheme Theme { get; set; } = AppTheme.Light;
 
-        // ===== 快捷鍵自訂 =====
-        // null = 使用系統預設值；預設值定義於 ShortcutDefaults
+        // 快捷鍵（null = 使用 ShortcutDefaults 預設值）
+        [NotMapped] public string? ShortcutPageSearch { get; set; }
+        [NotMapped] public string? ShortcutReportSearch { get; set; }
+        [NotMapped] public string? ShortcutStickyNotes { get; set; }
+        [NotMapped] public string? ShortcutCalendar { get; set; }
+        [NotMapped] public string? ShortcutQuickAction { get; set; }
 
-        /// <summary>頁面搜尋快捷鍵（預設 Alt+S）</summary>
-        [MaxLength(20)]
-        public string? ShortcutPageSearch { get; set; }
+        // 通知設定
+        [NotMapped] public bool EnableCalendar { get; set; } = true;
+        [NotMapped] public bool EnableStickyNote { get; set; } = true;
+        [NotMapped] public bool ShowCalendarBadge { get; set; } = true;
+        [NotMapped] public bool ShowNoteBadge { get; set; } = true;
+        [NotMapped] public int DefaultReminderMinutes { get; set; } = 15;
 
-        /// <summary>報表搜尋快捷鍵（預設 Alt+R）</summary>
-        [MaxLength(20)]
-        public string? ShortcutReportSearch { get; set; }
+        // Toast 顯示時長（毫秒）
+        [NotMapped] public int ToastSuccessDurationMs { get; set; } = 2000;
+        [NotMapped] public int ToastErrorDurationMs { get; set; } = 2000;
+        [NotMapped] public int ToastWarningDurationMs { get; set; } = 2000;
+        [NotMapped] public int ToastInfoDurationMs { get; set; } = 2000;
 
-        /// <summary>便條貼快捷鍵（預設 Alt+N）</summary>
-        [MaxLength(20)]
-        public string? ShortcutStickyNotes { get; set; }
-
-        /// <summary>行事曆快捷鍵（預設 Alt+C）</summary>
-        [MaxLength(20)]
-        public string? ShortcutCalendar { get; set; }
-
-        /// <summary>快速功能表快捷鍵（預設 Alt+Q）</summary>
-        [MaxLength(20)]
-        public string? ShortcutQuickAction { get; set; }
-
-        // ===== 通知設定 =====
-
-        /// <summary>是否啟用行事曆功能（預設開啟）</summary>
-        [Display(Name = "啟用行事曆")]
-        public bool EnableCalendar { get; set; } = true;
-
-        /// <summary>是否啟用便條貼功能（預設開啟）</summary>
-        [Display(Name = "啟用便條貼")]
-        public bool EnableStickyNote { get; set; } = true;
-
-        /// <summary>是否在 QuickAction 按鈕顯示行事曆提醒徽章（預設開啟）</summary>
-        [Display(Name = "顯示行事曆提醒徽章")]
-        public bool ShowCalendarBadge { get; set; } = true;
-
-        /// <summary>是否在 QuickAction 按鈕顯示便條貼計數徽章（預設開啟）</summary>
-        [Display(Name = "顯示便條貼計數徽章")]
-        public bool ShowNoteBadge { get; set; } = true;
-
-        /// <summary>行事曆事項的預設提醒時間（分鐘）。0 = 不提醒</summary>
-        [Display(Name = "預設提醒時間（分鐘）")]
-        public int DefaultReminderMinutes { get; set; } = 15;
-
-        // ===== 系統訊息顯示時長 (毫秒) =====
-
-        /// <summary>成功訊息顯示時長（毫秒），預設 2000</summary>
-        [Display(Name = "成功訊息顯示時長")]
-        public int ToastSuccessDurationMs { get; set; } = 2000;
-
-        /// <summary>錯誤訊息顯示時長（毫秒），預設 2000</summary>
-        [Display(Name = "錯誤訊息顯示時長")]
-        public int ToastErrorDurationMs { get; set; } = 2000;
-
-        /// <summary>警告訊息顯示時長（毫秒），預設 2000</summary>
-        [Display(Name = "警告訊息顯示時長")]
-        public int ToastWarningDurationMs { get; set; } = 2000;
-
-        /// <summary>資訊訊息顯示時長（毫秒），預設 2000</summary>
-        [Display(Name = "資訊訊息顯示時長")]
-        public int ToastInfoDurationMs { get; set; } = 2000;
-
-        // ===== 導覽列顯示設定 =====
-
-        /// <summary>是否在側邊選單中顯示已停用的模組（灰色鎖定狀態）。false = 完全隱藏</summary>
-        [Display(Name = "顯示停用模組")]
-        public bool ShowDisabledModules { get; set; } = false;
-
-        /// <summary>每頁顯示筆數（10 / 20 / 50 / 100），預設 20</summary>
-        [Display(Name = "每頁顯示筆數")]
-        public int DefaultPageSize { get; set; } = 20;
-
-        // ===== 操作偏好 =====
-
-        /// <summary>
-        /// 離開未儲存表單時是否顯示確認詢問。
-        /// true（預設）= 詢問；false = 直接離開，不顯示確認對話框。
-        /// </summary>
-        [Display(Name = "離開未儲存表單時詢問")]
-        public bool ShowUnsavedChangesWarning { get; set; } = true;
+        // 導覽列與操作偏好
+        [NotMapped] public bool ShowDisabledModules { get; set; } = false;
+        [NotMapped] public int DefaultPageSize { get; set; } = 20;
+        [NotMapped] public bool ShowUnsavedChangesWarning { get; set; } = true;
 
         // 導航屬性
         public Employee? Employee { get; set; }

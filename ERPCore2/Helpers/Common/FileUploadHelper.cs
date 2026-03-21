@@ -103,6 +103,46 @@ namespace ERPCore2.Helpers
         }
 
         /// <summary>
+        /// 上傳文件檔案至指定子目錄（支援 PDF、Word、Excel、圖片，最大 20MB）
+        /// </summary>
+        /// <param name="file">上傳的瀏覽器檔案</param>
+        /// <param name="environment">Web 環境（取得 WebRootPath）</param>
+        /// <param name="subFolder">儲存子目錄（相對於 wwwroot/uploads/，如 "journal-attachments/2026/03"）</param>
+        public static async Task<(bool Success, string Message, string? FilePath, string? MimeType)> UploadDocumentToFolderAsync(
+            IBrowserFile file,
+            IWebHostEnvironment environment,
+            string subFolder)
+        {
+            try
+            {
+                var validationResult = ValidateDocumentFile(file);
+                if (!validationResult.IsValid)
+                    return (false, validationResult.Message, null, null);
+
+                var extension = Path.GetExtension(file.Name).ToLowerInvariant();
+                var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+                var randomString = Guid.NewGuid().ToString("N").Substring(0, 8);
+                var fileName = $"{timestamp}_{randomString}{extension}";
+
+                var uploadPath = Path.Combine(environment.WebRootPath, "uploads", subFolder);
+                if (!Directory.Exists(uploadPath))
+                    Directory.CreateDirectory(uploadPath);
+
+                var filePath = Path.Combine(uploadPath, fileName);
+                await using var fileStream = new FileStream(filePath, FileMode.Create);
+                await file.OpenReadStream(MaxDocumentFileSize).CopyToAsync(fileStream);
+
+                var mimeType = GetDocumentMimeType(extension);
+                var relativePath = $"/uploads/{subFolder}/{fileName}";
+                return (true, "文件上傳成功", relativePath, mimeType);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"上傳失敗：{ex.Message}", null, null);
+            }
+        }
+
+        /// <summary>
         /// 上傳文件檔案（支援 PDF、Word、Excel、圖片，最大 20MB）
         /// </summary>
         public static async Task<(bool Success, string Message, string? FilePath, string? MimeType)> UploadDocumentAsync(

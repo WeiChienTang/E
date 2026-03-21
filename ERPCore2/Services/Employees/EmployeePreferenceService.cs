@@ -49,32 +49,19 @@ namespace ERPCore2.Services
 
                 if (existing == null)
                 {
-                    // 新增
-                    preference.EmployeeId = employeeId;
-                    preference.CreatedAt = DateTime.UtcNow;
-                    context.EmployeePreferences.Add(preference);
+                    // 新增：僅保留 Language，其他偏好由 localStorage 管理
+                    var newRecord = new EmployeePreference
+                    {
+                        EmployeeId = employeeId,
+                        Language   = preference.Language,
+                        CreatedAt  = DateTime.UtcNow
+                    };
+                    context.EmployeePreferences.Add(newRecord);
                 }
                 else
                 {
-                    existing.Language = preference.Language;
-                    existing.Zoom = preference.Zoom;
-                    existing.Theme = preference.Theme;
-                    existing.ShortcutPageSearch         = preference.ShortcutPageSearch;
-                    existing.ShortcutReportSearch       = preference.ShortcutReportSearch;
-                    existing.ShortcutStickyNotes        = preference.ShortcutStickyNotes;
-                    existing.ShortcutCalendar           = preference.ShortcutCalendar;
-                    existing.ShortcutQuickAction        = preference.ShortcutQuickAction;
-                    existing.EnableCalendar             = preference.EnableCalendar;
-                    existing.EnableStickyNote           = preference.EnableStickyNote;
-                    existing.ShowCalendarBadge          = preference.ShowCalendarBadge;
-                    existing.ShowNoteBadge              = preference.ShowNoteBadge;
-                    existing.DefaultReminderMinutes     = preference.DefaultReminderMinutes;
-                    existing.ToastSuccessDurationMs     = preference.ToastSuccessDurationMs;
-                    existing.ToastErrorDurationMs       = preference.ToastErrorDurationMs;
-                    existing.ToastWarningDurationMs     = preference.ToastWarningDurationMs;
-                    existing.ToastInfoDurationMs        = preference.ToastInfoDurationMs;
-                    existing.ShowDisabledModules        = preference.ShowDisabledModules;
-                    existing.DefaultPageSize            = preference.DefaultPageSize;
+                    // 更新：僅同步 Language 到 DB，其他偏好由 localStorage 管理
+                    existing.Language  = preference.Language;
                     existing.UpdatedAt = DateTime.UtcNow;
                 }
 

@@ -1,0 +1,90 @@
+@page "/crm/leads"
+@using ERPCore2.Services.Crm
+@using ERPCore2.FieldConfiguration
+@inject ICrmLeadService CrmLeadService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="CrmLead"
+                          TService="ICrmLeadService"
+                          Service="@CrmLeadService"
+                          EntityBasePath="/crm/leads"
+                          PageTitle="@L["Page.CrmLeadTitle"]"
+                          PageSubtitle="@L["Page.CrmLeadSubtitle"]"
+                          EntityName="@L["Entity.CrmLead"]"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          ServerDataLoader="@ServerLoadLeadsAsync"
+                          GetEntityDisplayName="@(l => l.CompanyName)"
+                          RequiredPermission="@PermissionRegistry.CrmLead.Read"
+                          RequiredModule="Customers"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          DebugPageName="CrmLeadIndex"
+                          @ref="indexComponent" />
+
+<CrmLeadEditModalComponent IsVisible="@showEditModal"
+                           IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                           CrmLeadId="@editingLeadId"
+                           OnCrmLeadSaved="@modalHandler.OnEntitySavedAsync"
+                           OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    private GenericIndexPageComponent<CrmLead, ICrmLeadService> indexComponent = default!;
+
+    private bool showEditModal = false;
+    private int? editingLeadId = null;
+
+    private ModalHandler<CrmLead, GenericIndexPageComponent<CrmLead, ICrmLeadService>> modalHandler = default!;
+
+    private CrmLeadFieldConfiguration fieldConfiguration = default!;
+
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            modalHandler = ModalHelper.CreateModalHandler<CrmLead, GenericIndexPageComponent<CrmLead, ICrmLeadService>>(
+                id => editingLeadId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            fieldConfiguration = new CrmLeadFieldConfiguration(NotificationService);
+            fieldConfiguration.SetLocalizer(L);
+
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化潛在客戶頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化潛在客戶頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() =>
+        breadcrumbItems = await BreadcrumbHelper.CreateThreeLevelAsync(
+            L["Nav.CustomerGroup"], L["Page.CrmLeadTitle"], "#", NotificationService, GetType());
+
+    private Task<(List<CrmLead> Items, int TotalCount)> ServerLoadLeadsAsync(
+        SearchFilterModel filter, int page, int pageSize)
+    {
+        return CrmLeadService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadLeadsAsync), GetType());
+                return q;
+            },
+            page, pageSize);
+    }
+}

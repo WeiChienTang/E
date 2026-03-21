@@ -76,41 +76,6 @@ namespace ERPCore2.FieldConfiguration
                                 model, query, nameof(Bank.SwiftCode), b => b.SwiftCode)
                         }
                     },
-                    {
-                        nameof(Bank.Phone),
-                        new FieldDefinition<Bank>
-                        {
-                            PropertyName = nameof(Bank.Phone),
-                            DisplayName = Dn("Field.Phone", "電話"),
-                            FilterPlaceholder = Fp("Field.Phone", "輸入電話搜尋"),
-                            TableOrder = 4,
-                            NullDisplayText = "-",
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(Bank.Phone), b => b.Phone)
-                        }
-                    },
-                    {
-                        nameof(Bank.Address),
-                        new FieldDefinition<Bank>
-                        {
-                            PropertyName = nameof(Bank.Address),
-                            DisplayName = Dn("Field.Address", "地址"),
-                            ShowInFilter = false,
-                            TableOrder = 5,
-                            NullDisplayText = "-"
-                        }
-                    },
-                    {
-                        nameof(Bank.Fax),
-                        new FieldDefinition<Bank>
-                        {
-                            PropertyName = nameof(Bank.Fax),
-                            DisplayName = Dn("Field.Fax", "傳真"),
-                            ShowInFilter = false,
-                            TableOrder = 6,
-                            NullDisplayText = "-"
-                        }
-                    }
                 };
             }
             catch (Exception ex)

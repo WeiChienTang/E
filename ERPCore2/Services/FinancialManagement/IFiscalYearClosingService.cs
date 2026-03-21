@@ -2,7 +2,7 @@ namespace ERPCore2.Services
 {
     /// <summary>
     /// 年底結帳服務介面
-    /// 執行損益科目歸零 → 本期損益 → 保留盈餘 → 鎖定期間 → 初始化下年度
+    /// 執行損益科目歸零 → 本期損益(3353) → 累積盈虧(3351) → 鎖定期間 → 初始化下年度
     /// </summary>
     public interface IFiscalYearClosingService
     {
@@ -13,8 +13,8 @@ namespace ERPCore2.Services
 
         /// <summary>
         /// 執行年底結帳
-        /// Step 1：損益科目餘額歸零，轉入本期損益 (3351)
-        /// Step 2：本期損益轉入保留盈餘 (3361)
+        /// Step 1：損益科目餘額歸零，轉入本期損益 (3353)
+        /// Step 2：本期損益 (3353) 轉入累積盈虧 (3351)
         /// Step 3：鎖定所有年度期間（Closed → Locked）
         /// Step 4：初始化下一年度 12 個期間
         /// </summary>
