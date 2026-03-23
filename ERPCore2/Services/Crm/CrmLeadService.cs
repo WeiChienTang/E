@@ -1,6 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities;
 using ERPCore2.Helpers;
+using ERPCore2.Helpers.EditModal;
 using ERPCore2.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -159,9 +160,19 @@ namespace ERPCore2.Services.Crm
                 if (string.IsNullOrWhiteSpace(lead.CompanyName))
                     return ServiceResult<int>.Failure("公司名稱不可為空白");
 
+                // 驗證客戶公司名稱不重複
+                var nameExists = await _customerService.IsCompanyNameExistsAsync(lead.CompanyName);
+                if (nameExists)
+                    return ServiceResult<int>.Failure($"客戶清單中已存在「{lead.CompanyName}」，無法重複建立");
+
+                // 自動產生客戶編號
+                var customerCode = await EntityCodeGenerationHelper
+                    .GenerateForEntity<Customer, ICustomerService>(_customerService, "CUST");
+
                 // 建立正式客戶
                 var newCustomer = new Customer
                 {
+                    Code          = customerCode,
                     CompanyName   = lead.CompanyName,
                     ContactPerson = lead.ContactPerson,
                     ContactPhone  = lead.ContactPhone,

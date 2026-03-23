@@ -22,14 +22,14 @@
 
     <HeaderButtons>
         <div class="d-flex gap-2 align-items-center">
-            <GenericButtonComponent Variant="ButtonVariant.Gray"
+            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                   Size="ButtonSize.Small"
                                   Text="@L["Preference.ExportSettings"]"
                                   Icon="bi bi-box-arrow-up"
                                   OnClick="HandleExportPreferences"
                                   IsDisabled="@(isLoading || !currentEmployeeId.HasValue)"
                                   Title="@L["Preference.ExportSettingsTooltip"]" />
-            <GenericButtonComponent Variant="ButtonVariant.Gray"
+            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                   Size="ButtonSize.Small"
                                   Text="@L["Preference.ImportSettings"]"
                                   Icon="bi bi-box-arrow-in-down"

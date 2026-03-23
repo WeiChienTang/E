@@ -98,6 +98,23 @@ namespace ERPCore2.Services.Payroll
                 if (period.PeriodStatus == PayrollPeriodStatus.Closed)
                     return ServiceResult.Failure("此薪資週期已關帳");
 
+                // 驗證：該週期下必須有薪資記錄，且全部已確認
+                var recordStats = await context.PayrollRecords
+                    .Where(r => r.PayrollPeriodId == periodId)
+                    .GroupBy(r => 1)
+                    .Select(g => new
+                    {
+                        Total = g.Count(),
+                        Unconfirmed = g.Count(r => r.RecordStatus != PayrollRecordStatus.Confirmed)
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (recordStats == null || recordStats.Total == 0)
+                    return ServiceResult.Failure("此薪資週期尚無薪資記錄，無法關帳");
+
+                if (recordStats.Unconfirmed > 0)
+                    return ServiceResult.Failure($"尚有 {recordStats.Unconfirmed} 筆薪資單未確認，請先確認所有薪資單再關帳");
+
                 period.PeriodStatus = PayrollPeriodStatus.Closed;
                 period.ClosedAt = DateTime.UtcNow;
                 period.ClosedBy = closedBy;

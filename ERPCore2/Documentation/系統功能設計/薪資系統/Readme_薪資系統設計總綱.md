@@ -1,7 +1,7 @@
 # 薪資系統設計總綱
 
 > 適用地區：中華民國台灣
-> 文件版本：v1.6（2026-03-21）
+> 文件版本：v1.7（2026-03-23）
 > ModuleKey：`Payroll`
 
 ---
@@ -60,8 +60,10 @@
 ```
 
 > **設計決策（v1.2）**：將薪資週期管理、出勤彙總、參考費率表統一整合進 `PayrollModalComponent` 的 Tab 系統，以減少頁面跳轉、提升月結操作效率。各功能依權限顯示對應 Tab。
+>
+> **設計決策（v1.2 補充）**：員工薪資設定（`/payroll/salary-config`）與基本工資維護（`/payroll/minimum-wages`）保留為獨立頁面，不整合至 PayrollModalComponent。原因：此二功能為跨週期／跨年度配置，不受特定薪資週期約束，若放入以週期為中心的 Modal Tab 會造成操作語境混淆（使用者可能誤以為設定只對當前週期生效）。
 
-### 計算流程（Phase 3 更新版）
+### 計算流程（v1.6 更新版）
 
 ```
 CalculateEmployeeAsync(employeeId, periodId)
@@ -70,12 +72,13 @@ CalculateEmployeeAsync(employeeId, periodId)
     ├─ 2. 計算應出勤天數（GetWorkDaysInMonth，排除週末）
     ├─ 3. 查詢 MonthlyAttendanceSummary（若有該月出勤記錄，以實際出勤資料覆蓋步驟 2）
     ├─ 4. 計算本薪（BaseSalary × 出勤比例）
-    ├─ 5. 加計固定月付津貼（動態讀取 EmployeeSalaryItem，全額不依出勤比例）
+    ├─ 5. 加計固定月付津貼（動態讀取 EmployeeSalaryItem，依 PayrollItem.IsProrated 決定是否按出勤比例）
     ├─ 6. 加計平日加班費（OT1 前2hr ×4/3、OT2 後2hr ×5/3）— 勞基法第24條第1項
     ├─ 7. 計算休息日加班費（OT_HOLIDAY：前2hr ×4/3、後續 ×5/3）— 勞基法第24條第2項
     ├─ 8. 計算國定假日加班費（OT_NATIONAL：月薪已含假日薪，加給1倍時薪）— 勞基法第39條
-    ├─ 9. 曠職扣薪（ABSENT：日薪 × 曠職天數）
-    ├─ 10. 病假半薪扣除（SICK：日薪 × 0.5 × 病假天數）
+    ├─ 9. 曠職扣薪（ABSENT：日薪 × 曠職天數）— 月薪制專用
+    ├─ 10. 病假半薪扣除（SICK：日薪 × 0.5 × 病假天數）— 月薪制專用
+    ├─ 10b. 事假全薪扣除（PERSONAL_LEAVE：日薪 × 事假天數）— 月薪制專用；勞基法第43條
     ├─ 11. 計算勞保費（員工負擔：InsuredSalary × 費率）
     ├─ 12. 計算健保費（員工負擔：HealthInsuredAmount × 費率 × 眷屬加乘）
     ├─ 13. 計算勞退自提（BaseSalary × VoluntaryRetirementRate）
@@ -84,12 +87,31 @@ CalculateEmployeeAsync(employeeId, periodId)
     └─ 16. 寫入 PayrollRecord + PayrollRecordDetail
 ```
 
-> 步驟 6–8 的加班費率自 Phase 2 起從 InsuranceRate DB 讀取，常數（4/3、5/3、1.0）為備援值。步驟 9–10 的曠職／病假扣薪依日薪計算，不使用 InsuranceRate。
+> 步驟 6–8 的加班費率自 Phase 2 起從 InsuranceRate DB 讀取，常數（4/3、5/3、1.0）為備援值。步驟 9–10b 的曠職／病假／事假扣薪依日薪計算，不使用 InsuranceRate。
 >
-> **⚠ 設計缺口（待確認）**：`DailyAttendanceStatus` 定義了 8 種狀態，但計算流程目前僅處理 `Absent`（步驟 9）與 `SickLeave`（步驟 10）。以下三種狀態的薪資處理邏輯尚未在計算流程中說明：
-> - `PersonalLeave`（事假，無薪）— 邏輯應等同曠職扣薪，待確認是否已在計算引擎中合併處理
-> - `AnnualLeave`（特休，有薪）— 不扣薪，待確認是否已在出勤天數計算中視為正常出勤
-> - `MakeUpWork`（補班）— 應計入出勤，待確認補班加班費計算規則
+> **設計決策（出勤比例策略）**：`ActualWorkDays` 固定等於 `ScheduledWorkDays`（出勤比例維持 1.0），各假別的薪資影響由步驟 9–10b 的明細扣款處理。此設計避免「出勤比例扣薪」與「明細逐項扣款」雙重扣薪。時薪制員工以實際工時計薪，不產生步驟 9–10b 的假別扣款。
+>
+> **設計決策（v1.6 — 津貼按比例發放）**：步驟 5 新增 `PayrollItem.IsProrated` 旗標。`IsProrated = true` 的津貼按出勤比例發放（如交通津貼），`IsProrated = false`（預設）全額發放（如伙食津貼）。
+
+### 出勤狀態與薪資處理對照表
+
+`DailyAttendanceStatus` 定義 8 種逐日出勤狀態，各狀態在薪資計算中的處理方式如下：
+
+| 狀態 | 值 | 薪資處理（月薪制） | 薪資處理（時薪制） | 計算流程步驟 |
+|------|---|-------------------|-------------------|------------|
+| `Present`（出勤） | 1 | 計入出勤天數，正常計薪 | 依 TotalWorkHours 計薪 | 步驟 4 |
+| `Absent`（曠職） | 2 | 扣全日薪（日薪 × 天數） | 不另扣（無工時即無薪） | 步驟 9 |
+| `SickLeave`（病假） | 3 | 扣半日薪（日薪 × 0.5 × 天數） | 不另扣 | 步驟 10 |
+| `PersonalLeave`（事假） | 4 | 扣全日薪（日薪 × 天數）— 勞基法第43條 | 不另扣 | 步驟 10b |
+| `AnnualLeave`（特休） | 5 | 有薪假，不扣薪（出勤比例 = 1.0 已涵蓋） | 不另扣 | — |
+| `RestDay`（休息日） | 6 | 月薪已含，不另計薪；若有加班走 OT_HOLIDAY | 依加班時數計 | 步驟 7 |
+| `NationalHoliday`（國定假日） | 7 | 月薪已含，不另計薪；若有加班走 OT_NATIONAL | 依加班時數計 | 步驟 8 |
+| `MakeUpWork`（補班） | 8 | 視為正常出勤日，計入出勤天數 | 依實際工時計薪 | 步驟 4 |
+
+> **事假 vs 曠職**：兩者扣薪金額相同（全日薪），但在 PayrollRecordDetail 中以不同 ItemCode（`PERSONAL_LEAVE` / `ABSENT`）記錄，因為：
+> - 曠職可累計為解僱事由（勞基法第12條第1項第6款：連續曠工3日），事假不可
+> - 曠職影響全勤獎金判斷，事假依公司規定可能不影響
+> - 勞檢稽核時需區分合法請假與無故缺勤
 
 ---
 
@@ -351,6 +373,9 @@ CalculateEmployeeAsync(employeeId, periodId)
 | 平日加班費 | 依 InsuranceRate.OvertimeRate1/OvertimeRate2（法定4/3、5/3） | DB 讀取，含 fallback（v1.3）|
 | 休息日加班費 | 依 InsuranceRate.RestDayRate1/RestDayRate2（法定4/3、5/3） | DB 讀取，含 fallback（v1.3）|
 | 國定假日加班費 | 依 InsuranceRate.NationalHolidayRate（法定1.0，額外加給） | DB 讀取，含 fallback（v1.3）|
+| 事假扣薪 | 全日薪扣除（日薪 × 事假天數）— 勞基法第43條 | 計算引擎步驟 10b |
+
+> **實體命名備注**：`InsuranceRate` 實體名稱源自 Phase 1 僅存放保險費率的歷史背景。Phase 2（v1.3）擴充加班費率後，此實體實際涵蓋所有薪資計算費率參數（保險費率、加班倍率、免稅上限）。為避免大規模重構風險，暫不改名，但語意上應理解為「薪資系統費率設定表」（PayrollRateConfig）。
 
 ---
 
@@ -373,7 +398,7 @@ CalculateEmployeeAsync(employeeId, periodId)
 
 > `Payroll.ReadAmount` 屬高度敏感個資，應僅授予 HR / 財務主管。
 >
-> **命名備注**：`Payroll.ChartRead` 的實際權限值為 `"PayrollChart.Read"`，前綴與其他 Payroll 權限（`"Payroll.XXX"`）不同。這是因為圖表功能在 NavigationConfig 中以 `ModuleKey = "Charts"` 獨立掛載。若以 `"Payroll.*"` 前綴進行模組級別檢查，**不會**匹配此權限，需額外處理。
+> **命名備注（已知不一致，維持現狀）**：`Payroll.ChartRead` 的實際權限值為 `"PayrollChart.Read"`，前綴與其他 Payroll 權限（`"Payroll.XXX"`）不同。這是因為圖表功能在 NavigationConfig 中以 `ModuleKey = "Charts"` 獨立掛載。若以 `"Payroll.*"` 前綴進行模組級別檢查，**不會**匹配此權限。目前無模組級批次授權功能，故維持現狀。若未來實作「一鍵授予所有薪資權限」，需將此特例納入處理或統一前綴為 `"Payroll.ChartRead"`。
 
 ---
 

@@ -32,7 +32,8 @@ public static class NavigationActionHelper
         List<string>? searchKeywords = null,
         string? quickActionId = null,
         string? quickActionName = null,
-        string? nameKey = null)
+        string? nameKey = null,
+        string? iconColorClass = null)
     {
         return new NavigationItem
         {
@@ -40,6 +41,7 @@ public static class NavigationActionHelper
             NameKey = nameKey,
             Description = description,
             IconClass = iconClass,
+            IconColorClass = iconColorClass,
             ActionId = actionId,
             ItemType = NavigationItemType.Action,
             Route = "", // Action 類型不需要路由

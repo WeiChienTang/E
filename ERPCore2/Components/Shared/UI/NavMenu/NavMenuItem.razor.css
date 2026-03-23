@@ -30,7 +30,7 @@
 
 .nav-menu-dropdown-toggle-btn:hover {
     background-color: var(--nav-hover-bg);
-    color: var(--nav-text);
+    color: var(--nav-active-border);
 }
 
 /* 展開狀態背景 */
@@ -42,7 +42,7 @@
 /* 展開且 hover */
 .nav-menu-dropdown-container.expanded .nav-menu-dropdown-toggle-btn:hover {
     background-color: var(--nav-hover-bg);
-    color: var(--nav-text);
+    color: var(--nav-active-border);
     border-radius: var(--radius-lg);
 }
 
@@ -110,7 +110,7 @@
 
 .nav-menu-nav-link:hover {
     background-color: var(--nav-hover-bg);
-    color: var(--nav-text);
+    color: var(--nav-active-border);
     text-decoration: none;
 }
 

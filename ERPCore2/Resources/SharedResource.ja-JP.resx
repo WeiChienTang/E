@@ -699,7 +699,7 @@
     <value>車両レポート</value>
   </data>
   <data name="Nav.EquipmentGroup" xml:space="preserve">
-    <value>設備管理</value>
+    <value>設備</value>
   </data>
   <data name="Nav.Equipments" xml:space="preserve">
     <value>設備</value>
@@ -714,7 +714,7 @@
     <value>設備レポート</value>
   </data>
   <data name="Nav.WasteGroup" xml:space="preserve">
-    <value>計量管理</value>
+    <value>計量</value>
   </data>
   <data name="Nav.WasteRecords" xml:space="preserve">
     <value>計量記録</value>
@@ -1473,6 +1473,9 @@
   <data name="Field.PayrollItemIsTaxable" xml:space="preserve"><value>課税対象</value></data>
   <data name="Field.PayrollItemIsInsuranceBasis" xml:space="preserve"><value>保険料算定基礎</value></data>
   <data name="Field.PayrollItemIsRetirementBasis" xml:space="preserve"><value>退職金算定基礎</value></data>
+  <data name="Field.PayrollItemIsProrated" xml:space="preserve"><value>出勤比例で按分</value></data>
+  <data name="Payroll.Prorated" xml:space="preserve"><value>按分</value></data>
+  <data name="Payroll.IsProratedHelpText" xml:space="preserve"><value>チェックすると、この手当は従業員の月次出勤率に応じて按分計算されます</value></data>
   <data name="Entity.PayrollItem" xml:space="preserve"><value>給与項目</value></data>
   <data name="Page.PayrollItemsTitle" xml:space="preserve"><value>給与項目設定</value></data>
   <data name="Page.PayrollItemsSubtitle" xml:space="preserve"><value>給与計算の収入・控除項目を管理</value></data>
@@ -1760,6 +1763,13 @@
   <data name="Field.EquipmentMaintenanceCost" xml:space="preserve"><value>保守費用</value></data>
   <data name="Field.EquipmentServiceProvider" xml:space="preserve"><value>サービス業者</value></data>
   <data name="Field.EquipmentPerformedByEmployee" xml:space="preserve"><value>実施担当者</value></data>
+  <!-- ===== Equipment EditModal 短縮名キー ===== -->
+  <data name="Field.SerialNumber" xml:space="preserve"><value>シリアル番号</value></data>
+  <data name="Field.PurchaseCost" xml:space="preserve"><value>購入費用</value></data>
+  <data name="Field.Location" xml:space="preserve"><value>設置場所</value></data>
+  <data name="Field.MaintenanceCycleMonths" xml:space="preserve"><value>保守周期（月）</value></data>
+  <data name="Field.MaintenanceRecordCode" xml:space="preserve"><value>保守記録コード</value></data>
+  <data name="Field.PerformedByEmployee" xml:space="preserve"><value>実施担当者</value></data>
   <data name="Tab.BasicData" xml:space="preserve"><value>基本情報</value></data>
   <data name="Tab.OrderSource" xml:space="preserve"><value>注文ソース</value></data>
   <!-- ===== Approval Settings Tab keys ===== -->
@@ -1891,10 +1901,20 @@
   <data name="Tab.PageShortcut" xml:space="preserve"><value>ページショートカット</value></data>
   <data name="Tab.QuickAction" xml:space="preserve"><value>クイックアクション</value></data>
   <data name="Tab.ChartView" xml:space="preserve"><value>グラフビュー</value></data>
+  <data name="Tab.CustomerInfo" xml:space="preserve"><value>顧客情報</value></data>
+  <data name="Tab.ItemInfo" xml:space="preserve"><value>品目情報</value></data>
+  <data name="Tab.InventoryData" xml:space="preserve"><value>在庫データ</value></data>
+  <data name="Message.PleaseSelectCustomer" xml:space="preserve"><value>先に顧客を選択してください</value></data>
+  <data name="Message.PleaseSelectItem" xml:space="preserve"><value>先に品目を選択してください</value></data>
+  <data name="Field.StandardCost" xml:space="preserve"><value>標準原価</value></data>
   <!-- ===== Supplier action keys ===== -->
   <data name="Supplier.CopyToCustomerTitle" xml:space="preserve"><value>顧客にコピー</value></data>
   <data name="Supplier.CopyToCustomerMessage" xml:space="preserve"><value>この仕入先のデータを新しい顧客としてコピーしますか？</value></data>
   <data name="Supplier.CopyToCustomerSummary" xml:space="preserve"><value>コピー後、顧客一覧に新しいレコードが作成されます。</value></data>
+  <!-- ===== Customer action keys ===== -->
+  <data name="Customer.CopyToSupplierTitle" xml:space="preserve"><value>仕入先にコピー</value></data>
+  <data name="Customer.CopyToSupplierMessage" xml:space="preserve"><value>この顧客のデータを新しい仕入先としてコピーしますか？</value></data>
+  <data name="Customer.CopyToSupplierSummary" xml:space="preserve"><value>コピー後、仕入先一覧に新しいレコードが作成されます。</value></data>
   <data name="CsvImport.Title" xml:space="preserve"><value>CSVから明細をインポート</value></data>
   <data name="CsvImport.FormatTitle" xml:space="preserve"><value>CSV形式</value></data>
   <data name="CsvImport.FormatDesc" xml:space="preserve"><value>列：取引日付、摘要、支出、収入、銀行参照番号（任意）、残高（任意）。日付形式：yyyy/MM/dd または yyyy-MM-dd。</value></data>
@@ -1946,6 +1966,7 @@
   <data name="CreditRating.C" xml:space="preserve"><value>C - 普通</value></data>
   <data name="CreditRating.D" xml:space="preserve"><value>D - 注意</value></data>
   <data name="Button.ConfirmCopy" xml:space="preserve"><value>コピーを確認</value></data>
+  <data name="Button.EditAndCreate" xml:space="preserve"><value>編集して作成</value></data>
   <!-- ===== Dashboard Widget Picker keys ===== -->
   <data name="Dashboard.AddShortcutTitle" xml:space="preserve"><value>ショートカット項目を追加</value></data>
   <data name="Dashboard.NoMatchFound" xml:space="preserve"><value>「{0}」に一致する項目が見つかりません</value></data>
@@ -2346,6 +2367,280 @@
   <data name="Modal.UpdatedBy" xml:space="preserve"><value>最終更新者：</value></data>
   <data name="Modal.ShowAuditInfo" xml:space="preserve"><value>監査情報を表示</value></data>
   <data name="Modal.HideAuditInfo" xml:space="preserve"><value>監査情報を非表示</value></data>
+  <data name="Modal.ShowFeatureGuide" xml:space="preserve"><value>この機能について</value></data>
+  <data name="Modal.HideFeatureGuide" xml:space="preserve"><value>機能ガイドを閉じる</value></data>
+  <data name="Modal.FeatureGuideTitle" xml:space="preserve"><value>操作ガイド</value></data>
+  <data name="Guide.Overview" xml:space="preserve"><value>機能概要</value></data>
+  <data name="Guide.Steps" xml:space="preserve"><value>操作手順</value></data>
+  <data name="Guide.FieldDescriptions" xml:space="preserve"><value>フィールド説明</value></data>
+  <data name="Guide.Tips" xml:space="preserve"><value>ヒントと注意事項</value></data>
+  <data name="Guide.SalesOrder.Description" xml:space="preserve"><value>販売注文は、顧客が注文した品目、数量、金額を記録します。作成後、承認、納品書の印刷、出荷や返品への変換が可能です。</value></data>
+  <data name="Guide.SalesOrder.Step1" xml:space="preserve"><value>顧客を選択：顧客フィールドから注文顧客を検索・選択</value></data>
+  <data name="Guide.SalesOrder.Step2" xml:space="preserve"><value>注文情報を入力：注文日、税区分などの基本情報を設定</value></data>
+  <data name="Guide.SalesOrder.Step3" xml:space="preserve"><value>明細を追加：明細タブで品目、数量、単価を入力</value></data>
+  <data name="Guide.SalesOrder.Step4" xml:space="preserve"><value>金額を確認：合計金額と税額が正しいか確認</value></data>
+  <data name="Guide.SalesOrder.Step5" xml:space="preserve"><value>保存または承認申請：保存ボタンをクリック、または承認フローに提出</value></data>
+  <data name="Guide.SalesOrder.Field.Customer" xml:space="preserve"><value>この注文の顧客を選択すると、関連データが自動入力されます</value></data>
+  <data name="Guide.SalesOrder.Field.OrderDate" xml:space="preserve"><value>注文作成日、デフォルトは本日、手動変更可能</value></data>
+  <data name="Guide.SalesOrder.Field.TaxMethod" xml:space="preserve"><value>税計算方式を選択（税込、税抜、免税）、明細金額の計算に影響します</value></data>
+  <data name="Guide.SalesOrder.Tip1" xml:space="preserve"><value>見積書から直接インポートでき、注文明細が自動入力され、重複入力を節約できます。</value></data>
+  <data name="Guide.SalesOrder.Warning1" xml:space="preserve"><value>承認後は注文内容を変更できません。承認申請前にすべてのデータを確認してください。</value></data>
+  <data name="Guide.SalesOrder.DetailTitle" xml:space="preserve"><value>明細操作</value></data>
+  <data name="Guide.SalesOrder.Detail1" xml:space="preserve"><value>「追加」ボタンで品目を追加 — 各行に品名、数量、単価を入力</value></data>
+  <data name="Guide.SalesOrder.Detail2" xml:space="preserve"><value>品名フィールドはスマート検索対応 — キーワードで素早く検索可能</value></data>
+  <data name="Guide.SalesOrder.Detail3" xml:space="preserve"><value>数量と単価を入力すると、小計が自動計算されます</value></data>
+  <data name="Guide.SalesOrder.Detail4" xml:space="preserve"><value>ドラッグで順序変更、削除ボタンで品目を削除できます</value></data>
+  <data name="Guide.SalesOrder.ApprovalTitle" xml:space="preserve"><value>承認と印刷</value></data>
+  <data name="Guide.SalesOrder.Approval1" xml:space="preserve"><value>注文作成後に承認申請が可能、承認後に出荷作業を進められます</value></data>
+  <data name="Guide.SalesOrder.Approval2" xml:space="preserve"><value>承認済み注文は納品書の印刷や出荷記録への変換が可能です</value></data>
+  <data name="Guide.SalesOrder.Approval3" xml:space="preserve"><value>承認済み注文を修正するには、まず却下操作が必要です（却下権限が必要）</value></data>
+  <data name="Guide.SalesOrder.FaqTitle" xml:space="preserve"><value>よくある質問</value></data>
+  <data name="Guide.SalesOrder.Faq1Q" xml:space="preserve"><value>見積書からインポートするには？</value></data>
+  <data name="Guide.SalesOrder.Faq1A" xml:space="preserve"><value>アクションボタンの「見積インポート」をクリックし、見積書を選択すると明細が自動入力されます。</value></data>
+  <data name="Guide.SalesOrder.Faq2Q" xml:space="preserve"><value>保存できないのはなぜ？</value></data>
+  <data name="Guide.SalesOrder.Faq2A" xml:space="preserve"><value>顧客が選択され、最低1つの明細品目があり、必須フィールドがすべて入力されているか確認してください。</value></data>
+  <data name="Guide.SalesOrder.Faq3Q" xml:space="preserve"><value>下書き機能の使い方は？</value></data>
+  <data name="Guide.SalesOrder.Faq3A" xml:space="preserve"><value>「下書き保存」をクリックすると未完成の注文を保存できます。下書きは承認フローに入らず、いつでも編集可能です。</value></data>
+  <data name="Guide.SalesOrder.Warning2" xml:space="preserve"><value>税区分を変更すると全明細の金額が再計算されます — 変更後にご確認ください。</value></data>
+  <data name="Guide.SalesOrder.Warning3" xml:space="preserve"><value>出荷実績のある明細は削除できません — 先に関連する出荷伝票を処理してください。</value></data>
+  <data name="Guide.SalesOrder.TabOverview" xml:space="preserve"><value>このページには3つのタブがあります：「注文データ」で基本情報と明細を入力、「顧客情報」で選択した顧客の詳細を確認、「写真」で注文関連の画像をアップロードできます。</value></data>
+  <data name="Guide.SalesOrder.Step6" xml:space="preserve"><value>後続作業：承認後、出荷伝票への変換または生産スケジュールの手配が可能です</value></data>
+  <data name="Guide.SalesOrder.BasicFieldsTitle" xml:space="preserve"><value>基本情報フィールド</value></data>
+  <data name="Guide.SalesOrder.Field.Code" xml:space="preserve"><value>システムが自動生成（SO＋日付＋連番）、手動編集不可</value></data>
+  <data name="Guide.SalesOrder.Field.Company" xml:space="preserve"><value>この注文が属する会社を選択します。複数会社環境では必須</value></data>
+  <data name="Guide.SalesOrder.Field.Salesperson" xml:space="preserve"><value>この注文の担当営業。営業実績の集計に影響します</value></data>
+  <data name="Guide.SalesOrder.Field.FormCreator" xml:space="preserve"><value>この注文を作成した担当者。営業担当と異なる場合があります</value></data>
+  <data name="Guide.SalesOrder.Field.ExpectedDeliveryDate" xml:space="preserve"><value>顧客が希望する納品日。スケジューリングと出荷時に参照されます</value></data>
+  <data name="Guide.SalesOrder.Field.PaymentTerms" xml:space="preserve"><value>支払方法と条件、例：「月末締め30日払い」「代金引換」</value></data>
+  <data name="Guide.SalesOrder.Field.DeliveryTerms" xml:space="preserve"><value>納品方法と場所、例：「顧客倉庫へ配送」「顧客引取り」</value></data>
+  <data name="Guide.SalesOrder.Field.Remarks" xml:space="preserve"><value>補足説明や特別な要望。印刷帳票にも表示されます</value></data>
+  <data name="Guide.SalesOrder.AmountFieldsTitle" xml:space="preserve"><value>金額・税務</value></data>
+  <data name="Guide.SalesOrder.Field.TotalAmount" xml:space="preserve"><value>全明細の小計合計（税抜）。システムが自動計算します</value></data>
+  <data name="Guide.SalesOrder.Field.DiscountAmount" xml:space="preserve"><value>全明細の値引き合計。各品目の割引率から自動計算されます</value></data>
+  <data name="Guide.SalesOrder.Field.SalesTaxAmount" xml:space="preserve"><value>税区分と税率に基づいて自動計算された税額。内税方式では総額から逆算されます</value></data>
+  <data name="Guide.SalesOrder.Field.TotalAmountWithTax" xml:space="preserve"><value>最終請求額 ＝ 合計 ＋ 税額。顧客が実際に支払う金額です</value></data>
+  <data name="Guide.SalesOrder.Detail5" xml:space="preserve"><value>各明細に割引率を設定でき、システムが割引後の小計を自動計算します</value></data>
+  <data name="Guide.SalesOrder.Detail6" xml:space="preserve"><value>出荷実績のある品目は出荷済数量と未出荷数量が表示され、削除できません</value></data>
+  <data name="Guide.SalesOrder.ActionsTitle" xml:space="preserve"><value>機能ボタン説明</value></data>
+  <data name="Guide.SalesOrder.Action.ConvertLabel" xml:space="preserve"><value>出荷伝票に変換</value></data>
+  <data name="Guide.SalesOrder.Action.Convert" xml:space="preserve"><value>承認済み注文を出荷伝票に変換。未出荷の品目と数量が自動反映されます</value></data>
+  <data name="Guide.SalesOrder.Action.ScheduleLabel" xml:space="preserve"><value>スケジュールボード</value></data>
+  <data name="Guide.SalesOrder.Action.Schedule" xml:space="preserve"><value>注文品目の生産スケジュールを確認・計画できます（承認後のみ利用可能）</value></data>
+  <data name="Guide.SalesOrder.Action.InventoryLabel" xml:space="preserve"><value>在庫チェック</value></data>
+  <data name="Guide.SalesOrder.Action.Inventory" xml:space="preserve"><value>全品目のリアルタイム在庫を確認。在庫不足時はボタンが黄色の警告表示になります</value></data>
+  <data name="Guide.SalesOrder.Action.PrintLabel" xml:space="preserve"><value>印刷</value></data>
+  <data name="Guide.SalesOrder.Action.Print" xml:space="preserve"><value>販売注文のプレビューと印刷。PDF・Excelエクスポートに対応</value></data>
+  <data name="Guide.SalesOrder.Action.DraftLabel" xml:space="preserve"><value>下書き保存</value></data>
+  <data name="Guide.SalesOrder.Action.Draft" xml:space="preserve"><value>未完成の注文を下書き保存。下書きは承認フローに入らず、いつでも編集可能です</value></data>
+  <data name="Guide.SalesOrder.Approval4" xml:space="preserve"><value>システム管理者がシステムパラメータで自動承認または手動承認を設定できます</value></data>
+  <data name="Guide.SalesOrder.Tip2" xml:space="preserve"><value>金額フィールドはすべてシステムが自動計算します。明細変更後に即時更新されます。</value></data>
+  <data name="Guide.SalesOrder.Tip3" xml:space="preserve"><value>「顧客情報」タブで選択した顧客の連絡先情報をこのページから直接確認できます。</value></data>
+  <data name="Guide.SalesOrder.Faq4Q" xml:space="preserve"><value>一部のフィールドが編集できないのはなぜですか？</value></data>
+  <data name="Guide.SalesOrder.Faq4A" xml:space="preserve"><value>注文に明細がある場合、顧客・会社・日付等の基本フィールドはロックされ、明細データとの不整合を防ぎます。</value></data>
+  <data name="Guide.SalesOrder.Faq5Q" xml:space="preserve"><value>出荷進捗はどこで確認できますか？</value></data>
+  <data name="Guide.SalesOrder.Faq5A" xml:space="preserve"><value>各明細で「出荷済数量」と「未出荷数量」を確認できます。「在庫チェック」ボタンで全品目の状況を一覧できます。</value></data>
+  <data name="Field.DiscountAmount" xml:space="preserve"><value>値引額</value></data>
+  <data name="Field.TotalAmountWithTax" xml:space="preserve"><value>税込合計</value></data>
+  <data name="Field.SubtotalBeforeDiscount" xml:space="preserve"><value>割引前小計</value></data>
+  <data name="Field.QuotationTaxAmount" xml:space="preserve"><value>見積税額</value></data>
+  <data name="Field.DeliveryAddress" xml:space="preserve"><value>配送先住所</value></data>
+  <data name="Field.ShippingMethod" xml:space="preserve"><value>配送方法</value></data>
+  <data name="Field.ExpectedArrivalDate" xml:space="preserve"><value>入荷予定日</value></data>
+  <data name="Field.PurchasePersonnel" xml:space="preserve"><value>購買担当者</value></data>
+  <data name="Field.PurchaseTaxAmount" xml:space="preserve"><value>仕入税額</value></data>
+  <data name="Field.PurchaseTotalAmountIncludingTax" xml:space="preserve"><value>仕入税込合計</value></data>
+  <data name="Field.PurchaseReceivingTaxAmount" xml:space="preserve"><value>入荷税額</value></data>
+  <data name="Field.PurchaseReceivingTotalAmountIncludingTax" xml:space="preserve"><value>入荷税込合計</value></data>
+  <data name="Field.ReturnTaxAmount" xml:space="preserve"><value>返品税額</value></data>
+  <data name="Field.TotalReturnAmount" xml:space="preserve"><value>返品合計</value></data>
+  <data name="Field.TotalReturnAmountWithTax" xml:space="preserve"><value>返品税込合計</value></data>
+  <data name="Guide.Quotation.Description" xml:space="preserve"><value>Quotations provide item pricing to customers. Once confirmed, they can be converted into sales orders.</value></data>
+  <data name="Guide.Quotation.TabOverview" xml:space="preserve"><value>Three tabs: Quotation Data, Customer Info, Photos.</value></data>
+  <data name="Guide.Quotation.Step1" xml:space="preserve"><value>Select customer</value></data>
+  <data name="Guide.Quotation.Step2" xml:space="preserve"><value>Fill basic info: date, tax type, project name</value></data>
+  <data name="Guide.Quotation.Step3" xml:space="preserve"><value>Add line items with quantities and prices</value></data>
+  <data name="Guide.Quotation.Step4" xml:space="preserve"><value>Verify subtotals, discounts, and tax</value></data>
+  <data name="Guide.Quotation.Step5" xml:space="preserve"><value>Save or submit for approval</value></data>
+  <data name="Guide.Quotation.Field.Code" xml:space="preserve"><value>Auto-generated; cannot be manually edited</value></data>
+  <data name="Guide.Quotation.Field.Customer" xml:space="preserve"><value>Select the customer for this quotation</value></data>
+  <data name="Guide.Quotation.Field.Company" xml:space="preserve"><value>Select the company</value></data>
+  <data name="Guide.Quotation.Field.Salesperson" xml:space="preserve"><value>Salesperson for this quotation</value></data>
+  <data name="Guide.Quotation.Field.Date" xml:space="preserve"><value>Creation date, defaults to today</value></data>
+  <data name="Guide.Quotation.Field.ProjectName" xml:space="preserve"><value>Related project name for tracking</value></data>
+  <data name="Guide.Quotation.Field.TaxMethod" xml:space="preserve"><value>Tax calculation method</value></data>
+  <data name="Guide.Quotation.Field.PaymentTerms" xml:space="preserve"><value>Agreed payment terms</value></data>
+  <data name="Guide.Quotation.Field.DeliveryTerms" xml:space="preserve"><value>Agreed delivery terms</value></data>
+  <data name="Guide.Quotation.Field.Remarks" xml:space="preserve"><value>Additional notes for printed documents</value></data>
+  <data name="Guide.Quotation.Field.Subtotal" xml:space="preserve"><value>Sum of items before discount; auto-calculated</value></data>
+  <data name="Guide.Quotation.Field.Discount" xml:space="preserve"><value>Total discount; auto-calculated</value></data>
+  <data name="Guide.Quotation.Field.TaxAmount" xml:space="preserve"><value>Tax based on tax type</value></data>
+  <data name="Guide.Quotation.Field.TotalAmount" xml:space="preserve"><value>Final = Subtotal - Discount + Tax</value></data>
+  <data name="Guide.Quotation.Action.ConvertLabel" xml:space="preserve"><value>Convert to Sales Order</value></data>
+  <data name="Guide.Quotation.Action.Convert" xml:space="preserve"><value>Convert to sales order; auto-populates unconverted items</value></data>
+  <data name="Guide.Quotation.Action.PrintLabel" xml:space="preserve"><value>Print</value></data>
+  <data name="Guide.Quotation.Action.Print" xml:space="preserve"><value>Preview and print; supports PDF and Excel</value></data>
+  <data name="Guide.Quotation.Action.DraftLabel" xml:space="preserve"><value>Save Draft</value></data>
+  <data name="Guide.Quotation.Action.Draft" xml:space="preserve"><value>Save as draft; won't enter approval</value></data>
+  <data name="Guide.Quotation.Tip1" xml:space="preserve"><value>Can convert multiple times; each brings remaining quantities.</value></data>
+  <data name="Guide.Quotation.Tip2" xml:space="preserve"><value>Set project name to search related quotations by project.</value></data>
+  <data name="Guide.Quotation.Warning1" xml:space="preserve"><value>Fields locked after approval or conversion.</value></data>
+  <data name="Guide.Quotation.Warning2" xml:space="preserve"><value>Deleting converted items may affect related orders.</value></data>
+  <data name="Guide.Quotation.Faq1Q" xml:space="preserve"><value>Can convert to orders multiple times?</value></data>
+  <data name="Guide.Quotation.Faq1A" xml:space="preserve"><value>Yes, each time brings unconverted remaining quantities.</value></data>
+  <data name="Guide.Quotation.Faq2Q" xml:space="preserve"><value>Why is convert button disabled?</value></data>
+  <data name="Guide.Quotation.Faq2A" xml:space="preserve"><value>Ensure saved, approved, and has unconverted items.</value></data>
+  <data name="Guide.Quotation.Faq3Q" xml:space="preserve"><value>How to edit an approved quotation?</value></data>
+  <data name="Guide.Quotation.Faq3A" xml:space="preserve"><value>An authorized user must reject it first.</value></data>
+  <data name="Guide.SalesDelivery.Description" xml:space="preserve"><value>Delivery notes record items delivered to customers. Usually from sales orders.</value></data>
+  <data name="Guide.SalesDelivery.TabOverview" xml:space="preserve"><value>Two tabs: Delivery Data and Customer Info.</value></data>
+  <data name="Guide.SalesDelivery.Step1" xml:space="preserve"><value>Confirm customer and delivery date</value></data>
+  <data name="Guide.SalesDelivery.Step2" xml:space="preserve"><value>Import items from sales orders</value></data>
+  <data name="Guide.SalesDelivery.Step3" xml:space="preserve"><value>Verify quantities and amounts</value></data>
+  <data name="Guide.SalesDelivery.Step4" xml:space="preserve"><value>Fill delivery address and remarks</value></data>
+  <data name="Guide.SalesDelivery.Step5" xml:space="preserve"><value>Save; print after approval</value></data>
+  <data name="Guide.SalesDelivery.Field.Code" xml:space="preserve"><value>Auto-generated: SD + date + sequence</value></data>
+  <data name="Guide.SalesDelivery.Field.Customer" xml:space="preserve"><value>Customer, usually from order</value></data>
+  <data name="Guide.SalesDelivery.Field.Salesperson" xml:space="preserve"><value>Salesperson for this delivery</value></data>
+  <data name="Guide.SalesDelivery.Field.DeliveryDate" xml:space="preserve"><value>Actual delivery date</value></data>
+  <data name="Guide.SalesDelivery.Field.Address" xml:space="preserve"><value>Delivery address; editable</value></data>
+  <data name="Guide.SalesDelivery.Field.TaxMethod" xml:space="preserve"><value>Tax type for calculation</value></data>
+  <data name="Guide.SalesDelivery.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.SalesDelivery.Field.TotalAmount" xml:space="preserve"><value>Subtotal (before tax)</value></data>
+  <data name="Guide.SalesDelivery.Field.Discount" xml:space="preserve"><value>Total discounts</value></data>
+  <data name="Guide.SalesDelivery.Field.TaxAmount" xml:space="preserve"><value>Tax auto-calculated</value></data>
+  <data name="Guide.SalesDelivery.Field.TotalWithTax" xml:space="preserve"><value>Final = Total + Tax</value></data>
+  <data name="Guide.SalesDelivery.Action.ReturnLabel" xml:space="preserve"><value>Convert to Return</value></data>
+  <data name="Guide.SalesDelivery.Action.Return" xml:space="preserve"><value>Create return from delivered items</value></data>
+  <data name="Guide.SalesDelivery.Action.SetoffLabel" xml:space="preserve"><value>Convert to Setoff</value></data>
+  <data name="Guide.SalesDelivery.Action.Setoff" xml:space="preserve"><value>Create setoff for payment</value></data>
+  <data name="Guide.SalesDelivery.Action.PrintLabel" xml:space="preserve"><value>Print</value></data>
+  <data name="Guide.SalesDelivery.Action.Print" xml:space="preserve"><value>Preview and print delivery note</value></data>
+  <data name="Guide.SalesDelivery.Tip1" xml:space="preserve"><value>Details show source order info for tracking.</value></data>
+  <data name="Guide.SalesDelivery.Tip2" xml:space="preserve"><value>Use filters to import from specific orders.</value></data>
+  <data name="Guide.SalesDelivery.Warning1" xml:space="preserve"><value>Items with returns cannot be deleted.</value></data>
+  <data name="Guide.SalesDelivery.Warning2" xml:space="preserve"><value>Fields locked after approval.</value></data>
+  <data name="Guide.SalesDelivery.Faq1Q" xml:space="preserve"><value>Can include items from multiple orders?</value></data>
+  <data name="Guide.SalesDelivery.Faq1A" xml:space="preserve"><value>Yes, use filters to select different orders.</value></data>
+  <data name="Guide.SalesDelivery.Faq2Q" xml:space="preserve"><value>Why can't I delete some items?</value></data>
+  <data name="Guide.SalesDelivery.Faq2A" xml:space="preserve"><value>Items with return/setoff records cannot be deleted.</value></data>
+  <data name="Guide.SalesDelivery.Faq3Q" xml:space="preserve"><value>How to create a return?</value></data>
+  <data name="Guide.SalesDelivery.Faq3A" xml:space="preserve"><value>Click Convert to Return; system auto-populates returnable items.</value></data>
+  <data name="Guide.SalesReturn.Description" xml:space="preserve"><value>Sales returns record items returned by customers. Can create setoffs for refunds.</value></data>
+  <data name="Guide.SalesReturn.TabOverview" xml:space="preserve"><value>Two tabs: Return Data and Customer Info.</value></data>
+  <data name="Guide.SalesReturn.Step1" xml:space="preserve"><value>Confirm customer and return date</value></data>
+  <data name="Guide.SalesReturn.Step2" xml:space="preserve"><value>Select return reason</value></data>
+  <data name="Guide.SalesReturn.Step3" xml:space="preserve"><value>Import returnable items from deliveries</value></data>
+  <data name="Guide.SalesReturn.Step4" xml:space="preserve"><value>Enter return quantities and verify amounts</value></data>
+  <data name="Guide.SalesReturn.Step5" xml:space="preserve"><value>Save; create setoff after approval</value></data>
+  <data name="Guide.SalesReturn.Field.Code" xml:space="preserve"><value>Auto-generated: SR + date + sequence</value></data>
+  <data name="Guide.SalesReturn.Field.Customer" xml:space="preserve"><value>Return customer, from delivery</value></data>
+  <data name="Guide.SalesReturn.Field.ReturnDate" xml:space="preserve"><value>Actual return date</value></data>
+  <data name="Guide.SalesReturn.Field.Reason" xml:space="preserve"><value>Return reason category</value></data>
+  <data name="Guide.SalesReturn.Field.TaxMethod" xml:space="preserve"><value>Tax type for calculation</value></data>
+  <data name="Guide.SalesReturn.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.SalesReturn.Field.TotalReturn" xml:space="preserve"><value>Return items subtotal</value></data>
+  <data name="Guide.SalesReturn.Field.Discount" xml:space="preserve"><value>Return items discount</value></data>
+  <data name="Guide.SalesReturn.Field.TaxAmount" xml:space="preserve"><value>Return tax</value></data>
+  <data name="Guide.SalesReturn.Field.TotalWithTax" xml:space="preserve"><value>Return total with tax</value></data>
+  <data name="Guide.SalesReturn.Action.SetoffLabel" xml:space="preserve"><value>Convert to Setoff</value></data>
+  <data name="Guide.SalesReturn.Action.Setoff" xml:space="preserve"><value>Create setoff for refund</value></data>
+  <data name="Guide.SalesReturn.Tip1" xml:space="preserve"><value>Auto-filters returnable items.</value></data>
+  <data name="Guide.SalesReturn.Warning1" xml:space="preserve"><value>Items with setoff records cannot be modified.</value></data>
+  <data name="Guide.SalesReturn.Warning2" xml:space="preserve"><value>Return qty cannot exceed delivered minus returned.</value></data>
+  <data name="Guide.SalesReturn.Faq1Q" xml:space="preserve"><value>Return qty limit?</value></data>
+  <data name="Guide.SalesReturn.Faq1A" xml:space="preserve"><value>Cannot exceed delivered minus already returned.</value></data>
+  <data name="Guide.SalesReturn.Faq2Q" xml:space="preserve"><value>How to refund?</value></data>
+  <data name="Guide.SalesReturn.Faq2A" xml:space="preserve"><value>Click Convert to Setoff.</value></data>
+  <data name="Guide.PurchaseOrder.Description" xml:space="preserve"><value>Purchase orders record procurement requests to suppliers. Convert to receiving after approval.</value></data>
+  <data name="Guide.PurchaseOrder.TabOverview" xml:space="preserve"><value>Two tabs: PO Data and Supplier Info.</value></data>
+  <data name="Guide.PurchaseOrder.Step1" xml:space="preserve"><value>Select supplier</value></data>
+  <data name="Guide.PurchaseOrder.Step2" xml:space="preserve"><value>Fill order details: dates, purchaser</value></data>
+  <data name="Guide.PurchaseOrder.Step3" xml:space="preserve"><value>Add line items</value></data>
+  <data name="Guide.PurchaseOrder.Step4" xml:space="preserve"><value>Verify amounts and tax</value></data>
+  <data name="Guide.PurchaseOrder.Step5" xml:space="preserve"><value>Save or submit for approval</value></data>
+  <data name="Guide.PurchaseOrder.Field.Code" xml:space="preserve"><value>Auto-generated: PO + date + sequence</value></data>
+  <data name="Guide.PurchaseOrder.Field.Supplier" xml:space="preserve"><value>Select supplier; auto-fills info</value></data>
+  <data name="Guide.PurchaseOrder.Field.Company" xml:space="preserve"><value>Select purchasing company</value></data>
+  <data name="Guide.PurchaseOrder.Field.Personnel" xml:space="preserve"><value>Purchaser for this PO</value></data>
+  <data name="Guide.PurchaseOrder.Field.OrderDate" xml:space="preserve"><value>PO creation date</value></data>
+  <data name="Guide.PurchaseOrder.Field.ExpectedDate" xml:space="preserve"><value>Supplier's promised delivery date</value></data>
+  <data name="Guide.PurchaseOrder.Field.TaxMethod" xml:space="preserve"><value>Tax calculation method</value></data>
+  <data name="Guide.PurchaseOrder.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.PurchaseOrder.Field.TotalAmount" xml:space="preserve"><value>Subtotal (before tax)</value></data>
+  <data name="Guide.PurchaseOrder.Field.TaxAmount" xml:space="preserve"><value>Purchase tax</value></data>
+  <data name="Guide.PurchaseOrder.Field.TotalWithTax" xml:space="preserve"><value>Final = Total + Tax</value></data>
+  <data name="Guide.PurchaseOrder.Action.ConvertLabel" xml:space="preserve"><value>Convert to Receiving</value></data>
+  <data name="Guide.PurchaseOrder.Action.Convert" xml:space="preserve"><value>Convert to receiving; auto-populates unreceived items</value></data>
+  <data name="Guide.PurchaseOrder.Action.CopyMsgLabel" xml:space="preserve"><value>Copy Message</value></data>
+  <data name="Guide.PurchaseOrder.Action.CopyMsg" xml:space="preserve"><value>Format order as text for messaging to supplier</value></data>
+  <data name="Guide.PurchaseOrder.Action.PrintLabel" xml:space="preserve"><value>Print</value></data>
+  <data name="Guide.PurchaseOrder.Action.Print" xml:space="preserve"><value>Preview and print PO</value></data>
+  <data name="Guide.PurchaseOrder.Tip1" xml:space="preserve"><value>Copy Message supports custom templates via gear icon.</value></data>
+  <data name="Guide.PurchaseOrder.Tip2" xml:space="preserve"><value>Expected date defaults to 7 days after order date.</value></data>
+  <data name="Guide.PurchaseOrder.Warning1" xml:space="preserve"><value>Fields locked after approval.</value></data>
+  <data name="Guide.PurchaseOrder.Warning2" xml:space="preserve"><value>Items with receiving records cannot be deleted.</value></data>
+  <data name="Guide.PurchaseOrder.Faq1Q" xml:space="preserve"><value>How to quickly order from supplier?</value></data>
+  <data name="Guide.PurchaseOrder.Faq1A" xml:space="preserve"><value>Use Copy Message to send via messaging app.</value></data>
+  <data name="Guide.PurchaseOrder.Faq2Q" xml:space="preserve"><value>Can receive in multiple batches?</value></data>
+  <data name="Guide.PurchaseOrder.Faq2A" xml:space="preserve"><value>Yes, each conversion brings unreceived quantities.</value></data>
+  <data name="Guide.PurchaseOrder.Faq3Q" xml:space="preserve"><value>Why are fields locked?</value></data>
+  <data name="Guide.PurchaseOrder.Faq3A" xml:space="preserve"><value>Fields lock when approved or has receiving records.</value></data>
+  <data name="Guide.PurchaseReceiving.Description" xml:space="preserve"><value>Receiving notes record items received from suppliers. Can specify warehouses and batch numbers.</value></data>
+  <data name="Guide.PurchaseReceiving.TabOverview" xml:space="preserve"><value>Two tabs: Receiving Data and Supplier Info.</value></data>
+  <data name="Guide.PurchaseReceiving.Step1" xml:space="preserve"><value>Select supplier</value></data>
+  <data name="Guide.PurchaseReceiving.Step2" xml:space="preserve"><value>Filter PO to receive from</value></data>
+  <data name="Guide.PurchaseReceiving.Step3" xml:space="preserve"><value>Use Smart Load to import items</value></data>
+  <data name="Guide.PurchaseReceiving.Step4" xml:space="preserve"><value>Verify quantities and assign warehouses</value></data>
+  <data name="Guide.PurchaseReceiving.Step5" xml:space="preserve"><value>Save and approve; items stocked on approval</value></data>
+  <data name="Guide.PurchaseReceiving.Field.Code" xml:space="preserve"><value>Auto-generated: PR + date + sequence</value></data>
+  <data name="Guide.PurchaseReceiving.Field.Supplier" xml:space="preserve"><value>Supplier, usually from PO</value></data>
+  <data name="Guide.PurchaseReceiving.Field.ReceiptDate" xml:space="preserve"><value>Actual date goods received</value></data>
+  <data name="Guide.PurchaseReceiving.Field.TaxMethod" xml:space="preserve"><value>Tax type for calculation</value></data>
+  <data name="Guide.PurchaseReceiving.Field.BatchNumber" xml:space="preserve"><value>Batch number for tracking</value></data>
+  <data name="Guide.PurchaseReceiving.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.PurchaseReceiving.Field.TotalAmount" xml:space="preserve"><value>Subtotal (before tax)</value></data>
+  <data name="Guide.PurchaseReceiving.Field.TaxAmount" xml:space="preserve"><value>Receiving tax</value></data>
+  <data name="Guide.PurchaseReceiving.Field.TotalWithTax" xml:space="preserve"><value>Final = Total + Tax</value></data>
+  <data name="Guide.PurchaseReceiving.Detail1" xml:space="preserve"><value>Smart Load imports unreceived PO items</value></data>
+  <data name="Guide.PurchaseReceiving.Detail2" xml:space="preserve"><value>Verify actual received qty per item</value></data>
+  <data name="Guide.PurchaseReceiving.Detail3" xml:space="preserve"><value>Assign warehouses; use Unify Warehouse for batch setting</value></data>
+  <data name="Guide.PurchaseReceiving.Detail4" xml:space="preserve"><value>Fill batch number for tracking</value></data>
+  <data name="Guide.PurchaseReceiving.Action.ReturnLabel" xml:space="preserve"><value>Convert to Return</value></data>
+  <data name="Guide.PurchaseReceiving.Action.Return" xml:space="preserve"><value>Create return from received items</value></data>
+  <data name="Guide.PurchaseReceiving.Action.SetoffLabel" xml:space="preserve"><value>Convert to Setoff</value></data>
+  <data name="Guide.PurchaseReceiving.Action.Setoff" xml:space="preserve"><value>Create setoff for payment</value></data>
+  <data name="Guide.PurchaseReceiving.Tip1" xml:space="preserve"><value>Unify Warehouse sets all items to same warehouse.</value></data>
+  <data name="Guide.PurchaseReceiving.Tip2" xml:space="preserve"><value>Received qty can differ from ordered; system tracks difference.</value></data>
+  <data name="Guide.PurchaseReceiving.Warning1" xml:space="preserve"><value>Items with returns/setoffs cannot be deleted.</value></data>
+  <data name="Guide.PurchaseReceiving.Faq1Q" xml:space="preserve"><value>Can receive less than ordered?</value></data>
+  <data name="Guide.PurchaseReceiving.Faq1A" xml:space="preserve"><value>Yes, remaining can be imported next time.</value></data>
+  <data name="Guide.PurchaseReceiving.Faq2Q" xml:space="preserve"><value>How to handle extra items?</value></data>
+  <data name="Guide.PurchaseReceiving.Faq2A" xml:space="preserve"><value>Manually add items; not required from PO.</value></data>
+  <data name="Guide.PurchaseReturn.Description" xml:space="preserve"><value>Purchase returns record items returned to suppliers. Can create setoffs for deductions.</value></data>
+  <data name="Guide.PurchaseReturn.TabOverview" xml:space="preserve"><value>Two tabs: Return Data and Supplier Info.</value></data>
+  <data name="Guide.PurchaseReturn.Step1" xml:space="preserve"><value>Confirm supplier and return date</value></data>
+  <data name="Guide.PurchaseReturn.Step2" xml:space="preserve"><value>Select return reason</value></data>
+  <data name="Guide.PurchaseReturn.Step3" xml:space="preserve"><value>Import returnable items from receiving</value></data>
+  <data name="Guide.PurchaseReturn.Step4" xml:space="preserve"><value>Enter return quantities and verify amounts</value></data>
+  <data name="Guide.PurchaseReturn.Step5" xml:space="preserve"><value>Save; create setoff after approval</value></data>
+  <data name="Guide.PurchaseReturn.Field.Code" xml:space="preserve"><value>Auto-generated: PRT + date + sequence</value></data>
+  <data name="Guide.PurchaseReturn.Field.Supplier" xml:space="preserve"><value>Return supplier, from receiving</value></data>
+  <data name="Guide.PurchaseReturn.Field.ReturnDate" xml:space="preserve"><value>Actual return date</value></data>
+  <data name="Guide.PurchaseReturn.Field.Reason" xml:space="preserve"><value>Return reason category</value></data>
+  <data name="Guide.PurchaseReturn.Field.TaxMethod" xml:space="preserve"><value>Tax type for calculation</value></data>
+  <data name="Guide.PurchaseReturn.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.PurchaseReturn.Field.TotalReturn" xml:space="preserve"><value>Return subtotal</value></data>
+  <data name="Guide.PurchaseReturn.Field.TaxAmount" xml:space="preserve"><value>Return tax</value></data>
+  <data name="Guide.PurchaseReturn.Field.TotalWithTax" xml:space="preserve"><value>Return total with tax</value></data>
+  <data name="Guide.PurchaseReturn.Action.SetoffLabel" xml:space="preserve"><value>Convert to Setoff</value></data>
+  <data name="Guide.PurchaseReturn.Action.Setoff" xml:space="preserve"><value>Create setoff for deduction</value></data>
+  <data name="Guide.PurchaseReturn.Tip1" xml:space="preserve"><value>Auto-filters returnable items from receiving.</value></data>
+  <data name="Guide.PurchaseReturn.Warning1" xml:space="preserve"><value>Items with setoff records cannot be modified.</value></data>
+  <data name="Guide.PurchaseReturn.Warning2" xml:space="preserve"><value>Return qty cannot exceed received minus returned.</value></data>
+  <data name="Guide.PurchaseReturn.Faq1Q" xml:space="preserve"><value>Return qty limit?</value></data>
+  <data name="Guide.PurchaseReturn.Faq1A" xml:space="preserve"><value>Cannot exceed received minus already returned.</value></data>
+  <data name="Guide.PurchaseReturn.Faq2Q" xml:space="preserve"><value>How to deduct from supplier?</value></data>
+  <data name="Guide.PurchaseReturn.Faq2A" xml:space="preserve"><value>Click Convert to Setoff.</value></data>
   <data name="Modal.DefaultTitle" xml:space="preserve"><value>ウィンドウ</value></data>
   <data name="Modal.DefaultLoading" xml:space="preserve"><value>読み込み中...</value></data>
 
@@ -3323,6 +3618,9 @@
   <data name="Column.StockCode" xml:space="preserve"><value>製品コード</value></data>
   <data name="Column.StorageQty" xml:space="preserve"><value>在庫数</value></data>
   <data name="Stats.ClickForDetail" xml:space="preserve"><value>クリックして詳細を表示</value></data>
+  <data name="Stats.Collapse" xml:space="preserve"><value>統計を折りたたむ</value></data>
+  <data name="Stats.ExpandAll" xml:space="preserve"><value>すべて展開</value></data>
+  <data name="Stats.Statistics" xml:space="preserve"><value>統計</value></data>
 
   <!-- ===== Vehicle Notifications ===== -->
   <data name="Vehicle.LoadFailed" xml:space="preserve"><value>車両リストの読み込みに失敗しました：{0}</value></data>
@@ -3719,6 +4017,10 @@
   <data name="Inventory.ReservedExceedsCurrent" xml:space="preserve"><value>予約在庫は現在庫を超えることはできません</value></data>
   <data name="Inventory.AllDetailsCleared" xml:space="preserve"><value>すべての在庫明細をクリアしました</value></data>
   <data name="Inventory.CurrentStockReadonlyHint" xml:space="preserve"><value>現在庫数量は棚卸調整、入庫または出庫プロセスを通じて変更する必要があります</value></data>
+  <data name="Inventory.NoWarehouseTitle" xml:space="preserve"><value>倉庫が未登録です</value></data>
+  <data name="Inventory.NoWarehouseMessage" xml:space="preserve"><value>倉庫がまだ登録されていません。在庫明細を追加するには倉庫が必要です。今すぐ倉庫を作成しますか？</value></data>
+  <data name="Inventory.CreateWarehouseNow" xml:space="preserve"><value>今すぐ倉庫を作成</value></data>
+  <data name="Inventory.WarehouseCreatedContinue" xml:space="preserve"><value>倉庫が作成されました。在庫明細を追加できます。</value></data>
   <data name="Message.ConfirmDeleteExistingDetail" xml:space="preserve"><value>この明細はデータベースに保存されています。削除してもよろしいですか？</value></data>
   <data name="Button.SaveDraft" xml:space="preserve"><value>下書き</value></data>
   <data name="Label.Draft" xml:space="preserve"><value>下書き</value></data>
@@ -3865,4 +4167,15 @@
   <data name="MaintenanceType.Inspection" xml:space="preserve"><value>点検</value></data>
   <data name="MaintenanceType.Other" xml:space="preserve"><value>その他</value></data>
   <data name="Label.Uncategorized" xml:space="preserve"><value>未分類</value></data>
+  <!-- ===== 仕入先比較 ===== -->
+  <data name="Button.ComparePrice" xml:space="preserve"><value>価格比較</value></data>
+  <data name="Message.LoadComparisonFailed" xml:space="preserve"><value>比較データの読み込みに失敗しました: {0}</value></data>
+  <data name="Message.PriceApplied" xml:space="preserve"><value>{0} の価格を適用しました: ¥{1}</value></data>
+  <data name="Comparison.PreferredSupplier" xml:space="preserve"><value>優先仕入先</value></data>
+  <data name="Comparison.Priority" xml:space="preserve"><value>優先順位</value></data>
+  <data name="Comparison.LeadTime" xml:space="preserve"><value>納期</value></data>
+  <data name="Comparison.Days" xml:space="preserve"><value>日</value></data>
+  <data name="Comparison.SupplierItemCode" xml:space="preserve"><value>仕入先品番</value></data>
+  <data name="Comparison.PriceRange" xml:space="preserve"><value>価格帯</value></data>
+  <data name="Validation.Required" xml:space="preserve"><value>は必須です</value></data>
 </root>

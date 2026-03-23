@@ -81,6 +81,13 @@ namespace ERPCore2.Data.Entities.Payroll
         [Display(Name = "已鎖定")]
         public bool IsLocked { get; set; } = false;
 
+        [Display(Name = "鎖定時間")]
+        public DateTime? LockedAt { get; set; }
+
+        [MaxLength(50)]
+        [Display(Name = "鎖定人員")]
+        public string? LockedBy { get; set; }
+
         [MaxLength(500)]
         [Display(Name = "備註")]
         public string? Remarks { get; set; }

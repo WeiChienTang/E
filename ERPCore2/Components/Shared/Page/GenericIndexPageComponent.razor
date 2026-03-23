@@ -51,9 +51,16 @@ else
                        LoadingText="@L["Label.Loading"]"
                        ShowDivider="true">
     <ActionButtons>
+        @* 統計 Badge - 內嵌於按鈕列 *@
+        @if (ShowStatisticsCards && StatisticsCardConfigs != null && StatisticsCardConfigs.Any())
+        {
+            <GenericStatisticsCards CardConfigs="@StatisticsCardConfigs"
+                                   Statistics="@_statisticsData" />
+        }
+
         @if (ShowDefaultActions && CustomActionButtons == null)
         {
-            <IndexActionButtonsComponent 
+            <IndexActionButtonsComponent
                 AddButtonText="@GetAddButtonText()"
                 AddButtonTitle="@GetAddButtonTitle()"
                 ShowAddButton="@ShowAddButton"
@@ -84,17 +91,6 @@ else
         }
     </ActionButtons>
 </GenericHeaderComponent>
-
-@* 統計卡片區域 - 條件顯示 *@
-@if (ShowStatisticsCards && StatisticsCardConfigs != null && StatisticsCardConfigs.Any())
-{
-    <div class="row mb-4">
-        <div class="col-12">
-            <GenericStatisticsCards CardConfigs="@StatisticsCardConfigs"
-                                   Statistics="@_statisticsData" />
-        </div>
-    </div>
-}
 
 @* 主要內容區域 *@
 <div class="row">

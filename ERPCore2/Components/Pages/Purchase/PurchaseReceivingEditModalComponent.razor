@@ -2,6 +2,7 @@
 @using ERPCore2.Helpers
 @using ERPCore2.Services.Reports
 @using ERPCore2.Services.Reports.Interfaces
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 @inject IPurchaseReceivingService PurchaseReceivingService
 @inject IPurchaseReceivingDetailService PurchaseReceivingDetailService
 @inject IPurchaseOrderService PurchaseOrderService
@@ -75,7 +76,8 @@
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.PurchaseReceivingDoc"]]"
                           GetReportDocumentName="@(e => $"進貨單-{e.Code}")"
                           OnEntityLoaded="@HandleEntityLoaded"
-                          ComponentName="PurchaseReceivingEditModalComponent" />
+                          ComponentName="PurchaseReceivingEditModalComponent"
+                          FeatureGuide="@PurchaseReceivingGuide.Create()" />
 
 @* 廠商編輯 Modal *@
 @if (supplierModalManager != null)

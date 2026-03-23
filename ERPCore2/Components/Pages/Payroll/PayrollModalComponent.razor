@@ -18,7 +18,7 @@
                     CloseOnBackdropClick="@CloseOnBackdropClick"
                     CloseOnEscape="@CloseOnEscape"
                     BodyCssClass="p-0"
-                    DebugComponentName="PayrollModalComponent">
+                    DebugComponentName="@DebugName">
 
     <BodyContent>
         <div class="form-tab-container">
@@ -197,6 +197,17 @@
 
     // ── Tab 定義（依權限動態建立，與 CustomerEditModalComponent 相同作法）──
 
+    private string DebugName
+    {
+        get
+        {
+            const string baseName = "PayrollModalComponent";
+            if (tabDefinitions.Count == 0 || activeTabIndex >= tabDefinitions.Count) return baseName;
+            var tabDebugName = tabDefinitions[activeTabIndex].DebugComponentName;
+            return string.IsNullOrEmpty(tabDebugName) ? baseName : $"{baseName} > {tabDebugName}";
+        }
+    }
+
     private void BuildTabDefinitions()
     {
         tabDefinitions = new List<FormTabDefinition>
@@ -206,17 +217,17 @@
 
         if (canRateTable)
         {
-            tabDefinitions.Add(new() { Label = L["Payroll.Tab.InsuranceRate"],        Icon = "bi bi-shield-check",    CustomContent = CreateInsuranceRateTabContent() });
-            tabDefinitions.Add(new() { Label = L["Payroll.Tab.LaborInsuranceGrade"], Icon = "bi bi-people",           CustomContent = CreateLaborInsuranceGradeTabContent() });
-            tabDefinitions.Add(new() { Label = L["Payroll.Tab.HealthInsuranceGrade"],Icon = "bi bi-heart-pulse",      CustomContent = CreateHealthInsuranceGradeTabContent() });
-            tabDefinitions.Add(new() { Label = L["Payroll.Tab.WithholdingTaxTable"], Icon = "bi bi-receipt-cutoff",   CustomContent = CreateWithholdingTaxTableTabContent() });
+            tabDefinitions.Add(new() { Label = L["Payroll.Tab.InsuranceRate"],        Icon = "bi bi-shield-check",    CustomContent = CreateInsuranceRateTabContent(),        DebugComponentName = nameof(InsuranceRateTab) });
+            tabDefinitions.Add(new() { Label = L["Payroll.Tab.LaborInsuranceGrade"], Icon = "bi bi-people",           CustomContent = CreateLaborInsuranceGradeTabContent(), DebugComponentName = nameof(LaborInsuranceGradeTab) });
+            tabDefinitions.Add(new() { Label = L["Payroll.Tab.HealthInsuranceGrade"],Icon = "bi bi-heart-pulse",      CustomContent = CreateHealthInsuranceGradeTabContent(), DebugComponentName = nameof(HealthInsuranceGradeTab) });
+            tabDefinitions.Add(new() { Label = L["Payroll.Tab.WithholdingTaxTable"], Icon = "bi bi-receipt-cutoff",   CustomContent = CreateWithholdingTaxTableTabContent(), DebugComponentName = nameof(WithholdingTaxTableTab) });
         }
 
         if (canClose)
-            tabDefinitions.Add(new() { Label = L["Payroll.Tab.PayrollPeriods"], Icon = "bi bi-calendar3",  CustomContent = CreatePayrollPeriodTabContent() });
+            tabDefinitions.Add(new() { Label = L["Payroll.Tab.PayrollPeriods"], Icon = "bi bi-calendar3",  CustomContent = CreatePayrollPeriodTabContent(), DebugComponentName = nameof(PayrollPeriodTab) });
 
         if (canAttendance)
-            tabDefinitions.Add(new() { Label = L["Payroll.Tab.Attendance"],     Icon = "bi bi-clock",      CustomContent = CreateAttendanceTabContent() });
+            tabDefinitions.Add(new() { Label = L["Payroll.Tab.Attendance"],     Icon = "bi bi-clock",      CustomContent = CreateAttendanceTabContent(), DebugComponentName = nameof(AttendanceTab) });
     }
 
     private RenderFragment CreateCalculationTabContent() => __builder =>

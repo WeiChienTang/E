@@ -30,7 +30,7 @@
                           GetEntityDisplayName="@(returnItem => returnItem.Code)"
                           RequiredPermission="@PermissionRegistry.PurchaseReturn.Read"
                           RequiredModule="Purchase"
-                          ShowBatchPrintButton="true"
+                          ShowBatchPrintButton="false"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
                           ShowBatchApprovalButton="@isManualApproval"
                           OnBatchApprovalClick="@HandleBatchApprovalAsync"

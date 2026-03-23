@@ -43,9 +43,10 @@
                    ErrorMessage="@ErrorMessage"
                    ShowFooter="@isEditMode"
                    AuditInfo="@GetAuditInfo()"
+                   FeatureGuide="@FeatureGuide"
                    BodyCssClass="p-0"
                    DebugComponentName="@DebugName"
-                   OnClose="@HandleCancel">    
+                   OnClose="@HandleCancel">
     <HeaderButtons>
         @* ===== Modal Actions 按鈕區塊 ===== *@
         <div class="w-100 d-flex flex-wrap align-items-center px-2 modal-buttons-container">
@@ -204,6 +205,7 @@
                                     Model="@Entity"
                                     FieldDefinitions="@GetProcessedFormFields()"
                                     FieldSections="@FormSections"
+                                    SectionColumnAssignments="@SectionColumnAssignments"
                                     TabDefinitions="@TabDefinitions"
                                     DisableSecondaryTabs="@(!Id.HasValue || Entity?.IsDraft == true)"
                                     OnFieldChanged="@HandleFieldChanged"
@@ -296,6 +298,7 @@
                        CloseOnEscape="true"
                        CloseOnBackdropClick="true"
                        ShowCloseButton="false"
+                       DebugComponentName="SaveAsDraftConfirmModal"
                        OnClose="HandleSaveAsDraftCancel">
         <HeaderButtons>
             <GenericButtonComponent Text="@L["Button.SaveDraft"]"      Variant="ButtonVariant.Gray"    OnClick="HandleSaveAsDraftConfirm" Title="@L["Button.SaveDraft"]" />
@@ -411,6 +414,7 @@
     [Parameter] public bool UseGenericForm { get; set; } = true;
     [Parameter] public List<FormFieldDefinition> FormFields { get; set; } = new();
     [Parameter] public Dictionary<string, string> FormSections { get; set; } = new();
+    [Parameter] public Dictionary<string, int>? SectionColumnAssignments { get; set; }
     [Parameter] public List<FormTabDefinition>? TabDefinitions { get; set; }
     
     // AutoComplete 智能預填支援
@@ -427,6 +431,11 @@
     [Parameter] public RenderFragment? FormHeaderContent { get; set; }  // 表單頂部內容（在欄位之前）
     [Parameter] public RenderFragment? CustomFormContent { get; set; }
     [Parameter] public RenderFragment? AdditionalSections { get; set; }
+
+    /// <summary>
+    /// 功能說明定義（數據驅動，自動渲染操作說明面板 + 書籤）
+    /// </summary>
+    [Parameter] public ERPCore2.Models.FeatureGuides.FeatureGuideDefinition? FeatureGuide { get; set; }
     
     // 自訂模組系統
     [Parameter] public List<CustomModule> CustomModules { get; set; } = new();

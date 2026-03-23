@@ -165,6 +165,10 @@ Components/Pages/Employees/
 
         var layout = FormSectionHelper<Customer>.Create()
             .AddToSection(...)
+            // Column 分組：多個 Section 共用同一欄，減少表單高度
+            // 不指定時每個 Section 獨立一欄（原有行為）
+            .AssignColumn(0, FormSectionNames.BasicInfo)
+            .AssignColumn(1, FormSectionNames.ContactInfo, FormSectionNames.AdditionalInfo)
             .GroupIntoTab("客戶資料", "bi-building", ...)   // 標準表單 Tab
             .GroupIntoCustomTab("車輛資訊", "bi-truck", CreateVehicleTabContent())  // 自訂 Tab
             .GroupIntoCustomTab("拜訪紀錄", "bi-journal-text", CreateVisitTabContent())

@@ -50,6 +50,7 @@ EditModal 是每個業務實體的新增/編輯表單，使用 `GenericEditModal
 | `UseGenericForm` | `bool` | 使用 GenericFormComponent 渲染表單 |
 | `FormFields` | `List<FormFieldDefinition>` | 直接綁定 `@formFields`（不使用 wrapper 方法） |
 | `FormSections` | `Dictionary<string, string>` | 欄位區段映射 |
+| `SectionColumnAssignments` | `Dictionary<string, int>?` | 區段 Column 分組映射（多個 Section 共用同一欄） |
 | `TabDefinitions` | `List<FormTabDefinition>?` | Tab 頁籤定義 |
 | `FormHeaderContent` | `RenderFragment?` | 表單頂部自訂內容（欄位之前） |
 | `CustomFormContent` | `RenderFragment?` | 自訂表單內容（欄位之後） |
@@ -220,7 +221,7 @@ Table 的 `<InteractiveTableComponent>` 必須綁定 `OnDataChanged`，確保所
 |--------|------|
 | `ModalManagerInitHelper` | 初始化關聯實體 Modal 管理器 |
 | `AutoCompleteConfigBuilder<T>` | 建立 AutoComplete 配置（含多欄位搜尋、條件式配置） |
-| `FormSectionHelper<T>` | 定義欄位區段與 Tab（需要 Tab 時用 `.BuildAll()`） |
+| `FormSectionHelper<T>` | 定義欄位區段與 Tab（需要 Tab 時用 `.BuildAll()`，可用 `.AssignColumn()` 讓多個 Section 共用同一欄） |
 | `ActionButtonHelper` | 產生 AutoComplete 欄位的新增/編輯按鈕 |
 | `EntityCodeGenerationHelper` | 新增模式自動產生單據編號（讀取 `[EntityCode]` Attribute） |
 | `FormFieldConfigurationHelper` | 建立常用欄位（備註、編號、狀態等） |
@@ -252,7 +253,7 @@ Table 的 `<InteractiveTableComponent>` 必須綁定 `OnDataChanged`，確保所
 ### Helper 使用
 - [ ] 使用 `ModalManagerInitHelper` 管理關聯實體
 - [ ] 使用 `AutoCompleteConfigBuilder` 建立 AutoComplete 配置
-- [ ] 使用 `FormSectionHelper` 定義區段（需要 Tab 時用 `.BuildAll()`）
+- [ ] 使用 `FormSectionHelper` 定義區段（需要 Tab 時用 `.BuildAll()`，多 Section 共用欄位時用 `.AssignColumn()`）
 - [ ] 使用 `ActionButtonHelper` 產生欄位按鈕
 - [ ] `OnFieldChanged` 僅在有非 ActionButton 自訂邏輯時才綁定
 

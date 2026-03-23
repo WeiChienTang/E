@@ -1564,6 +1564,10 @@ namespace ERPCore2.Data.Context
                   {
                         entity.HasIndex(e => e.EmployeeId);
                         entity.HasIndex(e => e.EffectiveDate);
+                        // 同一員工只能有一筆「當前有效」薪資設定（ExpiryDate IS NULL）
+                        entity.HasIndex(e => new { e.EmployeeId, e.ExpiryDate })
+                              .IsUnique()
+                              .HasFilter("[ExpiryDate] IS NULL");
                         entity.HasOne(e => e.Employee)
                               .WithMany()
                               .HasForeignKey(e => e.EmployeeId)
@@ -1614,7 +1618,7 @@ namespace ERPCore2.Data.Context
                               .HasForeignKey(e => e.EmployeeId)
                               .OnDelete(DeleteBehavior.Restrict);
                         entity.HasOne(e => e.Bank)
-                              .WithMany()
+                              .WithMany(b => b.EmployeeBankAccounts)
                               .HasForeignKey(e => e.BankId)
                               .OnDelete(DeleteBehavior.Restrict);
                   });

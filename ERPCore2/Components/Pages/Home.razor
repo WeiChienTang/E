@@ -72,7 +72,7 @@
 
             <div class="dashboard-panel mb-4">
                 @* 區塊標題列 *@
-                <div class="panel-header d-flex justify-content-between align-items-center">
+                <div class="panel-header d-flex justify-content-between align-items-center flex-wrap gap-1">
                     <h5 class="mb-0 fw-bold d-flex align-items-center">
                         @if (isEditMode)
                         {
@@ -91,7 +91,7 @@
                         {
                             <input type="text"
                                    class="form-control form-control-sm d-inline-block"
-                                   style="width: auto; max-width: 200px;"
+                                   style="width: auto; max-width: min(200px, calc(100% - 40px));"
                                    value="@panel.Title"
                                    maxlength="@DashboardDefaults.MaxPanelTitleLength"
                                    @onchange="@(e => HandlePanelTitleChange(panel.Id, e.Value?.ToString()))" />
@@ -101,7 +101,7 @@
                             @panel.Title
                         }
                     </h5>
-                    <div>
+                    <div class="d-flex gap-1">
                         @if (isEditMode)
                         {
                             <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
@@ -114,7 +114,6 @@
                                                         Size="ButtonSize.Small"
                                                         Text="@L["Button.Delete"]"
                                                         Title="@L["Home.DeleteThisPanelTooltip"]"
-                                                        CssClass="ms-1"
                                                         OnClick="@(() => HandleDeletePanel(panel))" />
                             }
                         }

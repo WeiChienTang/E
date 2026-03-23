@@ -57,7 +57,6 @@
                         var tab = TabDefinitions[i];
                         var tabSections = orderedSections
                             .Where(s => tab.SectionNames.Contains(s.Key)).ToList();
-                        var sectionColClass = GetSectionColumnClass(tabSections.Count);
 
                         <div class="tab-pane @(_activeTabIndex == index ? "active show" : "")"
                              style="@(_activeTabIndex == index ? "" : "display:none")">
@@ -68,31 +67,74 @@
                             }
                             else
                             {
-                                <div class="form-sections-container">
-                                    @foreach (var sectionGroup in tabSections)
-                                    {
-                                        var isFilterSectionTab = IsFilterSection(sectionGroup.Key);
-                                        <div class="form-section-column @sectionColClass">
-                                            <div class="form-section-header @(isFilterSectionTab ? "form-section-header-filter" : "")">
-                                                @if (isFilterSectionTab)
+                                @if (HasColumnAssignments)
+                                {
+                                    @* ===== Column 分組模式：多個 Section 可共用同一 Column ===== *@
+                                    var columnGroups = GroupSectionsByColumn(tabSections);
+                                    var columnColClass = GetSectionColumnClass(columnGroups.Count);
+
+                                    <div class="form-sections-container">
+                                        @foreach (var columnSections in columnGroups)
+                                        {
+                                            <div class="form-section-column @columnColClass">
+                                                @foreach (var sectionGroup in columnSections)
                                                 {
-                                                    <i class="bi bi-funnel-fill form-section-filter-icon"></i>
+                                                    var isFilterSectionCol = IsFilterSection(sectionGroup.Key);
+                                                    <div class="form-section-in-column">
+                                                        <div class="form-section-header @(isFilterSectionCol ? "form-section-header-filter" : "")">
+                                                            @if (isFilterSectionCol)
+                                                            {
+                                                                <i class="bi bi-funnel-fill form-section-filter-icon"></i>
+                                                            }
+                                                            <span class="form-section-title @(isFilterSectionCol ? "form-section-title-filter" : "")">@L[sectionGroup.Key]</span>
+                                                        </div>
+                                                        <div class="form-section-fields">
+                                                            @foreach (var fieldKvp in sectionGroup)
+                                                            {
+                                                                var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
+                                                                if (field != null)
+                                                                {
+                                                                    @RenderFieldMarkup(field)
+                                                                }
+                                                            }
+                                                        </div>
+                                                    </div>
                                                 }
-                                                <span class="form-section-title @(isFilterSectionTab ? "form-section-title-filter" : "")">@L[sectionGroup.Key]</span>
                                             </div>
-                                            <div class="form-section-fields">
-                                                @foreach (var fieldKvp in sectionGroup)
-                                                {
-                                                    var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
-                                                    if (field != null)
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    @* ===== 原有模式：每個 Section 獨立一個 Column ===== *@
+                                    var sectionColClass = GetSectionColumnClass(tabSections.Count);
+
+                                    <div class="form-sections-container">
+                                        @foreach (var sectionGroup in tabSections)
+                                        {
+                                            var isFilterSectionTab = IsFilterSection(sectionGroup.Key);
+                                            <div class="form-section-column @sectionColClass">
+                                                <div class="form-section-header @(isFilterSectionTab ? "form-section-header-filter" : "")">
+                                                    @if (isFilterSectionTab)
                                                     {
-                                                        @RenderFieldMarkup(field)
+                                                        <i class="bi bi-funnel-fill form-section-filter-icon"></i>
                                                     }
-                                                }
+                                                    <span class="form-section-title @(isFilterSectionTab ? "form-section-title-filter" : "")">@L[sectionGroup.Key]</span>
+                                                </div>
+                                                <div class="form-section-fields">
+                                                    @foreach (var fieldKvp in sectionGroup)
+                                                    {
+                                                        var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
+                                                        if (field != null)
+                                                        {
+                                                            @RenderFieldMarkup(field)
+                                                        }
+                                                    }
+                                                </div>
                                             </div>
-                                        </div>
-                                    }
-                                </div>
+                                        }
+                                    </div>
+                                }
                                 @if (tab.ExtraContent != null)
                                 {
                                     <div class="tab-extra-content">
@@ -109,34 +151,76 @@
         {
             @* ===== 水平並排佈局（現有行為，無 Tab）===== *@
             var orderedSections = GetOrderedSections().ToList();
-            var sectionCount = orderedSections.Count;
-            var sectionColClass = GetSectionColumnClass(sectionCount);
 
-            <div class="form-sections-container">
-                @foreach (var sectionGroup in orderedSections)
-                {
-                    var isFilterSectionHorizontal = IsFilterSection(sectionGroup.Key);
-                    <div class="form-section-column @sectionColClass">
-                        <div class="form-section-header @(isFilterSectionHorizontal ? "form-section-header-filter" : "")">
-                            @if (isFilterSectionHorizontal)
+            @if (HasColumnAssignments)
+            {
+                @* Column 分組模式 *@
+                var columnGroups = GroupSectionsByColumn(orderedSections);
+                var columnColClass = GetSectionColumnClass(columnGroups.Count);
+
+                <div class="form-sections-container">
+                    @foreach (var columnSections in columnGroups)
+                    {
+                        <div class="form-section-column @columnColClass">
+                            @foreach (var sectionGroup in columnSections)
                             {
-                                <i class="bi bi-funnel-fill form-section-filter-icon"></i>
+                                var isFilterSectionCol = IsFilterSection(sectionGroup.Key);
+                                <div class="form-section-in-column">
+                                    <div class="form-section-header @(isFilterSectionCol ? "form-section-header-filter" : "")">
+                                        @if (isFilterSectionCol)
+                                        {
+                                            <i class="bi bi-funnel-fill form-section-filter-icon"></i>
+                                        }
+                                        <span class="form-section-title @(isFilterSectionCol ? "form-section-title-filter" : "")">@L[sectionGroup.Key]</span>
+                                    </div>
+                                    <div class="form-section-fields">
+                                        @foreach (var fieldKvp in sectionGroup)
+                                        {
+                                            var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
+                                            if (field != null)
+                                            {
+                                                @RenderFieldMarkup(field)
+                                            }
+                                        }
+                                    </div>
+                                </div>
                             }
-                            <span class="form-section-title @(isFilterSectionHorizontal ? "form-section-title-filter" : "")">@L[sectionGroup.Key]</span>
                         </div>
-                        <div class="form-section-fields">
-                            @foreach (var fieldKvp in sectionGroup)
-                            {
-                                var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
-                                if (field != null)
+                    }
+                </div>
+            }
+            else
+            {
+                @* 原有模式：每個 Section 獨立一欄 *@
+                var sectionCount = orderedSections.Count;
+                var sectionColClass = GetSectionColumnClass(sectionCount);
+
+                <div class="form-sections-container">
+                    @foreach (var sectionGroup in orderedSections)
+                    {
+                        var isFilterSectionHorizontal = IsFilterSection(sectionGroup.Key);
+                        <div class="form-section-column @sectionColClass">
+                            <div class="form-section-header @(isFilterSectionHorizontal ? "form-section-header-filter" : "")">
+                                @if (isFilterSectionHorizontal)
                                 {
-                                    @RenderFieldMarkup(field)
+                                    <i class="bi bi-funnel-fill form-section-filter-icon"></i>
                                 }
-                            }
+                                <span class="form-section-title @(isFilterSectionHorizontal ? "form-section-title-filter" : "")">@L[sectionGroup.Key]</span>
+                            </div>
+                            <div class="form-section-fields">
+                                @foreach (var fieldKvp in sectionGroup)
+                                {
+                                    var field = FieldDefinitions?.FirstOrDefault(f => f.PropertyName == fieldKvp.Key);
+                                    if (field != null)
+                                    {
+                                        @RenderFieldMarkup(field)
+                                    }
+                                }
+                            </div>
                         </div>
-                    </div>
-                }
-            </div>
+                    }
+                </div>
+            }
         }
         else
         {

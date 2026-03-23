@@ -5,6 +5,7 @@
 @inject IEmployeeService EmployeeService
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
+@inject ICustomerService CustomerService
 @inject IStringLocalizer<SharedResource> L
 
 <GenericEditModalComponent TEntity="CrmLead"
@@ -35,7 +36,7 @@
                           OnEntitySaved="@OnCrmLeadSaved"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoadedById"
-                          CustomFooterButtons="@GetConvertButton()"
+                          CustomActionButtons="@GetConvertButton()"
                           ComponentName="CrmLeadEditModalComponent" />
 
 @* 員工編輯 Modal *@
@@ -56,8 +57,19 @@
                               CancelButtonText="@L["Button.Cancel"]"
                               ConfirmButtonVariant="ButtonVariant.Green"
                               HeaderColor="BaseModalComponent.HeaderVariant.Success"
+                              SecondaryButtonText="@L["Button.EditAndCreate"]"
+                              SecondaryButtonIcon="bi bi-pencil-square"
+                              SecondaryButtonVariant="ButtonVariant.Blue"
+                              OnSecondaryClick="@HandleConvertAndEdit"
                               OnConfirm="@HandleConfirmConvert"
                               OnCancel="@(() => showConvertModal = false)" />
+
+@* 客戶編輯 Modal（轉換後編輯用）*@
+<CustomerEditModalComponent IsVisible="@showCustomerEditModal"
+                            IsVisibleChanged="@((bool v) => showCustomerEditModal = v)"
+                            CustomerId="@convertedCustomerId"
+                            OnCustomerSaved="@HandleCustomerEditSaved"
+                            OnCancel="@(() => showCustomerEditModal = false)" />
 
 @code {
     // ===== 必要參數 =====
@@ -76,6 +88,8 @@
 
     private CrmLead? currentLead;
     private bool showConvertModal = false;
+    private bool showCustomerEditModal = false;
+    private int? convertedCustomerId;
 
     private List<Employee> availableEmployees = new();
 
@@ -393,5 +407,38 @@
         {
             await NotificationService.ShowErrorAsync($"轉換時發生錯誤：{ex.Message}");
         }
+    }
+
+    private async Task HandleConvertAndEdit()
+    {
+        showConvertModal = false;
+        try
+        {
+            var result = await CrmLeadService.ConvertToCustomerAsync(currentLead!.Id);
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync(L["Message.ConvertToCustomerSuccess"]);
+                currentLead = await CrmLeadService.GetByIdAsync(currentLead!.Id);
+
+                // 開啟客戶編輯 Modal
+                convertedCustomerId = result.Data;
+                showCustomerEditModal = true;
+                StateHasChanged();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"{L["Message.ConvertToCustomerFailed"]}：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"轉換時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private void HandleCustomerEditSaved(Customer customer)
+    {
+        showCustomerEditModal = false;
+        StateHasChanged();
     }
 }

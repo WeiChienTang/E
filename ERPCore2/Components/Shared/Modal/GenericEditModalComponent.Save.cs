@@ -51,17 +51,60 @@ public partial class GenericEditModalComponent<TEntity, TService>
                 // 無法取得使用者資訊時不阻擋儲存流程
             }
 
+            // 表單必填欄位驗證（僅在正式儲存時檢查，草稿不檢查）
+            var formValidationErrors = ValidateRequiredFormFields();
+
             bool success;
 
             if (UseGenericSave)
-                success = await GenericSave(Entity, wasOriginallyDraft);
+            {
+                // 如果有表單驗證錯誤且有草稿選項，先顯示草稿 dialog
+                if (formValidationErrors.Count > 0 && ShowDraftButton && (!Id.HasValue || wasOriginallyDraft))
+                {
+                    _draftValidationErrors = string.Join("; ", formValidationErrors);
+                    _saveAsDraftTcs = new TaskCompletionSource<bool>();
+                    _showSaveAsDraftModal = true;
+                    StateHasChanged();
+                    bool confirmed = await _saveAsDraftTcs.Task;
+                    if (confirmed)
+                    {
+                        Entity.IsDraft = true;
+                        success = await GenericSave(Entity, wasOriginallyDraft);
+                    }
+                    else
+                    {
+                        success = false;
+                        if (wasOriginallyDraft) Entity.IsDraft = true;
+                    }
+                }
+                else if (formValidationErrors.Count > 0)
+                {
+                    success = false;
+                    await ShowErrorMessage(string.Join("、", formValidationErrors));
+                }
+                else
+                {
+                    success = await GenericSave(Entity, wasOriginallyDraft);
+                }
+            }
             else if (SaveHandler != null)
             {
-                success = await SaveHandler(Entity);
+                // 如果有表單驗證錯誤，跳過 SaveHandler 直接進入草稿流程
+                if (formValidationErrors.Count > 0)
+                {
+                    success = false;
+                    // 將表單驗證錯誤設為 PendingSaveError，讓下方草稿流程使用
+                    PendingSaveError = string.Join("; ", formValidationErrors);
+                }
+                else
+                {
+                    success = await SaveHandler(Entity);
+                }
+
                 // 新增模式 或 編輯草稿模式，才提供草稿選項；編輯正式記錄時直接顯示錯誤
                 if (!success && ShowDraftButton && (!Id.HasValue || wasOriginallyDraft))
                 {
-                    _draftValidationErrors = PendingSaveError; // 讀取 SaveHandler 回傳的錯誤（無 toast）
+                    _draftValidationErrors = PendingSaveError; // 讀取表單驗證或 SaveHandler 回傳的錯誤
                     PendingSaveError = null;
                     _saveAsDraftTcs = new TaskCompletionSource<bool>();
                     _showSaveAsDraftModal = true;
@@ -76,6 +119,12 @@ public partial class GenericEditModalComponent<TEntity, TService>
                         else
                             Entity.IsDraft = false;
                     }
+                }
+                else if (!success && formValidationErrors.Count > 0)
+                {
+                    // 非草稿模式：顯示表單驗證錯誤
+                    await ShowErrorMessage(string.Join("、", formValidationErrors));
+                    PendingSaveError = null;
                 }
             }
             else
@@ -444,6 +493,38 @@ public partial class GenericEditModalComponent<TEntity, TService>
             LogError("GenericSave", ex);
             return false;
         }
+    }
+
+    // ===== 表單欄位驗證 =====
+
+    /// <summary>
+    /// 驗證 FormFields 中 IsRequired 的欄位是否已填入值。
+    /// 回傳遺漏欄位的 Label 清單（空集合表示全部通過）。
+    /// </summary>
+    private List<string> ValidateRequiredFormFields()
+    {
+        var errors = new List<string>();
+        if (Entity == null || FormFields == null || !FormFields.Any())
+            return errors;
+
+        var entityType = Entity.GetType();
+        foreach (var field in FormFields.Where(f => f.IsRequired && f.IsVisible))
+        {
+            var prop = GetCachedProperty(entityType, field.PropertyName);
+            if (prop == null) continue;
+
+            var value = prop.GetValue(Entity);
+            bool isEmpty = value == null
+                || (value is string s && string.IsNullOrWhiteSpace(s));
+
+            if (isEmpty)
+            {
+                var label = !string.IsNullOrEmpty(field.Label) ? field.Label : field.PropertyName;
+                errors.Add($"「{label}」{L["Validation.Required"]}");
+            }
+        }
+
+        return errors;
     }
 
     // ===== 欄位變更處理 =====

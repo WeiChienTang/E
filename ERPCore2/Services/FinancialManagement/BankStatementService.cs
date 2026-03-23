@@ -112,7 +112,7 @@ namespace ERPCore2.Services
             }
         }
 
-        public override async Task<ServiceResult> ValidateAsync(BankStatement entity)
+        public override Task<ServiceResult> ValidateAsync(BankStatement entity)
         {
             var errors = new List<string>();
             if (entity.CompanyId <= 0)
@@ -122,8 +122,8 @@ namespace ERPCore2.Services
             if (entity.PeriodEnd < entity.PeriodStart)
                 errors.Add("對帳期間結束日不可早於起始日");
             if (errors.Any())
-                return ServiceResult.Failure(string.Join("; ", errors));
-            return ServiceResult.Success();
+                return Task.FromResult(ServiceResult.Failure(string.Join("; ", errors)));
+            return Task.FromResult(ServiceResult.Success());
         }
 
         public async Task<ServiceResult> SaveWithLinesAsync(BankStatement statement, List<BankStatementLine> lines, string currentUser)

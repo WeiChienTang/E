@@ -20,22 +20,32 @@ namespace ERPCore2.Data.SeedDataManager.Seeders
 
             // ── 修正既有項目的命名與 IsSystemItem 標記（冪等，可重複執行）──────────────
             // OT2 原命名為「休息日加班費」但實際用於平日加班後2小時；OT_HOLIDAY 原命名為「例假日加班費」
-            var nameFixes = new Dictionary<string, (string Name, bool IsSystemItem)>
+            var nameFixes = new Dictionary<string, (string Name, bool IsSystemItem, bool? IsProrated)>
             {
-                { "OT2",           ("平日加班費（後2小時）", true) },
-                { "OT_HOLIDAY",    ("休息日加班費",          true) },
-                { "ABSENT",        ("曠職扣款",               true) },  // 計算引擎依賴此項目，應標為系統項目
-                { "PERSONAL_LEAVE",("事假扣款",               true) },  // 計算引擎依賴此項目，應標為系統項目
+                { "OT2",           ("平日加班費（後2小時）", true, null) },
+                { "OT_HOLIDAY",    ("休息日加班費",          true, null) },
+                { "ABSENT",        ("曠職扣款",               true, null) },  // 計算引擎依賴此項目，應標為系統項目
+                { "PERSONAL_LEAVE",("事假扣款",               true, null) },  // 計算引擎依賴此項目，應標為系統項目
+                { "TRANSPORT",     ("交通津貼",               false, true) },  // 交通津貼按出勤比例發放
             };
             bool anyFixed = false;
-            foreach (var (code, (newName, isSystem)) in nameFixes)
+            foreach (var (code, (newName, isSystem, isProrated)) in nameFixes)
             {
                 var existing = await context.PayrollItems.FirstOrDefaultAsync(i => i.Code == code);
-                if (existing != null && (existing.Name != newName || existing.IsSystemItem != isSystem))
+                if (existing != null)
                 {
-                    existing.Name = newName;
-                    existing.IsSystemItem = isSystem;
-                    anyFixed = true;
+                    bool needFix = existing.Name != newName || existing.IsSystemItem != isSystem;
+                    if (isProrated.HasValue && existing.IsProrated != isProrated.Value)
+                    {
+                        existing.IsProrated = isProrated.Value;
+                        needFix = true;
+                    }
+                    if (needFix)
+                    {
+                        existing.Name = newName;
+                        existing.IsSystemItem = isSystem;
+                        anyFixed = true;
+                    }
                 }
             }
             if (anyFixed)

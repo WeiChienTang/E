@@ -302,5 +302,6 @@ Helpers/
 5. **安全回傳值** - `catch` 區塊回傳空列表、null 或 `ServiceResult.Failure()`
 6. **Tab 佈局** - 使用 `FormSectionHelper.GroupIntoTab().BuildAll()` 啟用 Tab 模式
 7. **自訂 Tab** - 使用 `GroupIntoCustomTab()` 嵌入子表格等非表單內容
+8. **Column 分組** - 使用 `.AssignColumn(column, sectionNames)` 讓多個 Section 共用同一欄位，減少表單高度
 8. **上下筆導航** - 使用 `@bind-Id` 和 `OnEntityLoaded` 確保資料同步
 9. **巢狀 Modal** - 使用 `@if` 條件式渲染避免循環實例化

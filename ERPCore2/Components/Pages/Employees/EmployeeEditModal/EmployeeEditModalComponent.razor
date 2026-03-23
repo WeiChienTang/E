@@ -128,6 +128,7 @@
     private EmployeePayrollTab? payrollTab;
     private EmployeePhotoTab? photoTab;
     private EmployeeBankAccountTab? bankAccountTab;
+    private DocumentsTab? documentsTab;
 
     // ===== Tab 內容 RenderFragment =====
 
@@ -166,6 +167,11 @@
     private RenderFragment CreateBankAccountTabContent() => __builder =>
     {
         <EmployeeBankAccountTab @ref="bankAccountTab" EmployeeId="@EmployeeId" />
+    };
+
+    private RenderFragment CreateDocumentsTabContent() => __builder =>
+    {
+        <DocumentsTab @ref="documentsTab" RelatedEntityType="Employee" EntityId="@EmployeeId" />
     };
 
     // ===== 生命週期 =====
@@ -449,10 +455,20 @@
                 FormFieldConfigurationHelper.CreateRemarksField<Employee>()
             };
 
-            // 車輛模組狀態（停用時隱藏車輛 Tab）
+            // 模組狀態（停用時隱藏對應 Tab）
+            bool? isSuperAdmin = null;
             var isVehiclesEnabled = await CompanyModuleService.IsModuleEnabledAsync("Vehicles");
             if (!isVehiclesEnabled)
-                isVehiclesEnabled = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+            {
+                isSuperAdmin ??= await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+                isVehiclesEnabled = isSuperAdmin.Value;
+            }
+            var isDocumentsEnabled = await CompanyModuleService.IsModuleEnabledAsync("Documents");
+            if (!isDocumentsEnabled)
+            {
+                isSuperAdmin ??= await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+                isDocumentsEnabled = isSuperAdmin.Value;
+            }
 
             var builder = FormSectionHelper<Employee>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
@@ -474,7 +490,10 @@
 
             var isPayrollEnabled = await CompanyModuleService.IsModuleEnabledAsync("Payroll");
             if (!isPayrollEnabled)
-                isPayrollEnabled = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+            {
+                isSuperAdmin ??= await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+                isPayrollEnabled = isSuperAdmin.Value;
+            }
 
             builder = builder
                 .GroupIntoCustomTab(L["Tab.PersonalTools"].ToString(), "bi-tools", CreateToolTabContent(), nameof(EmployeeToolTab))
@@ -487,6 +506,9 @@
             builder = builder
                 .GroupIntoCustomTab(L["Tab.BankAccounts"].ToString(), "bi-bank", CreateBankAccountTabContent(), nameof(EmployeeBankAccountTab))
                 .GroupIntoCustomTab(L["Tab.EmployeePhoto"].ToString(), "bi-person-circle", CreatePhotoTabContent(), nameof(EmployeePhotoTab));
+
+            if (isDocumentsEnabled)
+                builder = builder.GroupIntoCustomTab(L["Tab.Documents"].ToString(), "bi-file-earmark-text", CreateDocumentsTabContent(), nameof(DocumentsTab));
 
             var layout = builder.BuildAll();
 

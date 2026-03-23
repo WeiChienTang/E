@@ -18,7 +18,7 @@ else if (ItemType == NavigationItemType.Action)
     <button type="button" class="nav-dropdown-item dropdown-item btn-link @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "")" @onclick="HandleActionClickAsync">
         @if (!string.IsNullOrEmpty(IconClass))
         {
-            <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
+            <span class="@IconClass nav-dropdown-bi @IconColorClass" aria-hidden="true"></span>
         }
         @Text
     </button>
@@ -31,7 +31,7 @@ else if (ForceLoad)
             @onclick="HandleForcedLoadClickAsync">
         @if (!string.IsNullOrEmpty(IconClass))
         {
-            <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
+            <span class="@IconClass nav-dropdown-bi @IconColorClass" aria-hidden="true"></span>
         }
         @Text
     </button>
@@ -41,7 +41,7 @@ else
     <a class="nav-dropdown-item dropdown-item @(string.IsNullOrEmpty(IconClass) ? "no-icon" : "") @(IsActive ? "active" : "")" href="@Url" @onclick="OnDropdownItemClick">
         @if (!string.IsNullOrEmpty(IconClass))
         {
-            <span class="@IconClass nav-dropdown-bi" aria-hidden="true"></span>
+            <span class="@IconClass nav-dropdown-bi @IconColorClass" aria-hidden="true"></span>
         }
         @Text
     </a>
@@ -69,6 +69,11 @@ else
     /// 圖示的 CSS 類別（例如 "bi bi-person-lines-fill"）
     /// </summary>
     [Parameter] public string IconClass { get; set; } = "";
+
+    /// <summary>
+    /// 圖示顏色 CSS 類別（可選，用於區分不同類型的項目）
+    /// </summary>
+    [Parameter] public string? IconColorClass { get; set; }
 
     /// <summary>
     /// 連結的 URL（當 ItemType 為 Route 時使用）

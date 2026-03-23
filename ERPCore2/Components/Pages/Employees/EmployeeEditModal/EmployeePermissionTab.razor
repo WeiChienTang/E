@@ -40,12 +40,15 @@ else
             var groupTotalCount = group.Permissions.Count;
             var isAllGranted = groupGrantedCount == groupTotalCount;
             var isNoneGranted = groupGrantedCount == 0;
-
+            var isCollapsed = collapsedGroups.Contains(group.GroupKey);
             <div class="card mb-3 border @(isAllGranted ? "border-success" : isNoneGranted ? "border-secondary opacity-75" : "border-warning")">
-                @* 分組標題 *@
+                @* 分組標題（可點擊摺疊） *@
                 <div class="card-header py-2 px-3 d-flex align-items-center justify-content-between
-                            @(isAllGranted ? "bg-success bg-opacity-10" : isNoneGranted ? "bg-light" : "bg-warning bg-opacity-10")">
+                            @(isAllGranted ? "bg-success bg-opacity-10" : isNoneGranted ? "bg-light" : "bg-warning bg-opacity-10")"
+                     style="cursor: pointer; user-select: none;"
+                     @onclick="() => ToggleGroup(group.GroupKey)">
                     <div class="d-flex align-items-center gap-2">
+                        <i class="bi @(isCollapsed ? "bi-chevron-right" : "bi-chevron-down") small"></i>
                         <i class="@group.IconClass"></i>
                         <span class="fw-semibold">@group.GroupName</span>
                     </div>
@@ -60,34 +63,37 @@ else
                     </div>
                 </div>
 
-                @* 權限清單 - 多欄排列 *@
-                <div class="card-body py-2 px-3">
-                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-1">
-                        @foreach (var perm in group.Permissions)
-                        {
-                            <div class="col">
-                                <div class="d-flex align-items-center gap-2 py-1 px-2 rounded @(perm.IsGranted ? "" : "text-muted")">
-                                    @if (perm.IsGranted)
-                                    {
-                                        <i class="bi bi-check-circle-fill @(perm.IsSensitive ? "text-warning" : "text-success")" title="@(perm.IsSensitive ? "敏感權限 - 已授權" : "已授權")"></i>
-                                    }
-                                    else
-                                    {
-                                        <i class="bi bi-circle text-muted opacity-50" title="未授權"></i>
-                                    }
-                                    <span class="small @(perm.IsGranted ? "" : "text-decoration-line-through opacity-50")"
-                                          title="@perm.Remarks">
-                                        @perm.Name
-                                    </span>
-                                    @if (perm.IsSensitive)
-                                    {
-                                        <i class="bi bi-shield-exclamation text-warning small" title="敏感權限"></i>
-                                    }
+                @* 權限清單 - 多欄排列（可摺疊） *@
+                @if (!isCollapsed)
+                {
+                    <div class="card-body py-2 px-3">
+                        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-1">
+                            @foreach (var perm in group.Permissions)
+                            {
+                                <div class="col">
+                                    <div class="d-flex align-items-center gap-2 py-1 px-2 rounded @(perm.IsGranted ? "" : "text-muted")">
+                                        @if (perm.IsGranted)
+                                        {
+                                            <i class="bi bi-check-circle-fill @(perm.IsSensitive ? "text-warning" : "text-success")" title="@(perm.IsSensitive ? "敏感權限 - 已授權" : "已授權")"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-circle text-muted opacity-50" title="未授權"></i>
+                                        }
+                                        <span class="small @(perm.IsGranted ? "" : "text-decoration-line-through opacity-50")"
+                                              title="@perm.Remarks">
+                                            @perm.Name
+                                        </span>
+                                        @if (perm.IsSensitive)
+                                        {
+                                            <i class="bi bi-shield-exclamation text-warning small" title="敏感權限"></i>
+                                        }
+                                    </div>
                                 </div>
-                            </div>
-                        }
+                            }
+                        </div>
                     </div>
-                </div>
+                }
             </div>
         }
     </div>
@@ -100,6 +106,7 @@ else
     private HashSet<string> grantedCodes = new();
     private List<PermissionGroupViewModel> groupedPermissions = new();
     private IEnumerable<PermissionDefinition> allPermissionDefinitions = Enumerable.Empty<PermissionDefinition>();
+    private HashSet<string> collapsedGroups = new();
     private int? _lastLoadedEmployeeId;
 
     // ===== ViewModel =====
@@ -194,6 +201,12 @@ else
         StateHasChanged();
     }
 
+    private void ToggleGroup(string groupKey)
+    {
+        if (!collapsedGroups.Remove(groupKey))
+            collapsedGroups.Add(groupKey);
+    }
+
     // ===== 分組建構 =====
 
     /// <summary>
@@ -237,5 +250,10 @@ else
             .OrderByDescending(g => g.Permissions.Any(p => p.IsGranted))  // 有授權的分組排前面
             .ThenBy(g => g.GroupName)
             .ToList();
+
+        // 預設全部收起
+        collapsedGroups = groupedPermissions
+            .Select(g => g.GroupKey)
+            .ToHashSet();
     }
 }

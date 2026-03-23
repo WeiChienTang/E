@@ -1,5 +1,6 @@
 ﻿@using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 @inject ISalesDeliveryService SalesDeliveryService
 @inject ISalesDeliveryDetailService SalesDeliveryDetailService
 @inject ISalesOrderService SalesOrderService
@@ -70,7 +71,8 @@
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.SalesDelivery"]]"
                           GetReportDocumentName="@(e => $"出貨單-{e.Code}")"
                           OnEntityLoaded="@HandleEntityLoaded"
-                          ComponentName="SalesDeliveryEditModalComponent">
+                          ComponentName="SalesDeliveryEditModalComponent"
+                          FeatureGuide="@SalesDeliveryGuide.Create()">
 </GenericEditModalComponent>
 
 @* 客戶編輯 Modal *@

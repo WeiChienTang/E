@@ -28,7 +28,7 @@
                           GetEntityDisplayName="@(delivery => delivery.Code)"
                           RequiredPermission="@PermissionRegistry.SalesDelivery.Read"
                           RequiredModule="Sales"
-                          ShowBatchPrintButton="true"
+                          ShowBatchPrintButton="false"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
                           ShowBatchApprovalButton="@isManualApproval"
                           OnBatchApprovalClick="@HandleBatchApprovalAsync"

@@ -4,6 +4,8 @@
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
 @inject IWebHostEnvironment WebHostEnvironment
+@inject ICompanyModuleService CompanyModuleService
+@inject INavigationPermissionService NavigationPermissionService
 @inject IStringLocalizer<SharedResource> L
 
 <GenericEditModalComponent TEntity="Company"
@@ -46,6 +48,7 @@
     private List<FormTabDefinition>? tabDefinitions;
     private CompanyLogoTab? logoTab;
     private GenericBankAccountTabComponent? bankAccountTab;
+    private DocumentsTab? documentsTab;
 
     // 資料載入狀態標記
     private bool isDataLoaded = false;
@@ -244,7 +247,12 @@
                 FormFieldConfigurationHelper.CreateRemarksField<Company>()
             };
 
-            var layout = FormSectionHelper<Company>.Create()
+            // 模組狀態（停用時隱藏對應 Tab）
+            var isDocumentsEnabled = await CompanyModuleService.IsModuleEnabledAsync("Documents");
+            if (!isDocumentsEnabled)
+                isDocumentsEnabled = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+
+            var builder = FormSectionHelper<Company>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     c => c.Code,
                     c => c.CompanyName,
@@ -274,8 +282,12 @@
                     FormSectionNames.ContactInfo,
                     FormSectionNames.AdditionalData)
                 .GroupIntoCustomTab(L["Tab.CompanyLogo"].ToString(), "bi-image", CreateLogoTabContent(), "CompanyLogoTab")
-                .GroupIntoCustomTab(L["Tab.BankAccounts"].ToString(), "bi-bank", CreateBankAccountTabContent(), nameof(GenericBankAccountTabComponent))
-                .BuildAll();
+                .GroupIntoCustomTab(L["Tab.BankAccounts"].ToString(), "bi-bank", CreateBankAccountTabContent(), nameof(GenericBankAccountTabComponent));
+
+            if (isDocumentsEnabled)
+                builder = builder.GroupIntoCustomTab(L["Tab.Documents"].ToString(), "bi-file-earmark-text", CreateDocumentsTabContent(), nameof(DocumentsTab));
+
+            var layout = builder.BuildAll();
 
             formSections = layout.FieldSections;
             tabDefinitions = layout.TabDefinitions;
@@ -300,6 +312,11 @@
         <GenericBankAccountTabComponent @ref="bankAccountTab"
                                         EntityType="BankAccountEntityType.Company"
                                         EntityId="@CompanyId" />
+    };
+
+    private RenderFragment CreateDocumentsTabContent() => __builder =>
+    {
+        <DocumentsTab @ref="documentsTab" RelatedEntityType="Company" EntityId="@CompanyId" />
     };
     
     /// <summary>

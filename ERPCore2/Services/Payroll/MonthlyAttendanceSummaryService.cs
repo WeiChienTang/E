@@ -98,10 +98,17 @@ namespace ERPCore2.Services.Payroll
                 if (existing.IsLocked)
                     return ServiceResult<MonthlyAttendanceSummary>.Failure("此出勤記錄已鎖定，無法修改");
 
+                // 出勤天數一致性驗證：假別天數合計不應超過應出勤天數
+                decimal totalLeaveDays = model.AbsentDays + model.SickLeaveDays + model.PersonalLeaveDays;
+                if (model.ScheduledWorkDays > 0 && totalLeaveDays > model.ScheduledWorkDays)
+                    return ServiceResult<MonthlyAttendanceSummary>.Failure(
+                        $"假別天數合計（{totalLeaveDays}）超過應出勤天數（{model.ScheduledWorkDays}），請確認資料正確性");
+
                 existing.ScheduledWorkDays = model.ScheduledWorkDays;
                 existing.ActualWorkDays = model.ActualWorkDays;
                 existing.AbsentDays = model.AbsentDays;
                 existing.SickLeaveDays = model.SickLeaveDays;
+                existing.PersonalLeaveDays = model.PersonalLeaveDays;
                 existing.OvertimeHours1 = model.OvertimeHours1;
                 existing.OvertimeHours2 = model.OvertimeHours2;
                 existing.HolidayOvertimeHours = model.HolidayOvertimeHours;
@@ -212,6 +219,8 @@ namespace ERPCore2.Services.Payroll
                 if (item == null) return ServiceResult.Success(); // 無記錄無需鎖定
 
                 item.IsLocked = true;
+                item.LockedAt = DateTime.UtcNow;
+                item.LockedBy = null; // TODO: 傳入操作者參數
                 item.UpdatedAt = DateTime.UtcNow;
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();

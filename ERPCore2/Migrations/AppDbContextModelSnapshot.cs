@@ -4350,9 +4350,6 @@ namespace ERPCore2.Migrations
                     b.Property<int>("BankId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("BankId1")
-                        .HasColumnType("int");
-
                     b.Property<string>("BranchCode")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
@@ -4398,8 +4395,6 @@ namespace ERPCore2.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BankId");
-
-                    b.HasIndex("BankId1");
 
                     b.HasIndex("EmployeeId");
 
@@ -4477,6 +4472,10 @@ namespace ERPCore2.Migrations
                     b.HasIndex("EffectiveDate");
 
                     b.HasIndex("EmployeeId");
+
+                    b.HasIndex("EmployeeId", "ExpiryDate")
+                        .IsUnique()
+                        .HasFilter("[ExpiryDate] IS NULL");
 
                     b.ToTable("EmployeeSalaries");
                 });
@@ -4675,6 +4674,13 @@ namespace ERPCore2.Migrations
                     b.Property<bool>("IsLocked")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("LockedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LockedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<int>("Month")
                         .HasColumnType("int");
 
@@ -4750,6 +4756,9 @@ namespace ERPCore2.Migrations
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsInsuranceBasis")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsProrated")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsRetirementBasis")
@@ -4877,6 +4886,13 @@ namespace ERPCore2.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("ConfirmedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ConfirmedBy")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -5701,9 +5717,8 @@ namespace ERPCore2.Migrations
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("PurchasePersonnel")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<int?>("PurchasePersonnelId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("PurchaseTaxAmount")
                         .HasColumnType("decimal(18,2)");
@@ -5747,6 +5762,8 @@ namespace ERPCore2.Migrations
                         .HasFilter("[Code] IS NOT NULL");
 
                     b.HasIndex("CompanyId");
+
+                    b.HasIndex("PurchasePersonnelId");
 
                     b.HasIndex("WarehouseId");
 
@@ -10429,14 +10446,10 @@ namespace ERPCore2.Migrations
             modelBuilder.Entity("ERPCore2.Data.Entities.Payroll.EmployeeBankAccount", b =>
                 {
                     b.HasOne("ERPCore2.Data.Entities.Bank", "Bank")
-                        .WithMany()
+                        .WithMany("EmployeeBankAccounts")
                         .HasForeignKey("BankId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("ERPCore2.Data.Entities.Bank", null)
-                        .WithMany("EmployeeBankAccounts")
-                        .HasForeignKey("BankId1");
 
                     b.HasOne("ERPCore2.Data.Entities.Employee", "Employee")
                         .WithMany()
@@ -10734,6 +10747,10 @@ namespace ERPCore2.Migrations
                         .WithMany()
                         .HasForeignKey("CompanyId");
 
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "PurchasePersonnelEmployee")
+                        .WithMany()
+                        .HasForeignKey("PurchasePersonnelId");
+
                     b.HasOne("ERPCore2.Data.Entities.Supplier", "Supplier")
                         .WithMany()
                         .HasForeignKey("SupplierId")
@@ -10747,6 +10764,8 @@ namespace ERPCore2.Migrations
                     b.Navigation("ApprovedByUser");
 
                     b.Navigation("Company");
+
+                    b.Navigation("PurchasePersonnelEmployee");
 
                     b.Navigation("Supplier");
 

@@ -70,8 +70,19 @@
                               CancelButtonText="@L["Button.Cancel"]"
                               ConfirmButtonVariant="ButtonVariant.Green"
                               HeaderColor="BaseModalComponent.HeaderVariant.Primary"
+                              SecondaryButtonText="@L["Button.EditAndCreate"]"
+                              SecondaryButtonIcon="bi bi-pencil-square"
+                              SecondaryButtonVariant="ButtonVariant.Blue"
+                              OnSecondaryClick="@HandleCopyToCustomerAndEdit"
                               OnConfirm="@HandleConfirmCopyToCustomer"
                               OnCancel="@(() => showCopyToCustomerModal = false)" />
+
+@* 客戶編輯 Modal（複製後編輯用）*@
+<CustomerEditModalComponent IsVisible="@showCustomerEditModal"
+                            IsVisibleChanged="@((bool v) => showCustomerEditModal = v)"
+                            CustomerId="@copiedCustomerId"
+                            OnCustomerSaved="@((Customer _) => showCustomerEditModal = false)"
+                            OnCancel="@(() => showCustomerEditModal = false)" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; }
@@ -105,6 +116,8 @@
     // 複製至客戶
     private bool showCopyToCustomerModal = false;
     private List<string> copyToCustomerConditions = new();
+    private bool showCustomerEditModal = false;
+    private int? copiedCustomerId;
 
     // Tab 元件參考（透過 @ref 呼叫公開方法）
     private SupplierVehicleTab? vehicleTab;
@@ -617,6 +630,12 @@
                 isSuperAdmin ??= await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
                 isAccountingEnabled = isSuperAdmin.Value;
             }
+            var isDocumentsEnabled = await CompanyModuleService.IsModuleEnabledAsync("Documents");
+            if (!isDocumentsEnabled)
+            {
+                isSuperAdmin ??= await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+                isDocumentsEnabled = isSuperAdmin.Value;
+            }
 
             var builder = FormSectionHelper<Supplier>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
@@ -656,13 +675,16 @@
 
             builder = builder.GroupIntoCustomTab(L["Tab.BankAccounts"].ToString(), "bi-bank", CreateBankAccountTabContent(), nameof(SupplierBankAccountTab));
 
-            var layout = builder
+            builder = builder
                 .GroupIntoCustomTab(L["Tab.SupplierItems"].ToString(), "bi-box-seam", CreateSupplierItemTabContent(), nameof(SupplierItemTab))
                 .GroupIntoCustomTab(L["Tab.VisitRecords"].ToString(), "bi-journal-text", CreateVisitTabContent(), nameof(SupplierVisitTab))
                 .GroupIntoCustomTab(L["Tab.TransactionRecords"].ToString(), "bi-receipt", CreateTransactionTabContent(), nameof(SupplierTransactionTab))
-                .GroupIntoCustomTab(L["Tab.BusinessCards"].ToString(), "bi-person-vcard", CreateBusinessCardTabContent(), nameof(BusinessCardTab))
-                .GroupIntoCustomTab(L["Tab.Documents"].ToString(), "bi-file-earmark-text", CreateDocumentsTabContent(), nameof(DocumentsTab))
-                .BuildAll();
+                .GroupIntoCustomTab(L["Tab.BusinessCards"].ToString(), "bi-person-vcard", CreateBusinessCardTabContent(), nameof(BusinessCardTab));
+
+            if (isDocumentsEnabled)
+                builder = builder.GroupIntoCustomTab(L["Tab.Documents"].ToString(), "bi-file-earmark-text", CreateDocumentsTabContent(), nameof(DocumentsTab));
+
+            var layout = builder.BuildAll();
 
             formSections = layout.FieldSections;
             tabDefinitions = layout.TabDefinitions;
@@ -836,6 +858,36 @@
             if (result.IsSuccess)
             {
                 await NotificationService.ShowSuccessAsync($"已成功將「{editModalComponent?.Entity?.CompanyName}」複製為客戶（編號：{result.Data?.Code}）");
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"複製至客戶失敗：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"複製至客戶時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task HandleCopyToCustomerAndEdit()
+    {
+        try
+        {
+            if (!SupplierId.HasValue)
+            {
+                await NotificationService.ShowErrorAsync("無法取得廠商 ID");
+                return;
+            }
+
+            var result = await SupplierService.CopyToCustomerAsync(SupplierId.Value);
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync($"已成功將「{editModalComponent?.Entity?.CompanyName}」複製為客戶（編號：{result.Data?.Code}）");
+                copiedCustomerId = result.Data?.Id;
+                showCustomerEditModal = true;
+                StateHasChanged();
             }
             else
             {

@@ -38,6 +38,7 @@ public static class NavigationConfig
                 IconClass = "bi bi-folder-fill",
                 Category = "檔案管理",
                 IsParent = true,
+                ModuleKey = "Documents",
                 MenuKey = "document_management",
                 SearchKeywords = new List<string> { "檔案留存", "檔案管理", "文件管理", "document", "file", "档案管理", "ファイル管理", "書類管理" },
                 Children = new List<NavigationItem>
@@ -138,7 +139,8 @@ public static class NavigationConfig
                         category: "人力管理",
                         requiredPermission: "Employee.Read",
                         searchKeywords: new List<string> { "人力報表", "人力報表集", "HR report", "員工名冊", "人力资源报表", "従業員レポート", "人事报表" },
-                        nameKey: "Nav.HRReportIndex"
+                        nameKey: "Nav.HRReportIndex",
+                        iconColorClass: "nav-icon-report"
                     ),
 
                     // 分隔線 - 區分資料維護與報表
@@ -159,7 +161,8 @@ public static class NavigationConfig
                         ModuleKey = "Charts",
                         RequiredPermission = PermissionRegistry.Employee.ChartRead,
                         SearchKeywords = new List<string> { "員工圖表", "員工分析", "統計分析", "人力分析", "employee chart", "HR analytics", "员工图表", "従業員分析" },
-                        IsChartWidget = true
+                        IsChartWidget = true,
+                        IconColorClass = "nav-icon-chart"
                     },
                 }
             },
@@ -207,7 +210,8 @@ public static class NavigationConfig
                         category: "供應鏈管理",
                         requiredPermission: "Supplier.Read",
                         searchKeywords: new List<string> { "廠商報表", "廠商報表集", "supplier report", "應付帳款", "厂商报表", "仕入先レポート", "買掛金" },
-                        nameKey: "Nav.SupplierReportIndex"
+                        nameKey: "Nav.SupplierReportIndex",
+                        iconColorClass: "nav-icon-report"
                     ),
                     // 分隔線 - 區分報表與圖表
                     new NavigationItem
@@ -226,7 +230,8 @@ public static class NavigationConfig
                         ModuleKey = "Charts",
                         RequiredPermission = PermissionRegistry.Supplier.ChartRead,
                         SearchKeywords = new List<string> { "廠商圖表", "廠商分析", "統計分析", "supplier chart", "analytics", "應付帳款", "厂商图表", "仕入先分析", "買掛分析" },
-                        IsChartWidget = true
+                        IsChartWidget = true,
+                        IconColorClass = "nav-icon-chart"
                     },
                 }
             },
@@ -296,7 +301,8 @@ public static class NavigationConfig
                         category: "客戶關係管理",
                         requiredPermission: "Customer.Read",
                         searchKeywords: new List<string> { "客戶報表", "客戶報表集", "customer report", "應收帳款", "客户报表", "得意先レポート", "売掛金" },
-                        nameKey: "Nav.CustomerReportIndex"
+                        nameKey: "Nav.CustomerReportIndex",
+                        iconColorClass: "nav-icon-report"
                     ),
                     // 分隔線 - 區分報表與圖表
                     new NavigationItem
@@ -315,7 +321,8 @@ public static class NavigationConfig
                         ModuleKey = "Charts",
                         RequiredPermission = PermissionRegistry.Customer.ChartRead,
                         SearchKeywords = new List<string> { "客戶圖表", "客戶分析", "統計分析", "customer chart", "analytics", "客户图表", "得意先分析", "売掛分析" },
-                        IsChartWidget = true
+                        IsChartWidget = true,
+                        IconColorClass = "nav-icon-chart"
                     },
                 }
             },
@@ -456,7 +463,8 @@ public static class NavigationConfig
                         category: "品項管理",
                         requiredPermission: "Item.Read",
                         searchKeywords: new List<string> { "品項報表", "品項報表集", "product report", "產品報表", "品项报表", "産品レポート" },
-                        nameKey: "Nav.ItemReportIndex"
+                        nameKey: "Nav.ItemReportIndex",
+                        iconColorClass: "nav-icon-report"
                     ),
 
                     new NavigationItem
@@ -476,7 +484,8 @@ public static class NavigationConfig
                         ModuleKey = "Charts",
                         RequiredPermission = PermissionRegistry.Item.ChartRead,
                         SearchKeywords = new List<string> { "品項圖表", "品項分析", "統計分析", "product chart", "item analytics", "品项图表", "品目分析" },
-                        IsChartWidget = true
+                        IsChartWidget = true,
+                        IconColorClass = "nav-icon-chart"
                     },
                     new NavigationItem
                     {
@@ -490,7 +499,8 @@ public static class NavigationConfig
                         ModuleKey = "Charts",
                         RequiredPermission = PermissionRegistry.ProductionSchedule.ChartRead,
                         SearchKeywords = new List<string> { "生產圖表", "製令分析", "生產統計", "production chart", "manufacturing analytics", "生产图表", "生産チャート" },
-                        IsChartWidget = true
+                        IsChartWidget = true,
+                        IconColorClass = "nav-icon-chart"
                     },
                 }
             },
@@ -600,7 +610,8 @@ public static class NavigationConfig
                         category: "庫存管理",
                         requiredPermission: "InventoryStock.Read",
                         searchKeywords: new List<string> { "倉庫報表", "庫存報表", "倉庫報表集", "inventory report", "庫存現況", "库存报表", "在庫レポート", "庫存盤點報表" },
-                        nameKey: "Nav.InventoryReportIndex"
+                        nameKey: "Nav.InventoryReportIndex",
+                        iconColorClass: "nav-icon-report"
                     ),
 
                     // 分隔線 - 區分資料維護與報表
@@ -621,7 +632,8 @@ public static class NavigationConfig
                         ModuleKey = "Charts",
                         RequiredPermission = PermissionRegistry.Inventory.ChartRead,
                         SearchKeywords = new List<string> { "庫存圖表", "庫存分析", "統計分析", "inventory chart", "stock analytics", "库存图表", "在庫分析" },
-                        IsChartWidget = true
+                        IsChartWidget = true,
+                        IconColorClass = "nav-icon-chart"
                     },
                 }
             },
@@ -708,7 +720,8 @@ public static class NavigationConfig
                         category: "採購管理",
                         requiredPermission: "PurchaseOrder.Read",
                         searchKeywords: new List<string> { "採購報表", "採購報表集", "purchase report", "進貨報表", "采购报表", "仕入レポート", "進貨統計" },
-                        nameKey: "Nav.PurchaseReportIndex"
+                        nameKey: "Nav.PurchaseReportIndex",
+                        iconColorClass: "nav-icon-report"
                     ),
 
                                         // 分隔線 - 區分資料維護與報表
@@ -729,7 +742,8 @@ public static class NavigationConfig
                         ModuleKey = "Charts",
                         RequiredPermission = PermissionRegistry.PurchaseOrder.ChartRead,
                         SearchKeywords = new List<string> { "採購圖表", "採購分析", "統計分析", "purchase chart", "procurement analytics", "采购图表", "仕入分析" },
-                        IsChartWidget = true
+                        IsChartWidget = true,
+                        IconColorClass = "nav-icon-chart"
                     },
                 }
             },
@@ -839,7 +853,24 @@ public static class NavigationConfig
                     {
                         IsDivider = true
                     },
-                    
+
+                    NavigationActionHelper.CreateActionItem(
+                        name: "銷貨報表集",
+                        description: "查看和列印所有銷貨相關報表",
+                        iconClass: "bi bi-printer-fill",
+                        actionId: "OpenSalesReportIndex",
+                        category: "銷售管理",
+                        requiredPermission: "SalesOrder.Read",
+                        searchKeywords: new List<string> { "銷貨報表", "銷貨報表集", "sales report", "銷售報表", "销货报表", "売上レポート", "業績報表" },
+                        nameKey: "Nav.SalesReportIndex",
+                        iconColorClass: "nav-icon-report"
+                    ),                   
+
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+
                     new NavigationItem
                     {
                         Name = "銷貨圖表",
@@ -852,24 +883,11 @@ public static class NavigationConfig
                         ModuleKey = "Charts",
                         RequiredPermission = PermissionRegistry.Sales.ChartRead,
                         SearchKeywords = new List<string> { "銷貨圖表", "銷售分析", "業績分析", "sales chart", "sales analytics", "销货图表", "売上分析", "業績圖表" },
-                        IsChartWidget = true
+                        IsChartWidget = true,
+                        IconColorClass = "nav-icon-chart"
                     },
 
-                    new NavigationItem
-                    {
-                        IsDivider = true
-                    },
 
-                    NavigationActionHelper.CreateActionItem(
-                        name: "銷貨報表集",
-                        description: "查看和列印所有銷貨相關報表",
-                        iconClass: "bi bi-printer-fill",
-                        actionId: "OpenSalesReportIndex",
-                        category: "銷售管理",
-                        requiredPermission: "SalesOrder.Read",
-                        searchKeywords: new List<string> { "銷貨報表", "銷貨報表集", "sales report", "銷售報表", "销货报表", "売上レポート", "業績報表" },
-                        nameKey: "Nav.SalesReportIndex"
-                    ),
                 }
             },
 
@@ -927,6 +945,27 @@ public static class NavigationConfig
                         QuickActionId = "NewVehicleMaintenance",
                         QuickActionName = "新增保養紀錄"
                     },
+                    
+                    new NavigationItem
+                    {
+                        IsDivider = true
+                    },
+                    
+                    new NavigationItem
+                    {
+                        Name = "車輛圖表",
+                        NameKey = "Nav.VehicleCharts",
+                        Description = "依多維度查看車輛保養費用與狀態統計分析圖表",
+                        IconClass = "bi bi-bar-chart-fill",
+                        ItemType = NavigationItemType.Action,
+                        ActionId = "OpenVehicleCharts",
+                        Category = "車輛管理",
+                        ModuleKey = "Charts",
+                        RequiredPermission = PermissionRegistry.Vehicle.ChartRead,
+                        SearchKeywords = new List<string> { "車輛圖表", "保養分析", "車輛統計", "vehicle chart", "vehicle analytics", "车辆图表", "車両チャート" },
+                        IsChartWidget = true,
+                        IconColorClass = "nav-icon-chart"
+                    },
 
                     // 分隔線 - 區分資料維護與報表
                     new NavigationItem
@@ -942,29 +981,17 @@ public static class NavigationConfig
                         category: "車輛管理",
                         requiredPermission: "Vehicle.Read",
                         searchKeywords: new List<string> { "車輛報表", "車輛報表集", "vehicle report", "保養報表", "车辆报表", "車両レポート" },
-                        nameKey: "Nav.VehicleReportIndex"
+                        nameKey: "Nav.VehicleReportIndex",
+                        iconColorClass: "nav-icon-report"
                     ),
-                    new NavigationItem
-                    {
-                        Name = "車輛圖表",
-                        NameKey = "Nav.VehicleCharts",
-                        Description = "依多維度查看車輛保養費用與狀態統計分析圖表",
-                        IconClass = "bi bi-bar-chart-fill",
-                        ItemType = NavigationItemType.Action,
-                        ActionId = "OpenVehicleCharts",
-                        Category = "車輛管理",
-                        ModuleKey = "Charts",
-                        RequiredPermission = PermissionRegistry.Vehicle.ChartRead,
-                        SearchKeywords = new List<string> { "車輛圖表", "保養分析", "車輛統計", "vehicle chart", "vehicle analytics", "车辆图表", "車両チャート" },
-                        IsChartWidget = true
-                    },
+
                 }
             },
 
-            // ==================== 設備管理 ====================
+            // ==================== 設備 ====================
             new NavigationItem
             {
-                Name = "設備管理",
+                Name = "設備",
                 NameKey = "Nav.EquipmentGroup",
                 Description = "設備與保養維修管理",
                 Route = "#",
@@ -973,19 +1000,19 @@ public static class NavigationConfig
                 IsParent = true,
                 MenuKey = "equipment_management",
                 ModuleKey = "Equipment",
-                SearchKeywords = new List<string> { "設備", "設備管理", "機台", "equipment", "machinery", "保養", "維修", "设备", "设备管理", "機器", "設備管理" },
+                SearchKeywords = new List<string> { "設備", "設備", "機台", "equipment", "machinery", "保養", "維修", "设备", "设备管理", "機器", "設備" },
                 Children = new List<NavigationItem>
                 {
                     new NavigationItem
                     {
-                        Name = "設備",
+                        Name = "設備紀錄",
                         NameKey = "Nav.Equipments",
                         Description = "管理設備基本資料與保養狀態",
                         Route = "/equipments",
                         IconClass = "bi bi-caret-right-fill",
                         Category = "設備管理",
                         RequiredPermission = PermissionRegistry.Equipment.Read,
-                        SearchKeywords = new List<string> { "設備", "機台", "equipment", "machinery", "设备", "機器", "生產設備" },
+                        SearchKeywords = new List<string> { "設備紀錄", "機台", "equipment", "machinery", "设备", "機器", "生產設備" },
                         QuickActionId = "NewEquipment",
                         QuickActionName = "新增設備"
                     },
@@ -1030,7 +1057,8 @@ public static class NavigationConfig
                         category: "設備管理",
                         requiredPermission: "Equipment.Read",
                         searchKeywords: new List<string> { "設備報表", "設備報表集", "equipment report", "保養報表", "设备报表", "設備レポート" },
-                        nameKey: "Nav.EquipmentReportIndex"
+                        nameKey: "Nav.EquipmentReportIndex",
+                        iconColorClass: "nav-icon-report"
                     ),
                 }
             },
@@ -1038,7 +1066,7 @@ public static class NavigationConfig
             // ==================== 磅秤管理 ====================
             new NavigationItem
             {
-                Name = "磅秤紀錄",
+                Name = "磅秤",
                 NameKey = "Nav.WasteGroup",
                 Description = "磅秤收料紀錄與類型管理",
                 Route = "#",
@@ -1047,7 +1075,7 @@ public static class NavigationConfig
                 IsParent = true,
                 MenuKey = "scale_management",
                 ModuleKey = "ScaleManagement",
-                SearchKeywords = new List<string> { "磅秤紀錄", "磅秤管理", "磅秤", "waste", "scale", "weighing", "磅秤管理", "磅秤记录", "計量", "磅秤回收" },
+                SearchKeywords = new List<string> { "磅秤", "磅秤管理", "磅秤", "waste", "scale", "weighing", "磅秤管理", "磅秤记录", "計量", "磅秤回收" },
                 Children = new List<NavigationItem>
                 {
                     new NavigationItem
@@ -1077,7 +1105,8 @@ public static class NavigationConfig
                         category: "磅秤管理",
                         requiredPermission: "ScaleRecord.Read",
                         searchKeywords: new List<string> { "磅秤報表", "磅秤報表集", "scale report", "磅秤报表", "計量レポート" },
-                        nameKey: "Nav.WasteReportIndex"
+                        nameKey: "Nav.WasteReportIndex",
+                        iconColorClass: "nav-icon-report"
                     ),
 
                     new NavigationItem
@@ -1096,7 +1125,8 @@ public static class NavigationConfig
                         ModuleKey = "Charts",
                         RequiredPermission = PermissionRegistry.ScaleRecord.ChartRead,
                         SearchKeywords = new List<string> { "磅秤圖表", "過磅分析", "磅秤統計", "scale chart", "weighing analytics", "磅秤图表", "計量チャート" },
-                        IsChartWidget = true
+                        IsChartWidget = true,
+                        IconColorClass = "nav-icon-chart"
                     },
                 }
             },
@@ -1196,7 +1226,8 @@ public static class NavigationConfig
                         category: "財務管理",
                         requiredPermission: "SetoffDocument.Read",
                         searchKeywords: new List<string> { "財務報表", "財務報表集", "financial report", "沖款單報表", "應收沖款", "應付沖款", "财务报表", "経理レポート", "帳款報表" },
-                        nameKey: "Nav.FinancialReportIndex"
+                        nameKey: "Nav.FinancialReportIndex",
+                        iconColorClass: "nav-icon-report"
                     ),
                     new NavigationItem
                     {
@@ -1214,7 +1245,8 @@ public static class NavigationConfig
                         ModuleKey = "Charts",
                         RequiredPermission = PermissionRegistry.SetoffDocument.ChartRead,
                         SearchKeywords = new List<string> { "財務圖表", "沖款分析", "財務統計", "financial chart", "financial analytics", "财务图表", "財務チャート" },
-                        IsChartWidget = true
+                        IsChartWidget = true,
+                        IconColorClass = "nav-icon-chart"
                     },
 
                 }
@@ -1314,7 +1346,8 @@ public static class NavigationConfig
                         category: "會計管理",
                         requiredPermission: "JournalEntry.Read",
                         searchKeywords: new List<string> { "會計報表", "試算表", "損益表", "資產負債表", "科目表", "總分類帳", "明細分類帳", "明細科目餘額表", "accounting report", "会计报表", "试算表", "损益表", "资产负债表", "財務諸表", "P&L", "B/S" },
-                        nameKey: "Nav.AccountingReportIndex"
+                        nameKey: "Nav.AccountingReportIndex",
+                        iconColorClass: "nav-icon-report"
                     ),
                 }
             },
@@ -1394,7 +1427,8 @@ public static class NavigationConfig
                         ModuleKey = "Charts",
                         RequiredPermission = PermissionRegistry.Payroll.ChartRead,
                         SearchKeywords = new List<string> { "薪資圖表", "薪資分析", "薪資統計", "payroll chart", "salary analytics", "薪资图表", "給与チャート" },
-                        IsChartWidget = true
+                        IsChartWidget = true,
+                        IconColorClass = "nav-icon-chart"
                     },
                 }
             },
@@ -1679,6 +1713,7 @@ public static class NavigationConfig
             "財務管理" => "bi bi-journal-text",
             "會計管理" => "bi bi-calculator",
             "車輛管理" => "bi bi-truck-front-fill",
+            "設備管理" => "bi bi-gear-wide-connected",
             "磅秤管理" => "bi bi-recycle",
             "系統管理" => "bi bi-gear-fill",
             "基礎功能" => "bi bi-house-door-fill",

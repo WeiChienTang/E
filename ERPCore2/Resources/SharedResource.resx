@@ -700,7 +700,7 @@
     <value>車輛報表集</value>
   </data>
   <data name="Nav.EquipmentGroup" xml:space="preserve">
-    <value>設備管理</value>
+    <value>設備</value>
   </data>
   <data name="Nav.Equipments" xml:space="preserve">
     <value>設備</value>
@@ -715,7 +715,7 @@
     <value>設備報表集</value>
   </data>
   <data name="Nav.WasteGroup" xml:space="preserve">
-    <value>磅秤管理</value>
+    <value>磅秤</value>
   </data>
   <data name="Nav.WasteRecords" xml:space="preserve">
     <value>磅秤紀錄</value>
@@ -1493,6 +1493,9 @@
   <data name="Field.PayrollItemIsTaxable" xml:space="preserve"><value>計入所得稅</value></data>
   <data name="Field.PayrollItemIsInsuranceBasis" xml:space="preserve"><value>計入勞健保投保薪資</value></data>
   <data name="Field.PayrollItemIsRetirementBasis" xml:space="preserve"><value>計入勞退提繳基礎</value></data>
+  <data name="Field.PayrollItemIsProrated" xml:space="preserve"><value>按出勤比例發放</value></data>
+  <data name="Payroll.Prorated" xml:space="preserve"><value>按比例</value></data>
+  <data name="Payroll.IsProratedHelpText" xml:space="preserve"><value>勾選後，此津貼項目將依員工當月出勤比例計算發放金額</value></data>
   <data name="Entity.PayrollItem" xml:space="preserve"><value>薪資項目</value></data>
   <data name="Page.PayrollItemsTitle" xml:space="preserve"><value>薪資項目設定</value></data>
   <data name="Page.PayrollItemsSubtitle" xml:space="preserve"><value>管理薪資計算中的收入與扣除項目</value></data>
@@ -1793,6 +1796,13 @@
   <data name="Field.EquipmentMaintenanceCost" xml:space="preserve"><value>維修費用</value></data>
   <data name="Field.EquipmentServiceProvider" xml:space="preserve"><value>服務廠商</value></data>
   <data name="Field.EquipmentPerformedByEmployee" xml:space="preserve"><value>執行人員</value></data>
+  <!-- ===== Equipment EditModal 短名稱 keys ===== -->
+  <data name="Field.SerialNumber" xml:space="preserve"><value>序號</value></data>
+  <data name="Field.PurchaseCost" xml:space="preserve"><value>購入費用</value></data>
+  <data name="Field.Location" xml:space="preserve"><value>放置地點</value></data>
+  <data name="Field.MaintenanceCycleMonths" xml:space="preserve"><value>保養週期（月）</value></data>
+  <data name="Field.MaintenanceRecordCode" xml:space="preserve"><value>保養維修記錄編號</value></data>
+  <data name="Field.PerformedByEmployee" xml:space="preserve"><value>執行人員</value></data>
   <!-- ===== FormSectionNames keys ===== -->
   <data name="Section.BasicInfo" xml:space="preserve"><value>基本資訊</value></data>
   <data name="Section.FilterConditions" xml:space="preserve"><value>篩選條件</value></data>
@@ -1914,11 +1924,19 @@
   <data name="Tab.PurchaseOrderData" xml:space="preserve"><value>採購單資料</value></data>
   <data name="Tab.SupplierInfo" xml:space="preserve"><value>廠商資訊</value></data>
   <data name="Tab.CustomerInfo" xml:space="preserve"><value>客戶資訊</value></data>
+  <data name="Tab.ItemInfo" xml:space="preserve"><value>品項資訊</value></data>
+  <data name="Tab.InventoryData" xml:space="preserve"><value>庫存資料</value></data>
   <data name="Message.PleaseSelectCustomer" xml:space="preserve"><value>請先選擇客戶</value></data>
+  <data name="Message.PleaseSelectItem" xml:space="preserve"><value>請先選擇品項</value></data>
+  <data name="Field.StandardCost" xml:space="preserve"><value>標準成本</value></data>
   <!-- ===== Supplier action keys ===== -->
   <data name="Supplier.CopyToCustomerTitle" xml:space="preserve"><value>複製至客戶</value></data>
   <data name="Supplier.CopyToCustomerMessage" xml:space="preserve"><value>確定要將此廠商的資料複製為新客戶嗎？</value></data>
   <data name="Supplier.CopyToCustomerSummary" xml:space="preserve"><value>複製後將在客戶清單中建立一筆新資料</value></data>
+  <!-- ===== Customer action keys ===== -->
+  <data name="Customer.CopyToSupplierTitle" xml:space="preserve"><value>複製至廠商</value></data>
+  <data name="Customer.CopyToSupplierMessage" xml:space="preserve"><value>確定要將此客戶的資料複製為新廠商嗎？</value></data>
+  <data name="Customer.CopyToSupplierSummary" xml:space="preserve"><value>複製後將在廠商清單中建立一筆新資料</value></data>
   <data name="CsvImport.Title" xml:space="preserve"><value>從 CSV 匯入對帳單明細</value></data>
   <data name="CsvImport.FormatTitle" xml:space="preserve"><value>CSV 格式說明</value></data>
   <data name="CsvImport.FormatDesc" xml:space="preserve"><value>格式：交易日期, 交易說明, 支出金額, 收入金額, 銀行流水號（選填）, 交易後餘額（選填）。日期格式：yyyy/MM/dd 或 yyyy-MM-dd。</value></data>
@@ -1970,6 +1988,7 @@
   <data name="CreditRating.C" xml:space="preserve"><value>C - 普通</value></data>
   <data name="CreditRating.D" xml:space="preserve"><value>D - 注意</value></data>
   <data name="Button.ConfirmCopy" xml:space="preserve"><value>確認複製</value></data>
+  <data name="Button.EditAndCreate" xml:space="preserve"><value>編輯後建立</value></data>
   <!-- ===== Dashboard Widget Picker keys ===== -->
   <data name="Dashboard.AddShortcutTitle" xml:space="preserve"><value>新增捷徑項目</value></data>
   <data name="Dashboard.NoMatchFound" xml:space="preserve"><value>找不到符合「{0}」的項目</value></data>
@@ -2371,6 +2390,280 @@
   <data name="Modal.UpdatedBy" xml:space="preserve"><value>最後修改者：</value></data>
   <data name="Modal.ShowAuditInfo" xml:space="preserve"><value>顯示審計資訊</value></data>
   <data name="Modal.HideAuditInfo" xml:space="preserve"><value>隱藏審計資訊</value></data>
+  <data name="Modal.ShowFeatureGuide" xml:space="preserve"><value>關於此功能</value></data>
+  <data name="Modal.HideFeatureGuide" xml:space="preserve"><value>關閉功能說明</value></data>
+  <data name="Modal.FeatureGuideTitle" xml:space="preserve"><value>操作說明</value></data>
+  <data name="Guide.Overview" xml:space="preserve"><value>功能概述</value></data>
+  <data name="Guide.Steps" xml:space="preserve"><value>操作步驟</value></data>
+  <data name="Guide.FieldDescriptions" xml:space="preserve"><value>欄位說明</value></data>
+  <data name="Guide.Tips" xml:space="preserve"><value>提示與注意事項</value></data>
+  <data name="Guide.SalesOrder.Description" xml:space="preserve"><value>銷售訂單用於記錄客戶下單的品項、數量及金額。建立訂單後可進行審核、列印出貨單，並轉為出貨或退貨作業。</value></data>
+  <data name="Guide.SalesOrder.Step1" xml:space="preserve"><value>選擇客戶：從客戶欄位搜尋並選擇下單客戶</value></data>
+  <data name="Guide.SalesOrder.Step2" xml:space="preserve"><value>填寫訂單資訊：設定訂單日期、稅別等基本資料</value></data>
+  <data name="Guide.SalesOrder.Step3" xml:space="preserve"><value>新增訂單明細：在明細分頁中加入品項、數量與單價</value></data>
+  <data name="Guide.SalesOrder.Step4" xml:space="preserve"><value>確認金額：檢查合計金額與稅額是否正確</value></data>
+  <data name="Guide.SalesOrder.Step5" xml:space="preserve"><value>儲存或送審：點擊儲存按鈕，或提交審核流程</value></data>
+  <data name="Guide.SalesOrder.Field.Customer" xml:space="preserve"><value>選擇此訂單的客戶，系統會自動帶入客戶相關資料</value></data>
+  <data name="Guide.SalesOrder.Field.OrderDate" xml:space="preserve"><value>訂單建立日期，預設為今天，可手動修改</value></data>
+  <data name="Guide.SalesOrder.Field.TaxMethod" xml:space="preserve"><value>選擇計稅方式（含稅、未稅、零稅率），將影響明細金額計算</value></data>
+  <data name="Guide.SalesOrder.Tip1" xml:space="preserve"><value>可從報價單直接轉入訂單，系統會自動帶入報價明細，節省重複輸入。</value></data>
+  <data name="Guide.SalesOrder.Warning1" xml:space="preserve"><value>訂單審核通過後將無法修改內容，請確認所有資料正確後再提交審核。</value></data>
+  <data name="Guide.SalesOrder.DetailTitle" xml:space="preserve"><value>明細操作</value></data>
+  <data name="Guide.SalesOrder.Detail1" xml:space="preserve"><value>點擊「新增」按鈕可加入品項，每行包含品名、數量、單價</value></data>
+  <data name="Guide.SalesOrder.Detail2" xml:space="preserve"><value>品名欄位支援智能搜尋，輸入關鍵字即可快速找到品項</value></data>
+  <data name="Guide.SalesOrder.Detail3" xml:space="preserve"><value>數量與單價輸入後，系統會自動計算小計金額</value></data>
+  <data name="Guide.SalesOrder.Detail4" xml:space="preserve"><value>可透過拖曳調整品項順序，或點擊刪除按鈕移除品項</value></data>
+  <data name="Guide.SalesOrder.ApprovalTitle" xml:space="preserve"><value>審核與列印</value></data>
+  <data name="Guide.SalesOrder.Approval1" xml:space="preserve"><value>訂單建立後可提交審核，審核通過後才能進行出貨作業</value></data>
+  <data name="Guide.SalesOrder.Approval2" xml:space="preserve"><value>審核通過的訂單可直接列印出貨單或轉為出貨記錄</value></data>
+  <data name="Guide.SalesOrder.Approval3" xml:space="preserve"><value>如需修改已審核訂單，需先執行駁回操作（需有駁回權限）</value></data>
+  <data name="Guide.SalesOrder.FaqTitle" xml:space="preserve"><value>常見問題</value></data>
+  <data name="Guide.SalesOrder.Faq1Q" xml:space="preserve"><value>如何從報價單轉入？</value></data>
+  <data name="Guide.SalesOrder.Faq1A" xml:space="preserve"><value>在操作按鈕列中點擊「報價轉入」，選擇報價單後系統會自動帶入明細。</value></data>
+  <data name="Guide.SalesOrder.Faq2Q" xml:space="preserve"><value>為什麼無法儲存？</value></data>
+  <data name="Guide.SalesOrder.Faq2A" xml:space="preserve"><value>請確認已選擇客戶且至少有一筆明細品項，並檢查必填欄位是否已填寫完整。</value></data>
+  <data name="Guide.SalesOrder.Faq3Q" xml:space="preserve"><value>如何使用草稿功能？</value></data>
+  <data name="Guide.SalesOrder.Faq3A" xml:space="preserve"><value>點擊「儲存草稿」可暫存未完成的訂單，草稿不會進入審核流程，可隨時編輯。</value></data>
+  <data name="Guide.SalesOrder.Warning2" xml:space="preserve"><value>修改稅別後，系統會重新計算所有明細金額，請注意確認。</value></data>
+  <data name="Guide.SalesOrder.Warning3" xml:space="preserve"><value>已建立出貨單的明細品項無法刪除，如需取消請先處理相關出貨單。</value></data>
+  <data name="Guide.SalesOrder.TabOverview" xml:space="preserve"><value>本頁面包含三個分頁：「訂單資料」可填寫基本資訊與明細品項；「客戶資訊」可查看所選客戶的詳細資料；「附件照片」可上傳訂單相關圖片。</value></data>
+  <data name="Guide.SalesOrder.Step6" xml:space="preserve"><value>後續作業：訂單審核通過後，可轉為出貨單或安排排程生產</value></data>
+  <data name="Guide.SalesOrder.BasicFieldsTitle" xml:space="preserve"><value>基本資料欄位</value></data>
+  <data name="Guide.SalesOrder.Field.Code" xml:space="preserve"><value>系統自動產生，格式為 SO + 日期 + 流水號，不可手動修改</value></data>
+  <data name="Guide.SalesOrder.Field.Company" xml:space="preserve"><value>選擇此訂單所屬公司，若為多公司環境須先指定</value></data>
+  <data name="Guide.SalesOrder.Field.Salesperson" xml:space="preserve"><value>負責此訂單的業務員，會影響業績統計與後續追蹤</value></data>
+  <data name="Guide.SalesOrder.Field.FormCreator" xml:space="preserve"><value>實際建立此訂單的經辦人員，與業務員可為不同人</value></data>
+  <data name="Guide.SalesOrder.Field.ExpectedDeliveryDate" xml:space="preserve"><value>客戶期望的交貨日期，排程與出貨時會參考此日期</value></data>
+  <data name="Guide.SalesOrder.Field.PaymentTerms" xml:space="preserve"><value>約定的付款方式與條件，例如「月結 30 天」、「貨到付款」</value></data>
+  <data name="Guide.SalesOrder.Field.DeliveryTerms" xml:space="preserve"><value>交貨方式與地點說明，例如「送貨至客戶倉庫」、「客戶自取」</value></data>
+  <data name="Guide.SalesOrder.Field.Remarks" xml:space="preserve"><value>訂單的補充說明或特殊需求，會顯示在列印單據上</value></data>
+  <data name="Guide.SalesOrder.AmountFieldsTitle" xml:space="preserve"><value>金額與稅務</value></data>
+  <data name="Guide.SalesOrder.Field.TotalAmount" xml:space="preserve"><value>所有明細品項的小計加總（未含稅），由系統自動計算</value></data>
+  <data name="Guide.SalesOrder.Field.DiscountAmount" xml:space="preserve"><value>明細品項折扣金額的加總，由各品項的折扣比例自動計算</value></data>
+  <data name="Guide.SalesOrder.Field.SalesTaxAmount" xml:space="preserve"><value>依據稅別與稅率自動計算的稅額，含稅模式下會從總額中反算</value></data>
+  <data name="Guide.SalesOrder.Field.TotalAmountWithTax" xml:space="preserve"><value>訂單最終應收金額 = 總金額 + 稅額，此為客戶實際支付的金額</value></data>
+  <data name="Guide.SalesOrder.Detail5" xml:space="preserve"><value>每行明細可設定折扣百分比，系統自動計算折後小計</value></data>
+  <data name="Guide.SalesOrder.Detail6" xml:space="preserve"><value>已建立出貨記錄的品項會顯示已出數量與待出數量，不可刪除</value></data>
+  <data name="Guide.SalesOrder.ActionsTitle" xml:space="preserve"><value>功能按鈕說明</value></data>
+  <data name="Guide.SalesOrder.Action.ConvertLabel" xml:space="preserve"><value>轉出貨單</value></data>
+  <data name="Guide.SalesOrder.Action.Convert" xml:space="preserve"><value>將已審核的訂單轉為出貨單，系統會自動帶入訂單明細中尚未出貨的品項與數量</value></data>
+  <data name="Guide.SalesOrder.Action.ScheduleLabel" xml:space="preserve"><value>排程看板</value></data>
+  <data name="Guide.SalesOrder.Action.Schedule" xml:space="preserve"><value>查看此訂單品項的生產排程狀態，可安排生產計畫（需審核通過後才可使用）</value></data>
+  <data name="Guide.SalesOrder.Action.InventoryLabel" xml:space="preserve"><value>庫存檢查</value></data>
+  <data name="Guide.SalesOrder.Action.Inventory" xml:space="preserve"><value>檢查訂單中所有品項的即時庫存，庫存不足時按鈕會顯示為黃色警告</value></data>
+  <data name="Guide.SalesOrder.Action.PrintLabel" xml:space="preserve"><value>列印</value></data>
+  <data name="Guide.SalesOrder.Action.Print" xml:space="preserve"><value>預覽並列印銷貨訂單，支援匯出 PDF 與 Excel 格式</value></data>
+  <data name="Guide.SalesOrder.Action.DraftLabel" xml:space="preserve"><value>儲存草稿</value></data>
+  <data name="Guide.SalesOrder.Action.Draft" xml:space="preserve"><value>暫存未完成的訂單，草稿狀態不會進入審核流程，可隨時繼續編輯</value></data>
+  <data name="Guide.SalesOrder.Approval4" xml:space="preserve"><value>系統可設定為自動審核或手動審核，由系統管理員在系統參數中配置</value></data>
+  <data name="Guide.SalesOrder.Tip2" xml:space="preserve"><value>金額欄位皆為系統自動計算，無須手動輸入，修改明細後會即時更新。</value></data>
+  <data name="Guide.SalesOrder.Tip3" xml:space="preserve"><value>「客戶資訊」分頁可直接查看選取客戶的聯絡資料，不須離開本頁面。</value></data>
+  <data name="Guide.SalesOrder.Faq4Q" xml:space="preserve"><value>為什麼部分欄位無法編輯？</value></data>
+  <data name="Guide.SalesOrder.Faq4A" xml:space="preserve"><value>當訂單已有明細品項時，客戶、公司、日期等基本欄位會鎖定，防止修改後與明細資料不一致。</value></data>
+  <data name="Guide.SalesOrder.Faq5Q" xml:space="preserve"><value>如何查看訂單的出貨進度？</value></data>
+  <data name="Guide.SalesOrder.Faq5A" xml:space="preserve"><value>在明細品項中可查看每項的「已出數量」與「待出數量」，也可透過「庫存檢查」按鈕總覽所有品項狀態。</value></data>
+  <data name="Field.DiscountAmount" xml:space="preserve"><value>折扣金額</value></data>
+  <data name="Field.TotalAmountWithTax" xml:space="preserve"><value>含稅總額</value></data>
+  <data name="Field.SubtotalBeforeDiscount" xml:space="preserve"><value>折扣前小計</value></data>
+  <data name="Field.QuotationTaxAmount" xml:space="preserve"><value>報價稅額</value></data>
+  <data name="Field.DeliveryAddress" xml:space="preserve"><value>交貨地址</value></data>
+  <data name="Field.ShippingMethod" xml:space="preserve"><value>運送方式</value></data>
+  <data name="Field.ExpectedArrivalDate" xml:space="preserve"><value>預計到貨日</value></data>
+  <data name="Field.PurchasePersonnel" xml:space="preserve"><value>採購人員</value></data>
+  <data name="Field.PurchaseTaxAmount" xml:space="preserve"><value>採購稅額</value></data>
+  <data name="Field.PurchaseTotalAmountIncludingTax" xml:space="preserve"><value>採購含稅總額</value></data>
+  <data name="Field.PurchaseReceivingTaxAmount" xml:space="preserve"><value>進貨稅額</value></data>
+  <data name="Field.PurchaseReceivingTotalAmountIncludingTax" xml:space="preserve"><value>進貨含稅總額</value></data>
+  <data name="Field.ReturnTaxAmount" xml:space="preserve"><value>退回稅額</value></data>
+  <data name="Field.TotalReturnAmount" xml:space="preserve"><value>退回總額</value></data>
+  <data name="Field.TotalReturnAmountWithTax" xml:space="preserve"><value>退回含稅總額</value></data>
+  <data name="Guide.Quotation.Description" xml:space="preserve"><value>報價單用於向客戶提供品項報價，包含品名、數量、單價及條件。報價確認後可直接轉為銷貨訂單，避免重複輸入。</value></data>
+  <data name="Guide.Quotation.TabOverview" xml:space="preserve"><value>本頁面包含三個分頁：「報價單資料」填寫基本資訊與明細品項；「客戶資訊」查看所選客戶的詳細資料；「報價照片」上傳相關圖片。</value></data>
+  <data name="Guide.Quotation.Step1" xml:space="preserve"><value>選擇客戶：搜尋並選擇報價對象</value></data>
+  <data name="Guide.Quotation.Step2" xml:space="preserve"><value>填寫基本資料：設定報價日期、稅別、專案名稱等</value></data>
+  <data name="Guide.Quotation.Step3" xml:space="preserve"><value>新增報價明細：加入品項、數量與單價</value></data>
+  <data name="Guide.Quotation.Step4" xml:space="preserve"><value>確認金額：檢查小計、折扣與稅額是否正確</value></data>
+  <data name="Guide.Quotation.Step5" xml:space="preserve"><value>儲存或送審：完成後儲存，或提交審核流程</value></data>
+  <data name="Guide.Quotation.Field.Code" xml:space="preserve"><value>系統自動產生，不可手動修改</value></data>
+  <data name="Guide.Quotation.Field.Customer" xml:space="preserve"><value>選擇此報價單的客戶，系統會帶入客戶相關資料</value></data>
+  <data name="Guide.Quotation.Field.Company" xml:space="preserve"><value>選擇報價所屬公司</value></data>
+  <data name="Guide.Quotation.Field.Salesperson" xml:space="preserve"><value>負責此報價的業務員</value></data>
+  <data name="Guide.Quotation.Field.Date" xml:space="preserve"><value>報價單建立日期，預設為今天</value></data>
+  <data name="Guide.Quotation.Field.ProjectName" xml:space="preserve"><value>關聯的專案名稱，方便後續追蹤</value></data>
+  <data name="Guide.Quotation.Field.TaxMethod" xml:space="preserve"><value>選擇計稅方式（含稅、未稅、零稅率）</value></data>
+  <data name="Guide.Quotation.Field.PaymentTerms" xml:space="preserve"><value>約定的付款條件</value></data>
+  <data name="Guide.Quotation.Field.DeliveryTerms" xml:space="preserve"><value>約定的交貨條件</value></data>
+  <data name="Guide.Quotation.Field.Remarks" xml:space="preserve"><value>報價的補充說明，會顯示在列印單據上</value></data>
+  <data name="Guide.Quotation.Field.Subtotal" xml:space="preserve"><value>所有品項小計加總（折扣前），系統自動計算</value></data>
+  <data name="Guide.Quotation.Field.Discount" xml:space="preserve"><value>品項折扣金額加總，由各品項折扣比例自動計算</value></data>
+  <data name="Guide.Quotation.Field.TaxAmount" xml:space="preserve"><value>依據稅別自動計算的稅額</value></data>
+  <data name="Guide.Quotation.Field.TotalAmount" xml:space="preserve"><value>報價最終金額 = 小計 - 折扣 + 稅額</value></data>
+  <data name="Guide.Quotation.Action.ConvertLabel" xml:space="preserve"><value>轉銷貨訂單</value></data>
+  <data name="Guide.Quotation.Action.Convert" xml:space="preserve"><value>將報價單轉為銷貨訂單，系統自動帶入報價明細中尚未轉單的品項</value></data>
+  <data name="Guide.Quotation.Action.PrintLabel" xml:space="preserve"><value>列印</value></data>
+  <data name="Guide.Quotation.Action.Print" xml:space="preserve"><value>預覽並列印報價單，支援 PDF 與 Excel 匯出</value></data>
+  <data name="Guide.Quotation.Action.DraftLabel" xml:space="preserve"><value>儲存草稿</value></data>
+  <data name="Guide.Quotation.Action.Draft" xml:space="preserve"><value>暫存未完成的報價單，草稿不進入審核流程</value></data>
+  <data name="Guide.Quotation.Tip1" xml:space="preserve"><value>報價單可多次轉單，每次只帶入尚未轉單的剩餘數量。</value></data>
+  <data name="Guide.Quotation.Tip2" xml:space="preserve"><value>可設定專案名稱方便日後依專案查詢所有相關報價。</value></data>
+  <data name="Guide.Quotation.Warning1" xml:space="preserve"><value>報價單審核通過或已轉單後，基本資料欄位將被鎖定無法修改。</value></data>
+  <data name="Guide.Quotation.Warning2" xml:space="preserve"><value>刪除已轉單的明細品項會影響對應訂單的資料，請謹慎操作。</value></data>
+  <data name="Guide.Quotation.Faq1Q" xml:space="preserve"><value>報價單可以轉多次訂單嗎？</value></data>
+  <data name="Guide.Quotation.Faq1A" xml:space="preserve"><value>可以。每次轉單只會帶入尚未轉單的剩餘數量，直到全部品項都轉完為止。</value></data>
+  <data name="Guide.Quotation.Faq2Q" xml:space="preserve"><value>為什麼轉單按鈕無法點擊？</value></data>
+  <data name="Guide.Quotation.Faq2A" xml:space="preserve"><value>請確認報價單已儲存、已通過審核（若有啟用審核），且仍有未轉單的品項。</value></data>
+  <data name="Guide.Quotation.Faq3Q" xml:space="preserve"><value>如何修改已審核的報價單？</value></data>
+  <data name="Guide.Quotation.Faq3A" xml:space="preserve"><value>需先由有權限的人員執行駁回操作，駁回後即可重新編輯。</value></data>
+  <data name="Guide.SalesDelivery.Description" xml:space="preserve"><value>出貨單記錄實際交付給客戶的品項與數量。通常從銷貨訂單轉入，出貨後可進一步建立退貨單或沖款單。</value></data>
+  <data name="Guide.SalesDelivery.TabOverview" xml:space="preserve"><value>本頁面包含兩個分頁：「出貨資料」填寫出貨資訊與明細品項；「客戶資訊」查看客戶的聯絡與地址資料。</value></data>
+  <data name="Guide.SalesDelivery.Step1" xml:space="preserve"><value>確認客戶與出貨日期等基本資料</value></data>
+  <data name="Guide.SalesDelivery.Step2" xml:space="preserve"><value>從銷貨訂單篩選並帶入出貨品項</value></data>
+  <data name="Guide.SalesDelivery.Step3" xml:space="preserve"><value>核對數量與金額是否正確</value></data>
+  <data name="Guide.SalesDelivery.Step4" xml:space="preserve"><value>填寫交貨地址與備註</value></data>
+  <data name="Guide.SalesDelivery.Step5" xml:space="preserve"><value>儲存出貨單，審核通過後可列印出貨文件</value></data>
+  <data name="Guide.SalesDelivery.Field.Code" xml:space="preserve"><value>系統自動產生，格式為 SD + 日期 + 流水號</value></data>
+  <data name="Guide.SalesDelivery.Field.Customer" xml:space="preserve"><value>此出貨單的客戶，通常從訂單帶入</value></data>
+  <data name="Guide.SalesDelivery.Field.Salesperson" xml:space="preserve"><value>負責此出貨的業務員</value></data>
+  <data name="Guide.SalesDelivery.Field.DeliveryDate" xml:space="preserve"><value>實際出貨日期</value></data>
+  <data name="Guide.SalesDelivery.Field.Address" xml:space="preserve"><value>客戶收貨地址，可手動修改</value></data>
+  <data name="Guide.SalesDelivery.Field.TaxMethod" xml:space="preserve"><value>稅別設定，影響金額計算</value></data>
+  <data name="Guide.SalesDelivery.Field.Remarks" xml:space="preserve"><value>出貨的補充說明</value></data>
+  <data name="Guide.SalesDelivery.Field.TotalAmount" xml:space="preserve"><value>明細品項小計加總（未含稅）</value></data>
+  <data name="Guide.SalesDelivery.Field.Discount" xml:space="preserve"><value>明細折扣金額加總</value></data>
+  <data name="Guide.SalesDelivery.Field.TaxAmount" xml:space="preserve"><value>依稅別自動計算的稅額</value></data>
+  <data name="Guide.SalesDelivery.Field.TotalWithTax" xml:space="preserve"><value>出貨最終金額 = 總額 + 稅額</value></data>
+  <data name="Guide.SalesDelivery.Action.ReturnLabel" xml:space="preserve"><value>轉銷貨退回</value></data>
+  <data name="Guide.SalesDelivery.Action.Return" xml:space="preserve"><value>將出貨品項建立退貨單，系統帶入可退貨的品項與數量</value></data>
+  <data name="Guide.SalesDelivery.Action.SetoffLabel" xml:space="preserve"><value>轉沖款單</value></data>
+  <data name="Guide.SalesDelivery.Action.Setoff" xml:space="preserve"><value>建立沖款單進行收款沖帳作業</value></data>
+  <data name="Guide.SalesDelivery.Action.PrintLabel" xml:space="preserve"><value>列印</value></data>
+  <data name="Guide.SalesDelivery.Action.Print" xml:space="preserve"><value>預覽並列印出貨單文件</value></data>
+  <data name="Guide.SalesDelivery.Tip1" xml:space="preserve"><value>出貨明細會顯示來源訂單資訊，方便追蹤。</value></data>
+  <data name="Guide.SalesDelivery.Tip2" xml:space="preserve"><value>可透過篩選條件快速從特定訂單帶入品項。</value></data>
+  <data name="Guide.SalesDelivery.Warning1" xml:space="preserve"><value>已建立退貨記錄的出貨品項無法刪除，需先處理退貨單。</value></data>
+  <data name="Guide.SalesDelivery.Warning2" xml:space="preserve"><value>出貨單審核通過後欄位將鎖定，如需修改請先駁回。</value></data>
+  <data name="Guide.SalesDelivery.Faq1Q" xml:space="preserve"><value>出貨單可以從多張訂單帶入嗎？</value></data>
+  <data name="Guide.SalesDelivery.Faq1A" xml:space="preserve"><value>可以。使用篩選條件選擇不同訂單，逐筆帶入品項即可。</value></data>
+  <data name="Guide.SalesDelivery.Faq2Q" xml:space="preserve"><value>為什麼無法刪除某些明細？</value></data>
+  <data name="Guide.SalesDelivery.Faq2A" xml:space="preserve"><value>已有退貨記錄或沖款記錄的明細不可刪除，請先處理相關單據。</value></data>
+  <data name="Guide.SalesDelivery.Faq3Q" xml:space="preserve"><value>如何建立退貨單？</value></data>
+  <data name="Guide.SalesDelivery.Faq3A" xml:space="preserve"><value>點擊「轉銷貨退回」按鈕，系統會自動帶入可退貨的品項，填寫退貨數量後儲存即可。</value></data>
+  <data name="Guide.SalesReturn.Description" xml:space="preserve"><value>銷貨退回單記錄客戶退回的品項與數量，通常從出貨單轉入。退回後可建立沖款單進行退款處理。</value></data>
+  <data name="Guide.SalesReturn.TabOverview" xml:space="preserve"><value>本頁面包含兩個分頁：「退回資料」填寫退回資訊與明細品項；「客戶資訊」查看客戶資料。</value></data>
+  <data name="Guide.SalesReturn.Step1" xml:space="preserve"><value>確認客戶與退回日期</value></data>
+  <data name="Guide.SalesReturn.Step2" xml:space="preserve"><value>選擇退回原因</value></data>
+  <data name="Guide.SalesReturn.Step3" xml:space="preserve"><value>從出貨單篩選並帶入退回品項</value></data>
+  <data name="Guide.SalesReturn.Step4" xml:space="preserve"><value>填寫退回數量並確認金額</value></data>
+  <data name="Guide.SalesReturn.Step5" xml:space="preserve"><value>儲存退回單，審核通過後可進行沖款</value></data>
+  <data name="Guide.SalesReturn.Field.Code" xml:space="preserve"><value>系統自動產生，格式為 SR + 日期 + 流水號</value></data>
+  <data name="Guide.SalesReturn.Field.Customer" xml:space="preserve"><value>退貨客戶，通常從出貨單帶入</value></data>
+  <data name="Guide.SalesReturn.Field.ReturnDate" xml:space="preserve"><value>實際退貨日期</value></data>
+  <data name="Guide.SalesReturn.Field.Reason" xml:space="preserve"><value>選擇退貨原因分類</value></data>
+  <data name="Guide.SalesReturn.Field.TaxMethod" xml:space="preserve"><value>稅別設定，影響退回金額計算</value></data>
+  <data name="Guide.SalesReturn.Field.Remarks" xml:space="preserve"><value>退貨的補充說明</value></data>
+  <data name="Guide.SalesReturn.Field.TotalReturn" xml:space="preserve"><value>退回品項小計加總</value></data>
+  <data name="Guide.SalesReturn.Field.Discount" xml:space="preserve"><value>退回品項折扣加總</value></data>
+  <data name="Guide.SalesReturn.Field.TaxAmount" xml:space="preserve"><value>退回稅額</value></data>
+  <data name="Guide.SalesReturn.Field.TotalWithTax" xml:space="preserve"><value>退回含稅總額 = 退回總額 + 稅額</value></data>
+  <data name="Guide.SalesReturn.Action.SetoffLabel" xml:space="preserve"><value>轉沖款單</value></data>
+  <data name="Guide.SalesReturn.Action.Setoff" xml:space="preserve"><value>建立沖款單進行退款沖帳作業</value></data>
+  <data name="Guide.SalesReturn.Tip1" xml:space="preserve"><value>退回明細會自動篩選出可退貨的品項，不需手動核對。</value></data>
+  <data name="Guide.SalesReturn.Warning1" xml:space="preserve"><value>已有沖款記錄的退回品項無法修改或刪除。</value></data>
+  <data name="Guide.SalesReturn.Warning2" xml:space="preserve"><value>退回數量不可超過原出貨數量減已退數量。</value></data>
+  <data name="Guide.SalesReturn.Faq1Q" xml:space="preserve"><value>退回數量有上限嗎？</value></data>
+  <data name="Guide.SalesReturn.Faq1A" xml:space="preserve"><value>有。每個品項的退回數量不可超過原出貨數量減去已退貨數量的差額。</value></data>
+  <data name="Guide.SalesReturn.Faq2Q" xml:space="preserve"><value>退回後如何退款給客戶？</value></data>
+  <data name="Guide.SalesReturn.Faq2A" xml:space="preserve"><value>點擊「轉沖款單」建立沖款單，在沖款單中進行退款沖帳作業。</value></data>
+  <data name="Guide.PurchaseOrder.Description" xml:space="preserve"><value>採購單用於向廠商下達採購需求，記錄採購品項、數量、單價與交貨條件。審核通過後可轉為進貨單。</value></data>
+  <data name="Guide.PurchaseOrder.TabOverview" xml:space="preserve"><value>本頁面包含兩個分頁：「採購單資料」填寫採購資訊與明細品項；「廠商資訊」查看廠商的聯絡與付款資料。</value></data>
+  <data name="Guide.PurchaseOrder.Step1" xml:space="preserve"><value>選擇廠商：搜尋並選擇供應廠商</value></data>
+  <data name="Guide.PurchaseOrder.Step2" xml:space="preserve"><value>填寫採購資料：設定日期、採購人員、預交日等</value></data>
+  <data name="Guide.PurchaseOrder.Step3" xml:space="preserve"><value>新增採購明細：加入品項、數量與單價</value></data>
+  <data name="Guide.PurchaseOrder.Step4" xml:space="preserve"><value>確認金額：檢查總金額與稅額是否正確</value></data>
+  <data name="Guide.PurchaseOrder.Step5" xml:space="preserve"><value>儲存或送審：完成後儲存，或提交審核流程</value></data>
+  <data name="Guide.PurchaseOrder.Field.Code" xml:space="preserve"><value>系統自動產生，格式為 PO + 日期 + 流水號</value></data>
+  <data name="Guide.PurchaseOrder.Field.Supplier" xml:space="preserve"><value>選擇採購對象廠商，系統帶入廠商相關資料</value></data>
+  <data name="Guide.PurchaseOrder.Field.Company" xml:space="preserve"><value>選擇採購所屬公司</value></data>
+  <data name="Guide.PurchaseOrder.Field.Personnel" xml:space="preserve"><value>負責此採購單的採購人員</value></data>
+  <data name="Guide.PurchaseOrder.Field.OrderDate" xml:space="preserve"><value>採購單建立日期</value></data>
+  <data name="Guide.PurchaseOrder.Field.ExpectedDate" xml:space="preserve"><value>廠商承諾的交貨日期</value></data>
+  <data name="Guide.PurchaseOrder.Field.TaxMethod" xml:space="preserve"><value>選擇計稅方式</value></data>
+  <data name="Guide.PurchaseOrder.Field.Remarks" xml:space="preserve"><value>採購的補充說明</value></data>
+  <data name="Guide.PurchaseOrder.Field.TotalAmount" xml:space="preserve"><value>明細品項小計加總（未含稅）</value></data>
+  <data name="Guide.PurchaseOrder.Field.TaxAmount" xml:space="preserve"><value>依稅別自動計算的採購稅額</value></data>
+  <data name="Guide.PurchaseOrder.Field.TotalWithTax" xml:space="preserve"><value>採購最終金額 = 總額 + 稅額</value></data>
+  <data name="Guide.PurchaseOrder.Action.ConvertLabel" xml:space="preserve"><value>轉進貨單</value></data>
+  <data name="Guide.PurchaseOrder.Action.Convert" xml:space="preserve"><value>將採購單轉為進貨單，系統帶入尚未進貨的品項與數量</value></data>
+  <data name="Guide.PurchaseOrder.Action.CopyMsgLabel" xml:space="preserve"><value>複製訊息</value></data>
+  <data name="Guide.PurchaseOrder.Action.CopyMsg" xml:space="preserve"><value>將採購資訊格式化為文字訊息複製到剪貼簿，方便透過通訊軟體傳送給廠商</value></data>
+  <data name="Guide.PurchaseOrder.Action.PrintLabel" xml:space="preserve"><value>列印</value></data>
+  <data name="Guide.PurchaseOrder.Action.Print" xml:space="preserve"><value>預覽並列印採購單文件</value></data>
+  <data name="Guide.PurchaseOrder.Tip1" xml:space="preserve"><value>「複製訊息」可自訂訊息模板，點擊齒輪圖示即可設定格式。</value></data>
+  <data name="Guide.PurchaseOrder.Tip2" xml:space="preserve"><value>預交日預設為採購日後 7 天，可手動調整。</value></data>
+  <data name="Guide.PurchaseOrder.Warning1" xml:space="preserve"><value>採購單審核通過後欄位將鎖定，如需修改請先駁回。</value></data>
+  <data name="Guide.PurchaseOrder.Warning2" xml:space="preserve"><value>已建立進貨記錄的明細無法刪除，需先處理進貨單。</value></data>
+  <data name="Guide.PurchaseOrder.Faq1Q" xml:space="preserve"><value>如何快速向廠商下單？</value></data>
+  <data name="Guide.PurchaseOrder.Faq1A" xml:space="preserve"><value>填寫採購單後使用「複製訊息」按鈕，可將訂購資訊複製到通訊軟體直接傳送。</value></data>
+  <data name="Guide.PurchaseOrder.Faq2Q" xml:space="preserve"><value>採購單可以轉多次進貨嗎？</value></data>
+  <data name="Guide.PurchaseOrder.Faq2A" xml:space="preserve"><value>可以。每次轉單只帶入尚未進貨的剩餘數量，支援分批進貨。</value></data>
+  <data name="Guide.PurchaseOrder.Faq3Q" xml:space="preserve"><value>為什麼部分欄位被鎖定？</value></data>
+  <data name="Guide.PurchaseOrder.Faq3A" xml:space="preserve"><value>當採購單已審核或已有進貨記錄時，基本資料欄位會鎖定以維持資料一致性。</value></data>
+  <data name="Guide.PurchaseReceiving.Description" xml:space="preserve"><value>進貨單記錄實際從廠商收到的品項與數量。通常從採購單轉入，可指定入庫倉庫與批號。進貨後可建立退貨單或沖款單。</value></data>
+  <data name="Guide.PurchaseReceiving.TabOverview" xml:space="preserve"><value>本頁面包含兩個分頁：「進貨資料」填寫進貨資訊與明細品項；「廠商資訊」查看廠商的聯絡與付款資料。</value></data>
+  <data name="Guide.PurchaseReceiving.Step1" xml:space="preserve"><value>選擇廠商：搜尋並選擇供貨廠商</value></data>
+  <data name="Guide.PurchaseReceiving.Step2" xml:space="preserve"><value>篩選採購單：從該廠商的採購單中篩選要進貨的單據</value></data>
+  <data name="Guide.PurchaseReceiving.Step3" xml:space="preserve"><value>載入明細：使用「智慧載入」或手動帶入採購品項</value></data>
+  <data name="Guide.PurchaseReceiving.Step4" xml:space="preserve"><value>確認數量與倉庫：核對進貨數量並指定入庫倉庫</value></data>
+  <data name="Guide.PurchaseReceiving.Step5" xml:space="preserve"><value>儲存並審核：完成後儲存，審核通過後品項入庫</value></data>
+  <data name="Guide.PurchaseReceiving.Field.Code" xml:space="preserve"><value>系統自動產生，格式為 PR + 日期 + 流水號</value></data>
+  <data name="Guide.PurchaseReceiving.Field.Supplier" xml:space="preserve"><value>此進貨單的廠商，通常從採購單帶入</value></data>
+  <data name="Guide.PurchaseReceiving.Field.ReceiptDate" xml:space="preserve"><value>實際收到貨品的日期</value></data>
+  <data name="Guide.PurchaseReceiving.Field.TaxMethod" xml:space="preserve"><value>稅別設定，影響金額計算方式</value></data>
+  <data name="Guide.PurchaseReceiving.Field.BatchNumber" xml:space="preserve"><value>進貨批號，用於追蹤同一批次的品項</value></data>
+  <data name="Guide.PurchaseReceiving.Field.Remarks" xml:space="preserve"><value>進貨的補充說明</value></data>
+  <data name="Guide.PurchaseReceiving.Field.TotalAmount" xml:space="preserve"><value>明細品項小計加總（未含稅）</value></data>
+  <data name="Guide.PurchaseReceiving.Field.TaxAmount" xml:space="preserve"><value>依稅別自動計算的進貨稅額</value></data>
+  <data name="Guide.PurchaseReceiving.Field.TotalWithTax" xml:space="preserve"><value>進貨最終金額 = 總額 + 稅額</value></data>
+  <data name="Guide.PurchaseReceiving.Detail1" xml:space="preserve"><value>使用「智慧載入」自動帶入採購單中尚未進貨的品項</value></data>
+  <data name="Guide.PurchaseReceiving.Detail2" xml:space="preserve"><value>核對每項品目的實際到貨數量，可修改為實際收到數量</value></data>
+  <data name="Guide.PurchaseReceiving.Detail3" xml:space="preserve"><value>為每個品項指定入庫倉庫，可使用「統一倉庫」快速設定</value></data>
+  <data name="Guide.PurchaseReceiving.Detail4" xml:space="preserve"><value>填寫批號欄位以追蹤品項批次</value></data>
+  <data name="Guide.PurchaseReceiving.Action.ReturnLabel" xml:space="preserve"><value>轉採購退回</value></data>
+  <data name="Guide.PurchaseReceiving.Action.Return" xml:space="preserve"><value>將進貨品項建立退貨單，系統帶入可退貨的品項與數量</value></data>
+  <data name="Guide.PurchaseReceiving.Action.SetoffLabel" xml:space="preserve"><value>轉沖款單</value></data>
+  <data name="Guide.PurchaseReceiving.Action.Setoff" xml:space="preserve"><value>建立沖款單進行付款沖帳作業</value></data>
+  <data name="Guide.PurchaseReceiving.Tip1" xml:space="preserve"><value>「統一倉庫」功能可一次將所有明細設為相同倉庫，節省逐筆設定。</value></data>
+  <data name="Guide.PurchaseReceiving.Tip2" xml:space="preserve"><value>進貨數量可與採購數量不同，系統會追蹤差異以便後續補進。</value></data>
+  <data name="Guide.PurchaseReceiving.Warning1" xml:space="preserve"><value>已建立退貨或沖款記錄的明細無法刪除或修改。</value></data>
+  <data name="Guide.PurchaseReceiving.Faq1Q" xml:space="preserve"><value>進貨數量可以少於採購數量嗎？</value></data>
+  <data name="Guide.PurchaseReceiving.Faq1A" xml:space="preserve"><value>可以。系統會記錄差異，未到貨的品項可在下次進貨時繼續帶入。</value></data>
+  <data name="Guide.PurchaseReceiving.Faq2Q" xml:space="preserve"><value>如何處理廠商多送的品項？</value></data>
+  <data name="Guide.PurchaseReceiving.Faq2A" xml:space="preserve"><value>可直接在進貨單中手動新增品項或調整數量，不一定要從採購單帶入。</value></data>
+  <data name="Guide.PurchaseReturn.Description" xml:space="preserve"><value>採購退回單記錄退還給廠商的品項與數量，通常從進貨單轉入。退回後可建立沖款單進行扣款處理。</value></data>
+  <data name="Guide.PurchaseReturn.TabOverview" xml:space="preserve"><value>本頁面包含兩個分頁：「退回資料」填寫退回資訊與明細品項；「廠商資訊」查看廠商資料。</value></data>
+  <data name="Guide.PurchaseReturn.Step1" xml:space="preserve"><value>確認廠商與退回日期</value></data>
+  <data name="Guide.PurchaseReturn.Step2" xml:space="preserve"><value>選擇退回原因</value></data>
+  <data name="Guide.PurchaseReturn.Step3" xml:space="preserve"><value>從進貨單篩選並帶入退回品項</value></data>
+  <data name="Guide.PurchaseReturn.Step4" xml:space="preserve"><value>填寫退回數量並確認金額</value></data>
+  <data name="Guide.PurchaseReturn.Step5" xml:space="preserve"><value>儲存退回單，審核通過後可進行沖款</value></data>
+  <data name="Guide.PurchaseReturn.Field.Code" xml:space="preserve"><value>系統自動產生，格式為 PRT + 日期 + 流水號</value></data>
+  <data name="Guide.PurchaseReturn.Field.Supplier" xml:space="preserve"><value>退貨廠商，通常從進貨單帶入</value></data>
+  <data name="Guide.PurchaseReturn.Field.ReturnDate" xml:space="preserve"><value>實際退貨日期</value></data>
+  <data name="Guide.PurchaseReturn.Field.Reason" xml:space="preserve"><value>選擇退貨原因分類</value></data>
+  <data name="Guide.PurchaseReturn.Field.TaxMethod" xml:space="preserve"><value>稅別設定，影響退回金額計算</value></data>
+  <data name="Guide.PurchaseReturn.Field.Remarks" xml:space="preserve"><value>退貨的補充說明</value></data>
+  <data name="Guide.PurchaseReturn.Field.TotalReturn" xml:space="preserve"><value>退回品項小計加總</value></data>
+  <data name="Guide.PurchaseReturn.Field.TaxAmount" xml:space="preserve"><value>退回稅額</value></data>
+  <data name="Guide.PurchaseReturn.Field.TotalWithTax" xml:space="preserve"><value>退回含稅總額 = 退回總額 + 稅額</value></data>
+  <data name="Guide.PurchaseReturn.Action.SetoffLabel" xml:space="preserve"><value>轉沖款單</value></data>
+  <data name="Guide.PurchaseReturn.Action.Setoff" xml:space="preserve"><value>建立沖款單進行扣款沖帳作業</value></data>
+  <data name="Guide.PurchaseReturn.Tip1" xml:space="preserve"><value>退回明細自動篩選可退品項，依據進貨記錄計算可退數量。</value></data>
+  <data name="Guide.PurchaseReturn.Warning1" xml:space="preserve"><value>已有沖款記錄的退回品項無法修改或刪除。</value></data>
+  <data name="Guide.PurchaseReturn.Warning2" xml:space="preserve"><value>退回數量不可超過進貨數量減已退數量。</value></data>
+  <data name="Guide.PurchaseReturn.Faq1Q" xml:space="preserve"><value>退回數量有上限嗎？</value></data>
+  <data name="Guide.PurchaseReturn.Faq1A" xml:space="preserve"><value>有。每個品項的退回數量不可超過原進貨數量減去已退貨數量的差額。</value></data>
+  <data name="Guide.PurchaseReturn.Faq2Q" xml:space="preserve"><value>退回後如何向廠商扣款？</value></data>
+  <data name="Guide.PurchaseReturn.Faq2A" xml:space="preserve"><value>點擊「轉沖款單」建立沖款單，在沖款單中進行扣款沖帳作業。</value></data>
   <data name="Modal.DefaultTitle" xml:space="preserve"><value>視窗</value></data>
   <data name="Modal.DefaultLoading" xml:space="preserve"><value>載入中...</value></data>
 
@@ -3384,6 +3677,9 @@
   <data name="Column.StockCode" xml:space="preserve"><value>產品編號</value></data>
   <data name="Column.StorageQty" xml:space="preserve"><value>存量</value></data>
   <data name="Stats.ClickForDetail" xml:space="preserve"><value>點擊查看詳情</value></data>
+  <data name="Stats.Collapse" xml:space="preserve"><value>收合統計</value></data>
+  <data name="Stats.ExpandAll" xml:space="preserve"><value>展開全部</value></data>
+  <data name="Stats.Statistics" xml:space="preserve"><value>統計</value></data>
 
   <!-- ===== Vehicle Notifications ===== -->
   <data name="Vehicle.LoadFailed" xml:space="preserve"><value>載入車輛列表失敗：{0}</value></data>
@@ -3812,6 +4108,10 @@
   <data name="Inventory.ReservedExceedsCurrent" xml:space="preserve"><value>預留庫存不可超過現有庫存</value></data>
   <data name="Inventory.AllDetailsCleared" xml:space="preserve"><value>已清空所有庫存明細</value></data>
   <data name="Inventory.CurrentStockReadonlyHint" xml:space="preserve"><value>現有庫存量須透過盤點調整、進貨或出貨等流程修改</value></data>
+  <data name="Inventory.NoWarehouseTitle" xml:space="preserve"><value>尚無倉庫資料</value></data>
+  <data name="Inventory.NoWarehouseMessage" xml:space="preserve"><value>系統尚未建立任何倉庫，庫存明細需要指定倉庫才能新增。是否立即建立倉庫？</value></data>
+  <data name="Inventory.CreateWarehouseNow" xml:space="preserve"><value>立即建立倉庫</value></data>
+  <data name="Inventory.WarehouseCreatedContinue" xml:space="preserve"><value>倉庫已建立，您可以繼續新增庫存明細</value></data>
   <data name="Message.ConfirmDeleteExistingDetail" xml:space="preserve"><value>此明細已儲存至資料庫，確定要刪除嗎？</value></data>
   <data name="Button.SaveDraft" xml:space="preserve"><value>草稿</value></data>
   <data name="Label.Draft" xml:space="preserve"><value>草稿</value></data>
@@ -3959,4 +4259,15 @@
   <data name="MaintenanceType.Inspection" xml:space="preserve"><value>檢查</value></data>
   <data name="MaintenanceType.Other" xml:space="preserve"><value>其他</value></data>
   <data name="Label.Uncategorized" xml:space="preserve"><value>未分類</value></data>
+  <!-- ===== 供應商比價 ===== -->
+  <data name="Button.ComparePrice" xml:space="preserve"><value>比價</value></data>
+  <data name="Message.LoadComparisonFailed" xml:space="preserve"><value>載入比價資料失敗: {0}</value></data>
+  <data name="Message.PriceApplied" xml:space="preserve"><value>已套用 {0} 的價格: ${1}</value></data>
+  <data name="Comparison.PreferredSupplier" xml:space="preserve"><value>常用供應商</value></data>
+  <data name="Comparison.Priority" xml:space="preserve"><value>優先順序</value></data>
+  <data name="Comparison.LeadTime" xml:space="preserve"><value>交貨</value></data>
+  <data name="Comparison.Days" xml:space="preserve"><value>天</value></data>
+  <data name="Comparison.SupplierItemCode" xml:space="preserve"><value>料號</value></data>
+  <data name="Comparison.PriceRange" xml:space="preserve"><value>價格區間</value></data>
+  <data name="Validation.Required" xml:space="preserve"><value>為必填</value></data>
 </root>

@@ -41,6 +41,11 @@
     max-width: calc(33.333% - 0.67rem);
 }
 
+/* 同一 Column 內多個 Section 的間距 */
+.form-section-in-column + .form-section-in-column {
+    margin-top: 0.75rem;
+}
+
 /* 區段標題 */
 .form-section-header {
     padding: 0.25rem 0;

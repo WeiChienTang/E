@@ -1,5 +1,6 @@
 ﻿@using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 @inject ISalesOrderService SalesOrderService
 @inject ISalesOrderDetailService SalesOrderDetailService
 @inject ISalesOrderCompositionDetailService SalesOrderCompositionDetailService
@@ -36,6 +37,7 @@
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
+                          SectionColumnAssignments="@sectionColumnAssignments"
                           TabDefinitions="@tabDefinitions"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
@@ -68,7 +70,8 @@
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.SalesDeliveryDoc"]]"
                           GetReportDocumentName="@(e => $"銷貨單-{e.Code}")"
                           OnEntityLoaded="@HandleEntityLoaded"
-                          ComponentName="SalesOrderEditModalComponent">
+                          ComponentName="SalesOrderEditModalComponent"
+                          FeatureGuide="@SalesOrderGuide.Create()">
 </GenericEditModalComponent>
 
 @* 客戶編輯 Modal *@
@@ -170,6 +173,7 @@
     private GenericEditModalComponent<SalesOrder, ISalesOrderService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private Dictionary<string, int>? sectionColumnAssignments;
     private List<FormTabDefinition>? tabDefinitions;
     
     // Tab 元件參考
@@ -747,6 +751,9 @@
                     "ApprovedByDisplayName",
                     "ApprovedAtText",
                     nameof(SalesOrder.RejectReason))
+                .AssignColumn(0, FormSectionNames.BasicInfo)
+                .AssignColumn(1, FormSectionNames.FilterConditions, FormSectionNames.AdditionalInfo)
+                .AssignColumn(2, FormSectionNames.AmountInfo, FormSectionNames.ApprovalInfo)
                 .GroupIntoTab(L["Tab.OrderData"].ToString(), "bi-cart-check",
                     FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
                     FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo, FormSectionNames.ApprovalInfo)
@@ -757,6 +764,7 @@
 
             var layout = formBuilder.BuildAll();
             formSections = layout.FieldSections;
+            sectionColumnAssignments = layout.SectionColumnAssignments;
             tabDefinitions = layout.TabDefinitions;
 
             // 將訂單明細表格嵌入第一個 Tab 的 ExtraContent

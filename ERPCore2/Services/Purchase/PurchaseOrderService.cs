@@ -49,6 +49,7 @@ namespace ERPCore2.Services
                 .Include(po => po.Supplier)
                 .Include(po => po.Warehouse)
                 .Include(po => po.ApprovedByUser)
+                .Include(po => po.PurchasePersonnelEmployee)
                 .Include(po => po.PurchaseOrderDetails)
                     .ThenInclude(pod => pod.Item);
             // 不在此處排序 - 排序由 FieldConfiguration 層統一處理
@@ -64,6 +65,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     .Include(po => po.ApprovedByUser)
+                    .Include(po => po.PurchasePersonnelEmployee)
                     .FirstOrDefaultAsync(po => po.Id == id);
             }
             catch (Exception ex)
@@ -86,10 +88,11 @@ namespace ERPCore2.Services
                     .Include(po => po.Company)
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
+                    .Include(po => po.PurchasePersonnelEmployee)
                     .Where(po => ((po.Code != null && po.Code.Contains(searchTerm)) ||
                                 (po.Supplier != null && po.Supplier.CompanyName!.Contains(searchTerm)) ||
                                 (po.Company != null && po.Company.CompanyName.Contains(searchTerm)) ||
-                                (po.PurchasePersonnel != null && po.PurchasePersonnel.Contains(searchTerm)) ||
+                                (po.PurchasePersonnelEmployee != null && po.PurchasePersonnelEmployee.Name != null && po.PurchasePersonnelEmployee.Name.Contains(searchTerm)) ||
                                 (po.Remarks != null && po.Remarks.Contains(searchTerm))))
                     .OrderByDescending(po => po.OrderDate)
                     .ToListAsync();
@@ -247,6 +250,7 @@ namespace ERPCore2.Services
                     .Include(po => po.Supplier)
                     .Include(po => po.Warehouse)
                     .Include(po => po.ApprovedByUser)
+                    .Include(po => po.PurchasePersonnelEmployee)
                     .AsQueryable();
 
                 // 日期範圍篩選
@@ -1118,7 +1122,8 @@ namespace ERPCore2.Services
                 using var context = await _contextFactory.CreateDbContextAsync();
                 IQueryable<PurchaseOrder> query = context.PurchaseOrders
                     .Include(po => po.Company)
-                    .Include(po => po.Supplier);
+                    .Include(po => po.Supplier)
+                    .Include(po => po.PurchasePersonnelEmployee);
 
                 if (filterFunc != null) query = filterFunc(query);
 

@@ -25,6 +25,7 @@
 
 @using ERPCore2.FieldConfiguration
 @using ERPCore2.Models.Enums
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 @using ERPCore2.Helpers.InteractiveTableComponentHelper
 
 <GenericEditModalComponent TEntity="SalesReturn" 
@@ -74,6 +75,7 @@
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.SalesReturnDoc"]]"
                           GetReportDocumentName="@(e => $"銷貨退回單-{e.Code}")"
                           ComponentName="SalesReturnEditModalComponent"
+                          FeatureGuide="@SalesReturnGuide.Create()"
 />
 
 @* 沖款單編輯 Modal *@

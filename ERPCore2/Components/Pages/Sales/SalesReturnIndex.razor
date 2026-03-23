@@ -29,7 +29,7 @@
                           GetEntityDisplayName="@(salesReturn => salesReturn.Code)"
                           RequiredPermission="@PermissionRegistry.SalesReturn.Read"
                           RequiredModule="Sales"
-                          ShowBatchPrintButton="true"
+                          ShowBatchPrintButton="false"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
                           ShowBatchApprovalButton="@isManualApproval"
                           OnBatchApprovalClick="@HandleBatchApprovalAsync"

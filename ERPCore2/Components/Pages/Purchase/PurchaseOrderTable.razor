@@ -5,6 +5,7 @@
 @inject IStringLocalizer<SharedResource> L
 @inject IPurchaseOrderDetailService PurchaseOrderDetailService
 @inject IItemSupplierService ItemSupplierService
+@inject ISupplierRecommendationService SupplierRecommendationService
 @inject ISystemParameterService SystemParameterService
 @inject INotificationService NotificationService
 @inject RelatedDocumentsHelper RelatedDocumentsHelper
@@ -34,7 +35,7 @@ else
                                       EmptyMessage="@L["Message.NoItems"]"
                                       ShowBuiltInActions="true"
                                       ShowBuiltInDeleteButton="false"
-                                      ActionsColumnWidth = "60px"
+                                      ActionsColumnWidth = "100px"
                                       CustomActionsTemplate="@GetCustomActionsTemplate"
                                       OnItemDelete="@HandleItemDelete"
                                       EnableAutoEmptyRow="true"
@@ -72,6 +73,14 @@ else
                                IsLoading="@isLoadingRelatedDocuments"
                                OnDocumentClick="@HandleRelatedDocumentClick" />
 
+<!-- 供應商比價 Modal -->
+<RelatedDocumentsModalComponent IsVisible="@showComparisonModal"
+                               IsVisibleChanged="@((bool visible) => showComparisonModal = visible)"
+                               ItemName="@comparisonItemName"
+                               RelatedDocuments="@comparisonDocuments"
+                               IsLoading="@isLoadingComparison"
+                               OnDocumentClick="@HandleComparisonSupplierClick" />
+
 @code {
     // ===== 採購特有參數 =====
     [Parameter] public List<Item> ItemEntities { get; set; } = new List<Item>();
@@ -89,6 +98,13 @@ else
     private string selectedItemName = string.Empty;
     private List<RelatedDocument>? relatedDocuments = null;
     private bool isLoadingRelatedDocuments = false;
+
+    // ===== 供應商比價 =====
+    private bool showComparisonModal = false;
+    private string comparisonItemName = string.Empty;
+    private List<RelatedDocument>? comparisonDocuments = null;
+    private bool isLoadingComparison = false;
+    private ItemItem? _comparisonTargetItem = null;
 
     // ===== 稅率算法輔助 =====
     private bool IsTaxCalculationMethodNoTax => TaxCalculationMethod == TaxCalculationMethod.NoTax;
@@ -524,6 +540,19 @@ else
     private RenderFragment<ItemItem> GetCustomActionsTemplate => item => __builder =>
     {
         var isLastEmptyRow = tableComponent?.IsLastEmptyRow(item) ?? false;
+        var hasSelectedItem = item.SelectedItemId.HasValue && item.SelectedItemId.Value > 0;
+
+        @* 比價按鈕：品項已選擇且非空白列時顯示 *@
+        if (hasSelectedItem && !isLastEmptyRow)
+        {
+            <GenericButtonComponent Variant="ButtonVariant.Green"
+                                   IconClass="bi bi-bar-chart-line text-white"
+                                   Size="ButtonSize.Large"
+                                   Title="@L["Button.ComparePrice"]"
+                                   OnClick="async () => await ShowSupplierComparison(item)"
+                                   StopPropagation="true"
+                                   CssClass="btn-square me-1" />
+        }
 
         if (DetailLockHelper.CanDeleteItem(item, out _, checkReceiving: true) && !isLastEmptyRow)
         {
@@ -908,6 +937,97 @@ else
             await NotificationService.ShowInfoAsync(
                 $"{document.TypeDisplayName}: {document.DocumentNumber}");
         }
+    }
+
+    // ===== 供應商比價 =====
+
+    /// <summary>
+    /// 開啟供應商比價 Modal，顯示該品項所有供應商的歷史價格
+    /// </summary>
+    private async Task ShowSupplierComparison(ItemItem item)
+    {
+        if (!item.SelectedItemId.HasValue || item.SelectedItemId.Value <= 0)
+            return;
+
+        _comparisonTargetItem = item;
+        comparisonItemName = item.SelectedItem?.Name ?? L["Label.UnknownItem"].ToString();
+        showComparisonModal = true;
+        isLoadingComparison = true;
+        comparisonDocuments = null;
+        StateHasChanged();
+
+        try
+        {
+            var recommendations = await SupplierRecommendationService.GetRecommendedSuppliersAsync(item.SelectedItemId.Value);
+
+            comparisonDocuments = recommendations.Select(r => new RelatedDocument
+            {
+                DocumentId = r.SupplierId,
+                DocumentType = RelatedDocumentType.SupplierRecommendation,
+                DocumentNumber = $"{r.SupplierCode} - {r.SupplierName}",
+                DocumentDate = r.LastPurchaseDate ?? DateTime.Now,
+                Quantity = r.PurchaseCount,
+                UnitPrice = r.LastPurchasePrice,
+                Amount = r.AveragePrice,
+                CurrentAmount = r.LowestPrice,
+                TotalAmount = r.HighestPrice,
+                Remarks = BuildComparisonRemarks(r)
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync(string.Format(L["Message.LoadComparisonFailed"].ToString(), ex.Message));
+        }
+        finally
+        {
+            isLoadingComparison = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 組合比價備註資訊
+    /// </summary>
+    private string BuildComparisonRemarks(SupplierRecommendation recommendation)
+    {
+        var remarks = new List<string>();
+
+        if (recommendation.IsPreferred)
+            remarks.Add($"⭐ {L["Comparison.PreferredSupplier"]} ({L["Comparison.Priority"]}: {recommendation.Priority})");
+
+        if (recommendation.LeadTimeDays.HasValue)
+            remarks.Add($"{L["Comparison.LeadTime"]}: {recommendation.LeadTimeDays}{L["Comparison.Days"]}");
+
+        if (!string.IsNullOrEmpty(recommendation.SupplierItemCode))
+            remarks.Add($"{L["Comparison.SupplierItemCode"]}: {recommendation.SupplierItemCode}");
+
+        if (recommendation.LowestPrice.HasValue && recommendation.HighestPrice.HasValue && recommendation.LowestPrice != recommendation.HighestPrice)
+            remarks.Add($"{L["Comparison.PriceRange"]}: ${NumberFormatHelper.FormatSmart(recommendation.LowestPrice.Value)}~${NumberFormatHelper.FormatSmart(recommendation.HighestPrice.Value)}");
+
+        return string.Join(" | ", remarks);
+    }
+
+    /// <summary>
+    /// 處理比價 Modal 中點選供應商 → 將該供應商的價格套用到目前品項列
+    /// </summary>
+    private async Task HandleComparisonSupplierClick(RelatedDocument document)
+    {
+        if (_comparisonTargetItem == null || !document.UnitPrice.HasValue)
+        {
+            showComparisonModal = false;
+            return;
+        }
+
+        _comparisonTargetItem.Price = document.UnitPrice.Value;
+        showComparisonModal = false;
+
+        await NotifyDetailsChangedAsync();
+        await NotificationService.ShowSuccessAsync(
+            string.Format(L["Message.PriceApplied"].ToString(),
+                document.DocumentNumber,
+                NumberFormatHelper.FormatSmart(document.UnitPrice.Value)));
+
+        _comparisonTargetItem = null;
     }
 
     private async Task<int?> GetCurrentUserIdAsync()

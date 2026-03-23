@@ -1,51 +1,101 @@
-@* 通用統計卡片套裝組件 - 緊湊 Badge 模式 *@
+@* 通用統計卡片套裝組件 - 內嵌按鈕列模式 *@
 @inject IStringLocalizer<SharedResource> L
 
-<div class="statistics-compact-container">
-    <div class="statistics-compact-row">
-        @foreach (var cardConfig in CardConfigs)
+@{
+    var alertCards = GetAlertCards();
+    var hasAlerts = alertCards.Any();
+}
+
+<div class="statistics-inline-container">
+    @* 警告 Badge - 直接顯示在按鈕列 *@
+    @foreach (var cardConfig in alertCards)
+    {
+        var value = GetCardValue(cardConfig);
+        <span class="statistics-badge badge-@cardConfig.BorderColor clickable"
+              @onclick="@(() => HandleBadgeClick(cardConfig))"
+              title="@L["Stats.ClickForDetail"]">
+            <span class="badge-title">@cardConfig.Title</span>
+            <span class="badge-value">@value.ToString("N0")</span>
+            <i class="bi bi-chevron-right badge-arrow"></i>
+        </span>
+    }
+
+    @* 統計展開按鈕 + 下拉面板 *@
+    <div class="statistics-dropdown-wrapper">
+        <button class="statistics-toggle-btn @(hasAlerts ? "" : "no-alerts")"
+                @onclick="ToggleDropdown"
+                @onclick:stopPropagation="true"
+                title="@L["Stats.Statistics"]">
+            <i class="bi bi-bar-chart-line"></i>
+            @if (!hasAlerts)
+            {
+                <span class="toggle-label">@L["Stats.Statistics"]</span>
+            }
+            <i class="bi bi-chevron-down toggle-chevron @(_showDropdown ? "rotated" : "")"></i>
+        </button>
+
+        @if (_showDropdown)
         {
-            var value = GetCardValue(cardConfig);
-            var isClickable = cardConfig.OnClick.HasDelegate;
-            <span class="statistics-badge badge-@cardConfig.BorderColor @(isClickable ? "clickable" : "")"
-                  @onclick="@(() => HandleBadgeClick(cardConfig))"
-                  title="@(isClickable ? L["Stats.ClickForDetail"].ToString() : "")">
-                <span class="badge-title">@cardConfig.Title</span>
-                <span class="badge-value">
-                    @if (cardConfig.IsCurrency)
-                    {
-                        <text>$@value.ToString("N0")</text>
-                    }
-                    else
-                    {
-                        @value.ToString("N0")
-                    }
-                </span>
-                @if (isClickable)
+            <div class="statistics-dropdown-backdrop" @onclick="CloseDropdown"></div>
+            <div class="statistics-dropdown-panel">
+                @foreach (var cardConfig in CardConfigs)
                 {
-                    <i class="bi bi-chevron-right badge-arrow"></i>
+                    var value = GetCardValue(cardConfig);
+                    var isClickable = cardConfig.OnClick.HasDelegate;
+                    <div class="statistics-dropdown-item @(isClickable ? "clickable" : "")"
+                         @onclick="@(() => HandleDropdownItemClick(cardConfig))">
+                        <span class="dropdown-item-dot dot-@cardConfig.BorderColor"></span>
+                        <span class="dropdown-item-title">@cardConfig.Title</span>
+                        <span class="dropdown-item-value value-@cardConfig.BorderColor">
+                            @if (cardConfig.IsCurrency)
+                            {
+                                <text>$@value.ToString("N0")</text>
+                            }
+                            else
+                            {
+                                @value.ToString("N0")
+                            }
+                        </span>
+                        @if (isClickable)
+                        {
+                            <i class="bi bi-chevron-right dropdown-item-arrow"></i>
+                        }
+                    </div>
                 }
-            </span>
+            </div>
         }
     </div>
 </div>
 
 @code {
-    /// <summary>
-    /// 統計卡片配置清單
-    /// </summary>
     [Parameter, EditorRequired]
     public List<StatisticsCardConfig> CardConfigs { get; set; } = new();
 
-    /// <summary>
-    /// 統計資料來源
-    /// </summary>
     [Parameter, EditorRequired]
     public Dictionary<string, object> Statistics { get; set; } = new();
 
+    private bool _showDropdown = false;
+
+    private void ToggleDropdown()
+    {
+        _showDropdown = !_showDropdown;
+    }
+
+    private void CloseDropdown()
+    {
+        _showDropdown = false;
+    }
+
     /// <summary>
-    /// 處理 Badge 點擊事件
+    /// 取得有警告的卡片（可點擊且值 > 0）
     /// </summary>
+    private List<StatisticsCardConfig> GetAlertCards()
+    {
+        return CardConfigs
+            .Where(c => c.OnClick.HasDelegate && GetCardValue(c) > 0)
+            .ToList();
+    }
+
     private async Task HandleBadgeClick(StatisticsCardConfig config)
     {
         if (config.OnClick.HasDelegate)
@@ -54,9 +104,15 @@
         }
     }
 
-    /// <summary>
-    /// 取得卡片顯示值
-    /// </summary>
+    private async Task HandleDropdownItemClick(StatisticsCardConfig config)
+    {
+        if (config.OnClick.HasDelegate)
+        {
+            _showDropdown = false;
+            await config.OnClick.InvokeAsync();
+        }
+    }
+
     private decimal GetCardValue(StatisticsCardConfig config)
     {
         if (config.ValueCalculator != null)

@@ -699,7 +699,7 @@
     <value>Mga Ulat ng Sasakyan</value>
   </data>
   <data name="Nav.EquipmentGroup" xml:space="preserve">
-    <value>Pamamahala ng Kagamitan</value>
+    <value>Kagamitan</value>
   </data>
   <data name="Nav.Equipments" xml:space="preserve">
     <value>Kagamitan</value>
@@ -714,7 +714,7 @@
     <value>Mga Ulat ng Kagamitan</value>
   </data>
   <data name="Nav.WasteGroup" xml:space="preserve">
-    <value>Pamamahala ng Timbangan</value>
+    <value>Timbangan</value>
   </data>
   <data name="Nav.WasteRecords" xml:space="preserve">
     <value>Mga Rekord ng Timbangan</value>
@@ -1473,6 +1473,9 @@
   <data name="Field.PayrollItemIsTaxable" xml:space="preserve"><value>Napapabuwis</value></data>
   <data name="Field.PayrollItemIsInsuranceBasis" xml:space="preserve"><value>Batayan ng Insurance</value></data>
   <data name="Field.PayrollItemIsRetirementBasis" xml:space="preserve"><value>Batayan ng Retirement</value></data>
+  <data name="Field.PayrollItemIsProrated" xml:space="preserve"><value>Batay sa Attendance Ratio</value></data>
+  <data name="Payroll.Prorated" xml:space="preserve"><value>Pro-rata</value></data>
+  <data name="Payroll.IsProratedHelpText" xml:space="preserve"><value>Kapag naka-check, ang allowance na ito ay kakalkulahin batay sa attendance ratio ng empleyado sa buwan</value></data>
   <data name="Entity.PayrollItem" xml:space="preserve"><value>Aytem ng Payroll</value></data>
   <data name="Page.PayrollItemsTitle" xml:space="preserve"><value>Mga Aytem ng Payroll</value></data>
   <data name="Page.PayrollItemsSubtitle" xml:space="preserve"><value>Pamahalaan ang mga aytem ng kita at bawas sa payroll</value></data>
@@ -1760,6 +1763,13 @@
   <data name="Field.EquipmentMaintenanceCost" xml:space="preserve"><value>Gastos sa Pagpapanatili</value></data>
   <data name="Field.EquipmentServiceProvider" xml:space="preserve"><value>Service Provider</value></data>
   <data name="Field.EquipmentPerformedByEmployee" xml:space="preserve"><value>Isinagawa ng Empleyado</value></data>
+  <!-- ===== Equipment EditModal short-name keys ===== -->
+  <data name="Field.SerialNumber" xml:space="preserve"><value>Serial Number</value></data>
+  <data name="Field.PurchaseCost" xml:space="preserve"><value>Gastos sa Pagbili</value></data>
+  <data name="Field.Location" xml:space="preserve"><value>Lokasyon</value></data>
+  <data name="Field.MaintenanceCycleMonths" xml:space="preserve"><value>Cycle ng Pagpapanatili (Buwan)</value></data>
+  <data name="Field.MaintenanceRecordCode" xml:space="preserve"><value>Kodigo ng Talaan ng Pagpapanatili</value></data>
+  <data name="Field.PerformedByEmployee" xml:space="preserve"><value>Isinagawa ng Empleyado</value></data>
   <data name="Tab.BasicData" xml:space="preserve"><value>Pangunahing Impormasyon</value></data>
   <data name="Tab.OrderSource" xml:space="preserve"><value>Pinagmulan ng Order</value></data>
   <!-- ===== Approval Settings Tab keys ===== -->
@@ -1891,10 +1901,20 @@
   <data name="Tab.PageShortcut" xml:space="preserve"><value>Shortcut ng Pahina</value></data>
   <data name="Tab.QuickAction" xml:space="preserve"><value>Mabilis na Aksyon</value></data>
   <data name="Tab.ChartView" xml:space="preserve"><value>Chart View</value></data>
+  <data name="Tab.CustomerInfo" xml:space="preserve"><value>Impormasyon ng Customer</value></data>
+  <data name="Tab.ItemInfo" xml:space="preserve"><value>Impormasyon ng Produkto</value></data>
+  <data name="Tab.InventoryData" xml:space="preserve"><value>Data ng Imbentaryo</value></data>
+  <data name="Message.PleaseSelectCustomer" xml:space="preserve"><value>Mangyaring pumili muna ng customer</value></data>
+  <data name="Message.PleaseSelectItem" xml:space="preserve"><value>Mangyaring pumili muna ng produkto</value></data>
+  <data name="Field.StandardCost" xml:space="preserve"><value>Karaniwang Gastos</value></data>
   <!-- ===== Supplier action keys ===== -->
   <data name="Supplier.CopyToCustomerTitle" xml:space="preserve"><value>Kopyahin sa Customer</value></data>
   <data name="Supplier.CopyToCustomerMessage" xml:space="preserve"><value>Sigurado ka bang gusto mong kopyahin ang data ng supplier na ito bilang bagong customer?</value></data>
   <data name="Supplier.CopyToCustomerSummary" xml:space="preserve"><value>Isang bagong rekord ang malilikha sa listahan ng customer pagkatapos ng pagkopya.</value></data>
+  <!-- ===== Customer action keys ===== -->
+  <data name="Customer.CopyToSupplierTitle" xml:space="preserve"><value>Kopyahin sa Supplier</value></data>
+  <data name="Customer.CopyToSupplierMessage" xml:space="preserve"><value>Sigurado ka bang gusto mong kopyahin ang data ng customer na ito bilang bagong supplier?</value></data>
+  <data name="Customer.CopyToSupplierSummary" xml:space="preserve"><value>Isang bagong rekord ang malilikha sa listahan ng supplier pagkatapos ng pagkopya.</value></data>
   <data name="CsvImport.Title" xml:space="preserve"><value>Mag-import ng Detalye mula sa CSV</value></data>
   <data name="CsvImport.FormatTitle" xml:space="preserve"><value>Format ng CSV</value></data>
   <data name="CsvImport.FormatDesc" xml:space="preserve"><value>Mga kolum: Petsa ng Transaksyon, Paglalarawan, Debit, Kredit, Ref. ng Bangko (opsyonal), Balanse Pagkatapos (opsyonal). Format ng petsa: yyyy/MM/dd o yyyy-MM-dd.</value></data>
@@ -1946,6 +1966,7 @@
   <data name="CreditRating.C" xml:space="preserve"><value>C - Katamtaman</value></data>
   <data name="CreditRating.D" xml:space="preserve"><value>D - Pag-ingat</value></data>
   <data name="Button.ConfirmCopy" xml:space="preserve"><value>Kumpirmahin ang Pagkopya</value></data>
+  <data name="Button.EditAndCreate" xml:space="preserve"><value>I-edit at Gumawa</value></data>
   <!-- ===== Dashboard Widget Picker keys ===== -->
   <data name="Dashboard.AddShortcutTitle" xml:space="preserve"><value>Magdagdag ng Shortcut na Item</value></data>
   <data name="Dashboard.NoMatchFound" xml:space="preserve"><value>Walang nahanap na item na tumutugma sa &quot;{0}&quot;</value></data>
@@ -2346,6 +2367,280 @@
   <data name="Modal.UpdatedBy" xml:space="preserve"><value>Huling binago ni:</value></data>
   <data name="Modal.ShowAuditInfo" xml:space="preserve"><value>Ipakita ang Audit Info</value></data>
   <data name="Modal.HideAuditInfo" xml:space="preserve"><value>Itago ang Audit Info</value></data>
+  <data name="Modal.ShowFeatureGuide" xml:space="preserve"><value>Tungkol sa Feature na Ito</value></data>
+  <data name="Modal.HideFeatureGuide" xml:space="preserve"><value>Isara ang Feature Guide</value></data>
+  <data name="Modal.FeatureGuideTitle" xml:space="preserve"><value>Gabay sa Feature</value></data>
+  <data name="Guide.Overview" xml:space="preserve"><value>Pangkalahatang-ideya</value></data>
+  <data name="Guide.Steps" xml:space="preserve"><value>Mga Hakbang</value></data>
+  <data name="Guide.FieldDescriptions" xml:space="preserve"><value>Paglalarawan ng mga Field</value></data>
+  <data name="Guide.Tips" xml:space="preserve"><value>Mga Tip at Paalala</value></data>
+  <data name="Guide.SalesOrder.Description" xml:space="preserve"><value>Ang Sales Order ay nagtatala ng mga item, dami, at halaga na inorder ng customer. Pagkatapos gawin, maaaring i-approve, i-print bilang delivery note, at i-convert sa delivery o return.</value></data>
+  <data name="Guide.SalesOrder.Step1" xml:space="preserve"><value>Pumili ng Customer: Hanapin at piliin ang customer mula sa field</value></data>
+  <data name="Guide.SalesOrder.Step2" xml:space="preserve"><value>Punan ang Order Info: Itakda ang petsa, tax method, at iba pang detalye</value></data>
+  <data name="Guide.SalesOrder.Step3" xml:space="preserve"><value>Magdagdag ng mga Item: Idagdag ang mga item, dami, at presyo sa details tab</value></data>
+  <data name="Guide.SalesOrder.Step4" xml:space="preserve"><value>I-verify ang mga Halaga: Suriin na tama ang kabuuang halaga at buwis</value></data>
+  <data name="Guide.SalesOrder.Step5" xml:space="preserve"><value>I-save o I-submit: I-click ang save, o isumite para sa approval</value></data>
+  <data name="Guide.SalesOrder.Field.Customer" xml:space="preserve"><value>Piliin ang customer para sa order na ito; awtomatikong mapupunan ang kaugnay na data</value></data>
+  <data name="Guide.SalesOrder.Field.OrderDate" xml:space="preserve"><value>Petsa ng paglikha ng order, default ay ngayon, maaaring baguhin</value></data>
+  <data name="Guide.SalesOrder.Field.TaxMethod" xml:space="preserve"><value>Piliin ang paraan ng pagkalkula ng buwis (kasama, hindi kasama, zero-rated), nakakaapekto sa kalkulasyon ng halaga</value></data>
+  <data name="Guide.SalesOrder.Tip1" xml:space="preserve"><value>Maaari kang mag-import mula sa quotation para awtomatikong mapunan ang mga detalye, nakakatipid ng oras.</value></data>
+  <data name="Guide.SalesOrder.Warning1" xml:space="preserve"><value>Kapag na-approve, hindi na mababago ang nilalaman ng order. Siguraduhing tama ang lahat ng data bago isumite.</value></data>
+  <data name="Guide.SalesOrder.DetailTitle" xml:space="preserve"><value>Mga Detalye ng Item</value></data>
+  <data name="Guide.SalesOrder.Detail1" xml:space="preserve"><value>I-click ang "Dagdag" para magdagdag ng item — bawat hilera ay may pangalan, dami, at presyo</value></data>
+  <data name="Guide.SalesOrder.Detail2" xml:space="preserve"><value>Ang pangalan ng item ay may smart search — mag-type ng keyword para mabilis na mahanap</value></data>
+  <data name="Guide.SalesOrder.Detail3" xml:space="preserve"><value>Pagkatapos i-input ang dami at presyo, awtomatikong kakalkulahin ang subtotal</value></data>
+  <data name="Guide.SalesOrder.Detail4" xml:space="preserve"><value>I-drag para baguhin ang ayos, o i-click ang delete button para tanggalin ang item</value></data>
+  <data name="Guide.SalesOrder.ApprovalTitle" xml:space="preserve"><value>Pag-approve at Pag-print</value></data>
+  <data name="Guide.SalesOrder.Approval1" xml:space="preserve"><value>Maaaring isumite ang order para sa approval pagkatapos gawin; ang delivery ay magpapatuloy lamang pagkatapos ma-approve</value></data>
+  <data name="Guide.SalesOrder.Approval2" xml:space="preserve"><value>Ang mga na-approve na order ay maaaring i-print bilang delivery note o i-convert sa delivery record</value></data>
+  <data name="Guide.SalesOrder.Approval3" xml:space="preserve"><value>Para baguhin ang na-approve na order, kailangan munang i-reject (kailangan ng rejection permission)</value></data>
+  <data name="Guide.SalesOrder.FaqTitle" xml:space="preserve"><value>Mga Madalas Itanong</value></data>
+  <data name="Guide.SalesOrder.Faq1Q" xml:space="preserve"><value>Paano mag-import mula sa quotation?</value></data>
+  <data name="Guide.SalesOrder.Faq1A" xml:space="preserve"><value>I-click ang "Import mula sa Quotation" sa action buttons, pumili ng quotation, at awtomatikong mapupunan ang mga item.</value></data>
+  <data name="Guide.SalesOrder.Faq2Q" xml:space="preserve"><value>Bakit hindi ko ma-save?</value></data>
+  <data name="Guide.SalesOrder.Faq2A" xml:space="preserve"><value>Siguraduhing may napiling customer, may kahit isang item, at kumpleto ang lahat ng required fields.</value></data>
+  <data name="Guide.SalesOrder.Faq3Q" xml:space="preserve"><value>Paano gamitin ang draft feature?</value></data>
+  <data name="Guide.SalesOrder.Faq3A" xml:space="preserve"><value>I-click ang "Save as Draft" para i-save ang hindi pa tapos na order. Hindi papasok sa approval flow at maaaring i-edit anumang oras.</value></data>
+  <data name="Guide.SalesOrder.Warning2" xml:space="preserve"><value>Ang pagbabago ng tax method ay magre-recalculate ng lahat ng halaga ng item — suriin pagkatapos ng pagbabago.</value></data>
+  <data name="Guide.SalesOrder.Warning3" xml:space="preserve"><value>Hindi maaaring burahin ang mga item na may delivery record — ayusin muna ang mga kaugnay na delivery.</value></data>
+  <data name="Guide.SalesOrder.TabOverview" xml:space="preserve"><value>Ang page na ito ay may tatlong tab: "Order Data" para sa basic info at line items; "Customer Info" para makita ang detalye ng customer; "Photos" para mag-upload ng mga larawan.</value></data>
+  <data name="Guide.SalesOrder.Step6" xml:space="preserve"><value>Susunod na hakbang: Pagkatapos ma-approve, maaaring i-convert sa delivery note o i-schedule sa production</value></data>
+  <data name="Guide.SalesOrder.BasicFieldsTitle" xml:space="preserve"><value>Mga Basic na Field</value></data>
+  <data name="Guide.SalesOrder.Field.Code" xml:space="preserve"><value>Auto-generated ng system sa format na SO + petsa + sequence number; hindi maaaring i-edit</value></data>
+  <data name="Guide.SalesOrder.Field.Company" xml:space="preserve"><value>Piliin ang company na pag-aari ng order; kailangan sa multi-company environment</value></data>
+  <data name="Guide.SalesOrder.Field.Salesperson" xml:space="preserve"><value>Ang salesperson na responsable sa order; nakakaapekto sa sales performance tracking</value></data>
+  <data name="Guide.SalesOrder.Field.FormCreator" xml:space="preserve"><value>Ang taong gumawa ng order; maaaring iba sa salesperson</value></data>
+  <data name="Guide.SalesOrder.Field.ExpectedDeliveryDate" xml:space="preserve"><value>Ang hinihiling na delivery date ng customer; ginagamit sa scheduling at delivery</value></data>
+  <data name="Guide.SalesOrder.Field.PaymentTerms" xml:space="preserve"><value>Napagkasunduang paraan ng pagbabayad, hal. "Net 30 araw", "Cash on delivery"</value></data>
+  <data name="Guide.SalesOrder.Field.DeliveryTerms" xml:space="preserve"><value>Paraan at lugar ng delivery, hal. "I-deliver sa warehouse ng customer", "Customer pickup"</value></data>
+  <data name="Guide.SalesOrder.Field.Remarks" xml:space="preserve"><value>Karagdagang tala o espesyal na kahilingan; lalabas sa printed na dokumento</value></data>
+  <data name="Guide.SalesOrder.AmountFieldsTitle" xml:space="preserve"><value>Halaga at Buwis</value></data>
+  <data name="Guide.SalesOrder.Field.TotalAmount" xml:space="preserve"><value>Kabuuan ng lahat ng subtotal ng item (bago buwis); auto-calculated ng system</value></data>
+  <data name="Guide.SalesOrder.Field.DiscountAmount" xml:space="preserve"><value>Kabuuang discount mula sa lahat ng item; auto-calculated mula sa discount percentage ng bawat item</value></data>
+  <data name="Guide.SalesOrder.Field.SalesTaxAmount" xml:space="preserve"><value>Buwis na kinalkula base sa tax type at rate; sa tax-inclusive mode, bina-back-calculate mula sa total</value></data>
+  <data name="Guide.SalesOrder.Field.TotalAmountWithTax" xml:space="preserve"><value>Final na matatanggap = Total + Buwis; ito ang aktwal na babayaran ng customer</value></data>
+  <data name="Guide.SalesOrder.Detail5" xml:space="preserve"><value>Bawat line item ay maaaring magkaroon ng discount percentage; auto-calculate ang discounted subtotal</value></data>
+  <data name="Guide.SalesOrder.Detail6" xml:space="preserve"><value>Mga item na may delivery record ay nagpapakita ng delivered at pending quantities, at hindi maaaring burahin</value></data>
+  <data name="Guide.SalesOrder.ActionsTitle" xml:space="preserve"><value>Mga Action Button</value></data>
+  <data name="Guide.SalesOrder.Action.ConvertLabel" xml:space="preserve"><value>I-convert sa Delivery</value></data>
+  <data name="Guide.SalesOrder.Action.Convert" xml:space="preserve"><value>I-convert ang approved order sa delivery note; auto-populate ang mga hindi pa na-deliver na item</value></data>
+  <data name="Guide.SalesOrder.Action.ScheduleLabel" xml:space="preserve"><value>Schedule Board</value></data>
+  <data name="Guide.SalesOrder.Action.Schedule" xml:space="preserve"><value>Tingnan ang production schedule ng mga order item; mag-plan ng production (available pagkatapos ng approval)</value></data>
+  <data name="Guide.SalesOrder.Action.InventoryLabel" xml:space="preserve"><value>I-check ang Inventory</value></data>
+  <data name="Guide.SalesOrder.Action.Inventory" xml:space="preserve"><value>I-check ang real-time inventory ng lahat ng item; magiging dilaw ang button kapag kulang ang stock</value></data>
+  <data name="Guide.SalesOrder.Action.PrintLabel" xml:space="preserve"><value>I-print</value></data>
+  <data name="Guide.SalesOrder.Action.Print" xml:space="preserve"><value>I-preview at i-print ang sales order; suportado ang PDF at Excel export</value></data>
+  <data name="Guide.SalesOrder.Action.DraftLabel" xml:space="preserve"><value>I-save bilang Draft</value></data>
+  <data name="Guide.SalesOrder.Action.Draft" xml:space="preserve"><value>I-save ang order bilang draft; hindi papasok sa approval workflow at maaaring i-edit anumang oras</value></data>
+  <data name="Guide.SalesOrder.Approval4" xml:space="preserve"><value>Maaaring i-configure ng administrator ang auto-approval o manual approval sa system settings</value></data>
+  <data name="Guide.SalesOrder.Tip2" xml:space="preserve"><value>Lahat ng amount field ay auto-calculated — hindi kailangan ng manual input. Nag-a-update agad pagkatapos baguhin ang details.</value></data>
+  <data name="Guide.SalesOrder.Tip3" xml:space="preserve"><value>Sa "Customer Info" tab, makikita mo ang contact details ng napiling customer nang hindi umaalis sa page na ito.</value></data>
+  <data name="Guide.SalesOrder.Faq4Q" xml:space="preserve"><value>Bakit hindi ma-edit ang ilang field?</value></data>
+  <data name="Guide.SalesOrder.Faq4A" xml:space="preserve"><value>Kapag may line items na ang order, naka-lock ang basic fields tulad ng customer, company, at petsa para maiwasan ang inconsistency.</value></data>
+  <data name="Guide.SalesOrder.Faq5Q" xml:space="preserve"><value>Paano i-check ang delivery progress?</value></data>
+  <data name="Guide.SalesOrder.Faq5A" xml:space="preserve"><value>Bawat line item ay nagpapakita ng "Delivered Qty" at "Pending Qty". Gamitin ang "Check Inventory" button para sa overview.</value></data>
+  <data name="Field.DiscountAmount" xml:space="preserve"><value>Discount Amount</value></data>
+  <data name="Field.TotalAmountWithTax" xml:space="preserve"><value>Kabuuang may Buwis</value></data>
+  <data name="Field.SubtotalBeforeDiscount" xml:space="preserve"><value>Subtotal Bago Discount</value></data>
+  <data name="Field.QuotationTaxAmount" xml:space="preserve"><value>Buwis ng Quotation</value></data>
+  <data name="Field.DeliveryAddress" xml:space="preserve"><value>Address ng Delivery</value></data>
+  <data name="Field.ShippingMethod" xml:space="preserve"><value>Paraan ng Pagpapadala</value></data>
+  <data name="Field.ExpectedArrivalDate" xml:space="preserve"><value>Inaasahang Petsa ng Dating</value></data>
+  <data name="Field.PurchasePersonnel" xml:space="preserve"><value>Tauhan ng Pagbili</value></data>
+  <data name="Field.PurchaseTaxAmount" xml:space="preserve"><value>Buwis ng Pagbili</value></data>
+  <data name="Field.PurchaseTotalAmountIncludingTax" xml:space="preserve"><value>Kabuuang Pagbili (may Buwis)</value></data>
+  <data name="Field.PurchaseReceivingTaxAmount" xml:space="preserve"><value>Buwis ng Pagtanggap</value></data>
+  <data name="Field.PurchaseReceivingTotalAmountIncludingTax" xml:space="preserve"><value>Kabuuang Pagtanggap (may Buwis)</value></data>
+  <data name="Field.ReturnTaxAmount" xml:space="preserve"><value>Buwis ng Pagbalik</value></data>
+  <data name="Field.TotalReturnAmount" xml:space="preserve"><value>Kabuuang Pagbalik</value></data>
+  <data name="Field.TotalReturnAmountWithTax" xml:space="preserve"><value>Kabuuang Pagbalik (may Buwis)</value></data>
+  <data name="Guide.Quotation.Description" xml:space="preserve"><value>Quotations provide item pricing to customers. Once confirmed, they can be converted into sales orders.</value></data>
+  <data name="Guide.Quotation.TabOverview" xml:space="preserve"><value>Three tabs: Quotation Data, Customer Info, Photos.</value></data>
+  <data name="Guide.Quotation.Step1" xml:space="preserve"><value>Select customer</value></data>
+  <data name="Guide.Quotation.Step2" xml:space="preserve"><value>Fill basic info: date, tax type, project name</value></data>
+  <data name="Guide.Quotation.Step3" xml:space="preserve"><value>Add line items with quantities and prices</value></data>
+  <data name="Guide.Quotation.Step4" xml:space="preserve"><value>Verify subtotals, discounts, and tax</value></data>
+  <data name="Guide.Quotation.Step5" xml:space="preserve"><value>Save or submit for approval</value></data>
+  <data name="Guide.Quotation.Field.Code" xml:space="preserve"><value>Auto-generated; cannot be manually edited</value></data>
+  <data name="Guide.Quotation.Field.Customer" xml:space="preserve"><value>Select the customer for this quotation</value></data>
+  <data name="Guide.Quotation.Field.Company" xml:space="preserve"><value>Select the company</value></data>
+  <data name="Guide.Quotation.Field.Salesperson" xml:space="preserve"><value>Salesperson for this quotation</value></data>
+  <data name="Guide.Quotation.Field.Date" xml:space="preserve"><value>Creation date, defaults to today</value></data>
+  <data name="Guide.Quotation.Field.ProjectName" xml:space="preserve"><value>Related project name for tracking</value></data>
+  <data name="Guide.Quotation.Field.TaxMethod" xml:space="preserve"><value>Tax calculation method</value></data>
+  <data name="Guide.Quotation.Field.PaymentTerms" xml:space="preserve"><value>Agreed payment terms</value></data>
+  <data name="Guide.Quotation.Field.DeliveryTerms" xml:space="preserve"><value>Agreed delivery terms</value></data>
+  <data name="Guide.Quotation.Field.Remarks" xml:space="preserve"><value>Additional notes for printed documents</value></data>
+  <data name="Guide.Quotation.Field.Subtotal" xml:space="preserve"><value>Sum of items before discount; auto-calculated</value></data>
+  <data name="Guide.Quotation.Field.Discount" xml:space="preserve"><value>Total discount; auto-calculated</value></data>
+  <data name="Guide.Quotation.Field.TaxAmount" xml:space="preserve"><value>Tax based on tax type</value></data>
+  <data name="Guide.Quotation.Field.TotalAmount" xml:space="preserve"><value>Final = Subtotal - Discount + Tax</value></data>
+  <data name="Guide.Quotation.Action.ConvertLabel" xml:space="preserve"><value>Convert to Sales Order</value></data>
+  <data name="Guide.Quotation.Action.Convert" xml:space="preserve"><value>Convert to sales order; auto-populates unconverted items</value></data>
+  <data name="Guide.Quotation.Action.PrintLabel" xml:space="preserve"><value>Print</value></data>
+  <data name="Guide.Quotation.Action.Print" xml:space="preserve"><value>Preview and print; supports PDF and Excel</value></data>
+  <data name="Guide.Quotation.Action.DraftLabel" xml:space="preserve"><value>Save Draft</value></data>
+  <data name="Guide.Quotation.Action.Draft" xml:space="preserve"><value>Save as draft; won't enter approval</value></data>
+  <data name="Guide.Quotation.Tip1" xml:space="preserve"><value>Can convert multiple times; each brings remaining quantities.</value></data>
+  <data name="Guide.Quotation.Tip2" xml:space="preserve"><value>Set project name to search related quotations by project.</value></data>
+  <data name="Guide.Quotation.Warning1" xml:space="preserve"><value>Fields locked after approval or conversion.</value></data>
+  <data name="Guide.Quotation.Warning2" xml:space="preserve"><value>Deleting converted items may affect related orders.</value></data>
+  <data name="Guide.Quotation.Faq1Q" xml:space="preserve"><value>Can convert to orders multiple times?</value></data>
+  <data name="Guide.Quotation.Faq1A" xml:space="preserve"><value>Yes, each time brings unconverted remaining quantities.</value></data>
+  <data name="Guide.Quotation.Faq2Q" xml:space="preserve"><value>Why is convert button disabled?</value></data>
+  <data name="Guide.Quotation.Faq2A" xml:space="preserve"><value>Ensure saved, approved, and has unconverted items.</value></data>
+  <data name="Guide.Quotation.Faq3Q" xml:space="preserve"><value>How to edit an approved quotation?</value></data>
+  <data name="Guide.Quotation.Faq3A" xml:space="preserve"><value>An authorized user must reject it first.</value></data>
+  <data name="Guide.SalesDelivery.Description" xml:space="preserve"><value>Delivery notes record items delivered to customers. Usually from sales orders.</value></data>
+  <data name="Guide.SalesDelivery.TabOverview" xml:space="preserve"><value>Two tabs: Delivery Data and Customer Info.</value></data>
+  <data name="Guide.SalesDelivery.Step1" xml:space="preserve"><value>Confirm customer and delivery date</value></data>
+  <data name="Guide.SalesDelivery.Step2" xml:space="preserve"><value>Import items from sales orders</value></data>
+  <data name="Guide.SalesDelivery.Step3" xml:space="preserve"><value>Verify quantities and amounts</value></data>
+  <data name="Guide.SalesDelivery.Step4" xml:space="preserve"><value>Fill delivery address and remarks</value></data>
+  <data name="Guide.SalesDelivery.Step5" xml:space="preserve"><value>Save; print after approval</value></data>
+  <data name="Guide.SalesDelivery.Field.Code" xml:space="preserve"><value>Auto-generated: SD + date + sequence</value></data>
+  <data name="Guide.SalesDelivery.Field.Customer" xml:space="preserve"><value>Customer, usually from order</value></data>
+  <data name="Guide.SalesDelivery.Field.Salesperson" xml:space="preserve"><value>Salesperson for this delivery</value></data>
+  <data name="Guide.SalesDelivery.Field.DeliveryDate" xml:space="preserve"><value>Actual delivery date</value></data>
+  <data name="Guide.SalesDelivery.Field.Address" xml:space="preserve"><value>Delivery address; editable</value></data>
+  <data name="Guide.SalesDelivery.Field.TaxMethod" xml:space="preserve"><value>Tax type for calculation</value></data>
+  <data name="Guide.SalesDelivery.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.SalesDelivery.Field.TotalAmount" xml:space="preserve"><value>Subtotal (before tax)</value></data>
+  <data name="Guide.SalesDelivery.Field.Discount" xml:space="preserve"><value>Total discounts</value></data>
+  <data name="Guide.SalesDelivery.Field.TaxAmount" xml:space="preserve"><value>Tax auto-calculated</value></data>
+  <data name="Guide.SalesDelivery.Field.TotalWithTax" xml:space="preserve"><value>Final = Total + Tax</value></data>
+  <data name="Guide.SalesDelivery.Action.ReturnLabel" xml:space="preserve"><value>Convert to Return</value></data>
+  <data name="Guide.SalesDelivery.Action.Return" xml:space="preserve"><value>Create return from delivered items</value></data>
+  <data name="Guide.SalesDelivery.Action.SetoffLabel" xml:space="preserve"><value>Convert to Setoff</value></data>
+  <data name="Guide.SalesDelivery.Action.Setoff" xml:space="preserve"><value>Create setoff for payment</value></data>
+  <data name="Guide.SalesDelivery.Action.PrintLabel" xml:space="preserve"><value>Print</value></data>
+  <data name="Guide.SalesDelivery.Action.Print" xml:space="preserve"><value>Preview and print delivery note</value></data>
+  <data name="Guide.SalesDelivery.Tip1" xml:space="preserve"><value>Details show source order info for tracking.</value></data>
+  <data name="Guide.SalesDelivery.Tip2" xml:space="preserve"><value>Use filters to import from specific orders.</value></data>
+  <data name="Guide.SalesDelivery.Warning1" xml:space="preserve"><value>Items with returns cannot be deleted.</value></data>
+  <data name="Guide.SalesDelivery.Warning2" xml:space="preserve"><value>Fields locked after approval.</value></data>
+  <data name="Guide.SalesDelivery.Faq1Q" xml:space="preserve"><value>Can include items from multiple orders?</value></data>
+  <data name="Guide.SalesDelivery.Faq1A" xml:space="preserve"><value>Yes, use filters to select different orders.</value></data>
+  <data name="Guide.SalesDelivery.Faq2Q" xml:space="preserve"><value>Why can't I delete some items?</value></data>
+  <data name="Guide.SalesDelivery.Faq2A" xml:space="preserve"><value>Items with return/setoff records cannot be deleted.</value></data>
+  <data name="Guide.SalesDelivery.Faq3Q" xml:space="preserve"><value>How to create a return?</value></data>
+  <data name="Guide.SalesDelivery.Faq3A" xml:space="preserve"><value>Click Convert to Return; system auto-populates returnable items.</value></data>
+  <data name="Guide.SalesReturn.Description" xml:space="preserve"><value>Sales returns record items returned by customers. Can create setoffs for refunds.</value></data>
+  <data name="Guide.SalesReturn.TabOverview" xml:space="preserve"><value>Two tabs: Return Data and Customer Info.</value></data>
+  <data name="Guide.SalesReturn.Step1" xml:space="preserve"><value>Confirm customer and return date</value></data>
+  <data name="Guide.SalesReturn.Step2" xml:space="preserve"><value>Select return reason</value></data>
+  <data name="Guide.SalesReturn.Step3" xml:space="preserve"><value>Import returnable items from deliveries</value></data>
+  <data name="Guide.SalesReturn.Step4" xml:space="preserve"><value>Enter return quantities and verify amounts</value></data>
+  <data name="Guide.SalesReturn.Step5" xml:space="preserve"><value>Save; create setoff after approval</value></data>
+  <data name="Guide.SalesReturn.Field.Code" xml:space="preserve"><value>Auto-generated: SR + date + sequence</value></data>
+  <data name="Guide.SalesReturn.Field.Customer" xml:space="preserve"><value>Return customer, from delivery</value></data>
+  <data name="Guide.SalesReturn.Field.ReturnDate" xml:space="preserve"><value>Actual return date</value></data>
+  <data name="Guide.SalesReturn.Field.Reason" xml:space="preserve"><value>Return reason category</value></data>
+  <data name="Guide.SalesReturn.Field.TaxMethod" xml:space="preserve"><value>Tax type for calculation</value></data>
+  <data name="Guide.SalesReturn.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.SalesReturn.Field.TotalReturn" xml:space="preserve"><value>Return items subtotal</value></data>
+  <data name="Guide.SalesReturn.Field.Discount" xml:space="preserve"><value>Return items discount</value></data>
+  <data name="Guide.SalesReturn.Field.TaxAmount" xml:space="preserve"><value>Return tax</value></data>
+  <data name="Guide.SalesReturn.Field.TotalWithTax" xml:space="preserve"><value>Return total with tax</value></data>
+  <data name="Guide.SalesReturn.Action.SetoffLabel" xml:space="preserve"><value>Convert to Setoff</value></data>
+  <data name="Guide.SalesReturn.Action.Setoff" xml:space="preserve"><value>Create setoff for refund</value></data>
+  <data name="Guide.SalesReturn.Tip1" xml:space="preserve"><value>Auto-filters returnable items.</value></data>
+  <data name="Guide.SalesReturn.Warning1" xml:space="preserve"><value>Items with setoff records cannot be modified.</value></data>
+  <data name="Guide.SalesReturn.Warning2" xml:space="preserve"><value>Return qty cannot exceed delivered minus returned.</value></data>
+  <data name="Guide.SalesReturn.Faq1Q" xml:space="preserve"><value>Return qty limit?</value></data>
+  <data name="Guide.SalesReturn.Faq1A" xml:space="preserve"><value>Cannot exceed delivered minus already returned.</value></data>
+  <data name="Guide.SalesReturn.Faq2Q" xml:space="preserve"><value>How to refund?</value></data>
+  <data name="Guide.SalesReturn.Faq2A" xml:space="preserve"><value>Click Convert to Setoff.</value></data>
+  <data name="Guide.PurchaseOrder.Description" xml:space="preserve"><value>Purchase orders record procurement requests to suppliers. Convert to receiving after approval.</value></data>
+  <data name="Guide.PurchaseOrder.TabOverview" xml:space="preserve"><value>Two tabs: PO Data and Supplier Info.</value></data>
+  <data name="Guide.PurchaseOrder.Step1" xml:space="preserve"><value>Select supplier</value></data>
+  <data name="Guide.PurchaseOrder.Step2" xml:space="preserve"><value>Fill order details: dates, purchaser</value></data>
+  <data name="Guide.PurchaseOrder.Step3" xml:space="preserve"><value>Add line items</value></data>
+  <data name="Guide.PurchaseOrder.Step4" xml:space="preserve"><value>Verify amounts and tax</value></data>
+  <data name="Guide.PurchaseOrder.Step5" xml:space="preserve"><value>Save or submit for approval</value></data>
+  <data name="Guide.PurchaseOrder.Field.Code" xml:space="preserve"><value>Auto-generated: PO + date + sequence</value></data>
+  <data name="Guide.PurchaseOrder.Field.Supplier" xml:space="preserve"><value>Select supplier; auto-fills info</value></data>
+  <data name="Guide.PurchaseOrder.Field.Company" xml:space="preserve"><value>Select purchasing company</value></data>
+  <data name="Guide.PurchaseOrder.Field.Personnel" xml:space="preserve"><value>Purchaser for this PO</value></data>
+  <data name="Guide.PurchaseOrder.Field.OrderDate" xml:space="preserve"><value>PO creation date</value></data>
+  <data name="Guide.PurchaseOrder.Field.ExpectedDate" xml:space="preserve"><value>Supplier's promised delivery date</value></data>
+  <data name="Guide.PurchaseOrder.Field.TaxMethod" xml:space="preserve"><value>Tax calculation method</value></data>
+  <data name="Guide.PurchaseOrder.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.PurchaseOrder.Field.TotalAmount" xml:space="preserve"><value>Subtotal (before tax)</value></data>
+  <data name="Guide.PurchaseOrder.Field.TaxAmount" xml:space="preserve"><value>Purchase tax</value></data>
+  <data name="Guide.PurchaseOrder.Field.TotalWithTax" xml:space="preserve"><value>Final = Total + Tax</value></data>
+  <data name="Guide.PurchaseOrder.Action.ConvertLabel" xml:space="preserve"><value>Convert to Receiving</value></data>
+  <data name="Guide.PurchaseOrder.Action.Convert" xml:space="preserve"><value>Convert to receiving; auto-populates unreceived items</value></data>
+  <data name="Guide.PurchaseOrder.Action.CopyMsgLabel" xml:space="preserve"><value>Copy Message</value></data>
+  <data name="Guide.PurchaseOrder.Action.CopyMsg" xml:space="preserve"><value>Format order as text for messaging to supplier</value></data>
+  <data name="Guide.PurchaseOrder.Action.PrintLabel" xml:space="preserve"><value>Print</value></data>
+  <data name="Guide.PurchaseOrder.Action.Print" xml:space="preserve"><value>Preview and print PO</value></data>
+  <data name="Guide.PurchaseOrder.Tip1" xml:space="preserve"><value>Copy Message supports custom templates via gear icon.</value></data>
+  <data name="Guide.PurchaseOrder.Tip2" xml:space="preserve"><value>Expected date defaults to 7 days after order date.</value></data>
+  <data name="Guide.PurchaseOrder.Warning1" xml:space="preserve"><value>Fields locked after approval.</value></data>
+  <data name="Guide.PurchaseOrder.Warning2" xml:space="preserve"><value>Items with receiving records cannot be deleted.</value></data>
+  <data name="Guide.PurchaseOrder.Faq1Q" xml:space="preserve"><value>How to quickly order from supplier?</value></data>
+  <data name="Guide.PurchaseOrder.Faq1A" xml:space="preserve"><value>Use Copy Message to send via messaging app.</value></data>
+  <data name="Guide.PurchaseOrder.Faq2Q" xml:space="preserve"><value>Can receive in multiple batches?</value></data>
+  <data name="Guide.PurchaseOrder.Faq2A" xml:space="preserve"><value>Yes, each conversion brings unreceived quantities.</value></data>
+  <data name="Guide.PurchaseOrder.Faq3Q" xml:space="preserve"><value>Why are fields locked?</value></data>
+  <data name="Guide.PurchaseOrder.Faq3A" xml:space="preserve"><value>Fields lock when approved or has receiving records.</value></data>
+  <data name="Guide.PurchaseReceiving.Description" xml:space="preserve"><value>Receiving notes record items received from suppliers. Can specify warehouses and batch numbers.</value></data>
+  <data name="Guide.PurchaseReceiving.TabOverview" xml:space="preserve"><value>Two tabs: Receiving Data and Supplier Info.</value></data>
+  <data name="Guide.PurchaseReceiving.Step1" xml:space="preserve"><value>Select supplier</value></data>
+  <data name="Guide.PurchaseReceiving.Step2" xml:space="preserve"><value>Filter PO to receive from</value></data>
+  <data name="Guide.PurchaseReceiving.Step3" xml:space="preserve"><value>Use Smart Load to import items</value></data>
+  <data name="Guide.PurchaseReceiving.Step4" xml:space="preserve"><value>Verify quantities and assign warehouses</value></data>
+  <data name="Guide.PurchaseReceiving.Step5" xml:space="preserve"><value>Save and approve; items stocked on approval</value></data>
+  <data name="Guide.PurchaseReceiving.Field.Code" xml:space="preserve"><value>Auto-generated: PR + date + sequence</value></data>
+  <data name="Guide.PurchaseReceiving.Field.Supplier" xml:space="preserve"><value>Supplier, usually from PO</value></data>
+  <data name="Guide.PurchaseReceiving.Field.ReceiptDate" xml:space="preserve"><value>Actual date goods received</value></data>
+  <data name="Guide.PurchaseReceiving.Field.TaxMethod" xml:space="preserve"><value>Tax type for calculation</value></data>
+  <data name="Guide.PurchaseReceiving.Field.BatchNumber" xml:space="preserve"><value>Batch number for tracking</value></data>
+  <data name="Guide.PurchaseReceiving.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.PurchaseReceiving.Field.TotalAmount" xml:space="preserve"><value>Subtotal (before tax)</value></data>
+  <data name="Guide.PurchaseReceiving.Field.TaxAmount" xml:space="preserve"><value>Receiving tax</value></data>
+  <data name="Guide.PurchaseReceiving.Field.TotalWithTax" xml:space="preserve"><value>Final = Total + Tax</value></data>
+  <data name="Guide.PurchaseReceiving.Detail1" xml:space="preserve"><value>Smart Load imports unreceived PO items</value></data>
+  <data name="Guide.PurchaseReceiving.Detail2" xml:space="preserve"><value>Verify actual received qty per item</value></data>
+  <data name="Guide.PurchaseReceiving.Detail3" xml:space="preserve"><value>Assign warehouses; use Unify Warehouse for batch setting</value></data>
+  <data name="Guide.PurchaseReceiving.Detail4" xml:space="preserve"><value>Fill batch number for tracking</value></data>
+  <data name="Guide.PurchaseReceiving.Action.ReturnLabel" xml:space="preserve"><value>Convert to Return</value></data>
+  <data name="Guide.PurchaseReceiving.Action.Return" xml:space="preserve"><value>Create return from received items</value></data>
+  <data name="Guide.PurchaseReceiving.Action.SetoffLabel" xml:space="preserve"><value>Convert to Setoff</value></data>
+  <data name="Guide.PurchaseReceiving.Action.Setoff" xml:space="preserve"><value>Create setoff for payment</value></data>
+  <data name="Guide.PurchaseReceiving.Tip1" xml:space="preserve"><value>Unify Warehouse sets all items to same warehouse.</value></data>
+  <data name="Guide.PurchaseReceiving.Tip2" xml:space="preserve"><value>Received qty can differ from ordered; system tracks difference.</value></data>
+  <data name="Guide.PurchaseReceiving.Warning1" xml:space="preserve"><value>Items with returns/setoffs cannot be deleted.</value></data>
+  <data name="Guide.PurchaseReceiving.Faq1Q" xml:space="preserve"><value>Can receive less than ordered?</value></data>
+  <data name="Guide.PurchaseReceiving.Faq1A" xml:space="preserve"><value>Yes, remaining can be imported next time.</value></data>
+  <data name="Guide.PurchaseReceiving.Faq2Q" xml:space="preserve"><value>How to handle extra items?</value></data>
+  <data name="Guide.PurchaseReceiving.Faq2A" xml:space="preserve"><value>Manually add items; not required from PO.</value></data>
+  <data name="Guide.PurchaseReturn.Description" xml:space="preserve"><value>Purchase returns record items returned to suppliers. Can create setoffs for deductions.</value></data>
+  <data name="Guide.PurchaseReturn.TabOverview" xml:space="preserve"><value>Two tabs: Return Data and Supplier Info.</value></data>
+  <data name="Guide.PurchaseReturn.Step1" xml:space="preserve"><value>Confirm supplier and return date</value></data>
+  <data name="Guide.PurchaseReturn.Step2" xml:space="preserve"><value>Select return reason</value></data>
+  <data name="Guide.PurchaseReturn.Step3" xml:space="preserve"><value>Import returnable items from receiving</value></data>
+  <data name="Guide.PurchaseReturn.Step4" xml:space="preserve"><value>Enter return quantities and verify amounts</value></data>
+  <data name="Guide.PurchaseReturn.Step5" xml:space="preserve"><value>Save; create setoff after approval</value></data>
+  <data name="Guide.PurchaseReturn.Field.Code" xml:space="preserve"><value>Auto-generated: PRT + date + sequence</value></data>
+  <data name="Guide.PurchaseReturn.Field.Supplier" xml:space="preserve"><value>Return supplier, from receiving</value></data>
+  <data name="Guide.PurchaseReturn.Field.ReturnDate" xml:space="preserve"><value>Actual return date</value></data>
+  <data name="Guide.PurchaseReturn.Field.Reason" xml:space="preserve"><value>Return reason category</value></data>
+  <data name="Guide.PurchaseReturn.Field.TaxMethod" xml:space="preserve"><value>Tax type for calculation</value></data>
+  <data name="Guide.PurchaseReturn.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.PurchaseReturn.Field.TotalReturn" xml:space="preserve"><value>Return subtotal</value></data>
+  <data name="Guide.PurchaseReturn.Field.TaxAmount" xml:space="preserve"><value>Return tax</value></data>
+  <data name="Guide.PurchaseReturn.Field.TotalWithTax" xml:space="preserve"><value>Return total with tax</value></data>
+  <data name="Guide.PurchaseReturn.Action.SetoffLabel" xml:space="preserve"><value>Convert to Setoff</value></data>
+  <data name="Guide.PurchaseReturn.Action.Setoff" xml:space="preserve"><value>Create setoff for deduction</value></data>
+  <data name="Guide.PurchaseReturn.Tip1" xml:space="preserve"><value>Auto-filters returnable items from receiving.</value></data>
+  <data name="Guide.PurchaseReturn.Warning1" xml:space="preserve"><value>Items with setoff records cannot be modified.</value></data>
+  <data name="Guide.PurchaseReturn.Warning2" xml:space="preserve"><value>Return qty cannot exceed received minus returned.</value></data>
+  <data name="Guide.PurchaseReturn.Faq1Q" xml:space="preserve"><value>Return qty limit?</value></data>
+  <data name="Guide.PurchaseReturn.Faq1A" xml:space="preserve"><value>Cannot exceed received minus already returned.</value></data>
+  <data name="Guide.PurchaseReturn.Faq2Q" xml:space="preserve"><value>How to deduct from supplier?</value></data>
+  <data name="Guide.PurchaseReturn.Faq2A" xml:space="preserve"><value>Click Convert to Setoff.</value></data>
   <data name="Modal.DefaultTitle" xml:space="preserve"><value>Window</value></data>
   <data name="Modal.DefaultLoading" xml:space="preserve"><value>Naglo-load...</value></data>
 
@@ -3323,6 +3618,9 @@
   <data name="Column.StockCode" xml:space="preserve"><value>Kodigo ng Produkto</value></data>
   <data name="Column.StorageQty" xml:space="preserve"><value>Stock</value></data>
   <data name="Stats.ClickForDetail" xml:space="preserve"><value>I-click para tingnan ang detalye</value></data>
+  <data name="Stats.Collapse" xml:space="preserve"><value>I-collapse ang estadistika</value></data>
+  <data name="Stats.ExpandAll" xml:space="preserve"><value>Palawakin lahat</value></data>
+  <data name="Stats.Statistics" xml:space="preserve"><value>Estadistika</value></data>
 
   <!-- ===== Vehicle Notifications ===== -->
   <data name="Vehicle.LoadFailed" xml:space="preserve"><value>Nabigo ang pag-load ng listahan ng sasakyan: {0}</value></data>
@@ -3719,6 +4017,10 @@
   <data name="Inventory.ReservedExceedsCurrent" xml:space="preserve"><value>Hindi maaaring lumampas ang nakalaan sa kasalukuyang stock</value></data>
   <data name="Inventory.AllDetailsCleared" xml:space="preserve"><value>Nalinis na ang lahat ng detalye ng imbentaryo</value></data>
   <data name="Inventory.CurrentStockReadonlyHint" xml:space="preserve"><value>Ang kasalukuyang stock ay dapat baguhin sa pamamagitan ng proseso ng pagsasaayos ng imbentaryo</value></data>
+  <data name="Inventory.NoWarehouseTitle" xml:space="preserve"><value>Walang Bodega</value></data>
+  <data name="Inventory.NoWarehouseMessage" xml:space="preserve"><value>Wala pang naka-set up na bodega. Kailangan ng bodega para makapag-dagdag ng detalye ng imbentaryo. Gusto mo bang gumawa ngayon?</value></data>
+  <data name="Inventory.CreateWarehouseNow" xml:space="preserve"><value>Gumawa ng Bodega Ngayon</value></data>
+  <data name="Inventory.WarehouseCreatedContinue" xml:space="preserve"><value>Nagawa na ang bodega. Maaari ka nang magdagdag ng detalye ng imbentaryo.</value></data>
   <data name="Message.ConfirmDeleteExistingDetail" xml:space="preserve"><value>Ang detalyeng ito ay naka-save sa database. Sigurado ka bang gusto mo itong burahin?</value></data>
   <data name="Button.SaveDraft" xml:space="preserve"><value>Draft</value></data>
   <data name="Label.Draft" xml:space="preserve"><value>Draft</value></data>
@@ -3865,4 +4167,15 @@
   <data name="MaintenanceType.Inspection" xml:space="preserve"><value>Inspeksyon</value></data>
   <data name="MaintenanceType.Other" xml:space="preserve"><value>Iba pa</value></data>
   <data name="Label.Uncategorized" xml:space="preserve"><value>Walang Kategorya</value></data>
+  <!-- ===== Paghahambing ng Supplier ===== -->
+  <data name="Button.ComparePrice" xml:space="preserve"><value>Ihambing</value></data>
+  <data name="Message.LoadComparisonFailed" xml:space="preserve"><value>Nabigo ang pag-load ng data ng paghahambing: {0}</value></data>
+  <data name="Message.PriceApplied" xml:space="preserve"><value>Nailapat ang presyo mula sa {0}: ₱{1}</value></data>
+  <data name="Comparison.PreferredSupplier" xml:space="preserve"><value>Pangunahing Supplier</value></data>
+  <data name="Comparison.Priority" xml:space="preserve"><value>Priyoridad</value></data>
+  <data name="Comparison.LeadTime" xml:space="preserve"><value>Lead Time</value></data>
+  <data name="Comparison.Days" xml:space="preserve"><value> araw</value></data>
+  <data name="Comparison.SupplierItemCode" xml:space="preserve"><value>Code ng Supplier Item</value></data>
+  <data name="Comparison.PriceRange" xml:space="preserve"><value>Saklaw ng Presyo</value></data>
+  <data name="Validation.Required" xml:space="preserve"><value>ay kinakailangan</value></data>
 </root>

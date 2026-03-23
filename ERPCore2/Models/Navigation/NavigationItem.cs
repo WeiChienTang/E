@@ -43,6 +43,11 @@ namespace ERPCore2.Models.Navigation
         /// 圖示 CSS 類別
         /// </summary>
         public string IconClass { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 圖示顏色 CSS 類別（可選，用於區分不同類型的項目，如報表、圖表）
+        /// </summary>
+        public string? IconColorClass { get; set; }
         
         /// <summary>
         /// 分類

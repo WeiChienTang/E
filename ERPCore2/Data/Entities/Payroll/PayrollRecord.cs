@@ -5,11 +5,17 @@ using ERPCore2.Models.Enums;
 namespace ERPCore2.Data.Entities.Payroll
 {
     /// <summary>薪資單主檔 — 每人每月一筆</summary>
+    /// <remarks>
+    /// 繼承 BaseEntity 以共用 Id/Code/CreatedAt 等欄位。BaseEntity.Status（EntityStatus.Active/Inactive）
+    /// 在此實體中不具業務意義；薪資單的工作流狀態由 RecordStatus（Draft/Confirmed）控管。
+    /// 出勤欄位為快照設計（從 MonthlyAttendanceSummary 複製），確保計算後資料不受來源修改影響。
+    /// </remarks>
     public class PayrollRecord : BaseEntity
     {
         // BaseEntity 已提供：Id, Code, Status(EntityStatus), CreatedAt, CreatedBy,
         //                    UpdatedAt, UpdatedBy, Remarks
         // 薪資單流程狀態命名為 RecordStatus，以區別 BaseEntity.Status（EntityStatus）
+        // ⚠ BaseEntity.Status 在此實體無業務用途，僅因繼承而存在
 
         [Required] public int PayrollPeriodId { get; set; }
         public PayrollPeriod Period { get; set; } = null!;
@@ -92,6 +98,12 @@ namespace ERPCore2.Data.Entities.Payroll
 
         [MaxLength(50)]
         [Display(Name = "計算人員")] public string? CalculatedBy { get; set; }
+
+        // ── 確認稽核欄位 ────────────────────────────────────────
+        [Display(Name = "確認時間")] public DateTime? ConfirmedAt { get; set; }
+
+        [MaxLength(50)]
+        [Display(Name = "確認人員")] public string? ConfirmedBy { get; set; }
 
         // 導航屬性
         public ICollection<PayrollRecordDetail> Details { get; set; } = new List<PayrollRecordDetail>();

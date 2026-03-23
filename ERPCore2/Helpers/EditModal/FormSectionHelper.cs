@@ -49,6 +49,13 @@ namespace ERPCore2.Helpers.EditModal
 
         /// <summary>Tab 頁籤定義清單（為 null 時表示不使用 Tab 佈局）</summary>
         public List<FormTabDefinition>? TabDefinitions { get; set; }
+
+        /// <summary>
+        /// 區段到欄位（Column）的映射字典 - 允許多個 Section 共用同一 Column
+        /// Key: Section 名稱, Value: Column 索引 (0-based)
+        /// 未指定時，每個 Section 獨立佔一個 Column（現有行為）
+        /// </summary>
+        public Dictionary<string, int>? SectionColumnAssignments { get; set; }
     }
 
     /// <summary>
@@ -60,6 +67,7 @@ namespace ERPCore2.Helpers.EditModal
     {
         private readonly Dictionary<string, string> _sections = new();
         private readonly List<FormTabDefinition> _tabDefinitions = new();
+        private readonly Dictionary<string, int> _sectionColumnAssignments = new();
 
         /// <summary>
         /// 私有建構子 - 使用靜態工廠方法建立實例
@@ -141,6 +149,22 @@ namespace ERPCore2.Helpers.EditModal
         }
 
         /// <summary>
+        /// 指定多個 Section 共用同一個 Column（垂直堆疊）
+        /// 相同 column 索引的 Section 會在同一欄中上下排列，而非各自佔用獨立欄位
+        /// </summary>
+        /// <param name="column">Column 索引 (0-based)</param>
+        /// <param name="sectionNames">要歸入此 Column 的 Section 名稱</param>
+        /// <returns>當前實例，支援鏈式呼叫</returns>
+        public FormSectionHelper<TEntity> AssignColumn(int column, params string[] sectionNames)
+        {
+            foreach (var sectionName in sectionNames)
+            {
+                _sectionColumnAssignments[sectionName] = column;
+            }
+            return this;
+        }
+
+        /// <summary>
         /// 將多個 Section 歸組到一個 Tab 頁籤
         /// </summary>
         /// <param name="tabLabel">Tab 標籤文字</param>
@@ -198,7 +222,10 @@ namespace ERPCore2.Helpers.EditModal
             return new FormLayoutResult
             {
                 FieldSections = Build(),
-                TabDefinitions = _tabDefinitions.Count > 0 ? _tabDefinitions.ToList() : null
+                TabDefinitions = _tabDefinitions.Count > 0 ? _tabDefinitions.ToList() : null,
+                SectionColumnAssignments = _sectionColumnAssignments.Count > 0
+                    ? new Dictionary<string, int>(_sectionColumnAssignments)
+                    : null
             };
         }
 

@@ -30,9 +30,9 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "稅率算法")]
         public TaxCalculationMethod TaxCalculationMethod { get; set; } = TaxCalculationMethod.TaxExclusive;
 
-        [MaxLength(100, ErrorMessage = "採購人員不可超過100個字元")]
         [Display(Name = "採購人員")]
-        public string? PurchasePersonnel { get; set; }
+        [ForeignKey(nameof(PurchasePersonnelEmployee))]
+        public int? PurchasePersonnelId { get; set; }
 
         [Display(Name = "訂單總金額")]
         [Column(TypeName = "decimal(18,2)")]
@@ -91,6 +91,7 @@ namespace ERPCore2.Data.Entities
         public Company? Company { get; set; }
         public Warehouse? Warehouse { get; set; }
         public Employee? ApprovedByUser { get; set; }
+        public Employee? PurchasePersonnelEmployee { get; set; }
         public ICollection<PurchaseOrderDetail> PurchaseOrderDetails { get; set; } = new List<PurchaseOrderDetail>();
     }
 }

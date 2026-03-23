@@ -19,6 +19,8 @@ namespace ERPCore2.Services.Payroll
         private readonly ILogger<PayrollCalculationService>? _logger;
 
         // ── 費率備援常數（InsuranceRate 資料表無資料時使用）───────────
+        // ⚠ 這些值與 InsuranceRate 實體的預設值重複（寫法不同：4m/3m vs 1.3333m）
+        //    修改法定費率時需同步更新兩處：此處常數 + InsuranceRate.cs 屬性預設值
         private const decimal DefaultLaborInsuranceEmployeeRate  = 0.02m;
         private const decimal DefaultLaborInsuranceEmployerRate  = 0.10m;
         private const decimal DefaultHealthInsuranceEmployeeRate = 0.0235m;
@@ -117,11 +119,21 @@ namespace ERPCore2.Services.Payroll
                     record.TotalWorkHours = attendance.TotalWorkHours;
                 }
 
+                // 無出勤記錄時記錄警告（員工將以全勤計薪）
+                if (attendance == null)
+                    _logger?.LogWarning("[PayrollCalculation] 員工 {EmployeeId} 在 {Year}/{Month} 無出勤彙總記錄，將以全勤計算",
+                        employeeId, period.Year, period.Month);
+
                 var items = await context.PayrollItems
                     .Where(i => i.Status == EntityStatus.Active)
                     .ToListAsync();
 
-                await DoCalculateAsync(context, record, salary, period, items);
+                var warnings = new List<string>();
+                await DoCalculateAsync(context, record, salary, period, items, warnings);
+
+                // 記錄計算過程中的警告
+                foreach (var w in warnings)
+                    _logger?.LogWarning(w);
 
                 record.UpdatedAt = DateTime.UtcNow;
                 record.UpdatedBy = calculatedBy ?? "System";
@@ -159,12 +171,23 @@ namespace ERPCore2.Services.Payroll
                 if (period.PeriodStatus == PayrollPeriodStatus.Closed)
                     return ServiceResult.Failure("此薪資週期已關帳，不可重新計算");
 
-                // 取得所有在職員工
-                var employees = await context.Employees
+                // 取得所有在職及試用期員工
+                var activeEmployeeIds = await context.Employees
                     .Where(e => e.EmploymentStatus == EmployeeStatus.Active
                              || e.EmploymentStatus == EmployeeStatus.Probation)
                     .Select(e => e.Id)
                     .ToListAsync();
+
+                // 納入已有本期薪資記錄但已離職的員工（月中離職仍需結算最終薪資）
+                var existingRecordEmployeeIds = await context.PayrollRecords
+                    .Where(r => r.PayrollPeriodId == periodId)
+                    .Select(r => r.EmployeeId)
+                    .ToListAsync();
+
+                var employees = activeEmployeeIds
+                    .Union(existingRecordEmployeeIds)
+                    .Distinct()
+                    .ToList();
 
                 var errors = new List<string>();
                 int successCount = 0;
@@ -178,8 +201,17 @@ namespace ERPCore2.Services.Payroll
                         errors.Add($"員工 {employeeId}：{r.ErrorMessage}");
                 }
 
+                if (errors.Any() && successCount == 0)
+                    return ServiceResult.Failure($"全部 {errors.Count} 筆失敗：{string.Join("；", errors)}");
+
                 if (errors.Any())
-                    return ServiceResult.Failure($"完成 {successCount} 筆，{errors.Count} 筆失敗：{string.Join("；", errors)}");
+                {
+                    _logger?.LogWarning("[PayrollCalculation] 批次計算部分失敗：成功 {Success} 筆，失敗 {Failed} 筆", successCount, errors.Count);
+                    // 部分成功：回傳 Success 但將警告訊息帶入 ErrorMessage 供 UI 顯示
+                    var result = ServiceResult.Success();
+                    result.ErrorMessage = $"完成 {successCount} 筆，{errors.Count} 筆失敗：{string.Join("；", errors)}";
+                    return result;
+                }
 
                 return ServiceResult.Success();
             }
@@ -317,6 +349,8 @@ namespace ERPCore2.Services.Payroll
                     return ServiceResult.Failure("薪資單尚未計算，無法確認");
 
                 record.RecordStatus = PayrollRecordStatus.Confirmed;
+                record.ConfirmedAt = DateTime.UtcNow;
+                record.ConfirmedBy = confirmedBy ?? "System";
                 record.UpdatedAt = DateTime.UtcNow;
                 record.UpdatedBy = confirmedBy ?? "System";
                 await context.SaveChangesAsync();
@@ -345,6 +379,8 @@ namespace ERPCore2.Services.Payroll
                     return ServiceResult.Failure("此薪資週期已關帳，不可取消確認");
 
                 record.RecordStatus = PayrollRecordStatus.Draft;
+                record.ConfirmedAt = null;  // 取消確認時清除審計紀錄
+                record.ConfirmedBy = null;
                 record.UpdatedAt = DateTime.UtcNow;
                 record.UpdatedBy = operatedBy ?? "System";
                 await context.SaveChangesAsync();
@@ -366,7 +402,8 @@ namespace ERPCore2.Services.Payroll
             PayrollRecord record,
             EmployeeSalary salary,
             PayrollPeriod period,
-            List<PayrollItem> items)
+            List<PayrollItem> items,
+            List<string>? warnings = null)
         {
             var details = new List<PayrollRecordDetail>();
             int adYear = period.Year + 1911;
@@ -402,7 +439,7 @@ namespace ERPCore2.Services.Payroll
                 // 時薪制：BaseSalary 即時薪，依實際總工時計算
                 hourlyRate = salary.BaseSalary;
                 basePay = Math.Round(record.TotalWorkHours * hourlyRate, 0);
-                AddDetail(details, items, "BASE", record.TotalWorkHours, hourlyRate, basePay,
+                AddDetail(details, items, warnings, "BASE", record.TotalWorkHours, hourlyRate, basePay,
                     $"時薪 {hourlyRate:N0} × 實際工時 {record.TotalWorkHours:N2}h = {basePay:N0}");
             }
             else
@@ -414,16 +451,26 @@ namespace ERPCore2.Services.Payroll
                     ? record.ActualWorkDays / record.ScheduledWorkDays
                     : 1m;
                 basePay = Math.Round(salary.BaseSalary * attendanceRatio, 0);
-                AddDetail(details, items, "BASE", 1, salary.BaseSalary, basePay,
+                AddDetail(details, items, warnings, "BASE", 1, salary.BaseSalary, basePay,
                     $"本薪 {salary.BaseSalary:N0} × 出勤比例 {attendanceRatio:P0}");
             }
 
             // ── 3. 固定月付津貼項目（動態，從 EmployeeSalaryItem 讀取）──
+            // IsProrated = true 的津貼按出勤比例發放（如交通津貼），false 全額發放（如伙食津貼）
+            decimal allowanceRatio = record.ScheduledWorkDays > 0
+                ? record.ActualWorkDays / record.ScheduledWorkDays
+                : 1m;
             foreach (var allowanceItem in salary.AllowanceItems.Where(i => i.Amount > 0 && i.PayrollItem != null))
             {
-                AddDetail(details, items, allowanceItem.PayrollItem.Code!, 1,
-                    allowanceItem.Amount, allowanceItem.Amount,
-                    $"{allowanceItem.PayrollItem.Name}（固定）");
+                bool prorated = allowanceItem.PayrollItem.IsProrated;
+                decimal finalAmount = prorated
+                    ? Math.Round(allowanceItem.Amount * allowanceRatio, 0)
+                    : allowanceItem.Amount;
+                string remark = prorated
+                    ? $"{allowanceItem.PayrollItem.Name} {allowanceItem.Amount:N0} × 出勤比例 {allowanceRatio:P0}"
+                    : $"{allowanceItem.PayrollItem.Name}（固定）";
+                AddDetail(details, items, warnings, allowanceItem.PayrollItem.Code!, prorated ? allowanceRatio : 1,
+                    allowanceItem.Amount, finalAmount, remark);
             }
 
             // ── 6. 加班費（倍率從 InsuranceRate DB 讀取，備援至法定常數）──────
@@ -431,7 +478,7 @@ namespace ERPCore2.Services.Payroll
             {
                 decimal appliedRate1 = Math.Round(hourlyRate * ot1Rate, 4);
                 decimal ot1Pay = Math.Round(record.OvertimeHours1 * appliedRate1, 0);
-                AddDetail(details, items, "OT1", record.OvertimeHours1, appliedRate1, ot1Pay,
+                AddDetail(details, items, warnings, "OT1", record.OvertimeHours1, appliedRate1, ot1Pay,
                     $"平日加班（前2hr）{record.OvertimeHours1}hr × {appliedRate1:N4}（×{ot1Rate:N4}）= {ot1Pay:N0}");
             }
 
@@ -439,7 +486,7 @@ namespace ERPCore2.Services.Payroll
             {
                 decimal appliedRate2 = Math.Round(hourlyRate * ot2Rate, 4);
                 decimal ot2Pay = Math.Round(record.OvertimeHours2 * appliedRate2, 0);
-                AddDetail(details, items, "OT2", record.OvertimeHours2, appliedRate2, ot2Pay,
+                AddDetail(details, items, warnings, "OT2", record.OvertimeHours2, appliedRate2, ot2Pay,
                     $"平日加班（後2hr）{record.OvertimeHours2}hr × {appliedRate2:N4}（×{ot2Rate:N4}）= {ot2Pay:N0}");
             }
 
@@ -456,7 +503,7 @@ namespace ERPCore2.Services.Payroll
                 string restRemark = restExtra > 0
                     ? $"休息日加班 前{restFirst}hr×{appliedRestRate1:N4}（×{restDay1Rate:N4}）+ 後{restExtra}hr×{appliedRestRate2:N4}（×{restDay2Rate:N4}）= {restPay:N0}"
                     : $"休息日加班 {restFirst}hr×{appliedRestRate1:N4}（×{restDay1Rate:N4}）= {restPay:N0}";
-                AddDetail(details, items, "OT_HOLIDAY", record.HolidayOvertimeHours, restAvgRate, restPay, restRemark);
+                AddDetail(details, items, warnings, "OT_HOLIDAY", record.HolidayOvertimeHours, restAvgRate, restPay, restRemark);
             }
 
             // 國定假日加班（勞基法第39條：月薪已含假日薪，加給 natHolRate 倍時薪）
@@ -464,7 +511,7 @@ namespace ERPCore2.Services.Payroll
             {
                 decimal appliedNatRate = Math.Round(hourlyRate * natHolRate, 4);
                 decimal nationalPay = Math.Round(record.NationalHolidayHours * appliedNatRate, 0);
-                AddDetail(details, items, "OT_NATIONAL", record.NationalHolidayHours, appliedNatRate, nationalPay,
+                AddDetail(details, items, warnings, "OT_NATIONAL", record.NationalHolidayHours, appliedNatRate, nationalPay,
                     $"國定假日加班 {record.NationalHolidayHours}hr × {appliedNatRate:N4}（加給×{natHolRate:N4}，月薪已含假日薪）= {nationalPay:N0}");
             }
 
@@ -473,7 +520,7 @@ namespace ERPCore2.Services.Payroll
             {
                 decimal dailyRateForDeduct = salary.BaseSalary / 30m;
                 decimal absentDeduct = Math.Round(record.AbsentDays * dailyRateForDeduct, 0);
-                AddDetail(details, items, "ABSENT", record.AbsentDays, dailyRateForDeduct, -absentDeduct,
+                AddDetail(details, items, warnings, "ABSENT", record.AbsentDays, dailyRateForDeduct, -absentDeduct,
                     $"曠職 {record.AbsentDays}天 × 日薪 {dailyRateForDeduct:N2} = -{absentDeduct:N0}");
             }
 
@@ -482,7 +529,7 @@ namespace ERPCore2.Services.Payroll
             {
                 decimal dailyRateForDeduct = salary.BaseSalary / 30m;
                 decimal sickDeduct = Math.Round(record.SickLeaveDays * dailyRateForDeduct * 0.5m, 0);
-                AddDetail(details, items, "SICK", record.SickLeaveDays, dailyRateForDeduct * 0.5m, -sickDeduct,
+                AddDetail(details, items, warnings, "SICK", record.SickLeaveDays, dailyRateForDeduct * 0.5m, -sickDeduct,
                     $"病假 {record.SickLeaveDays}天 × 日薪半薪 = -{sickDeduct:N0}");
             }
 
@@ -491,7 +538,7 @@ namespace ERPCore2.Services.Payroll
             {
                 decimal dailyRateForDeduct = salary.BaseSalary / 30m;
                 decimal personalLeaveDeduct = Math.Round(record.PersonalLeaveDays * dailyRateForDeduct, 0);
-                AddDetail(details, items, "PERSONAL_LEAVE", record.PersonalLeaveDays, dailyRateForDeduct, -personalLeaveDeduct,
+                AddDetail(details, items, warnings, "PERSONAL_LEAVE", record.PersonalLeaveDays, dailyRateForDeduct, -personalLeaveDeduct,
                     $"事假 {record.PersonalLeaveDays}天 × 日薪 {dailyRateForDeduct:N2} = -{personalLeaveDeduct:N0}");
             }
 
@@ -503,7 +550,7 @@ namespace ERPCore2.Services.Payroll
             decimal laborInsuredSalary = salary.LaborInsuredSalary > 0 ? salary.LaborInsuredSalary : salary.BaseSalary;
             decimal laborInsuranceEE = Math.Round(laborInsuredSalary * laborInsuranceEmployeeRate, 0);
             if (laborInsuranceEE > 0)
-                AddDetail(details, items, "LI_EE", 1, laborInsuredSalary, -laborInsuranceEE,
+                AddDetail(details, items, warnings, "LI_EE", 1, laborInsuredSalary, -laborInsuranceEE,
                     $"勞保費 投保薪資 {laborInsuredSalary:N0} × {laborInsuranceEmployeeRate:P0} = -{laborInsuranceEE:N0}");
 
             // ── 11. 健保費（員工負擔）───────────────────────────────
@@ -513,7 +560,7 @@ namespace ERPCore2.Services.Payroll
             if (healthInsuranceEE > 0)
             {
                 string depNote = salary.DependentCount > 0 ? $"×{multiplier}（含{salary.DependentCount}眷屬）" : "";
-                AddDetail(details, items, "HI_EE", 1, healthInsuredAmount, -healthInsuranceEE,
+                AddDetail(details, items, warnings, "HI_EE", 1, healthInsuredAmount, -healthInsuranceEE,
                     $"健保費 投保金額 {healthInsuredAmount:N0} × {healthInsuranceEmployeeRate:P2}{depNote} = -{healthInsuranceEE:N0}");
             }
 
@@ -522,7 +569,7 @@ namespace ERPCore2.Services.Payroll
             if (salary.VoluntaryRetirementRate > 0)
             {
                 voluntaryRetirement = Math.Round(salary.BaseSalary * (salary.VoluntaryRetirementRate / 100m), 0);
-                AddDetail(details, items, "RETIRE_VOL", 1, salary.BaseSalary, -voluntaryRetirement,
+                AddDetail(details, items, warnings, "RETIRE_VOL", 1, salary.BaseSalary, -voluntaryRetirement,
                     $"勞退自提 本薪 {salary.BaseSalary:N0} × {salary.VoluntaryRetirementRate}% = -{voluntaryRetirement:N0}");
             }
 
@@ -547,7 +594,7 @@ namespace ERPCore2.Services.Payroll
             decimal withholdingTax = 0;
             if (taxableIncome > 0 && salary.TaxType == TaxWithholdingType.Standard)
             {
-                withholdingTax = await LookupWithholdingTaxAsync(context, taxableIncome, salary.DependentCount, periodDate);
+                withholdingTax = await LookupWithholdingTaxAsync(context, taxableIncome, salary.DependentCount, periodDate, warnings);
             }
             else if (taxableIncome > 0 && salary.TaxType == TaxWithholdingType.Resident)
             {
@@ -559,7 +606,7 @@ namespace ERPCore2.Services.Payroll
             }
 
             if (withholdingTax > 0)
-                AddDetail(details, items, "TAX", 1, taxableIncome, -withholdingTax,
+                AddDetail(details, items, warnings, "TAX", 1, taxableIncome, -withholdingTax,
                     $"薪資所得稅 課稅所得 {taxableIncome:N0} = -{withholdingTax:N0}");
 
             // ── 15. 彙總計算 ─────────────────────────────────────────
@@ -612,7 +659,8 @@ namespace ERPCore2.Services.Payroll
 
         /// <summary>查扣繳稅額表（Standard 制度使用）</summary>
         private static async Task<decimal> LookupWithholdingTaxAsync(
-            AppDbContext context, decimal taxableIncome, int dependentCount, DateOnly periodDate)
+            AppDbContext context, decimal taxableIncome, int dependentCount, DateOnly periodDate,
+            List<string>? warnings = null)
         {
             // 取得適用於該月份的最新版本扣繳稅額表
             var entry = await context.WithholdingTaxTables
@@ -623,6 +671,9 @@ namespace ERPCore2.Services.Payroll
                 .OrderByDescending(t => t.EffectiveDate)
                 .FirstOrDefaultAsync();
 
+            if (entry == null && taxableIncome > 0)
+                warnings?.Add($"[PayrollCalculation] 查無適用扣繳稅額表（課稅所得={taxableIncome:N0}，扶養人數={dependentCount}，月份={periodDate}），代扣所得稅將為 0。請確認扣繳稅額表資料完整。");
+
             return entry?.TaxAmount ?? 0;
         }
 
@@ -630,6 +681,7 @@ namespace ERPCore2.Services.Payroll
         private static void AddDetail(
             List<PayrollRecordDetail> details,
             List<PayrollItem> items,
+            List<string>? warnings,
             string itemCode,
             decimal quantity,
             decimal unitAmount,
@@ -640,8 +692,8 @@ namespace ERPCore2.Services.Payroll
             if (item == null)
             {
                 // 找不到項目定義：通常表示種子資料未執行或項目被停用
-                // 不應靜默略過，以免造成薪資計算結果不完整而無法察覺
-                System.Diagnostics.Debug.WriteLine($"[PayrollCalculation] 找不到薪資項目代碼 '{itemCode}'，此明細將略過。請確認薪資項目種子資料已完整執行且項目狀態為啟用。");
+                // 記錄警告（非靜默略過），以免造成薪資計算結果不完整而無法察覺
+                warnings?.Add($"[PayrollCalculation] 找不到薪資項目代碼 '{itemCode}'，此明細將略過。請確認薪資項目種子資料已完整執行且項目狀態為啟用。");
                 return;
             }
 

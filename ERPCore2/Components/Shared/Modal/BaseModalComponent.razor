@@ -10,6 +10,7 @@
 *@
 @using Microsoft.JSInterop
 @using Microsoft.Extensions.Localization
+@using ERPCore2.Models.FeatureGuides
 @inject IJSRuntime JSRuntime
 @inject IStringLocalizer<SharedResource> L
 @inject INavigationPermissionService NavigationPermissionService
@@ -25,7 +26,7 @@
         <div class="modal-dialog @GetModalSizeClass()"
              style="@GetModalDialogStyle()"
              @onclick:stopPropagation="true">
-            <div class="modal-content shadow-lg">
+            <div class="modal-content shadow-lg" @onclick="DismissPopups">
                 
                 @* ===== Modal Header ===== *@
                 <div class="modal-header @GetHeaderCssClass()" style="@GetHeaderStyle()">
@@ -110,16 +111,33 @@
                     </div>
                 }
                 
-                @* ===== Modal Metadata (Audit Info) - 浮動圖示，點擊展開 ===== *@
-                @if (ShowFooter && AuditInfo != null)
+                @* ===== Modal 底部浮動按鈕群組 ===== *@
+                @{
+                    bool hasAuditBtn = ShowFooter && AuditInfo != null;
+                    bool hasGuideBtn = FeatureGuide != null;
+                }
+                @if (hasAuditBtn || hasGuideBtn)
                 {
-                    <div class="audit-info-float-container">
-                        <button class="audit-info-toggle-btn"
-                                @onclick="@(() => _showAuditInfo = !_showAuditInfo)"
-                                title="@(_showAuditInfo ? L["Modal.HideAuditInfo"] : L["Modal.ShowAuditInfo"])">
-                            <i class="bi bi-clock-history"></i>
-                        </button>
-                        @if (_showAuditInfo)
+                    <div class="audit-info-float-container" @onclick:stopPropagation="true">
+                        @* 功能說明按鈕（新增 / 編輯模式皆可見） *@
+                        @if (hasGuideBtn)
+                        {
+                            <button class="audit-info-toggle-btn"
+                                    @onclick="ToggleFeatureGuide"
+                                    title="@(_showFeatureGuide ? L["Modal.HideFeatureGuide"] : L["Modal.ShowFeatureGuide"])">
+                                <i class="bi bi-question-circle"></i>
+                            </button>
+                        }
+                        @* 審計資訊按鈕（僅編輯模式，有 Footer 時顯示） *@
+                        @if (hasAuditBtn)
+                        {
+                            <button class="audit-info-toggle-btn"
+                                    @onclick="@(() => _showAuditInfo = !_showAuditInfo)"
+                                    title="@(_showAuditInfo ? L["Modal.HideAuditInfo"] : L["Modal.ShowAuditInfo"])">
+                                <i class="bi bi-clock-history"></i>
+                            </button>
+                        }
+                        @if (_showAuditInfo && AuditInfo != null)
                         {
                             <div class="audit-info-popup">
                                 @if (AuditInfo.CreatedAt.HasValue)
@@ -152,6 +170,62 @@
                                 }
                             </div>
                         }
+                    </div>
+                }
+
+                @* ===== Feature Guide Side Drawer（右側滑出操作說明面板） ===== *@
+                @if (FeatureGuide != null)
+                {
+                    @* 點擊外部關閉用的透明遮罩 *@
+                    @if (_showFeatureGuide)
+                    {
+                        <div class="feature-guide-overlay" @onclick="CloseFeatureGuide"></div>
+                    }
+
+                    <div class="feature-guide-drawer @(_showFeatureGuide ? "open" : "")">
+                        @* 左側書籤標籤（從 Sections 自動產生） *@
+                        @if (FeatureGuide.Sections.Count > 0)
+                        {
+                            <div class="feature-guide-bookmarks">
+                                @foreach (var sec in FeatureGuide.Sections)
+                                {
+                                    <button class="feature-guide-bookmark @(_activeBookmarkId == sec.Id ? "active" : "")"
+                                            style="--bookmark-color: @sec.BookmarkColor;"
+                                            title="@sec.BookmarkLabel"
+                                            @onclick="@(() => ScrollToBookmark(sec.Id))">
+                                        <span class="feature-guide-bookmark-text">@sec.BookmarkLabel</span>
+                                    </button>
+                                }
+                            </div>
+                        }
+
+                        <div class="feature-guide-main">
+                            <div class="feature-guide-header">
+                                <h6 class="feature-guide-title">
+                                    <i class="bi bi-book me-2"></i>@L["Modal.FeatureGuideTitle"]
+                                </h6>
+                                <button class="feature-guide-close-btn"
+                                        @onclick="CloseFeatureGuide"
+                                        title="@L["Button.Close"]">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                            <div class="feature-guide-body" @ref="_guideBodyRef">
+                                <FeatureGuideRenderer Definition="@FeatureGuide" ActiveSectionId="@_activeBookmarkId" />
+                            </div>
+
+                            @* Debug Bar：顯示定義檔路徑（僅 SuperAdmin） *@
+                            @if (_isSuperAdmin && !string.IsNullOrEmpty(FeatureGuide.SourceFile))
+                            {
+                                var fileName = System.IO.Path.GetFileName(FeatureGuide.SourceFile);
+                                <div class="feature-guide-debug"
+                                     title="@FeatureGuide.SourceFile"
+                                     @onclick="() => CopyTextAsync(fileName!)"
+                                     @onclick:stopPropagation="true">
+                                    🔧 @fileName
+                                </div>
+                            }
+                        </div>
                     </div>
                 }
 
@@ -336,6 +410,13 @@
     /// </summary>
     [Parameter]
     public RenderFragment? FooterContent { get; set; }
+
+    /// <summary>
+    /// 功能說明定義（數據驅動，自動渲染操作說明面板）
+    /// 傳入 FeatureGuideDefinition 即可自動產生右側滑出面板、左側書籤
+    /// </summary>
+    [Parameter]
+    public FeatureGuideDefinition? FeatureGuide { get; set; }
     
     // ===== 事件回呼 =====
     
@@ -363,6 +444,9 @@
     private bool _isSuperAdmin = false;
     private bool _isModalFullscreen = false;
     private bool _showAuditInfo = false;
+    private bool _showFeatureGuide = false;
+    private string? _activeBookmarkId = null;
+    private ElementReference _guideBodyRef;
     private DotNetObjectReference<BaseModalComponent>? _escKeyDotNetRef;
     private bool _isEscKeyListenerActive = false;
     private bool _isDisposed = false;
@@ -405,6 +489,7 @@
         {
             _lastVisible = false;
             _isModalFullscreen = false;
+            _showFeatureGuide = false;
 
             // 釋放 z-index（遞減回去）
             lock (_zIndexLock)
@@ -772,6 +857,59 @@
     }
     
     /// <summary>
+    /// 點擊 modal-content 時關閉所有彈出元素（審計 popup 等）
+    /// </summary>
+    private void DismissPopups()
+    {
+        if (_showAuditInfo)
+        {
+            _showAuditInfo = false;
+        }
+    }
+
+    /// <summary>
+    /// 切換功能說明面板（打開時自動選中第一個書籤）
+    /// </summary>
+    private void ToggleFeatureGuide()
+    {
+        _showFeatureGuide = !_showFeatureGuide;
+        if (_showFeatureGuide && FeatureGuide?.Sections.Count > 0)
+        {
+            _activeBookmarkId ??= FeatureGuide.Sections[0].Id;
+        }
+        else if (!_showFeatureGuide)
+        {
+            _activeBookmarkId = null;
+        }
+    }
+
+    /// <summary>
+    /// 關閉功能說明面板並重置書籤狀態
+    /// </summary>
+    private void CloseFeatureGuide()
+    {
+        _showFeatureGuide = false;
+        _activeBookmarkId = null;
+    }
+
+    /// <summary>
+    /// 滾動到指定書籤章節
+    /// </summary>
+    private async Task ScrollToBookmark(string targetId)
+    {
+        _activeBookmarkId = targetId;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("eval",
+                $"document.getElementById('{targetId}')?.scrollIntoView({{ behavior: 'smooth', block: 'start' }})");
+        }
+        catch
+        {
+            // 忽略 JS 錯誤
+        }
+    }
+
+    /// <summary>
     /// 複製指定文字到剪貼簿（方式一：點擊 Debug Bar 各分段）
     /// </summary>
     private async Task CopyTextAsync(string text)
@@ -889,4 +1027,5 @@
         public DateTime? UpdatedAt { get; set; }
         public string? UpdatedBy { get; set; }
     }
+
 }

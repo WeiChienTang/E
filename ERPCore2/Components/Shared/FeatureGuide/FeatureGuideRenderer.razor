@@ -1,0 +1,112 @@
+@*
+    功能說明自動渲染組件
+    根據 FeatureGuideDefinition 自動產生操作說明 UI
+    支援的章節類型：Description / Steps / FieldList / Tips / FAQ
+    可透過 ActiveSectionId 控制只顯示指定章節
+*@
+@using ERPCore2.Models.FeatureGuides
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResource> L
+
+@if (Definition != null)
+{
+    var sec = GetActiveSection();
+    if (sec != null)
+    {
+        <div class="guide-section" id="@sec.Id">
+            @* 章節標題 *@
+            <div class="guide-section-title">
+                <i class="bi @sec.Icon"></i> @L[sec.TitleKey]
+            </div>
+
+            @* 根據章節類型渲染不同的內容 *@
+            @switch (sec.Type)
+            {
+                case GuideSectionType.Description:
+                    @foreach (var item in sec.Items)
+                    {
+                        <p class="guide-description">@L[item.TextKey]</p>
+                    }
+                    break;
+
+                case GuideSectionType.Steps:
+                    <ol class="guide-steps">
+                        @foreach (var item in sec.Items)
+                        {
+                            <li>@L[item.TextKey]</li>
+                        }
+                    </ol>
+                    break;
+
+                case GuideSectionType.FieldList:
+                    <dl class="guide-fields">
+                        @foreach (var item in sec.Items)
+                        {
+                            <dt>@L[item.LabelKey ?? item.TextKey]</dt>
+                            <dd>@L[item.TextKey]</dd>
+                        }
+                    </dl>
+                    break;
+
+                case GuideSectionType.Tips:
+                    @foreach (var item in sec.Items)
+                    {
+                        @if (item.Style == GuideItemStyle.Warning)
+                        {
+                            <div class="guide-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                @L[item.TextKey]
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="guide-tip">
+                                <i class="bi bi-lightbulb"></i>
+                                @L[item.TextKey]
+                            </div>
+                        }
+                    }
+                    break;
+
+                case GuideSectionType.FAQ:
+                    <dl class="guide-fields">
+                        @foreach (var item in sec.Items)
+                        {
+                            <dt>@L[item.LabelKey ?? item.TextKey]</dt>
+                            <dd>@L[item.TextKey]</dd>
+                        }
+                    </dl>
+                    break;
+            }
+        </div>
+    }
+}
+
+@code {
+    /// <summary>
+    /// 功能說明定義（數據驅動）
+    /// </summary>
+    [Parameter]
+    public FeatureGuideDefinition? Definition { get; set; }
+
+    /// <summary>
+    /// 目前選中的書籤章節 ID（只顯示該章節）
+    /// 若為 null 則顯示第一個章節
+    /// </summary>
+    [Parameter]
+    public string? ActiveSectionId { get; set; }
+
+    private GuideSection? GetActiveSection()
+    {
+        if (Definition == null || Definition.Sections.Count == 0)
+            return null;
+
+        if (!string.IsNullOrEmpty(ActiveSectionId))
+        {
+            return Definition.Sections.FirstOrDefault(s => s.Id == ActiveSectionId)
+                   ?? Definition.Sections[0];
+        }
+
+        return Definition.Sections[0];
+    }
+}

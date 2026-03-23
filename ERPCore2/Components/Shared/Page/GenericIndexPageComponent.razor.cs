@@ -271,7 +271,7 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     private bool _mobileFilterOpen = false;
 
     // Desktop 篩選折疊狀態
-    private bool _desktopFilterCollapsed = false;
+    private bool _desktopFilterCollapsed = true;
 
     /// <summary>計算目前有幾個作用中的篩選條件（用於書籤把手 badge）</summary>
     private int _activeFilterCount =>

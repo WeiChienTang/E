@@ -122,6 +122,13 @@
                 },
                 new()
                 {
+                    PropertyName = nameof(PayrollItem.IsProrated),
+                    Label = L["Field.PayrollItemIsProrated"],
+                    FieldType = FormFieldType.Checkbox,
+                    HelpText = L["Payroll.IsProratedHelpText"]
+                },
+                new()
+                {
                     PropertyName = nameof(PayrollItem.SortOrder),
                     Label = L["Field.SortOrder"],
                     FieldType = FormFieldType.Number
@@ -151,6 +158,7 @@
                     i => i.IsTaxable,
                     i => i.IsInsuranceBasis,
                     i => i.IsRetirementBasis,
+                    i => i.IsProrated,
                     i => i.SortOrder,
                     i => i.Status)
                 .AddToSection(FormSectionNames.AdditionalData,

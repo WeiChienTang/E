@@ -59,6 +59,7 @@
     border: none;
     border-radius: 0.5rem;
     position: relative;
+    overflow: hidden;
 }
 
 /* Header 樣式優化 */
@@ -101,6 +102,10 @@
     bottom: 0.75rem;
     right: 0.75rem;
     z-index: 10;
+    display: flex;
+    flex-direction: row-reverse;
+    gap: 0.4rem;
+    align-items: center;
 }
 
 ::deep .audit-info-toggle-btn {
@@ -276,13 +281,14 @@
 }
 
 /* Desktop modal：固定高度 flex 佈局，Body 自動撐滿剩餘空間 */
-::deep .modal-dialog.modal-desktop .modal-content {
+/* 使用 > 直接子元素選擇器，避免巢狀 Modal 被父層 modal-desktop 規則污染 */
+::deep .modal-dialog.modal-desktop > .modal-content {
     height: 100%;
     display: flex;
     flex-direction: column;
 }
 
-::deep .modal-dialog.modal-desktop .modal-body {
+::deep .modal-dialog.modal-desktop > .modal-content > .modal-body {
     flex: 1 1 0;    /* flex-basis: 0 確保 modal-body 從 0 開始擴展，不受內容高度影響 */
     min-height: 0;
     max-height: none;
@@ -369,7 +375,8 @@
 /* ===== 全景模式（modal-fullscreen）佈局修正 ===== */
 
 /* 確保 modal-content 為 flex column 且填滿全高 */
-::deep .modal-dialog.modal-fullscreen .modal-content {
+/* 使用 > 直接子元素選擇器，避免巢狀 Modal 被父層 modal-fullscreen 規則污染 */
+::deep .modal-dialog.modal-fullscreen > .modal-content {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -377,9 +384,399 @@
 }
 
 /* modal-body：移除 max-height 限制，flex-basis 設為 0 讓子元素的 height: 100% 可正確解析 */
-::deep .modal-dialog.modal-fullscreen .modal-body {
+::deep .modal-dialog.modal-fullscreen > .modal-content > .modal-body {
     flex: 1 1 0;
     min-height: 0;
     max-height: none !important;
     overflow: hidden;
+}
+
+/* ===== Feature Guide 點擊外部關閉遮罩 ===== */
+
+::deep .feature-guide-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 19;
+    background: rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+}
+
+/* ===== Feature Guide Side Drawer（右側滑出操作說明面板） ===== */
+
+::deep .feature-guide-drawer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: row;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::deep .feature-guide-drawer.open {
+    transform: translateX(0);
+}
+
+/* 關閉狀態下禁止書籤互動（防止突出的 active 書籤被點到） */
+::deep .feature-guide-drawer:not(.open) {
+    pointer-events: none;
+}
+
+/* ===== 左側書籤標籤列 ===== */
+
+::deep .feature-guide-bookmarks {
+    display: flex;
+    flex-direction: column;
+    padding-top: 3.2rem;
+    gap: 0.25rem;
+    position: relative;
+    z-index: 2;
+}
+
+::deep .feature-guide-bookmark {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    border: none;
+    background-color: var(--bookmark-color, #3B82F6);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.55rem 0.35rem;
+    cursor: pointer;
+    border-radius: 0.4rem 0 0 0.4rem;
+    transition: filter 0.15s, transform 0.15s, padding 0.15s;
+    white-space: nowrap;
+    letter-spacing: 0.08em;
+    min-width: 1.85rem;
+    text-align: center;
+    box-shadow: -2px 1px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    left: 1px;
+}
+
+::deep .feature-guide-bookmark:hover {
+    filter: brightness(1.1);
+    transform: translateX(-3px);
+    padding: 0.55rem 0.4rem;
+}
+
+::deep .feature-guide-bookmark.active {
+    filter: brightness(1.15);
+    transform: translateX(-4px);
+    padding: 0.55rem 0.45rem;
+    box-shadow: -3px 1px 8px rgba(0, 0, 0, 0.18);
+}
+
+::deep .feature-guide-bookmark-text {
+    display: block;
+}
+
+/* ===== Drawer 主要內容區 ===== */
+
+::deep .feature-guide-main {
+    width: 340px;
+    max-width: calc(90vw - 2rem);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-primary);
+    border-left: 1px solid var(--border-color);
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+    border-top-right-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+}
+
+/* Drawer Header */
+::deep .feature-guide-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    flex-shrink: 0;
+    border-top-right-radius: 0.5rem;
+}
+
+::deep .feature-guide-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+}
+
+::deep .feature-guide-title i {
+    color: var(--bs-primary, #0d6efd);
+    font-size: 1rem;
+}
+
+::deep .feature-guide-close-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background-color 0.15s, color 0.15s;
+    padding: 0;
+    line-height: 1;
+}
+
+::deep .feature-guide-close-btn:hover {
+    background-color: var(--bg-hover, #e9ecef);
+    color: var(--text-primary);
+}
+
+/* Drawer Body（可滾動內容區） */
+::deep .feature-guide-body {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1rem;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--text-primary);
+}
+
+/* Drawer 內部的說明書樣式 */
+
+::deep .feature-guide-body .guide-section {
+    margin-bottom: 1.25rem;
+}
+
+::deep .feature-guide-body .guide-section:last-child {
+    margin-bottom: 0;
+}
+
+::deep .feature-guide-body .guide-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 2px solid var(--bs-primary, #0d6efd);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+::deep .feature-guide-body .guide-section-title i {
+    font-size: 1rem;
+    color: var(--bs-primary, #0d6efd);
+}
+
+::deep .feature-guide-body .guide-description {
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+}
+
+/* 操作步驟（有序列表） */
+::deep .feature-guide-body .guide-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.75rem 0;
+    counter-reset: step-counter;
+}
+
+::deep .feature-guide-body .guide-steps li {
+    counter-increment: step-counter;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.4rem 0;
+    color: var(--text-primary);
+}
+
+::deep .feature-guide-body .guide-steps li::before {
+    content: counter(step-counter);
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background-color: var(--bs-primary, #0d6efd);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.15rem;
+}
+
+/* 欄位說明（定義列表） */
+::deep .feature-guide-body .guide-fields {
+    margin: 0 0 0.75rem 0;
+    padding: 0;
+}
+
+::deep .feature-guide-body .guide-fields dt {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1rem;
+    margin-top: 0.5rem;
+}
+
+::deep .feature-guide-body .guide-fields dt:first-child {
+    margin-top: 0;
+}
+
+::deep .feature-guide-body .guide-fields dd {
+    margin-left: 0;
+    padding-left: 0.85rem;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    border-left: 2px solid var(--border-color);
+}
+
+/* 提示框 */
+::deep .feature-guide-body .guide-tip {
+    background-color: rgba(13, 110, 253, 0.06);
+    border-left: 3px solid var(--bs-primary, #0d6efd);
+    border-radius: 0.3rem;
+    padding: 0.55rem 0.75rem;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+::deep .feature-guide-body .guide-tip i {
+    color: var(--bs-primary, #0d6efd);
+    margin-right: 0.35rem;
+}
+
+/* 警告框 */
+::deep .feature-guide-body .guide-warning {
+    background-color: rgba(255, 193, 7, 0.08);
+    border-left: 3px solid var(--bs-warning, #ffc107);
+    border-radius: 0.3rem;
+    padding: 0.55rem 0.75rem;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+::deep .feature-guide-body .guide-warning i {
+    color: var(--bs-warning, #ffc107);
+    margin-right: 0.35rem;
+}
+
+/* Drawer 滾動條 */
+::deep .feature-guide-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+::deep .feature-guide-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::deep .feature-guide-body::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+::deep .feature-guide-body::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* ===== Feature Guide Debug Bar（SuperAdmin 專屬） ===== */
+
+::deep .feature-guide-debug {
+    flex-shrink: 0;
+    padding: 0.3rem 0.75rem;
+    background: #1a1a2e;
+    color: #7ec8e3;
+    font-size: 0.7rem;
+    font-family: monospace;
+    letter-spacing: 0.03em;
+    user-select: text;
+    cursor: pointer;
+    border-top: 1px solid rgba(126, 200, 227, 0.15);
+    border-bottom-right-radius: 0.5rem;
+}
+
+::deep .feature-guide-debug:hover {
+    background: #232342;
+    color: #a8dcf0;
+}
+
+/* 手機版：Drawer 佔滿整個 modal 寬度 */
+@media (max-width: 576px) {
+    ::deep .feature-guide-main {
+        width: 100%;
+        max-width: 100%;
+        border-left: none;
+        border-radius: 0;
+        flex: 1 1 0;
+        min-height: 0;
+    }
+
+    ::deep .feature-guide-header {
+        border-radius: 0;
+    }
+
+    /* 手機版書籤改為水平排列在頂部，Drawer 佔滿全高 */
+    ::deep .feature-guide-drawer {
+        flex-direction: column;
+        top: 0;
+        bottom: 0;
+    }
+
+    ::deep .feature-guide-bookmarks {
+        flex-direction: row;
+        padding-top: 0;
+        overflow-x: auto;
+        gap: 0.2rem;
+        padding: 0.3rem 0.5rem;
+        background-color: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    ::deep .feature-guide-bookmark {
+        writing-mode: horizontal-tb;
+        text-orientation: initial;
+        border-radius: 0.3rem 0.3rem 0 0;
+        left: 0;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.7rem;
+        min-width: auto;
+    }
+
+    ::deep .feature-guide-bookmark:hover,
+    ::deep .feature-guide-bookmark.active {
+        transform: none;
+        padding: 0.35rem 0.65rem;
+    }
+}
+
+/* Dark mode 微調 */
+[data-bs-theme=dark] .feature-guide-main {
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+}
+
+[data-bs-theme=dark] .feature-guide-overlay {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+[data-bs-theme=dark] .feature-guide-body .guide-tip {
+    background-color: rgba(88, 166, 255, 0.08);
+}
+
+[data-bs-theme=dark] .feature-guide-body .guide-warning {
+    background-color: rgba(255, 193, 7, 0.06);
+}
+
+[data-bs-theme=dark] .feature-guide-bookmark {
+    box-shadow: -2px 1px 6px rgba(0, 0, 0, 0.25);
 }

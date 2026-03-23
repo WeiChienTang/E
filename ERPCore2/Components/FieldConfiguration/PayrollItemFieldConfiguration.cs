@@ -96,12 +96,33 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
+                        nameof(PayrollItem.IsProrated),
+                        new FieldDefinition<PayrollItem>
+                        {
+                            PropertyName = nameof(PayrollItem.IsProrated),
+                            DisplayName = Dn("Field.PayrollItemIsProrated", "按出勤比例"),
+                            TableOrder = 5,
+                            ShowInFilter = false,
+                            CustomTemplate = item => builder =>
+                            {
+                                var entity = (PayrollItem)item;
+                                if (entity.IsProrated)
+                                {
+                                    builder.OpenElement(0, "span");
+                                    builder.AddAttribute(1, "class", "badge bg-info");
+                                    builder.AddContent(2, L?["Payroll.Prorated"].ToString() ?? "按比例");
+                                    builder.CloseElement();
+                                }
+                            }
+                        }
+                    },
+                    {
                         nameof(PayrollItem.IsSystemItem),
                         new FieldDefinition<PayrollItem>
                         {
                             PropertyName = nameof(PayrollItem.IsSystemItem),
                             DisplayName = Dn("Field.PayrollItemIsSystem", "系統內建"),
-                            TableOrder = 5,
+                            TableOrder = 6,
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -122,7 +143,7 @@ namespace ERPCore2.FieldConfiguration
                         {
                             PropertyName = nameof(PayrollItem.Status),
                             DisplayName = Dn("Field.Status", "狀態"),
-                            TableOrder = 6,
+                            TableOrder = 7,
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {

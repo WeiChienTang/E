@@ -27,7 +27,7 @@
                           GetEntityDisplayName="@(receipt => receipt.Code)"
                           RequiredPermission="@PermissionRegistry.PurchaseReceiving.Read"
                           RequiredModule="Purchase"
-                          ShowBatchPrintButton="true"
+                          ShowBatchPrintButton="false"
                           OnBatchPrintClick="@HandleBatchPrintAsync"
                           ShowBatchApprovalButton="@isManualApproval"
                           OnBatchApprovalClick="@HandleBatchApprovalAsync"

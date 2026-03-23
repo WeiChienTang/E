@@ -59,6 +59,14 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
     public List<FormTabDefinition>? TabDefinitions { get; set; }
 
     /// <summary>
+    /// 區段到欄位（Column）的映射 - 允許多個 Section 共用同一 Column（垂直堆疊）
+    /// Key: Section 名稱, Value: Column 索引 (0-based)
+    /// 未指定或為 null 時，每個 Section 獨立佔一個 Column（現有行為）
+    /// </summary>
+    [Parameter]
+    public Dictionary<string, int>? SectionColumnAssignments { get; set; }
+
+    /// <summary>
     /// 是否停用非第一個 Tab（新增模式或草稿模式下使用）
     /// true = 除第一個 Tab 外，其餘 Tab 按鈕皆呈現灰色且無法點擊
     /// </summary>
@@ -291,6 +299,50 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
         return FieldSections
             .GroupBy(kvp => kvp.Value)
             .OrderBy(g => sectionOrderMap.GetValueOrDefault(g.Key, int.MaxValue));
+    }
+
+    /// <summary>
+    /// 判斷是否啟用了 Column 分組模式
+    /// </summary>
+    protected bool HasColumnAssignments => SectionColumnAssignments != null && SectionColumnAssignments.Count > 0;
+
+    /// <summary>
+    /// 將區段依照 Column 分組，同一 Column 內的多個 Section 會垂直堆疊
+    /// 未指定 Column 的 Section 各自佔用獨立 Column（auto-assign 遞增索引）
+    /// </summary>
+    protected List<List<IGrouping<string, KeyValuePair<string, string>>>> GroupSectionsByColumn(
+        List<IGrouping<string, KeyValuePair<string, string>>> orderedSections)
+    {
+        if (!HasColumnAssignments)
+        {
+            // 無 Column 指定 → 每個 Section 獨立一欄（現有行為）
+            return orderedSections.Select(s => new List<IGrouping<string, KeyValuePair<string, string>>> { s }).ToList();
+        }
+
+        // 找出目前已使用的最大 Column 索引，用於 auto-assign
+        var maxAssignedColumn = SectionColumnAssignments!.Values.DefaultIfEmpty(-1).Max();
+        var nextAutoColumn = maxAssignedColumn + 1;
+
+        // 為每個 Section 決定 Column 索引
+        var sectionToColumn = new Dictionary<string, int>();
+        foreach (var section in orderedSections)
+        {
+            if (SectionColumnAssignments.TryGetValue(section.Key, out var col))
+            {
+                sectionToColumn[section.Key] = col;
+            }
+            else
+            {
+                sectionToColumn[section.Key] = nextAutoColumn++;
+            }
+        }
+
+        // 按 Column 索引分組，保持組內順序
+        return orderedSections
+            .GroupBy(s => sectionToColumn[s.Key])
+            .OrderBy(g => g.Key)
+            .Select(g => g.ToList())
+            .ToList();
     }
 
     /// <summary>

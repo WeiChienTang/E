@@ -1,0 +1,211 @@
+@* 共用品項資訊 Tab（唯讀）— 以 dl/dt/dd 精緻列表呈現，可跨單據重用 *@
+@using Microsoft.Extensions.Localization
+@inject IItemService ItemService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+@if (_itemId <= 0)
+{
+    <div class="d-flex align-items-center justify-content-center text-muted py-5">
+        <i class="bi bi-box-seam fs-4 me-2 opacity-50"></i>
+        <span>@L["Message.PleaseSelectItem"]</span>
+    </div>
+}
+else if (_isLoading)
+{
+    <div class="d-flex align-items-center justify-content-center text-muted py-5">
+        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+        <span>@L["Label.Loading"]</span>
+    </div>
+}
+else if (_item == null)
+{
+    <div class="d-flex align-items-center justify-content-center text-muted py-5">
+        <i class="bi bi-exclamation-circle fs-4 me-2 opacity-50"></i>
+        <span>找不到品項資料</span>
+    </div>
+}
+else
+{
+    <div class="entity-info-tab px-2 pt-3 pb-2">
+        @* --- 基本資訊 --- *@
+        <div class="info-section mb-3">
+            <div class="info-section-header">
+                <i class="bi bi-box-seam me-1"></i>@L["Section.BasicInfo"]
+            </div>
+            <dl class="info-list">
+                @RenderRow(L["Field.ItemCode"], _item.Code, isMono: true)
+                @RenderRow(L["Field.ItemName"], _item.Name, isBold: true)
+                @RenderRow(L["Field.Barcode"], _item.Barcode, isMono: true)
+                @RenderRow(L["Field.Specification"], _item.Specification)
+                @RenderRow(L["Entity.ItemCategory"], _item.ItemCategory?.Name)
+                @RenderRow(L["Entity.Size"], _item.Size?.Name)
+            </dl>
+        </div>
+
+        @* --- 單位資訊 --- *@
+        @if (HasUnitInfo())
+        {
+            <div class="info-section mb-3">
+                <div class="info-section-header">
+                    <i class="bi bi-rulers me-1"></i>@L["Section.UnitSettings"]
+                </div>
+                <dl class="info-list">
+                    @RenderRow(L["Entity.Unit"], _item.Unit?.Name)
+                    @RenderRow(L["Field.ProductionUnit"], _item.ProductionUnit?.Name)
+                    @if (_item.ProductionUnitConversionRate.HasValue && _item.Unit != null && _item.ProductionUnit != null && _item.ProductionUnitId != _item.UnitId)
+                    {
+                        @RenderRow(L["Field.ProductionUnitConversion"], $"1 {_item.Unit.Name} = {NumberFormatHelper.FormatSmart(_item.ProductionUnitConversionRate.Value, useThousandsSeparator: false)} {_item.ProductionUnit.Name}")
+                    }
+                </dl>
+            </div>
+        }
+
+        @* --- 財務資訊 --- *@
+        @if (HasFinanceInfo())
+        {
+            <div class="info-section mb-3">
+                <div class="info-section-header">
+                    <i class="bi bi-currency-dollar me-1"></i>@L["Section.FinanceAndRemarks"]
+                </div>
+                <dl class="info-list">
+                    @if (_item.TaxRate.HasValue)
+                    {
+                        @RenderRow(L["Field.TaxRate"], $"{_item.TaxRate.Value}%")
+                    }
+                    @if (_item.StandardCost.HasValue)
+                    {
+                        @RenderRow(L["Field.StandardCost"], NumberFormatHelper.FormatSmart(_item.StandardCost.Value))
+                    }
+                    @RenderRow(L["Field.Remarks"], _item.Remarks)
+                </dl>
+            </div>
+        }
+    </div>
+}
+
+<style>
+    .entity-info-tab .info-section-header {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--bs-primary);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        padding-bottom: 0.35rem;
+        margin-bottom: 0.5rem;
+        border-bottom: 2px solid var(--bs-primary);
+        opacity: 0.85;
+    }
+
+    .entity-info-tab .info-list {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 0;
+        margin: 0;
+    }
+
+    .entity-info-tab .info-list dt {
+        font-size: 1rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding: 0.4rem 0.5rem 0.4rem 0;
+        border-bottom: 1px solid var(--border-color);
+        margin: 0;
+        white-space: nowrap;
+    }
+
+    .entity-info-tab .info-list dd {
+        font-size: 1rem;
+        color: var(--text-primary);
+        padding: 0.4rem 0;
+        border-bottom: 1px solid var(--border-color);
+        margin: 0;
+        word-break: break-word;
+    }
+
+    .entity-info-tab .info-list dd:last-child,
+    .entity-info-tab .info-list dt:nth-last-child(2) {
+        border-bottom: none;
+    }
+
+    .entity-info-tab .info-list .info-mono {
+        font-family: 'Cascadia Code', 'Fira Code', monospace;
+        letter-spacing: 0.04em;
+    }
+
+    .entity-info-tab .info-list .info-bold {
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    [Parameter] public int? ItemId { get; set; }
+
+    private int _itemId;
+    private int _lastLoadedId;
+    private bool _isLoading;
+    private Item? _item;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var id = ItemId ?? 0;
+        if (id != _lastLoadedId)
+        {
+            if (id > 0)
+                await LoadAsync(id);
+            else
+                Clear();
+        }
+    }
+
+    public async Task LoadAsync(int itemId)
+    {
+        _itemId = itemId;
+        _lastLoadedId = itemId;
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            _item = await ItemService.GetByIdAsync(itemId);
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("載入品項資訊時發生錯誤");
+            _item = null;
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    public void Clear()
+    {
+        _itemId = 0;
+        _lastLoadedId = 0;
+        _item = null;
+        StateHasChanged();
+    }
+
+    // ===== 區塊顯示判斷（空區塊自動隱藏） =====
+
+    private bool HasUnitInfo() =>
+        _item?.Unit != null ||
+        _item?.ProductionUnit != null;
+
+    private bool HasFinanceInfo() =>
+        _item?.TaxRate.HasValue == true ||
+        _item?.StandardCost.HasValue == true ||
+        !string.IsNullOrWhiteSpace(_item?.Remarks);
+
+    // ===== 渲染輔助方法 =====
+
+    private RenderFragment RenderRow(string label, string? value, bool isMono = false, bool isBold = false) => __builder =>
+    {
+        if (string.IsNullOrWhiteSpace(value)) return;
+        <dt>@label</dt>
+        <dd class="@(isMono ? "info-mono" : "") @(isBold ? "info-bold" : "")">@value</dd>
+    };
+}

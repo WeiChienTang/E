@@ -72,7 +72,7 @@
 /* Hover - 左側 border 漸現效果 */
 .nav-dropdown-item:hover {
     background-color: var(--nav-hover-bg);
-    color: var(--nav-text);
+    color: var(--nav-active-border);
     text-decoration: none;
     border-left-color: var(--nav-dropdown-hover-border);
 }
@@ -95,4 +95,33 @@
 
 .nav-dropdown-item.active:hover {
     background-color: var(--nav-active-hover-bg);
+}
+
+/* 報表圖示顏色（青綠色） */
+.nav-dropdown-bi.nav-icon-report {
+    color: #0d9488;
+    opacity: 0.85;
+}
+
+.nav-dropdown-item:hover .nav-dropdown-bi.nav-icon-report {
+    opacity: 1;
+}
+
+/* 圖表圖示顏色（橘色） */
+.nav-dropdown-bi.nav-icon-chart {
+    color: #ea580c;
+    opacity: 0.85;
+}
+
+.nav-dropdown-item:hover .nav-dropdown-bi.nav-icon-chart {
+    opacity: 1;
+}
+
+/* 深色模式 */
+[data-bs-theme=dark] .nav-dropdown-bi.nav-icon-report {
+    color: #5eead4;
+}
+
+[data-bs-theme=dark] .nav-dropdown-bi.nav-icon-chart {
+    color: #fb923c;
 }

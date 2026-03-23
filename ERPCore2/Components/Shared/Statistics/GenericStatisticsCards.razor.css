@@ -1,67 +1,49 @@
-/* 通用統計卡片套裝組件樣式 - 緊湊 Badge 模式 */
+/* 通用統計卡片套裝組件樣式 - 內嵌按鈕列模式 */
 
-/* ===== Badge 容器樣式 ===== */
-.statistics-compact-container {
-    margin-bottom: 0.5rem;
-}
-
-.statistics-compact-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 0;
-}
-
-/* ===== 統計 Badge 樣式 ===== */
-.statistics-badge {
+/* ===== 內嵌容器 ===== */
+.statistics-inline-container {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 25px;
-    font-size: 1rem; /* 與 InteractiveTableComponent 一致 */
+    flex-wrap: wrap;
+}
+
+/* ===== 內嵌警告 Badge ===== */
+.statistics-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
     font-weight: 500;
     background-color: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     transition: all 0.2s ease;
     white-space: nowrap;
+    cursor: pointer;
 }
 
 .statistics-badge .badge-title {
     color: var(--text-secondary);
-    font-size: 1rem; /* 與 InteractiveTableComponent 一致 */
+    font-size: 0.8rem;
     font-weight: 500;
 }
 
 .statistics-badge .badge-value {
     font-weight: 700;
-    font-size: 1rem; /* 與 InteractiveTableComponent 一致 */
-    color: var(--text-primary);
+    font-size: 0.85rem;
 }
 
 .statistics-badge .badge-arrow {
-    font-size: 0.85rem;
-    opacity: 0.6;
-    margin-left: 0.25rem;
+    font-size: 0.7rem;
+    opacity: 0.5;
 }
 
-/* ===== Badge 顏色變體 ===== */
-.statistics-badge.badge-primary {
-    border-color: #0d6efd;
-    background-color: rgba(13, 110, 253, 0.1);
-}
-.statistics-badge.badge-primary .badge-value { color: #0d6efd; }
-
-.statistics-badge.badge-success {
-    border-color: #198754;
-    background-color: rgba(25, 135, 84, 0.1);
-}
-.statistics-badge.badge-success .badge-value { color: #198754; }
-
+/* Badge 顏色 */
 .statistics-badge.badge-warning {
     border-color: #ffc107;
-    background-color: rgba(255, 193, 7, 0.15);
+    background-color: rgba(255, 193, 7, 0.12);
 }
 .statistics-badge.badge-warning .badge-value { color: #cc9a06; }
 
@@ -83,44 +65,170 @@
 }
 .statistics-badge.badge-secondary .badge-value { color: #6c757d; }
 
-/* ===== 可點擊的 Badge ===== */
-.statistics-badge.clickable {
+.statistics-badge.badge-success {
+    border-color: #198754;
+    background-color: rgba(25, 135, 84, 0.1);
+}
+.statistics-badge.badge-success .badge-value { color: #198754; }
+
+.statistics-badge.badge-primary {
+    border-color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.1);
+}
+.statistics-badge.badge-primary .badge-value { color: #0d6efd; }
+
+/* Badge hover */
+.statistics-badge.clickable:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ===== 統計下拉按鈕 ===== */
+.statistics-dropdown-wrapper {
+    position: relative;
+    display: inline-flex;
+}
+
+.statistics-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background-color: var(--bg-tertiary);
+    border: 1px dashed var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.statistics-toggle-btn:hover {
+    color: var(--text-primary);
+    border-style: solid;
+    border-color: var(--text-secondary);
+}
+
+.statistics-toggle-btn .toggle-label {
+    font-size: 0.8rem;
+}
+
+.statistics-toggle-btn .toggle-chevron {
+    font-size: 0.65rem;
+    transition: transform 0.2s ease;
+}
+
+.statistics-toggle-btn .toggle-chevron.rotated {
+    transform: rotate(180deg);
+}
+
+/* ===== 下拉面板 ===== */
+.statistics-dropdown-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+}
+
+.statistics-dropdown-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 220px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1001;
+    padding: 0.35rem 0;
+    animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== 下拉項目 ===== */
+.statistics-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.85rem;
+    transition: background-color 0.15s ease;
+}
+
+.statistics-dropdown-item.clickable {
     cursor: pointer;
 }
 
-.statistics-badge.clickable:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 3px 6px rgba(0,0,0,0.12);
+.statistics-dropdown-item.clickable:hover {
+    background-color: var(--bg-secondary);
 }
 
-.statistics-badge.clickable:active {
-    transform: translateY(0);
+.statistics-dropdown-item .dropdown-item-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
 }
 
-/* ===== 響應式設計 ===== */
-@media (max-width: 768px) {
-    .statistics-compact-row {
-        gap: 0.5rem;
-    }
-    
-    .statistics-badge {
-        padding: 0.4rem 0.75rem;
-        font-size: 1rem;
-    }
-    
-    .statistics-badge .badge-title,
-    .statistics-badge .badge-value {
-        font-size: 1rem;
-    }
+.statistics-dropdown-item .dropdown-item-title {
+    color: var(--text-secondary);
+    flex: 1;
+    font-size: 0.82rem;
 }
 
-@media (max-width: 576px) {
-    .statistics-compact-row {
-        gap: 0.4rem;
+.statistics-dropdown-item .dropdown-item-value {
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.statistics-dropdown-item .dropdown-item-arrow {
+    font-size: 0.65rem;
+    opacity: 0.4;
+    color: var(--text-secondary);
+}
+
+/* 下拉項目顏色 */
+.dropdown-item-dot.dot-success { background-color: #198754; }
+.dropdown-item-dot.dot-warning { background-color: #ffc107; }
+.dropdown-item-dot.dot-danger { background-color: #dc3545; }
+.dropdown-item-dot.dot-info { background-color: #0dcaf0; }
+.dropdown-item-dot.dot-secondary { background-color: #6c757d; }
+.dropdown-item-dot.dot-primary { background-color: #0d6efd; }
+
+.dropdown-item-value.value-success { color: #198754; }
+.dropdown-item-value.value-warning { color: #cc9a06; }
+.dropdown-item-value.value-danger { color: #dc3545; }
+.dropdown-item-value.value-info { color: #0aa2c0; }
+.dropdown-item-value.value-secondary { color: #6c757d; }
+.dropdown-item-value.value-primary { color: #0d6efd; }
+
+/* ===== 響應式 ===== */
+@media (max-width: 767.98px) {
+    .statistics-inline-container {
+        width: 100%;
+        margin-bottom: 0.25rem;
     }
-    
-    .statistics-badge {
-        padding: 0.35rem 0.6rem;
-        border-radius: 20px;
+
+    .statistics-toggle-btn .toggle-label {
+        display: none;
+    }
+
+    .statistics-dropdown-panel {
+        right: auto;
+        left: 0;
     }
 }

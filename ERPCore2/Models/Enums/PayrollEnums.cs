@@ -6,6 +6,8 @@ namespace ERPCore2.Models.Enums
     public enum PayrollPeriodStatus
     {
         [Display(Name = "草稿")] Draft = 1,
+        /// <summary>保留值：UI FieldConfiguration/Tab 有對應 badge 顯示，但目前無任何服務邏輯會將狀態設為 Processing。
+        /// 未來若需實作「批次計算進行中」鎖定機制，可啟用此狀態。</summary>
         [Display(Name = "計算中")] Processing = 2,
         [Display(Name = "已關帳")] Closed = 3
     }

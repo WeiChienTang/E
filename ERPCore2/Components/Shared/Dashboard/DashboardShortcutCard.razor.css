@@ -235,3 +235,10 @@
         font-size: 0.45rem;
     }
 }
+
+/* ===== 觸控設備：編輯模式直接顯示移除按鈕 ===== */
+@media (hover: none) {
+    .shortcut-card.edit-mode .btn-remove {
+        opacity: 1;
+    }
+}

@@ -20,6 +20,7 @@
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
+                          TabDefinitions="@tabDefinitions"
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
@@ -33,9 +34,26 @@
                           RequiredPermission="@PermissionRegistry.InventoryStock.Read"
                           OnEntitySaved="@OnInventoryStockSaved"
                           OnCancel="@OnCancel"
-                          CustomModules="@GetCustomModules()"
                           ComponentName="InventoryStockEditModalComponent"
 />
+
+@* ==================== 無倉庫提示確認 Modal ==================== *@
+<GenericConfirmModalComponent IsVisible="@showNoWarehouseConfirm"
+                             IsVisibleChanged="@((bool v) => showNoWarehouseConfirm = v)"
+                             Title="@L["Inventory.NoWarehouseTitle"]"
+                             Icon="bi-exclamation-triangle"
+                             Message="@L["Inventory.NoWarehouseMessage"]"
+                             ConfirmButtonText="@L["Inventory.CreateWarehouseNow"]"
+                             CancelButtonText="@L["Button.Cancel"]"
+                             HeaderColor="BaseModalComponent.HeaderVariant.Warning"
+                             OnConfirm="@OpenWarehouseCreateModal" />
+
+@* ==================== 倉庫新增 Modal ==================== *@
+<WarehouseEditModalComponent IsVisible="@showWarehouseCreateModal"
+                            IsVisibleChanged="@((bool v) => showWarehouseCreateModal = v)"
+                            WarehouseId="@null"
+                            OnWarehouseSaved="@HandleWarehouseCreated"
+                            OnCancel="@(() => showWarehouseCreateModal = false)" />
 
 @code {
     // ===== 參數 =====
@@ -50,6 +68,7 @@
     private GenericEditModalComponent<InventoryStock, IInventoryStockService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
     private List<Item> availableItems = new();
     private List<Unit> availableUnits = new();
     private List<Warehouse> availableWarehouses = new();
@@ -61,6 +80,13 @@
     // 庫存明細
     private List<InventoryStockDetail> inventoryStockDetails = new();
     private InventoryStockTable<InventoryStock, InventoryStockDetail>? inventoryStockDetailManager;
+
+    // 品項資訊 Tab
+    private ItemInfoTab? itemInfoTab;
+
+    // 無倉庫提示
+    private bool showNoWarehouseConfirm = false;
+    private bool showWarehouseCreateModal = false;
 
     // 資料載入狀態標記
     private bool isDataLoaded = false;
@@ -173,17 +199,23 @@
             // 載入單位列表（用於顯示換算資訊）
             availableUnits = await ItemService.GetUnitsAsync();
             
-            // 載入倉庫列表  
+            // 載入倉庫列表
             availableWarehouses = await WarehouseService.GetAllAsync();
-            
+
+            // 檢查是否有倉庫，若無則提示使用者
+            if (!availableWarehouses.Any())
+            {
+                showNoWarehouseConfirm = true;
+            }
+
             // 載入所有倉庫位置（初始化時）
             availableWarehouseLocations = await WarehouseLocationService.GetAllAsync();
-            
+
             // 配置 AutoComplete
             autoCompleteConfig = new AutoCompleteConfigBuilder<InventoryStock>()
                 .AddField(nameof(InventoryStock.ItemId), "Name", availableItems)
                 .Build();
-            
+
             isDetailDataReady = true;
         }
         catch (Exception ex)
@@ -284,13 +316,26 @@
                 FormFieldConfigurationHelper.CreateRemarksField<InventoryStock>()
             };
 
-            formSections = FormSectionHelper<InventoryStock>.Create()
+            var layout = FormSectionHelper<InventoryStock>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     ist => ist.ItemId,
                     ist => ist.TotalCurrentStock)
                 .AddToSection(FormSectionNames.AdditionalData,
                     ist => ist.Remarks)
-                .Build();
+                .GroupIntoTab(L["Tab.InventoryData"].ToString(), "bi-box-seam",
+                    FormSectionNames.BasicInfo, FormSectionNames.AdditionalData)
+                .GroupIntoCustomTab(L["Tab.ItemInfo"].ToString(), "bi-info-circle",
+                    CreateItemInfoTabContent(), nameof(ItemInfoTab))
+                .BuildAll();
+
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
+
+            // 將庫存明細表格嵌入第一個 Tab 的 ExtraContent
+            if (tabDefinitions != null && tabDefinitions.Count > 0)
+            {
+                tabDefinitions[0].ExtraContent = CreateStockDetailContent();
+            }
 
         return Task.CompletedTask;
         }
@@ -303,30 +348,6 @@
 
     // 注意：倉庫和庫位相關方法已移除，因為 InventoryStock 已改為主檔結構
     // 倉庫/庫位資訊現在存儲在 InventoryStockDetails 中
-
-    // ===== 自訂模組 =====
-    
-    /// <summary>
-    /// 配置自訂模組 - 庫存分佈明細
-    /// </summary>
-    private List<GenericEditModalComponent<InventoryStock, IInventoryStockService>.CustomModule> GetCustomModules()
-    {
-        // 一律顯示庫存明細模組（與採購單不同，不需要檢查是否已儲存）
-        if (editModalComponent == null)
-        {
-            return new List<GenericEditModalComponent<InventoryStock, IInventoryStockService>.CustomModule>();
-        }
-
-        return new List<GenericEditModalComponent<InventoryStock, IInventoryStockService>.CustomModule>
-        {
-            new GenericEditModalComponent<InventoryStock, IInventoryStockService>.CustomModule
-            {
-                Title = "",
-                Order = 0,
-                Content = CreateStockDetailContent()
-            }
-        };
-    }
 
     /// <summary>
     /// 根據品項 ID 取得採購/製程單位換算資訊
@@ -380,6 +401,15 @@
         if (entity == null || !entity.ItemId.HasValue || entity.ItemId.Value <= 0) return null;
         return GetItemUnitInfo(entity.ItemId.Value).ConversionRate;
     }
+
+    /// <summary>
+    /// 建立品項資訊 Tab 內容
+    /// </summary>
+    private RenderFragment CreateItemInfoTabContent() => __builder =>
+    {
+        <ItemInfoTab @ref="itemInfoTab"
+                     ItemId="@editModalComponent?.Entity?.ItemId" />
+    };
 
     /// <summary>
     /// 建立單位換算資訊區塊（顯示在表單下方、明細表格上方）
@@ -463,6 +493,32 @@
         {
             await NotificationService.ShowErrorAsync($"處理庫存明細變更時發生錯誤：{ex.Message}");
         }
+    }
+
+    // ===== 倉庫建立相關 =====
+
+    /// <summary>
+    /// 開啟倉庫新增 Modal
+    /// </summary>
+    private void OpenWarehouseCreateModal()
+    {
+        showNoWarehouseConfirm = false;
+        showWarehouseCreateModal = true;
+    }
+
+    /// <summary>
+    /// 倉庫建立完成後，重新載入倉庫列表
+    /// </summary>
+    private async Task HandleWarehouseCreated(Warehouse savedWarehouse)
+    {
+        showWarehouseCreateModal = false;
+
+        // 重新載入倉庫與庫位列表
+        availableWarehouses = await WarehouseService.GetAllAsync();
+        availableWarehouseLocations = await WarehouseLocationService.GetAllAsync();
+
+        await NotificationService.ShowSuccessAsync(L["Inventory.WarehouseCreatedContinue"]);
+        StateHasChanged();
     }
 
     // ===== 公開方法 (供父組件調用) =====

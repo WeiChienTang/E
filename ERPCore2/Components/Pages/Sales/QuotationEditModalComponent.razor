@@ -1,5 +1,6 @@
 ﻿@using ERPCore2.Services.Reports.Interfaces
 @using ERPCore2.Models.Reports
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 @inject IQuotationService QuotationService
 @inject IQuotationDetailService QuotationDetailService
 @inject IQuotationCompositionDetailService QuotationCompositionDetailService
@@ -65,7 +66,8 @@
                           HasDownstreamActions="@hasUndeletableDetails"
                           CanPrintCheck="@GetCanPrintCheck()"
                           OnEntityLoaded="@HandleEntityLoaded"
-                          ComponentName="QuotationEditModalComponent">
+                          ComponentName="QuotationEditModalComponent"
+                          FeatureGuide="@QuotationGuide.Create()">
 </GenericEditModalComponent>
 
 @* 客戶編輯 Modal *@

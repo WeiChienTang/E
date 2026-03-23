@@ -26,7 +26,7 @@
                       GetEntityDisplayName="@(quotation => quotation.Code)"
                       RequiredPermission="@PermissionRegistry.Quotation.Read"
                       RequiredModule="Sales"
-                      ShowBatchPrintButton="true"
+                      ShowBatchPrintButton="false"
                       OnBatchPrintClick="@HandleBatchPrintAsync"
                       ShowBatchApprovalButton="@isManualApproval"
                       OnBatchApprovalClick="@HandleBatchApprovalAsync"

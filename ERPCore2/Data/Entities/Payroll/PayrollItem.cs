@@ -41,6 +41,10 @@ namespace ERPCore2.Data.Entities.Payroll
         [Display(Name = "計入勞退")]
         public bool IsRetirementBasis { get; set; } = true;
 
+        /// <summary>是否按出勤比例發放（僅適用於津貼類項目：true = 按比例，false = 全額）</summary>
+        [Display(Name = "按出勤比例")]
+        public bool IsProrated { get; set; } = false;
+
         /// <summary>排列順序（薪資單顯示用）</summary>
         [Display(Name = "排序")]
         public int SortOrder { get; set; } = 0;

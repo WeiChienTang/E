@@ -4,9 +4,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace ERPCore2.Data.Entities.Payroll
 {
     /// <summary>
-    /// 薪資保費費率表
-    /// 儲存勞保、健保、勞退費率及免稅上限，每次調整新增一筆（含生效日）
-    /// Phase 1 使用常數；Phase 2 改從此表讀取
+    /// 薪資系統費率設定表（歷史命名為 InsuranceRate，實際涵蓋所有薪資計算費率參數）
+    /// 儲存勞保、健保、勞退費率、免稅上限及加班費倍率，每次調整新增一筆（含生效日）
+    /// Phase 1 使用常數；Phase 2 改從此表讀取；v1.3 新增 5 個加班費率欄位
     /// </summary>
     public class InsuranceRate
     {

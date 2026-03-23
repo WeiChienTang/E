@@ -17,6 +17,14 @@
                    OnClose="@HandleCancel"
                    DebugComponentName="GenericConfirmModalComponent">
     <HeaderButtons>
+        @if (!string.IsNullOrWhiteSpace(SecondaryButtonText))
+        {
+            <GenericButtonComponent Variant="@SecondaryButtonVariant"
+                                Text="@SecondaryButtonText"
+                                IconClass="@SecondaryButtonIcon"
+                                OnClick="HandleSecondary"
+                                Title="@SecondaryButtonText" />
+        }
         <GenericButtonComponent Variant="@ConfirmButtonVariant"
                             Text="@ConfirmButtonText"
                             OnClick="HandleConfirm"
@@ -142,6 +150,30 @@
     public BaseModalComponent.HeaderVariant HeaderColor { get; set; } = BaseModalComponent.HeaderVariant.Primary;
     
     /// <summary>
+    /// 第二按鈕文字（選填，有值時才顯示）
+    /// </summary>
+    [Parameter]
+    public string? SecondaryButtonText { get; set; }
+
+    /// <summary>
+    /// 第二按鈕圖示
+    /// </summary>
+    [Parameter]
+    public string? SecondaryButtonIcon { get; set; }
+
+    /// <summary>
+    /// 第二按鈕樣式
+    /// </summary>
+    [Parameter]
+    public ButtonVariant SecondaryButtonVariant { get; set; } = ButtonVariant.Blue;
+
+    /// <summary>
+    /// 第二按鈕事件
+    /// </summary>
+    [Parameter]
+    public EventCallback OnSecondaryClick { get; set; }
+
+    /// <summary>
     /// 確認事件
     /// </summary>
     [Parameter]
@@ -172,6 +204,19 @@
         }
         
         // 關閉 Modal
+        await CloseModal();
+    }
+
+    /// <summary>
+    /// 處理第二按鈕點擊
+    /// </summary>
+    private async Task HandleSecondary()
+    {
+        if (OnSecondaryClick.HasDelegate)
+        {
+            await OnSecondaryClick.InvokeAsync();
+        }
+
         await CloseModal();
     }
 
