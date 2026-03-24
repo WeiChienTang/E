@@ -2,6 +2,7 @@
 @inject IEmployeePositionService EmployeePositionService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="EmployeePosition"
                           TService="IEmployeePositionService"
@@ -26,7 +27,8 @@
                           RequiredPermission="@PermissionRegistry.EmployeePosition.Read"
                           OnEntitySaved="@OnEmployeePositionSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="EmployeePositionEditModalComponent" />
+                          ComponentName="EmployeePositionEditModalComponent"
+                          FeatureGuide="@EmployeePositionGuide.Create()" />
 
 @code {
     // ===== 參數 =====

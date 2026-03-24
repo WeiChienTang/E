@@ -587,6 +587,7 @@ namespace ERPCore2.Services
                         d.Status == EntityStatus.Active &&
                         d.SalesOrder.Status == EntityStatus.Active &&
                         d.SalesOrder.RejectReason == null &&   // 排除已駁回
+                        d.RequiresProduction &&                // 只取需要排程的明細
                         d.OrderQuantity > d.ScheduledQuantity) // 只取尚有待排量
                     .OrderBy(d => d.SalesOrder.ExpectedDeliveryDate)
                     .ThenBy(d => d.SalesOrderId)

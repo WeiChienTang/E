@@ -2,6 +2,7 @@
 @inject IPayrollItemService PayrollItemService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="PayrollItem"
                           TService="IPayrollItemService"
@@ -24,7 +25,8 @@
                           RequiredPermission="@PermissionRegistry.Payroll.RateTable"
                           OnEntitySaved="@OnPayrollItemSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="PayrollItemEditModalComponent" />
+                          ComponentName="PayrollItemEditModalComponent"
+                          FeatureGuide="@PayrollItemGuide.Create()" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; } = false;

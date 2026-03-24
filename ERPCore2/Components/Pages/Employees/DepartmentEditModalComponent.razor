@@ -2,6 +2,7 @@
 @inject IDepartmentService DepartmentService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Department"
                           TService="IDepartmentService"
@@ -30,7 +31,8 @@
                           RequiredPermission="@PermissionRegistry.Department.Read"
                           OnEntitySaved="@OnDepartmentSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="DepartmentEditModalComponent" />
+                          ComponentName="DepartmentEditModalComponent"
+                          FeatureGuide="@DepartmentGuide.Create()" />
 
 @code {
     // ===== 參數 =====

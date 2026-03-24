@@ -2,6 +2,7 @@
 @inject IEmployeeTrainingRecordService EmployeeTrainingRecordService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="EmployeeTrainingRecord"
                           TService="IEmployeeTrainingRecordService"
@@ -23,7 +24,8 @@
                           RequiredPermission="@PermissionRegistry.Employee.Read"
                           OnEntitySaved="@OnEmployeeTrainingRecordSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="EmployeeTrainingRecordEditModalComponent" />
+                          ComponentName="EmployeeTrainingRecordEditModalComponent"
+                          FeatureGuide="@EmployeeTrainingRecordGuide.Create()" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; } = false;

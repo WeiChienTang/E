@@ -2,9 +2,6 @@ using System.Runtime.CompilerServices;
 
 namespace ERPCore2.Models.FeatureGuides.GuideDefinitions;
 
-/// <summary>
-/// 銷貨退回功能說明定義
-/// </summary>
 public static class SalesReturnGuide
 {
     private static string GetSourcePath([CallerFilePath] string? path = null) => path!;
@@ -14,7 +11,6 @@ public static class SalesReturnGuide
         SourceFile = GetSourcePath(),
         Sections = new()
         {
-            // ===== 功能概述 =====
             new GuideSection
             {
                 Id = "guide-sr-overview",
@@ -25,31 +21,25 @@ public static class SalesReturnGuide
                 Type = GuideSectionType.Description,
                 Items =
                 {
-                    new("Guide.SalesReturn.Description"),
-                    new("Guide.SalesReturn.TabOverview"),
+                    new("Guide.SalesReturn.Description")
                 }
             },
 
-            // ===== 操作步驟 =====
             new GuideSection
             {
-                Id = "guide-sr-steps",
-                TitleKey = "Guide.Steps",
-                Icon = "bi-list-ol",
-                BookmarkLabel = "步驟",
-                BookmarkColor = "#10B981",
-                Type = GuideSectionType.Steps,
+                Id = "guide-sr-tabs",
+                TitleKey = "Guide.TabDescriptions",
+                Icon = "bi-folder2-open",
+                BookmarkLabel = "分頁",
+                BookmarkColor = "#8B5CF6",
+                Type = GuideSectionType.FieldList,
                 Items =
                 {
-                    new("Guide.SalesReturn.Step1"),
-                    new("Guide.SalesReturn.Step2"),
-                    new("Guide.SalesReturn.Step3"),
-                    new("Guide.SalesReturn.Step4"),
-                    new("Guide.SalesReturn.Step5"),
+                    new("Tab.ReturnData", "Guide.SalesReturn.Tab.ReturnData"),
+                    new("Tab.CustomerInfo", "Guide.SalesReturn.Tab.CustomerInfo")
                 }
             },
 
-            // ===== 欄位說明 =====
             new GuideSection
             {
                 Id = "guide-sr-fields",
@@ -61,15 +51,14 @@ public static class SalesReturnGuide
                 Items =
                 {
                     new("Field.SalesReturnCode", "Guide.SalesReturn.Field.Code"),
-                    new("Field.Customer", "Guide.SalesReturn.Field.Customer"),
+                    new("Entity.Customer", "Guide.SalesReturn.Field.Customer"),
                     new("Field.SalesReturnDate", "Guide.SalesReturn.Field.ReturnDate"),
-                    new("Field.ReturnReason", "Guide.SalesReturn.Field.Reason"),
+                    new("Entity.SalesReturnReason", "Guide.SalesReturn.Field.Reason"),
                     new("Field.TaxType", "Guide.SalesReturn.Field.TaxMethod"),
-                    new("Field.Remarks", "Guide.SalesReturn.Field.Remarks"),
+                    new("Field.Remarks", "Guide.SalesReturn.Field.Remarks")
                 }
             },
 
-            // ===== 金額欄位 =====
             new GuideSection
             {
                 Id = "guide-sr-amount",
@@ -83,11 +72,10 @@ public static class SalesReturnGuide
                     new("Field.TotalReturnAmount", "Guide.SalesReturn.Field.TotalReturn"),
                     new("Field.DiscountAmount", "Guide.SalesReturn.Field.Discount"),
                     new("Field.ReturnTaxAmount", "Guide.SalesReturn.Field.TaxAmount"),
-                    new("Field.TotalReturnAmountWithTax", "Guide.SalesReturn.Field.TotalWithTax"),
+                    new("Field.TotalReturnAmountWithTax", "Guide.SalesReturn.Field.TotalWithTax")
                 }
             },
 
-            // ===== 功能按鈕 =====
             new GuideSection
             {
                 Id = "guide-sr-actions",
@@ -98,11 +86,10 @@ public static class SalesReturnGuide
                 Type = GuideSectionType.FieldList,
                 Items =
                 {
-                    new("Guide.SalesReturn.Action.SetoffLabel", "Guide.SalesReturn.Action.Setoff"),
+                    new("Guide.SalesReturn.Action.SetoffLabel", "Guide.SalesReturn.Action.Setoff")
                 }
             },
 
-            // ===== 提示與警告 =====
             new GuideSection
             {
                 Id = "guide-sr-tips",
@@ -115,11 +102,10 @@ public static class SalesReturnGuide
                 {
                     new("Guide.SalesReturn.Tip1", GuideItemStyle.Tip),
                     new("Guide.SalesReturn.Warning1", GuideItemStyle.Warning),
-                    new("Guide.SalesReturn.Warning2", GuideItemStyle.Warning),
+                    new("Guide.SalesReturn.Warning2", GuideItemStyle.Warning)
                 }
             },
 
-            // ===== 常見問題 =====
             new GuideSection
             {
                 Id = "guide-sr-faq",
@@ -131,7 +117,7 @@ public static class SalesReturnGuide
                 Items =
                 {
                     new("Guide.SalesReturn.Faq1Q", "Guide.SalesReturn.Faq1A"),
-                    new("Guide.SalesReturn.Faq2Q", "Guide.SalesReturn.Faq2A"),
+                    new("Guide.SalesReturn.Faq2Q", "Guide.SalesReturn.Faq2A")
                 }
             },
         }

@@ -527,6 +527,9 @@
   <data name="Message.ConvertToCustomerSuccess" xml:space="preserve">
     <value>已成功转为正式客户</value>
   </data>
+  <data name="Message.ConvertToCustomerSummary" xml:space="preserve">
+    <value>转换后将在客户清单中建立一笔新资料</value>
+  </data>
   <data name="Message.ConvertToCustomerFailed" xml:space="preserve">
     <value>转换失败</value>
   </data>
@@ -2643,6 +2646,472 @@
   <data name="Guide.PurchaseReturn.Faq1A" xml:space="preserve"><value>Cannot exceed received minus already returned.</value></data>
   <data name="Guide.PurchaseReturn.Faq2Q" xml:space="preserve"><value>How to deduct from supplier?</value></data>
   <data name="Guide.PurchaseReturn.Faq2A" xml:space="preserve"><value>Click Convert to Setoff.</value></data>
+  <data name="Field.IsSaleable" xml:space="preserve"><value>Saleable</value></data>
+  <data name="Field.ManagerId" xml:space="preserve"><value>Manager</value></data>
+  <data name="Field.DeputyManagerId" xml:space="preserve"><value>Deputy Manager</value></data>
+  <data name="Field.BankNameEn" xml:space="preserve"><value>Bank Name (EN)</value></data>
+  <data name="Field.Symbol" xml:space="preserve"><value>Symbol</value></data>
+  <data name="Field.Aisle" xml:space="preserve"><value>Aisle</value></data>
+  <data name="Field.Width" xml:space="preserve"><value>Width (cm)</value></data>
+  <data name="Field.Height" xml:space="preserve"><value>Height (cm)</value></data>
+  <data name="Field.Orientation" xml:space="preserve"><value>Orientation</value></data>
+  <data name="Field.TopMargin" xml:space="preserve"><value>Top Margin</value></data>
+  <data name="Field.BottomMargin" xml:space="preserve"><value>Bottom Margin</value></data>
+  <data name="Field.LeftMargin" xml:space="preserve"><value>Left Margin</value></data>
+  <data name="Field.RightMargin" xml:space="preserve"><value>Right Margin</value></data>
+  <data name="Field.TaxId" xml:space="preserve"><value>Tax ID</value></data>
+  <data name="Field.Representative" xml:space="preserve"><value>Representative</value></data>
+  <data name="Field.IsDefault" xml:space="preserve"><value>Set as Default</value></data>
+  <data name="Field.TargetAmount" xml:space="preserve"><value>Target Amount</value></data>
+  <data name="Field.ItemId" xml:space="preserve"><value>Related Item</value></data>
+  <data name="Entity.ScaleType" xml:space="preserve"><value>Scale Type</value></data>
+  <data name="Field.PaperSetting" xml:space="preserve"><value>Paper Setting</value></data>
+  <data name="Guide.Unit.Description" xml:space="preserve"><value>Unit management defines measurement units for items (e.g., PC, BOX, KG).</value></data>
+  <data name="Guide.Unit.Field.Code" xml:space="preserve"><value>Unit code, e.g., PCS, BOX, KG</value></data>
+  <data name="Guide.Unit.Field.Name" xml:space="preserve"><value>Unit name</value></data>
+  <data name="Guide.Unit.Field.EnglishName" xml:space="preserve"><value>English name for exported documents</value></data>
+  <data name="Guide.Unit.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Size.Description" xml:space="preserve"><value>Size management defines item specifications (e.g., S, M, L, XL).</value></data>
+  <data name="Guide.Size.Field.Code" xml:space="preserve"><value>Size code</value></data>
+  <data name="Guide.Size.Field.Name" xml:space="preserve"><value>Size name</value></data>
+  <data name="Guide.Size.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.ItemCategory.Description" xml:space="preserve"><value>Item categories organize items by type (e.g., raw materials, finished goods) for search and reporting.</value></data>
+  <data name="Guide.ItemCategory.Field.Code" xml:space="preserve"><value>Category code</value></data>
+  <data name="Guide.ItemCategory.Field.Name" xml:space="preserve"><value>Category name</value></data>
+  <data name="Guide.ItemCategory.Field.IsSaleable" xml:space="preserve"><value>When checked, items in this category appear in sales documents</value></data>
+  <data name="Guide.ItemCategory.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.CompositionCategory.Description" xml:space="preserve"><value>Composition categories organize BOM recipes by product line.</value></data>
+  <data name="Guide.CompositionCategory.Field.Code" xml:space="preserve"><value>Category code</value></data>
+  <data name="Guide.CompositionCategory.Field.Name" xml:space="preserve"><value>Category name</value></data>
+  <data name="Guide.CompositionCategory.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.SalesReturnReason.Description" xml:space="preserve"><value>Predefined return reason options (e.g., defective, quantity mismatch) for sales return documents.</value></data>
+  <data name="Guide.SalesReturnReason.Field.Code" xml:space="preserve"><value>Auto-generated code</value></data>
+  <data name="Guide.SalesReturnReason.Field.Name" xml:space="preserve"><value>Reason name</value></data>
+  <data name="Guide.SalesReturnReason.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.SalesTarget.Description" xml:space="preserve"><value>Set monthly sales targets per salesperson for dashboard tracking.</value></data>
+  <data name="Guide.SalesTarget.Field.Year" xml:space="preserve"><value>Target year</value></data>
+  <data name="Guide.SalesTarget.Field.Month" xml:space="preserve"><value>Target month</value></data>
+  <data name="Guide.SalesTarget.Field.Salesperson" xml:space="preserve"><value>Salesperson for the target</value></data>
+  <data name="Guide.SalesTarget.Field.Amount" xml:space="preserve"><value>Monthly sales target amount</value></data>
+  <data name="Guide.SalesTarget.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.PurchaseReturnReason.Description" xml:space="preserve"><value>Predefined return reason options (e.g., poor quality, spec mismatch) for purchase returns.</value></data>
+  <data name="Guide.PurchaseReturnReason.Field.Code" xml:space="preserve"><value>Auto-generated code</value></data>
+  <data name="Guide.PurchaseReturnReason.Field.Name" xml:space="preserve"><value>Reason name</value></data>
+  <data name="Guide.PurchaseReturnReason.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Department.Description" xml:space="preserve"><value>Department management builds the organization hierarchy with manager and parent-child relationships.</value></data>
+  <data name="Guide.Department.Field.Code" xml:space="preserve"><value>Department code</value></data>
+  <data name="Guide.Department.Field.Name" xml:space="preserve"><value>Department name</value></data>
+  <data name="Guide.Department.Field.Manager" xml:space="preserve"><value>Department manager</value></data>
+  <data name="Guide.Department.Field.Deputy" xml:space="preserve"><value>Deputy manager</value></data>
+  <data name="Guide.Department.Field.Parent" xml:space="preserve"><value>Parent department for hierarchy</value></data>
+  <data name="Guide.Department.Field.Phone" xml:space="preserve"><value>Department phone</value></data>
+  <data name="Guide.Department.Field.Location" xml:space="preserve"><value>Department location</value></data>
+  <data name="Guide.Department.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.EmployeePosition.Description" xml:space="preserve"><value>Position management defines job titles (e.g., Manager, Engineer).</value></data>
+  <data name="Guide.EmployeePosition.Field.Code" xml:space="preserve"><value>Position code</value></data>
+  <data name="Guide.EmployeePosition.Field.Name" xml:space="preserve"><value>Position name</value></data>
+  <data name="Guide.EmployeePosition.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Role.Description" xml:space="preserve"><value>Role management defines system roles with configurable permission sets.</value></data>
+  <data name="Guide.Role.Field.Code" xml:space="preserve"><value>Role code for system identification</value></data>
+  <data name="Guide.Role.Field.Name" xml:space="preserve"><value>Role display name</value></data>
+  <data name="Guide.Role.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Permission.Description" xml:space="preserve"><value>Permission viewer showing all system-defined permissions. Read-only — permissions are auto-generated.</value></data>
+  <data name="Guide.Permission.Field.Code" xml:space="preserve"><value>Permission identifier (auto-generated)</value></data>
+  <data name="Guide.Permission.Field.Name" xml:space="preserve"><value>Permission display name</value></data>
+  <data name="Guide.Permission.Field.Level" xml:space="preserve"><value>Permission level (Module/Function/Operation)</value></data>
+  <data name="Guide.Permission.Field.Remarks" xml:space="preserve"><value>Permission description</value></data>
+  <data name="Guide.VehicleType.Description" xml:space="preserve"><value>Vehicle type management categorizes vehicles (e.g., truck, van, refrigerated).</value></data>
+  <data name="Guide.VehicleType.Field.Code" xml:space="preserve"><value>Type code</value></data>
+  <data name="Guide.VehicleType.Field.Name" xml:space="preserve"><value>Type name</value></data>
+  <data name="Guide.VehicleType.Field.Description" xml:space="preserve"><value>Detailed description</value></data>
+  <data name="Guide.VehicleType.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.ScaleType.Description" xml:space="preserve"><value>Scale type management defines material types for weighing operations, linkable to items for auto-pricing.</value></data>
+  <data name="Guide.ScaleType.Field.Code" xml:space="preserve"><value>Type code</value></data>
+  <data name="Guide.ScaleType.Field.Name" xml:space="preserve"><value>Type name</value></data>
+  <data name="Guide.ScaleType.Field.Item" xml:space="preserve"><value>Related item for auto unit price</value></data>
+  <data name="Guide.ScaleType.Field.Description" xml:space="preserve"><value>Detailed description</value></data>
+  <data name="Guide.ScaleType.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Bank.Description" xml:space="preserve"><value>Bank management maintains bank info including codes and SWIFT codes for bank account setup.</value></data>
+  <data name="Guide.Bank.Field.Code" xml:space="preserve"><value>Bank code (e.g., 004, 012)</value></data>
+  <data name="Guide.Bank.Field.BankName" xml:space="preserve"><value>Bank name</value></data>
+  <data name="Guide.Bank.Field.BankNameEn" xml:space="preserve"><value>Bank name in English</value></data>
+  <data name="Guide.Bank.Field.SwiftCode" xml:space="preserve"><value>SWIFT/BIC code for international transfers</value></data>
+  <data name="Guide.Bank.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Currency.Description" xml:space="preserve"><value>Currency management defines supported currencies and exchange rates for multi-currency operations.</value></data>
+  <data name="Guide.Currency.Field.Code" xml:space="preserve"><value>Currency code (e.g., TWD, USD, JPY)</value></data>
+  <data name="Guide.Currency.Field.Name" xml:space="preserve"><value>Currency name</value></data>
+  <data name="Guide.Currency.Field.Symbol" xml:space="preserve"><value>Currency symbol (e.g., $, ¥, €)</value></data>
+  <data name="Guide.Currency.Field.IsBase" xml:space="preserve"><value>Set as base currency (rate fixed at 1)</value></data>
+  <data name="Guide.Currency.Field.Rate" xml:space="preserve"><value>Exchange rate relative to base currency</value></data>
+  <data name="Guide.Currency.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.PaymentMethod.Description" xml:space="preserve"><value>Payment method management defines payment options (e.g., cash, transfer, check).</value></data>
+  <data name="Guide.PaymentMethod.Field.Code" xml:space="preserve"><value>Payment method code</value></data>
+  <data name="Guide.PaymentMethod.Field.Name" xml:space="preserve"><value>Payment method name</value></data>
+  <data name="Guide.PaymentMethod.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.DocumentCategory.Description" xml:space="preserve"><value>Document categories organize company documents (e.g., contracts, forms) with default access levels.</value></data>
+  <data name="Guide.DocumentCategory.Field.Code" xml:space="preserve"><value>Category code</value></data>
+  <data name="Guide.DocumentCategory.Field.Name" xml:space="preserve"><value>Category name</value></data>
+  <data name="Guide.DocumentCategory.Field.AccessLevel" xml:space="preserve"><value>Default access level for documents in this category</value></data>
+  <data name="Guide.DocumentCategory.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.EquipmentCategory.Description" xml:space="preserve"><value>Equipment categories organize equipment types (e.g., production, office, transport).</value></data>
+  <data name="Guide.EquipmentCategory.Field.Code" xml:space="preserve"><value>Category code</value></data>
+  <data name="Guide.EquipmentCategory.Field.Name" xml:space="preserve"><value>Category name</value></data>
+  <data name="Guide.EquipmentCategory.Field.Description" xml:space="preserve"><value>Detailed description</value></data>
+  <data name="Guide.EquipmentCategory.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Warehouse.Description" xml:space="preserve"><value>Warehouse management maintains warehouse info. Warehouse locations can be set up for detailed inventory tracking.</value></data>
+  <data name="Guide.Warehouse.Field.Code" xml:space="preserve"><value>Warehouse code</value></data>
+  <data name="Guide.Warehouse.Field.Name" xml:space="preserve"><value>Warehouse name</value></data>
+  <data name="Guide.Warehouse.Field.Contact" xml:space="preserve"><value>Contact person</value></data>
+  <data name="Guide.Warehouse.Field.Phone" xml:space="preserve"><value>Phone number</value></data>
+  <data name="Guide.Warehouse.Field.Address" xml:space="preserve"><value>Warehouse address</value></data>
+  <data name="Guide.Warehouse.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Warehouse.Tip1" xml:space="preserve"><value>After creating a warehouse, add locations in edit mode for detailed inventory management.</value></data>
+  <data name="Guide.WarehouseLocation.Description" xml:space="preserve"><value>Warehouse location management defines storage positions (zone, aisle, level, position) within warehouses.</value></data>
+  <data name="Guide.WarehouseLocation.Field.Code" xml:space="preserve"><value>Location code</value></data>
+  <data name="Guide.WarehouseLocation.Field.Name" xml:space="preserve"><value>Location name</value></data>
+  <data name="Guide.WarehouseLocation.Field.Warehouse" xml:space="preserve"><value>Parent warehouse</value></data>
+  <data name="Guide.WarehouseLocation.Field.Zone" xml:space="preserve"><value>Zone number</value></data>
+  <data name="Guide.WarehouseLocation.Field.Aisle" xml:space="preserve"><value>Aisle number</value></data>
+  <data name="Guide.WarehouseLocation.Field.Level" xml:space="preserve"><value>Level/shelf number</value></data>
+  <data name="Guide.WarehouseLocation.Field.Position" xml:space="preserve"><value>Position number</value></data>
+  <data name="Guide.WarehouseLocation.Field.MaxCapacity" xml:space="preserve"><value>Maximum storage capacity</value></data>
+  <data name="Guide.WarehouseLocation.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Company.Description" xml:space="preserve"><value>Company management maintains enterprise info including tax ID, address, and contacts. Multi-company environments can switch operating company.</value></data>
+  <data name="Guide.Company.TabOverview" xml:space="preserve"><value>Multiple tabs: Company Data, Company Logo, Bank Accounts.</value></data>
+  <data name="Guide.Company.Field.Code" xml:space="preserve"><value>Company code</value></data>
+  <data name="Guide.Company.Field.Name" xml:space="preserve"><value>Full company name</value></data>
+  <data name="Guide.Company.Field.ShortName" xml:space="preserve"><value>Short name for reports</value></data>
+  <data name="Guide.Company.Field.TaxId" xml:space="preserve"><value>Tax identification number</value></data>
+  <data name="Guide.Company.Field.Representative" xml:space="preserve"><value>Company representative</value></data>
+  <data name="Guide.Company.Field.Address" xml:space="preserve"><value>Company address</value></data>
+  <data name="Guide.Company.Field.Phone" xml:space="preserve"><value>Company phone</value></data>
+  <data name="Guide.Company.Field.Email" xml:space="preserve"><value>Company email</value></data>
+  <data name="Guide.Company.Field.Website" xml:space="preserve"><value>Company website</value></data>
+  <data name="Guide.Company.Field.IsDefault" xml:space="preserve"><value>Set as default; new documents auto-use this company</value></data>
+  <data name="Guide.Company.Tip1" xml:space="preserve"><value>Setting as default company auto-fills company info on all new documents.</value></data>
+  <data name="Guide.PaperSetting.Description" xml:space="preserve"><value>Paper settings define print paper specs including size, orientation, and margins for report printing.</value></data>
+  <data name="Guide.PaperSetting.Field.Code" xml:space="preserve"><value>Paper code</value></data>
+  <data name="Guide.PaperSetting.Field.Name" xml:space="preserve"><value>Paper name (e.g., A4, Letter)</value></data>
+  <data name="Guide.PaperSetting.Field.Width" xml:space="preserve"><value>Paper width (cm)</value></data>
+  <data name="Guide.PaperSetting.Field.Height" xml:space="preserve"><value>Paper height (cm)</value></data>
+  <data name="Guide.PaperSetting.Field.Orientation" xml:space="preserve"><value>Print orientation (Portrait/Landscape)</value></data>
+  <data name="Guide.PaperSetting.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.PaperSetting.Tip1" xml:space="preserve"><value>Use the 'Query Paper' button to quickly apply common paper specs (A4, A5, B5, etc.).</value></data>
+  <data name="Guide.ReportPrintConfiguration.Description" xml:space="preserve"><value>Report print config assigns paper settings to each report for correct print formatting.</value></data>
+  <data name="Guide.ReportPrintConfiguration.Field.Code" xml:space="preserve"><value>Config code</value></data>
+  <data name="Guide.ReportPrintConfiguration.Field.ReportName" xml:space="preserve"><value>Associated report name (read-only)</value></data>
+  <data name="Guide.ReportPrintConfiguration.Field.PaperSetting" xml:space="preserve"><value>Paper setting for this report</value></data>
+  <data name="Guide.ReportPrintConfiguration.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.TextMessageTemplate.Description" xml:space="preserve"><value>Message template management customizes the 'Copy Message' format for purchase orders.</value></data>
+  <data name="Guide.TextMessageTemplate.Step1" xml:space="preserve"><value>Set header text: Enter fixed text at the beginning</value></data>
+  <data name="Guide.TextMessageTemplate.Step2" xml:space="preserve"><value>Select detail columns: Check which item fields to include</value></data>
+  <data name="Guide.TextMessageTemplate.Step3" xml:space="preserve"><value>Set footer text: Enter closing remarks</value></data>
+  <data name="Guide.PayrollItem.Description" xml:space="preserve"><value>Payroll items define salary calculation components (e.g., base salary, overtime, insurance deductions).</value></data>
+  <data name="Guide.PayrollItem.Field.Code" xml:space="preserve"><value>Item code</value></data>
+  <data name="Guide.PayrollItem.Field.Name" xml:space="preserve"><value>Item name</value></data>
+  <data name="Guide.PayrollItem.Field.Description" xml:space="preserve"><value>Calculation description</value></data>
+  <data name="Guide.PayrollItem.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.PayrollPeriod.Description" xml:space="preserve"><value>Payroll periods define salary calculation time ranges, typically monthly.</value></data>
+  <data name="Guide.PayrollPeriod.Field.Name" xml:space="preserve"><value>Period name</value></data>
+  <data name="Guide.PayrollPeriod.Field.Year" xml:space="preserve"><value>Year</value></data>
+  <data name="Guide.PayrollPeriod.Field.Month" xml:space="preserve"><value>Month</value></data>
+  <data name="Guide.PayrollPeriod.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.InsuranceRate.Description" xml:space="preserve"><value>Insurance rate management maintains labor and health insurance rates for auto-calculating employer and employee contributions.</value></data>
+  <data name="Guide.HealthInsuranceGrade.Description" xml:space="preserve"><value>Health insurance grade table maintains NHI insured salary grades for health insurance calculation.</value></data>
+  <data name="Guide.LaborInsuranceGrade.Description" xml:space="preserve"><value>Labor insurance grade table maintains insured salary grades for labor insurance calculation.</value></data>
+  <data name="Guide.MinimumWage.Description" xml:space="preserve"><value>Minimum wage management maintains annual minimum wage standards referenced in salary calculations.</value></data>
+  <data name="Guide.WithholdingTaxTable.Description" xml:space="preserve"><value>Withholding tax table maintains salary income tax withholding lookup tables for auto-calculating tax deductions.</value></data>
+  <data name="Guide.EmployeeSalary.Description" xml:space="preserve"><value>Employee salary settings maintain individual salary structures including base pay and allowances.</value></data>
+  <data name="Guide.EmployeeBankAccount.Description" xml:space="preserve"><value>Employee bank account management maintains salary transfer account information.</value></data>
+  <data name="Guide.MonthlyAttendanceSummary.Description" xml:space="preserve"><value>Monthly attendance summary records employee attendance stats including work days and overtime hours for payroll.</value></data>
+  <data name="Field.VisitType" xml:space="preserve"><value>Visit Type</value></data>
+  <data name="Field.Unit" xml:space="preserve"><value>Unit</value></data>
+  <data name="Guide.Item.Description" xml:space="preserve"><value>Item management maintains all products, raw materials, and semi-finished goods.</value></data>
+  <data name="Guide.Item.TabOverview" xml:space="preserve"><value>Multiple tabs: Item Data, Accounting, Photos.</value></data>
+  <data name="Guide.Item.Field.Code" xml:space="preserve"><value>Item code</value></data>
+  <data name="Guide.Item.Field.Name" xml:space="preserve"><value>Item name</value></data>
+  <data name="Guide.Item.Field.Category" xml:space="preserve"><value>Category for sales and reporting</value></data>
+  <data name="Guide.Item.Field.Unit" xml:space="preserve"><value>Measurement unit</value></data>
+  <data name="Guide.Item.Field.Size" xml:space="preserve"><value>Item size/spec</value></data>
+  <data name="Guide.Item.Field.Supplier" xml:space="preserve"><value>Primary supplier</value></data>
+  <data name="Guide.Item.Field.Spec" xml:space="preserve"><value>Specification description</value></data>
+  <data name="Guide.Item.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Item.Action.PrintLabel" xml:space="preserve"><value>Print</value></data>
+  <data name="Guide.Item.Action.Print" xml:space="preserve"><value>Print item detail report</value></data>
+  <data name="Guide.Item.Tip1" xml:space="preserve"><value>Set up BOM compositions to define product recipes.</value></data>
+  <data name="Guide.Item.Warning1" xml:space="preserve"><value>Ensure no related orders or stock before deleting.</value></data>
+  <data name="Guide.Item.Faq1Q" xml:space="preserve"><value>How to set up BOM?</value></data>
+  <data name="Guide.Item.Faq1A" xml:space="preserve"><value>Use the composition feature from item list right-click menu.</value></data>
+  <data name="Guide.Item.Faq2Q" xml:space="preserve"><value>Why can't item be selected in sales?</value></data>
+  <data name="Guide.Item.Faq2A" xml:space="preserve"><value>Check if the item category has 'Saleable' checked.</value></data>
+  <data name="Guide.ItemComposition.Description" xml:space="preserve"><value>BOM compositions define product recipes and material quantities for production scheduling.</value></data>
+  <data name="Guide.ItemComposition.Field.Code" xml:space="preserve"><value>Composition code</value></data>
+  <data name="Guide.ItemComposition.Field.Name" xml:space="preserve"><value>Composition name</value></data>
+  <data name="Guide.ItemComposition.Field.Spec" xml:space="preserve"><value>Recipe specification</value></data>
+  <data name="Guide.ItemComposition.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.ItemComposition.Tip1" xml:space="preserve"><value>One item can have multiple recipes; select the appropriate one during production.</value></data>
+  <data name="Guide.Customer.Description" xml:space="preserve"><value>Customer management maintains customer info, contacts, and payment terms — core data for sales.</value></data>
+  <data name="Guide.Customer.TabOverview" xml:space="preserve"><value>Multiple tabs: Customer Data, Vehicles, Bank Accounts, Visits, Complaints, Transactions, Accounting.</value></data>
+  <data name="Guide.Customer.Field.Code" xml:space="preserve"><value>Customer code</value></data>
+  <data name="Guide.Customer.Field.Name" xml:space="preserve"><value>Customer/company name</value></data>
+  <data name="Guide.Customer.Field.Type" xml:space="preserve"><value>Customer type</value></data>
+  <data name="Guide.Customer.Field.Contact" xml:space="preserve"><value>Primary contact</value></data>
+  <data name="Guide.Customer.Field.Phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="Guide.Customer.Field.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Guide.Customer.Field.Address" xml:space="preserve"><value>Address</value></data>
+  <data name="Guide.Customer.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Customer.Tip1" xml:space="preserve"><value>Copy customer data to create a supplier record in one click.</value></data>
+  <data name="Guide.Customer.Warning1" xml:space="preserve"><value>Ensure no related orders or receivables before deleting.</value></data>
+  <data name="Guide.Customer.Faq1Q" xml:space="preserve"><value>How to also set as supplier?</value></data>
+  <data name="Guide.Customer.Faq1A" xml:space="preserve"><value>Use 'Copy to Supplier' to auto-create supplier record.</value></data>
+  <data name="Guide.CustomerVisit.Description" xml:space="preserve"><value>Customer visit records track salesperson visits for relationship management.</value></data>
+  <data name="Guide.CustomerVisit.Field.Customer" xml:space="preserve"><value>Visited customer</value></data>
+  <data name="Guide.CustomerVisit.Field.Date" xml:space="preserve"><value>Visit date</value></data>
+  <data name="Guide.CustomerVisit.Field.Type" xml:space="preserve"><value>Visit type</value></data>
+  <data name="Guide.CustomerVisit.Field.Employee" xml:space="preserve"><value>Visiting salesperson</value></data>
+  <data name="Guide.CustomerVisit.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.CustomerComplaint.Description" xml:space="preserve"><value>Customer complaint management tracks complaint cases with resolution progress.</value></data>
+  <data name="Guide.CustomerComplaint.Field.Customer" xml:space="preserve"><value>Complaining customer</value></data>
+  <data name="Guide.CustomerComplaint.Field.Title" xml:space="preserve"><value>Complaint title</value></data>
+  <data name="Guide.CustomerComplaint.Field.Description" xml:space="preserve"><value>Complaint details</value></data>
+  <data name="Guide.CustomerComplaint.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.CustomerComplaint.Tip1" xml:space="preserve"><value>Track complaint status from 'Pending' to 'Resolved'.</value></data>
+  <data name="Guide.CustomerBankAccount.Description" xml:space="preserve"><value>Customer bank account management for payment settlement.</value></data>
+  <data name="Guide.CustomerBankAccount.Field.Bank" xml:space="preserve"><value>Bank</value></data>
+  <data name="Guide.CustomerBankAccount.Field.AccountNumber" xml:space="preserve"><value>Account number</value></data>
+  <data name="Guide.CustomerBankAccount.Field.AccountName" xml:space="preserve"><value>Account holder name</value></data>
+  <data name="Guide.CustomerBankAccount.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Supplier.Description" xml:space="preserve"><value>Supplier management maintains vendor info, contacts, and payment terms — core data for procurement.</value></data>
+  <data name="Guide.Supplier.TabOverview" xml:space="preserve"><value>Multiple tabs: Supplier Data, Vehicles, Items, Bank Accounts, Visits.</value></data>
+  <data name="Guide.Supplier.Field.Code" xml:space="preserve"><value>Supplier code</value></data>
+  <data name="Guide.Supplier.Field.Name" xml:space="preserve"><value>Supplier/company name</value></data>
+  <data name="Guide.Supplier.Field.Contact" xml:space="preserve"><value>Primary contact</value></data>
+  <data name="Guide.Supplier.Field.Phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="Guide.Supplier.Field.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Guide.Supplier.Field.Address" xml:space="preserve"><value>Address</value></data>
+  <data name="Guide.Supplier.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Supplier.Tip1" xml:space="preserve"><value>Copy supplier data to create a customer record in one click.</value></data>
+  <data name="Guide.Supplier.Faq1Q" xml:space="preserve"><value>How to view supplier items?</value></data>
+  <data name="Guide.Supplier.Faq1A" xml:space="preserve"><value>Check the Items tab for all products supplied with pricing.</value></data>
+  <data name="Guide.SupplierVisit.Description" xml:space="preserve"><value>Supplier visit records track vendor visits.</value></data>
+  <data name="Guide.SupplierVisit.Field.Supplier" xml:space="preserve"><value>Visited supplier</value></data>
+  <data name="Guide.SupplierVisit.Field.Date" xml:space="preserve"><value>Visit date</value></data>
+  <data name="Guide.SupplierVisit.Field.Type" xml:space="preserve"><value>Visit type</value></data>
+  <data name="Guide.SupplierVisit.Field.Employee" xml:space="preserve"><value>Visiting employee</value></data>
+  <data name="Guide.SupplierVisit.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.SupplierBankAccount.Description" xml:space="preserve"><value>Supplier bank account management for payment processing.</value></data>
+  <data name="Guide.SupplierBankAccount.Field.Bank" xml:space="preserve"><value>Bank</value></data>
+  <data name="Guide.SupplierBankAccount.Field.AccountNumber" xml:space="preserve"><value>Account number</value></data>
+  <data name="Guide.SupplierBankAccount.Field.AccountName" xml:space="preserve"><value>Account holder name</value></data>
+  <data name="Guide.SupplierBankAccount.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Employee.Description" xml:space="preserve"><value>Employee management maintains personal info, department, position, and contacts.</value></data>
+  <data name="Guide.Employee.TabOverview" xml:space="preserve"><value>Multiple tabs: Employee Data, Vehicles, Tools, Training, Permissions, Payroll, Photos.</value></data>
+  <data name="Guide.Employee.Field.Code" xml:space="preserve"><value>Employee ID</value></data>
+  <data name="Guide.Employee.Field.Name" xml:space="preserve"><value>Full name</value></data>
+  <data name="Guide.Employee.Field.Gender" xml:space="preserve"><value>Gender</value></data>
+  <data name="Guide.Employee.Field.Birthday" xml:space="preserve"><value>Date of birth</value></data>
+  <data name="Guide.Employee.Field.Phone" xml:space="preserve"><value>Mobile number</value></data>
+  <data name="Guide.Employee.Field.Department" xml:space="preserve"><value>Department</value></data>
+  <data name="Guide.Employee.Field.Position" xml:space="preserve"><value>Job position</value></data>
+  <data name="Guide.Employee.Field.HireDate" xml:space="preserve"><value>Hire date</value></data>
+  <data name="Guide.Employee.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Employee.Tip1" xml:space="preserve"><value>The Permissions tab controls granular module access per employee.</value></data>
+  <data name="Guide.Employee.Warning1" xml:space="preserve"><value>Deactivating an employee account prevents system login.</value></data>
+  <data name="Guide.EmployeeLicense.Description" xml:space="preserve"><value>Employee license management tracks professional certifications with expiry alerts.</value></data>
+  <data name="Guide.EmployeeLicense.Field.Name" xml:space="preserve"><value>License name</value></data>
+  <data name="Guide.EmployeeLicense.Field.Number" xml:space="preserve"><value>License number</value></data>
+  <data name="Guide.EmployeeLicense.Field.Authority" xml:space="preserve"><value>Issuing authority</value></data>
+  <data name="Guide.EmployeeLicense.Field.Expiry" xml:space="preserve"><value>Expiry date (with alert days)</value></data>
+  <data name="Guide.EmployeeLicense.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.EmployeeTool.Description" xml:space="preserve"><value>Employee tool management tracks tools and equipment assigned to employees.</value></data>
+  <data name="Guide.EmployeeTool.Field.Name" xml:space="preserve"><value>Tool name</value></data>
+  <data name="Guide.EmployeeTool.Field.Serial" xml:space="preserve"><value>Serial number or model</value></data>
+  <data name="Guide.EmployeeTool.Field.AssignDate" xml:space="preserve"><value>Assignment date</value></data>
+  <data name="Guide.EmployeeTool.Field.ReturnDate" xml:space="preserve"><value>Return date (blank if not returned)</value></data>
+  <data name="Guide.EmployeeTrainingRecord.Description" xml:space="preserve"><value>Employee training records track courses and results.</value></data>
+  <data name="Guide.EmployeeTrainingRecord.Field.Course" xml:space="preserve"><value>Course name</value></data>
+  <data name="Guide.EmployeeTrainingRecord.Field.Date" xml:space="preserve"><value>Training date</value></data>
+  <data name="Guide.EmployeeTrainingRecord.Field.Hours" xml:space="preserve"><value>Training hours</value></data>
+  <data name="Guide.EmployeeTrainingRecord.Field.Organization" xml:space="preserve"><value>Training organization</value></data>
+  <data name="Guide.Vehicle.Description" xml:space="preserve"><value>Vehicle management maintains fleet info including plates, types, and ownership.</value></data>
+  <data name="Guide.Vehicle.Field.Code" xml:space="preserve"><value>Vehicle code</value></data>
+  <data name="Guide.Vehicle.Field.LicensePlate" xml:space="preserve"><value>License plate</value></data>
+  <data name="Guide.Vehicle.Field.Type" xml:space="preserve"><value>Vehicle type</value></data>
+  <data name="Guide.Vehicle.Field.Spec" xml:space="preserve"><value>Vehicle specifications</value></data>
+  <data name="Guide.Vehicle.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Vehicle.Tip1" xml:space="preserve"><value>Vehicles can be linked to employees, customers, or suppliers.</value></data>
+  <data name="Guide.VehicleMaintenance.Description" xml:space="preserve"><value>Vehicle maintenance records track repair and service history.</value></data>
+  <data name="Guide.VehicleMaintenance.Field.Vehicle" xml:space="preserve"><value>Vehicle being serviced</value></data>
+  <data name="Guide.VehicleMaintenance.Field.Description" xml:space="preserve"><value>Maintenance description</value></data>
+  <data name="Guide.VehicleMaintenance.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Equipment.Description" xml:space="preserve"><value>Equipment management maintains company equipment info, status, and value tracking.</value></data>
+  <data name="Guide.Equipment.Field.Code" xml:space="preserve"><value>Equipment code</value></data>
+  <data name="Guide.Equipment.Field.Name" xml:space="preserve"><value>Equipment name</value></data>
+  <data name="Guide.Equipment.Field.Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Guide.Equipment.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Equipment.Tip1" xml:space="preserve"><value>Track maintenance history and next service dates via maintenance records.</value></data>
+  <data name="Guide.EquipmentMaintenance.Description" xml:space="preserve"><value>Equipment maintenance records track repair and service history.</value></data>
+  <data name="Guide.EquipmentMaintenance.Field.Equipment" xml:space="preserve"><value>Equipment being serviced</value></data>
+  <data name="Guide.EquipmentMaintenance.Field.Description" xml:space="preserve"><value>Maintenance description</value></data>
+  <data name="Guide.EquipmentMaintenance.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.CrmLead.Description" xml:space="preserve"><value>Lead management tracks business opportunities with contact info and estimated values; can convert to customers.</value></data>
+  <data name="Guide.CrmLead.Field.CompanyName" xml:space="preserve"><value>Company or person name</value></data>
+  <data name="Guide.CrmLead.Field.Contact" xml:space="preserve"><value>Contact name</value></data>
+  <data name="Guide.CrmLead.Field.Phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="Guide.CrmLead.Field.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Guide.CrmLead.Field.Industry" xml:space="preserve"><value>Industry</value></data>
+  <data name="Guide.CrmLead.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.CrmLead.Action.ConvertLabel" xml:space="preserve"><value>Convert to Customer</value></data>
+  <data name="Guide.CrmLead.Action.Convert" xml:space="preserve"><value>Convert lead to a formal customer record</value></data>
+  <data name="Guide.CrmLead.Tip1" xml:space="preserve"><value>Use the Follow-up tab to record each contact and plan next steps.</value></data>
+  <data name="Guide.CrmLead.Warning1" xml:space="preserve"><value>Converting to customer is irreversible; the lead is marked as converted.</value></data>
+  <data name="Guide.CrmLeadFollowUp.Description" xml:space="preserve"><value>Lead follow-up records track each contact method, content, and next steps.</value></data>
+  <data name="Guide.CrmLeadFollowUp.Field.Type" xml:space="preserve"><value>Follow-up method (call, visit, email)</value></data>
+  <data name="Guide.CrmLeadFollowUp.Field.Notes" xml:space="preserve"><value>Follow-up content and results</value></data>
+  <data name="Guide.CrmLeadFollowUp.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.ScaleRecord.Description" xml:space="preserve"><value>Scale records capture vehicle weighing data with auto net-weight calculation and printing.</value></data>
+  <data name="Guide.ScaleRecord.Field.Code" xml:space="preserve"><value>Record number</value></data>
+  <data name="Guide.ScaleRecord.Field.Vehicle" xml:space="preserve"><value>Weighed vehicle</value></data>
+  <data name="Guide.ScaleRecord.Field.Customer" xml:space="preserve"><value>Related customer</value></data>
+  <data name="Guide.ScaleRecord.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.ScaleRecord.Action.ReadLabel" xml:space="preserve"><value>Read Scale</value></data>
+  <data name="Guide.ScaleRecord.Action.Read" xml:space="preserve"><value>Read real-time weight from connected scale device</value></data>
+  <data name="Guide.ScaleRecord.Tip1" xml:space="preserve"><value>Entry and exit weights can be auto-read from scale devices.</value></data>
+  <data name="Guide.Document.Description" xml:space="preserve"><value>Document management for uploading, categorizing, and managing company documents.</value></data>
+  <data name="Guide.Document.Field.Title" xml:space="preserve"><value>Document title</value></data>
+  <data name="Guide.Document.Field.Content" xml:space="preserve"><value>Content description</value></data>
+  <data name="Guide.Document.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.Document.Tip1" xml:space="preserve"><value>Multiple file attachments supported in common formats.</value></data>
+  <data name="Guide.InventoryStock.Description" xml:space="preserve"><value>Inventory management for viewing and maintaining stock quantities, locations, and costs.</value></data>
+  <data name="Guide.InventoryStock.Field.Item" xml:space="preserve"><value>Stock item</value></data>
+  <data name="Guide.InventoryStock.Field.Warehouse" xml:space="preserve"><value>Storage warehouse</value></data>
+  <data name="Guide.InventoryStock.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.InventoryStock.Tip1" xml:space="preserve"><value>Stock quantities are usually auto-updated by transactions; manual edits not recommended.</value></data>
+  <data name="Guide.InventoryTransaction.Description" xml:space="preserve"><value>Inventory transaction log is read-only, showing all stock movement history for tracking.</value></data>
+  <data name="Guide.MaterialIssue.Description" xml:space="preserve"><value>Material issue records track materials withdrawn from warehouse for production.</value></data>
+  <data name="Guide.MaterialIssue.Field.Code" xml:space="preserve"><value>Issue number</value></data>
+  <data name="Guide.MaterialIssue.Field.Department" xml:space="preserve"><value>Issuing department</value></data>
+  <data name="Guide.MaterialIssue.Field.Employee" xml:space="preserve"><value>Issued to</value></data>
+  <data name="Guide.MaterialIssue.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.MaterialIssue.Tip1" xml:space="preserve"><value>Can link to production schedules; system auto-calculates required materials from BOM.</value></data>
+  <data name="Guide.StockTaking.Description" xml:space="preserve"><value>Stock taking records physical inventory counts, compares with system stock, and generates difference reports.</value></data>
+  <data name="Guide.StockTaking.Field.Code" xml:space="preserve"><value>Count number</value></data>
+  <data name="Guide.StockTaking.Field.Warehouse" xml:space="preserve"><value>Count warehouse</value></data>
+  <data name="Guide.StockTaking.Field.Employee" xml:space="preserve"><value>Counter</value></data>
+  <data name="Guide.StockTaking.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.StockTaking.Tip1" xml:space="preserve"><value>After counting, one-click adjustment auto-corrects stock differences.</value></data>
+  <data name="Guide.StockTaking.Warning1" xml:space="preserve"><value>Stock adjustments are irreversible; verify carefully before confirming.</value></data>
+  <data name="Guide.SetoffDocument.Description" xml:space="preserve"><value>Setoff documents handle AR/AP settlement including collections, payments, and refunds.</value></data>
+  <data name="Guide.SetoffDocument.Field.Code" xml:space="preserve"><value>Setoff number</value></data>
+  <data name="Guide.SetoffDocument.Field.Type" xml:space="preserve"><value>Setoff type (collection/payment/refund)</value></data>
+  <data name="Guide.SetoffDocument.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.SetoffDocument.Tip1" xml:space="preserve"><value>Usually created via 'Convert to Setoff' from delivery, return, or receiving documents.</value></data>
+  <data name="Guide.SetoffDocument.Warning1" xml:space="preserve"><value>Completed setoffs affect AR/AP balances; verify amounts carefully.</value></data>
+  <data name="Guide.BankStatement.Description" xml:space="preserve"><value>Bank statement management imports bank transaction details for reconciliation.</value></data>
+  <data name="Guide.BankStatement.Field.Company" xml:space="preserve"><value>Reconciliation company</value></data>
+  <data name="Guide.BankStatement.Field.BankAccount" xml:space="preserve"><value>Bank account</value></data>
+  <data name="Guide.BankStatement.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.BankStatement.Tip1" xml:space="preserve"><value>Supports CSV import; imported transactions can be matched one by one.</value></data>
+  <data name="Guide.AccountItem.Description" xml:space="preserve"><value>Chart of accounts management with multi-level hierarchy (assets, liabilities, income, expenses).</value></data>
+  <data name="Guide.AccountItem.Field.Code" xml:space="preserve"><value>Account code</value></data>
+  <data name="Guide.AccountItem.Field.Name" xml:space="preserve"><value>Account name</value></data>
+  <data name="Guide.AccountItem.Field.Type" xml:space="preserve"><value>Account type and direction</value></data>
+  <data name="Guide.AccountItem.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.AccountItem.Tip1" xml:space="preserve"><value>Sub-accounts auto-roll up to parent accounts in summaries.</value></data>
+  <data name="Guide.FiscalPeriod.Description" xml:space="preserve"><value>Fiscal period management controls accounting period status (open/closed/locked).</value></data>
+  <data name="Guide.FiscalPeriod.Field.Name" xml:space="preserve"><value>Period name</value></data>
+  <data name="Guide.FiscalPeriod.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.FiscalPeriod.Warning1" xml:space="preserve"><value>Closing or locking a period prevents adding or editing journal entries within it.</value></data>
+  <data name="Guide.JournalEntry.Description" xml:space="preserve"><value>Journal entry management creates accounting entries with balanced debit and credit lines.</value></data>
+  <data name="Guide.JournalEntry.Field.Code" xml:space="preserve"><value>Entry number</value></data>
+  <data name="Guide.JournalEntry.Field.Description" xml:space="preserve"><value>Entry description/memo</value></data>
+  <data name="Guide.JournalEntry.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.JournalEntry.Tip1" xml:space="preserve"><value>System checks debit-credit balance in real-time as lines are added.</value></data>
+  <data name="Guide.JournalEntry.Warning1" xml:space="preserve"><value>Entries must be balanced; unbalanced entries cannot be saved.</value></data>
+  <data name="Guide.ManufacturingOrder.Description" xml:space="preserve"><value>Manufacturing order management tracks production schedule execution, quantities, and related material issues.</value></data>
+  <data name="Guide.ManufacturingOrder.Field.Code" xml:space="preserve"><value>Order number</value></data>
+  <data name="Guide.ManufacturingOrder.Field.Item" xml:space="preserve"><value>Product item</value></data>
+  <data name="Guide.ManufacturingOrder.Field.Remarks" xml:space="preserve"><value>Additional notes</value></data>
+  <data name="Guide.TabDescriptions" xml:space="preserve"><value>Tab Descriptions</value></data>
+  <data name="Guide.Employee.Tab.EmployeeData" xml:space="preserve"><value>Enter core personal info, contacts, emergency contacts, department, and position</value></data>
+  <data name="Guide.Employee.Tab.VehicleInfo" xml:space="preserve"><value>Manage company vehicles assigned to this employee; add, edit, or unlink vehicles</value></data>
+  <data name="Guide.Employee.Tab.PersonalTools" xml:space="preserve"><value>Track tools and equipment issued to the employee (laptop, phone, keys, etc.) with assign/return dates</value></data>
+  <data name="Guide.Employee.Tab.Training" xml:space="preserve"><value>Record training courses attended, including course name, hours, organization, and results</value></data>
+  <data name="Guide.Employee.Tab.Permissions" xml:space="preserve"><value>Fine-grained control over which system modules and operations this employee can access</value></data>
+  <data name="Guide.Employee.Tab.Payroll" xml:space="preserve"><value>Maintain this employee's salary structure including base pay and allowances (requires Payroll module)</value></data>
+  <data name="Guide.Employee.Tab.BankAccounts" xml:space="preserve"><value>Maintain salary transfer bank account information for monthly payroll</value></data>
+  <data name="Guide.Employee.Tab.Photo" xml:space="preserve"><value>Upload and manage employee photos</value></data>
+  <data name="Guide.Employee.Tab.Documents" xml:space="preserve"><value>Manage document attachments related to this employee (requires Documents module)</value></data>
+  <data name="Guide.Employee.BasicFieldsTitle" xml:space="preserve"><value>Personal Information</value></data>
+  <data name="Guide.Employee.ContactFieldsTitle" xml:space="preserve"><value>Contact &amp; Organization</value></data>
+  <data name="Guide.Employee.Field.EnglishName" xml:space="preserve"><value>English name for international reports and communication</value></data>
+  <data name="Guide.Employee.Field.IdNumber" xml:space="preserve"><value>National ID number for insurance and tax filing</value></data>
+  <data name="Guide.Employee.Field.Nationality" xml:space="preserve"><value>Nationality</value></data>
+  <data name="Guide.Employee.Field.MaritalStatus" xml:space="preserve"><value>Marital status (single/married/other)</value></data>
+  <data name="Guide.Employee.Field.BloodType" xml:space="preserve"><value>Blood type information</value></data>
+  <data name="Guide.Employee.Field.Mobile" xml:space="preserve"><value>Employee mobile number, primary contact method</value></data>
+  <data name="Guide.Employee.Field.Email" xml:space="preserve"><value>Email address</value></data>
+  <data name="Guide.Employee.Field.HomeAddress" xml:space="preserve"><value>Registered home address</value></data>
+  <data name="Guide.Employee.Field.MailingAddress" xml:space="preserve"><value>Mailing address (actual residence)</value></data>
+  <data name="Guide.Employee.Field.EmergencyContact" xml:space="preserve"><value>Emergency contact name</value></data>
+  <data name="Guide.Employee.Field.EmergencyPhone" xml:space="preserve"><value>Emergency contact phone</value></data>
+  <data name="Guide.Employee.Field.ResignDate" xml:space="preserve"><value>Resignation date (blank for active employees)</value></data>
+  <data name="Guide.Employee.Field.EmploymentStatus" xml:space="preserve"><value>Employment status (active/resigned/leave of absence, etc.)</value></data>
+  <data name="Guide.Employee.Tip2" xml:space="preserve"><value>Payroll and Bank Account tabs appear only after saving the employee record.</value></data>
+  <data name="Guide.SalesOrder.Tab.OrderData" xml:space="preserve"><value>Enter order basics (customer, date, tax) and manage order line items with quantities, prices, and discounts</value></data>
+  <data name="Guide.SalesOrder.Tab.CustomerInfo" xml:space="preserve"><value>View the selected customer's full contact and address info without leaving the order page</value></data>
+  <data name="Guide.SalesOrder.Tab.Photos" xml:space="preserve"><value>Upload and manage order-related image attachments</value></data>
+  <data name="Guide.Quotation.Tab.QuotationData" xml:space="preserve"><value>Enter quotation basics and manage line items with quantities, prices, and discounts</value></data>
+  <data name="Guide.Quotation.Tab.CustomerInfo" xml:space="preserve"><value>View customer contact details without leaving the quotation page</value></data>
+  <data name="Guide.Quotation.Tab.Photos" xml:space="preserve"><value>Upload and manage quotation-related images</value></data>
+  <data name="Guide.SalesDelivery.Tab.DeliveryData" xml:space="preserve"><value>Enter delivery basics (customer, date, address) and manage delivery line items</value></data>
+  <data name="Guide.SalesDelivery.Tab.CustomerInfo" xml:space="preserve"><value>View customer contact and address info for delivery confirmation</value></data>
+  <data name="Guide.SalesDelivery.Field.FormCreator" xml:space="preserve"><value>The person who created this delivery note</value></data>
+  <data name="Guide.SalesReturn.Tab.ReturnData" xml:space="preserve"><value>Enter return basics and manage return items; filter from deliveries to import returnable items</value></data>
+  <data name="Guide.SalesReturn.Tab.CustomerInfo" xml:space="preserve"><value>View return customer's contact details</value></data>
+  <data name="Guide.PurchaseOrder.Tab.OrderData" xml:space="preserve"><value>Enter PO basics (supplier, date, tax) and manage purchase line items</value></data>
+  <data name="Guide.PurchaseOrder.Tab.SupplierInfo" xml:space="preserve"><value>View selected supplier's contact and payment info</value></data>
+  <data name="Guide.PurchaseReceiving.Tab.ReceivingData" xml:space="preserve"><value>Enter receiving basics and manage details; smart-load items from POs and assign warehouses</value></data>
+  <data name="Guide.PurchaseReceiving.Tab.SupplierInfo" xml:space="preserve"><value>View supplier's contact and payment info</value></data>
+  <data name="Guide.PurchaseReturn.Tab.ReturnData" xml:space="preserve"><value>Enter return basics and manage return items; filter from receiving to import returnable items</value></data>
+  <data name="Guide.PurchaseReturn.Tab.SupplierInfo" xml:space="preserve"><value>View return supplier's contact details</value></data>
+  <data name="Guide.Customer.Tab.CustomerData" xml:space="preserve"><value>Enter customer basics, contacts, payment terms, and other core info</value></data>
+  <data name="Guide.Customer.Tab.VehicleInfo" xml:space="preserve"><value>Manage vehicles linked to this customer</value></data>
+  <data name="Guide.Customer.Tab.Accounting" xml:space="preserve"><value>Set accounting mappings (receivables, prepayments, etc.)</value></data>
+  <data name="Guide.Customer.Tab.BankAccounts" xml:space="preserve"><value>Maintain customer bank accounts for payment settlement</value></data>
+  <data name="Guide.Customer.Tab.Items" xml:space="preserve"><value>View customer-specific items and quotation records</value></data>
+  <data name="Guide.Customer.Tab.Visits" xml:space="preserve"><value>Record salesperson visit history with purposes and follow-ups</value></data>
+  <data name="Guide.Customer.Tab.Complaints" xml:space="preserve"><value>Manage complaint cases with resolution tracking</value></data>
+  <data name="Guide.Customer.Tab.Transactions" xml:space="preserve"><value>View transaction history (orders, deliveries, returns, etc.)</value></data>
+  <data name="Guide.Customer.Tab.BusinessCards" xml:space="preserve"><value>Manage customer business cards</value></data>
+  <data name="Guide.Customer.Field.TaxNumber" xml:space="preserve"><value>Tax ID for invoicing</value></data>
+  <data name="Guide.Customer.Field.SalesManager" xml:space="preserve"><value>Salesperson responsible for this customer</value></data>
+  <data name="Guide.Customer.Field.PaymentTerms" xml:space="preserve"><value>Agreed payment terms and conditions</value></data>
+  <data name="Guide.Supplier.Tab.SupplierData" xml:space="preserve"><value>Enter supplier basics, contacts, payment terms, and other core info</value></data>
+  <data name="Guide.Supplier.Tab.VehicleInfo" xml:space="preserve"><value>Manage vehicles linked to this supplier</value></data>
+  <data name="Guide.Supplier.Tab.Accounting" xml:space="preserve"><value>Set accounting mappings (payables, prepayments, etc.)</value></data>
+  <data name="Guide.Supplier.Tab.BankAccounts" xml:space="preserve"><value>Maintain supplier bank accounts for payment processing</value></data>
+  <data name="Guide.Supplier.Tab.Items" xml:space="preserve"><value>View items supplied with pricing records</value></data>
+  <data name="Guide.Supplier.Tab.Visits" xml:space="preserve"><value>Record visit history with this supplier</value></data>
+  <data name="Guide.Supplier.Tab.Transactions" xml:space="preserve"><value>View transaction history (POs, receivings, returns, etc.)</value></data>
+  <data name="Guide.Supplier.Tab.BusinessCards" xml:space="preserve"><value>Manage supplier business cards</value></data>
+  <data name="Guide.Supplier.Field.TaxNumber" xml:space="preserve"><value>Tax ID number</value></data>
+  <data name="Guide.Supplier.Field.PaymentTerms" xml:space="preserve"><value>Agreed payment terms</value></data>
+  <data name="Guide.Item.Tab.ItemData" xml:space="preserve"><value>Enter item basics, category, unit, specs, and supplier info</value></data>
+  <data name="Guide.Item.Tab.Accounting" xml:space="preserve"><value>Set accounting mappings (sales revenue, COGS, etc.)</value></data>
+  <data name="Guide.Item.Tab.Photos" xml:space="preserve"><value>Upload and manage product photos</value></data>
+  <data name="Guide.Item.Field.Barcode" xml:space="preserve"><value>Item barcode for quick scanning</value></data>
+  <data name="Guide.Item.Field.Type" xml:space="preserve"><value>Item type (standard / BOM composite)</value></data>
+  <data name="Guide.Item.Field.TaxRate" xml:space="preserve"><value>Default tax rate, auto-filled when creating documents</value></data>
+  <data name="Guide.Company.Tab.CompanyData" xml:space="preserve"><value>Enter company basics, tax ID, address, and contact info</value></data>
+  <data name="Guide.Company.Tab.Logo" xml:space="preserve"><value>Upload company logo; appears on printed reports and documents</value></data>
+  <data name="Guide.Company.Tab.BankAccounts" xml:space="preserve"><value>Maintain company bank accounts for financial management</value></data>
+  <data name="Guide.CrmLead.Tab.LeadInfo" xml:space="preserve"><value>Enter lead basics, contacts, estimated value, and development stage</value></data>
+  <data name="Guide.CrmLead.Tab.FollowUp" xml:space="preserve"><value>Record each follow-up method, content, and next contact plan</value></data>
+  <data name="Guide.CrmLead.Field.Source" xml:space="preserve"><value>Lead source channel (web, referral, exhibition, etc.)</value></data>
+  <data name="Guide.CrmLead.Field.Stage" xml:space="preserve"><value>Development stage (initial contact, needs confirmed, quoting, closed, etc.)</value></data>
+  <data name="Guide.CrmLead.Field.Assigned" xml:space="preserve"><value>Salesperson responsible for this lead</value></data>
+  <data name="Guide.CrmLead.Field.Value" xml:space="preserve"><value>Estimated opportunity value</value></data>
   <data name="Modal.DefaultTitle" xml:space="preserve"><value>窗口</value></data>
   <data name="Modal.DefaultLoading" xml:space="preserve"><value>载入中...</value></data>
 
@@ -3943,6 +4412,9 @@
   <data name="Placeholder.ReopenReason" xml:space="preserve"><value>输入重新开放原因（选填）</value></data>
   <data name="Toggle.Manual" xml:space="preserve"><value>人工审核</value></data>
   <data name="Toggle.Auto" xml:space="preserve"><value>自动审核</value></data>
+  <data name="Toggle.AllManual" xml:space="preserve"><value>全部人工审核</value></data>
+  <data name="Toggle.AllAuto" xml:space="preserve"><value>全部自动审核</value></data>
+  <data name="Toggle.Partial" xml:space="preserve"><value>部分人工审核</value></data>
   <data name="Toggle.Enabled" xml:space="preserve"><value>启用</value></data>
   <data name="Toggle.Disabled" xml:space="preserve"><value>停用</value></data>
   <data name="Toggle.Switch" xml:space="preserve"><value>开关</value></data>
@@ -4189,4 +4661,7 @@
   <data name="Comparison.SupplierItemCode" xml:space="preserve"><value>料号</value></data>
   <data name="Comparison.PriceRange" xml:space="preserve"><value>价格区间</value></data>
   <data name="Validation.Required" xml:space="preserve"><value>为必填</value></data>
+  <data name="Column.RequiresProduction" xml:space="preserve"><value>需排程</value></data>
+  <data name="Tooltip.RequiresProduction" xml:space="preserve"><value>控制此品项是否出现在生产排程看板，依 BOM 配方自动设定</value></data>
+  <data name="Field.RequiresProduction" xml:space="preserve"><value>需要排程</value></data>
 </root>

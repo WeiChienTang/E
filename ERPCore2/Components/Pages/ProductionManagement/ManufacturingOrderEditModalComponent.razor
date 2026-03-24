@@ -9,6 +9,7 @@
 @inject IManufacturingOrderReportService ManufacturingOrderReportService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="ProductionScheduleItem"
                           TService="IProductionScheduleItemService"
@@ -37,7 +38,8 @@
                           ReportId="@ReportIds.ManufacturingOrder"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.ManufacturingOrder"]]"
                           GetReportDocumentName="@(e => $"{L["Entity.ManufacturingOrder"]}-{e.Code}")"
-                          ComponentName="ManufacturingOrderEditModalComponent">
+                          ComponentName="ManufacturingOrderEditModalComponent"
+                          FeatureGuide="@ManufacturingOrderGuide.Create()">
 </GenericEditModalComponent>
 
 @code {

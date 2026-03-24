@@ -2,6 +2,7 @@
 @inject IEquipmentCategoryService EquipmentCategoryService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="EquipmentCategory"
                           TService="IEquipmentCategoryService"
@@ -26,7 +27,8 @@
                           RequiredPermission="@PermissionRegistry.EquipmentCategory.Read"
                           OnEntitySaved="@OnEquipmentCategorySaved"
                           OnCancel="@OnCancel"
-                          ComponentName="EquipmentCategoryEditModalComponent" />
+                          ComponentName="EquipmentCategoryEditModalComponent"
+                          FeatureGuide="@EquipmentCategoryGuide.Create()" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; } = false;

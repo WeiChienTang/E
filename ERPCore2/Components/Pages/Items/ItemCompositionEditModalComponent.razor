@@ -13,6 +13,7 @@
 @inject ActionButtonHelper ActionButtonHelper
 @inject IBOMReportService BOMReportService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="ItemComposition" 
                           TService="IItemCompositionService"
@@ -49,7 +50,8 @@ ShowPrintButton="true"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.BOM"]]"
                           GetReportDocumentName="@(e => $"物料清單-{e.Code}")"
                           CustomModules="@GetCustomModules()"
-                          ComponentName="ItemCompositionEditModalComponent" />
+                          ComponentName="ItemCompositionEditModalComponent"
+                          FeatureGuide="@ItemCompositionGuide.Create()" />
 
 @* 客戶編輯 Modal *@
 <CustomerEditModalComponent @ref="customerEditModal"

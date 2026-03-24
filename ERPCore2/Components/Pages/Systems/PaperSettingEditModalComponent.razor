@@ -2,6 +2,7 @@
 @inject IPaperSettingService PaperSettingService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="PaperSetting"
                           TService="IPaperSettingService"
@@ -25,7 +26,8 @@
                           OnEntitySaved="@OnPaperSettingSaved"
                           OnCancel="@OnCancel"
                           CustomActionButtons="@CustomActionButtons"
-                          ComponentName="PaperSettingEditModalComponent" />
+                          ComponentName="PaperSettingEditModalComponent"
+                          FeatureGuide="@PaperSettingGuide.Create()" />
 
 @* 現有紙張列表 Modal *@
 <ExistingPaperListModalComponent IsVisible="@showExistingPaperModal"

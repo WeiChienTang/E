@@ -8,6 +8,7 @@
 @inject IVehicleMaintenanceReportService VehicleMaintenanceReportService
 @inject ActionButtonHelper ActionButtonHelper
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="VehicleMaintenance"
                           TService="IVehicleMaintenanceService"
@@ -44,7 +45,8 @@
                           ReportId="@ReportIds.VehicleMaintenance"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.VehicleMaintenance"]]"
                           GetReportDocumentName="@(e => $"保養紀錄-{e.Code}")"
-                          ComponentName="VehicleMaintenanceEditModalComponent" />
+                          ComponentName="VehicleMaintenanceEditModalComponent"
+                          FeatureGuide="@VehicleMaintenanceGuide.Create()" />
 
 @* 車輛編輯 Modal *@
 <VehicleEditModalComponent @ref="vehicleEditModal"

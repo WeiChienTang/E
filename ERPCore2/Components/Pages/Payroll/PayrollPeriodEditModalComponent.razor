@@ -2,6 +2,7 @@
 @inject IPayrollPeriodService PeriodService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="PayrollPeriod"
                           TService="IPayrollPeriodService"
@@ -25,7 +26,8 @@
                           OnEntitySaved="@OnPayrollPeriodSaved"
                           OnCancel="@OnCancel"
                           CustomActionButtons="@customActionButtons"
-                          ComponentName="PayrollPeriodEditModalComponent" />
+                          ComponentName="PayrollPeriodEditModalComponent"
+                          FeatureGuide="@PayrollPeriodGuide.Create()" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; } = false;

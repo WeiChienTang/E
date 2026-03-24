@@ -11,6 +11,7 @@
 @inject ICompanyModuleService CompanyModuleService
 @inject INavigationPermissionService NavigationPermissionService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Supplier"
                           TService="ISupplierService"
@@ -48,7 +49,8 @@
                           GetReportDocumentName="@(e => $"廠商-{e.Code}")"
                           CustomModules="@GetCustomModules()"
                           CustomActionButtons="@GetCustomActionButtons()"
-                          ComponentName="SupplierEditModalComponent" />
+                          ComponentName="SupplierEditModalComponent"
+                          FeatureGuide="@SupplierGuide.Create()" />
 
 @* 付款方式編輯 Modal *@
 <PaymentMethodEditModalComponent @ref="paymentMethodEditModal"
@@ -77,12 +79,15 @@
                               OnConfirm="@HandleConfirmCopyToCustomer"
                               OnCancel="@(() => showCopyToCustomerModal = false)" />
 
-@* 客戶編輯 Modal（複製後編輯用）*@
-<CustomerEditModalComponent IsVisible="@showCustomerEditModal"
-                            IsVisibleChanged="@((bool v) => showCustomerEditModal = v)"
-                            CustomerId="@copiedCustomerId"
-                            OnCustomerSaved="@((Customer _) => showCustomerEditModal = false)"
-                            OnCancel="@(() => showCustomerEditModal = false)" />
+@* 客戶編輯 Modal（複製後編輯用，條件渲染避免循環引用）*@
+@if (showCustomerEditModal)
+{
+    <CustomerEditModalComponent IsVisible="@showCustomerEditModal"
+                                IsVisibleChanged="@((bool v) => showCustomerEditModal = v)"
+                                CustomerId="@copiedCustomerId"
+                                OnCustomerSaved="@((Customer _) => showCustomerEditModal = false)"
+                                OnCancel="@(() => showCustomerEditModal = false)" />
+}
 
 @code {
     [Parameter] public bool IsVisible { get; set; }

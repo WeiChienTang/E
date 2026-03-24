@@ -6,6 +6,7 @@
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="CrmLeadFollowUp"
                           TService="ICrmLeadFollowUpService"
@@ -32,7 +33,8 @@
                           RequiredPermission="@PermissionRegistry.CrmLead.Read"
                           OnEntitySaved="@OnFollowUpSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="CrmLeadFollowUpEditModalComponent" />
+                          ComponentName="CrmLeadFollowUpEditModalComponent"
+                          FeatureGuide="@CrmLeadFollowUpGuide.Create()" />
 
 @* 員工編輯 Modal *@
 <EmployeeEditModalComponent @ref="employeeEditModal"

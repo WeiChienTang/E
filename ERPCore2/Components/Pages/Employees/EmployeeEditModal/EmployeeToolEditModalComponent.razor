@@ -2,6 +2,7 @@
 @inject IEmployeeToolService EmployeeToolService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="EmployeeTool"
                           TService="IEmployeeToolService"
@@ -23,7 +24,8 @@
                           RequiredPermission="@PermissionRegistry.Employee.Read"
                           OnEntitySaved="@OnEmployeeToolSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="EmployeeToolEditModalComponent" />
+                          ComponentName="EmployeeToolEditModalComponent"
+                          FeatureGuide="@EmployeeToolGuide.Create()" />
 
 @code {
     // ===== 必要參數 =====

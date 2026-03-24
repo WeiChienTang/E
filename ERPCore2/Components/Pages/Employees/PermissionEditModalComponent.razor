@@ -4,6 +4,7 @@
 @inject IPermissionManagementService PermissionService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Permission"
                           TService="IPermissionManagementService"
@@ -25,7 +26,8 @@
                           RequiredPermission="@PermissionRegistry.Permission.Read"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
-                          ComponentName="PermissionEditModalComponent" />
+                          ComponentName="PermissionEditModalComponent"
+                          FeatureGuide="@PermissionGuide.Create()" />
 
 @code {
     // ===== 必要參數 =====

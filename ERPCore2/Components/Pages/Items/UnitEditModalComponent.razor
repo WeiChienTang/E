@@ -2,6 +2,7 @@
 @inject IUnitService UnitService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Unit"
                           TService="IUnitService"
@@ -26,7 +27,8 @@
                           RequiredPermission="@PermissionRegistry.Unit.Read"
                           OnEntitySaved="@OnUnitSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="UnitEditModalComponent" />
+                          ComponentName="UnitEditModalComponent"
+                          FeatureGuide="@UnitGuide.Create()" />
 
 @code {
     // ===== 必要參數 =====

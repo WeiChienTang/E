@@ -8,6 +8,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IEmployeeService EmployeeService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="ReportPrintConfiguration"
                           TService="IReportPrintConfigurationService"
@@ -35,7 +36,8 @@
                           OnEntitySaved="@OnReportPrintConfigurationSaved"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
-                          ComponentName="ReportPrintConfigurationEditModalComponent" />
+                          ComponentName="ReportPrintConfigurationEditModalComponent"
+                          FeatureGuide="@ReportPrintConfigurationGuide.Create()" />
 
 @code {
     // ===== 參數 =====

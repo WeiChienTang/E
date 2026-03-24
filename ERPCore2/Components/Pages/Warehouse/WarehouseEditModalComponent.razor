@@ -2,6 +2,7 @@
 @inject IWarehouseService WarehouseService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Warehouse"
                           TService="IWarehouseService"
@@ -28,7 +29,8 @@
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
                           CustomModules="@GetCustomModules()"
-                          ComponentName="WarehouseEditModalComponent" />
+                          ComponentName="WarehouseEditModalComponent"
+                          FeatureGuide="@WarehouseGuide.Create()" />
 
 @code {
     // ===== 必要參數 =====

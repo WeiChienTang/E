@@ -393,6 +393,7 @@ else
                 DeliveredQuantity = salesDetail.DeliveredQuantity,
                 ScheduledQuantity = salesDetail.ScheduledQuantity,
                 ProducedQuantity = salesDetail.ProducedQuantity,
+                RequiresProduction = salesDetail.RequiresProduction,
                 UnitPrice = salesDetail.UnitPrice,
                 DiscountPercentage = salesDetail.DiscountPercentage,
                 TaxRate = finalTaxRate,
@@ -488,6 +489,7 @@ else
                 detail.TaxRate = item.TaxRate;
                 detail.Remarks = item.DetailRemarks;
                 detail.SelectedCompositionId = item.IsCustomComposition ? null : item.SelectedCompositionId;
+                detail.RequiresProduction = item.RequiresProduction;
                 if (item.SourceQuotationDetailId.HasValue)
                     detail.QuotationDetailId = item.SourceQuotationDetailId.Value;
             }
@@ -503,6 +505,7 @@ else
                 detail.TaxRate = item.TaxRate;
                 detail.Remarks = item.DetailRemarks;
                 detail.SelectedCompositionId = item.IsCustomComposition ? null : item.SelectedCompositionId;
+                detail.RequiresProduction = item.RequiresProduction;
                 if (item.SourceQuotationDetailId.HasValue)
                     detail.QuotationDetailId = item.SourceQuotationDetailId.Value;
             }
@@ -1162,9 +1165,29 @@ else
             }
         });
 
+        // 需要排程欄位
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = L["Column.RequiresProduction"],
+            PropertyName = nameof(SalesItem.RequiresProduction),
+            ColumnType = InteractiveColumnType.Checkbox,
+            Width = "80px",
+            HideOnMobile = true,
+            Tooltip = L["Tooltip.RequiresProduction"],
+            IsDisabledFunc = item =>
+            {
+                var salesItem = (SalesItem)item;
+                return salesItem.SelectedItem == null;
+            },
+            OnCheckboxChanged = EventCallback.Factory.Create<(object, bool)>(this, async args =>
+            {
+                await NotifyDetailsChangedAsync();
+            })
+        });
+
         // 備註欄位
         columns.Add(new InteractiveColumnDefinition
-        { 
+        {
             Title = L["Label.Remarks"],
             PropertyName = "",
             ColumnType = InteractiveColumnType.Custom,
@@ -1342,6 +1365,7 @@ else
         public decimal DeliveredQuantity { get; set; } = 0;
         public decimal ScheduledQuantity { get; set; } = 0;
         public decimal ProducedQuantity { get; set; } = 0;
+        public bool RequiresProduction { get; set; } = true;
         public ProductionItemStatus? ProductionStatus { get; set; }
         public decimal UnitPrice { get; set; } = 0;
         public decimal DiscountPercentage { get; set; } = 0;
@@ -1510,6 +1534,7 @@ else
             item.SourceQuotationId = detail.QuotationId;
             item.SourceQuotationDetailId = detail.Id;
             item.IsQuotationApproved = detail.Quotation?.IsApproved ?? false;
+            item.RequiresProduction = detail.Item != null && HasItemComposition(detail.Item.Id);
             item.CalculateSubtotal();
         }
         else if (selectedItem is Item product)
@@ -1525,12 +1550,14 @@ else
             item.SourceQuotationId = null;
             item.SourceQuotationDetailId = null;
             item.IsQuotationApproved = null;
+            item.RequiresProduction = HasItemComposition(product.Id);
         }
         else
         {
             item.SelectedQuotationDetail = null;
             item.SelectedItem = null;
             item.ItemSearchValue = string.Empty;
+            item.RequiresProduction = true;
         }
         
         item.ShowItemDropdown = false;
@@ -2132,22 +2159,23 @@ else
                 // 設定報價單來源資訊
                 SourceQuotationId = quotation.Id,
                 SourceQuotationDetailId = quotationDetail.Id,
-                IsQuotationApproved = quotation.IsApproved
+                IsQuotationApproved = quotation.IsApproved,
+                RequiresProduction = quotationDetail.Item != null && HasItemComposition(quotationDetail.Item.Id)
             };
-            
+
             // 初始化 ItemSearchValue
             if (salesItem.SelectedItem != null)
             {
                 salesItem.ItemSearchValue = FormatItemDisplayText(salesItem.SelectedItem);
             }
-            
+
             // 計算小計
             salesItem.CalculateSubtotal();
-            
+
             Items.Add(salesItem);
             loadedCount++;
         }
-        
+
         return loadedCount;
     }
     
@@ -2188,15 +2216,16 @@ else
                 OrderQuantity = detail.OrderQuantity,
                 UnitPrice = detail.UnitPrice,
                 TaxRate = detail.TaxRate ?? detail.Item?.TaxRate ?? await SystemParameterService.GetTaxRateAsync(),
-                DetailRemarks = detail.Remarks ?? ""
+                DetailRemarks = detail.Remarks ?? "",
+                RequiresProduction = detail.Item != null && HasItemComposition(detail.Item.Id)
             };
-            
+
             // 初始化 ItemSearchValue
             if (salesItem.SelectedItem != null)
             {
                 salesItem.ItemSearchValue = FormatItemDisplayText(salesItem.SelectedItem);
             }
-            
+
             salesItem.CalculateSubtotal();
             Items.Add(salesItem);
         }
@@ -2251,7 +2280,8 @@ else
                     // 設定報價單來源資訊（用於審核檢查和轉單追蹤）
                     SourceQuotationId = quotationId,
                     SourceQuotationDetailId = quotationDetail.Id,
-                    IsQuotationApproved = isQuotationApproved
+                    IsQuotationApproved = isQuotationApproved,
+                    RequiresProduction = quotationDetail.Item != null && HasItemComposition(quotationDetail.Item.Id)
                 };
                 
                 // 🔑 載入報價單明細的 BOM 組成並轉換為銷貨訂單 BOM 組成

@@ -192,8 +192,11 @@ namespace ERPCore2.Services
                 };
 
                 // 稅額行（僅在稅額 > 0 時建立）
-                if (doc.PurchaseReceivingTaxAmount > 0 && inputVat != null)
+                if (doc.PurchaseReceivingTaxAmount > 0)
                 {
+                    if (inputVat == null)
+                        return (false, $"進貨入庫單 {doc.Code} 有稅額 {doc.PurchaseReceivingTaxAmount:N2}，但找不到進項稅額科目（{InputVatCode}），請確認種子資料已正確載入");
+
                     lines.Add(new JournalEntryLine
                     {
                         LineNumber = 2,
@@ -285,8 +288,11 @@ namespace ERPCore2.Services
                     }
                 };
 
-                if (doc.ReturnTaxAmount > 0 && inputVat != null)
+                if (doc.ReturnTaxAmount > 0)
                 {
+                    if (inputVat == null)
+                        return (false, $"進貨退回單 {doc.Code} 有稅額 {doc.ReturnTaxAmount:N2}，但找不到進項稅額科目（{InputVatCode}），請確認種子資料已正確載入");
+
                     lines.Add(new JournalEntryLine
                     {
                         LineNumber = 3,
@@ -369,8 +375,11 @@ namespace ERPCore2.Services
                     }
                 };
 
-                if (doc.TaxAmount > 0 && outputVat != null)
+                if (doc.TaxAmount > 0)
                 {
+                    if (outputVat == null)
+                        return (false, $"銷貨出貨單 {doc.Code} 有稅額 {doc.TaxAmount:N2}，但找不到銷項稅額科目（{OutputVatCode}），請確認種子資料已正確載入");
+
                     lines.Add(new JournalEntryLine
                     {
                         LineNumber = 3,
@@ -478,8 +487,11 @@ namespace ERPCore2.Services
                     }
                 };
 
-                if (doc.ReturnTaxAmount > 0 && outputVat != null)
+                if (doc.ReturnTaxAmount > 0)
                 {
+                    if (outputVat == null)
+                        return (false, $"銷貨退回單 {doc.Code} 有稅額 {doc.ReturnTaxAmount:N2}，但找不到銷項稅額科目（{OutputVatCode}），請確認種子資料已正確載入");
+
                     lines.Add(new JournalEntryLine
                     {
                         LineNumber = 2,

@@ -19,6 +19,7 @@
 @inject ICompanyModuleService CompanyModuleService
 @inject INavigationPermissionService NavigationPermissionService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Item" 
                           TService="IItemService"
@@ -58,7 +59,8 @@
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.Item"]]"
                           GetReportDocumentName="@(e => $"品項-{e.Code}")"
                           CustomActionButtons="@CustomActionButtons"
-                          ComponentName="ItemEditModalComponent" />
+                          ComponentName="ItemEditModalComponent"
+                          FeatureGuide="@ItemGuide.Create()" />
 
 @* 品項類型編輯 Modal *@
 <ItemCategoryEditModalComponent @ref="productCategoryEditModal"

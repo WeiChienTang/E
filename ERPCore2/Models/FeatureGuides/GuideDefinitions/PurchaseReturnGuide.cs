@@ -2,9 +2,6 @@ using System.Runtime.CompilerServices;
 
 namespace ERPCore2.Models.FeatureGuides.GuideDefinitions;
 
-/// <summary>
-/// 採購退回功能說明定義
-/// </summary>
 public static class PurchaseReturnGuide
 {
     private static string GetSourcePath([CallerFilePath] string? path = null) => path!;
@@ -14,7 +11,6 @@ public static class PurchaseReturnGuide
         SourceFile = GetSourcePath(),
         Sections = new()
         {
-            // ===== 功能概述 =====
             new GuideSection
             {
                 Id = "guide-prt-overview",
@@ -25,31 +21,25 @@ public static class PurchaseReturnGuide
                 Type = GuideSectionType.Description,
                 Items =
                 {
-                    new("Guide.PurchaseReturn.Description"),
-                    new("Guide.PurchaseReturn.TabOverview"),
+                    new("Guide.PurchaseReturn.Description")
                 }
             },
 
-            // ===== 操作步驟 =====
             new GuideSection
             {
-                Id = "guide-prt-steps",
-                TitleKey = "Guide.Steps",
-                Icon = "bi-list-ol",
-                BookmarkLabel = "步驟",
-                BookmarkColor = "#10B981",
-                Type = GuideSectionType.Steps,
+                Id = "guide-prt-tabs",
+                TitleKey = "Guide.TabDescriptions",
+                Icon = "bi-folder2-open",
+                BookmarkLabel = "分頁",
+                BookmarkColor = "#8B5CF6",
+                Type = GuideSectionType.FieldList,
                 Items =
                 {
-                    new("Guide.PurchaseReturn.Step1"),
-                    new("Guide.PurchaseReturn.Step2"),
-                    new("Guide.PurchaseReturn.Step3"),
-                    new("Guide.PurchaseReturn.Step4"),
-                    new("Guide.PurchaseReturn.Step5"),
+                    new("Tab.ReturnData", "Guide.PurchaseReturn.Tab.ReturnData"),
+                    new("Tab.SupplierInfo", "Guide.PurchaseReturn.Tab.SupplierInfo")
                 }
             },
 
-            // ===== 欄位說明 =====
             new GuideSection
             {
                 Id = "guide-prt-fields",
@@ -61,15 +51,14 @@ public static class PurchaseReturnGuide
                 Items =
                 {
                     new("Field.PurchaseReturnCode", "Guide.PurchaseReturn.Field.Code"),
-                    new("Field.Supplier", "Guide.PurchaseReturn.Field.Supplier"),
+                    new("Entity.Supplier", "Guide.PurchaseReturn.Field.Supplier"),
                     new("Field.PurchaseReturnDate", "Guide.PurchaseReturn.Field.ReturnDate"),
-                    new("Field.ReturnReason", "Guide.PurchaseReturn.Field.Reason"),
+                    new("Entity.PurchaseReturnReason", "Guide.PurchaseReturn.Field.Reason"),
                     new("Field.TaxType", "Guide.PurchaseReturn.Field.TaxMethod"),
-                    new("Field.Remarks", "Guide.PurchaseReturn.Field.Remarks"),
+                    new("Field.Remarks", "Guide.PurchaseReturn.Field.Remarks")
                 }
             },
 
-            // ===== 金額欄位 =====
             new GuideSection
             {
                 Id = "guide-prt-amount",
@@ -82,11 +71,10 @@ public static class PurchaseReturnGuide
                 {
                     new("Field.TotalReturnAmount", "Guide.PurchaseReturn.Field.TotalReturn"),
                     new("Field.ReturnTaxAmount", "Guide.PurchaseReturn.Field.TaxAmount"),
-                    new("Field.TotalReturnAmountWithTax", "Guide.PurchaseReturn.Field.TotalWithTax"),
+                    new("Field.TotalReturnAmountWithTax", "Guide.PurchaseReturn.Field.TotalWithTax")
                 }
             },
 
-            // ===== 功能按鈕 =====
             new GuideSection
             {
                 Id = "guide-prt-actions",
@@ -97,11 +85,10 @@ public static class PurchaseReturnGuide
                 Type = GuideSectionType.FieldList,
                 Items =
                 {
-                    new("Guide.PurchaseReturn.Action.SetoffLabel", "Guide.PurchaseReturn.Action.Setoff"),
+                    new("Guide.PurchaseReturn.Action.SetoffLabel", "Guide.PurchaseReturn.Action.Setoff")
                 }
             },
 
-            // ===== 提示與警告 =====
             new GuideSection
             {
                 Id = "guide-prt-tips",
@@ -114,11 +101,10 @@ public static class PurchaseReturnGuide
                 {
                     new("Guide.PurchaseReturn.Tip1", GuideItemStyle.Tip),
                     new("Guide.PurchaseReturn.Warning1", GuideItemStyle.Warning),
-                    new("Guide.PurchaseReturn.Warning2", GuideItemStyle.Warning),
+                    new("Guide.PurchaseReturn.Warning2", GuideItemStyle.Warning)
                 }
             },
 
-            // ===== 常見問題 =====
             new GuideSection
             {
                 Id = "guide-prt-faq",
@@ -130,7 +116,7 @@ public static class PurchaseReturnGuide
                 Items =
                 {
                     new("Guide.PurchaseReturn.Faq1Q", "Guide.PurchaseReturn.Faq1A"),
-                    new("Guide.PurchaseReturn.Faq2Q", "Guide.PurchaseReturn.Faq2A"),
+                    new("Guide.PurchaseReturn.Faq2Q", "Guide.PurchaseReturn.Faq2A")
                 }
             },
         }

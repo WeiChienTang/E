@@ -616,6 +616,14 @@ input[type="number"] {
     appearance: textfield;
 }
 
+/* Select 下拉箭頭：在表格內永遠隱藏，點擊仍可開啟選單 */
+.interactive-table td .form-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: none !important;
+    padding-right: 0.5rem;
+}
+
 /* --- SearchableSelect 下拉動畫 --- */
 .searchable-dropdown {
     animation: searchableDropdownFadeIn 0.12s ease-out;

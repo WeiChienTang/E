@@ -2,6 +2,7 @@
 @inject IDocumentCategoryService DocumentCategoryService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="DocumentCategory"
                           TService="IDocumentCategoryService"
@@ -26,7 +27,8 @@
                           RequiredPermission="@PermissionRegistry.Document.Manage"
                           OnEntitySaved="@OnDocumentCategorySaved"
                           OnCancel="@OnCancel"
-                          ComponentName="DocumentCategoryEditModalComponent" />
+                          ComponentName="DocumentCategoryEditModalComponent"
+                          FeatureGuide="@DocumentCategoryGuide.Create()" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; } = false;

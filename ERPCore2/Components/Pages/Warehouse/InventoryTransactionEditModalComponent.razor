@@ -9,6 +9,7 @@
 @using ERPCore2.Models.Enums
 @using ERPCore2.Data.Entities
 @using ERPCore2.Helpers
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="InventoryTransaction" 
                           TService="IInventoryTransactionService"
@@ -33,7 +34,8 @@
                           CancelButtonText="關閉"
                           OnEntityLoaded="@HandleEntityLoaded"
                           CustomModules="@GetCustomModules()"
-                          ComponentName="InventoryTransactionEditModalComponent">
+                          ComponentName="InventoryTransactionEditModalComponent"
+                          FeatureGuide="@InventoryTransactionGuide.Create()">
 </GenericEditModalComponent>
 
 @code {

@@ -37,6 +37,7 @@
                           FormFields="@formFields"
                           FormSections="@formSections"
                           TabDefinitions="@tabDefinitions"
+                          SectionColumnAssignments="@sectionColumnAssignments"
                           AutoCompletePrefillers="@(autoCompleteConfig?.Prefillers)"
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
@@ -110,6 +111,7 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     private List<FormTabDefinition>? tabDefinitions;
+    private Dictionary<string, int>? sectionColumnAssignments;
     
     // Tab 元件參考
     private SupplierInfoTab? supplierInfoTab;
@@ -653,6 +655,9 @@
                     "ApprovedByDisplayName",
                     "ApprovedAtText",
                     nameof(PurchaseReturn.RejectReason))
+                .AssignColumn(0, FormSectionNames.BasicInfo)
+                .AssignColumn(1, FormSectionNames.FilterConditions, FormSectionNames.ApprovalInfo)
+                .AssignColumn(2, FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo)
                 .GroupIntoTab(L["Tab.ReturnData"].ToString(), "bi-arrow-return-left",
                     FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
                     FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo, FormSectionNames.ApprovalInfo)
@@ -661,6 +666,7 @@
 
             var layout = formBuilder.BuildAll();
             formSections = layout.FieldSections;
+            sectionColumnAssignments = layout.SectionColumnAssignments;
             tabDefinitions = layout.TabDefinitions;
 
             // 將退貨明細表格嵌入第一個 Tab 的 ExtraContent

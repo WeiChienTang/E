@@ -38,6 +38,7 @@
                           FormFields="@formFields"
                           FormSections="@formSections"
                           TabDefinitions="@tabDefinitions"
+                          SectionColumnAssignments="@sectionColumnAssignments"
                           AutoCompleteCollections="@(autoCompleteConfig?.Collections)"
                           AutoCompleteDisplayProperties="@(autoCompleteConfig?.DisplayProperties)"
                           AutoCompleteValueProperties="@(autoCompleteConfig?.ValueProperties)"
@@ -147,6 +148,7 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     private List<FormTabDefinition>? tabDefinitions;
+    private Dictionary<string, int>? sectionColumnAssignments;
     
     // Tab 元件參考
     private CustomerInfoTab? customerInfoTab;
@@ -753,6 +755,9 @@
                     "ApprovedByDisplayName",
                     "ApprovedAtText",
                     nameof(SalesDelivery.RejectReason))
+                .AssignColumn(0, FormSectionNames.BasicInfo)
+                .AssignColumn(1, FormSectionNames.FilterConditions, FormSectionNames.ApprovalInfo)
+                .AssignColumn(2, FormSectionNames.AmountInfo, FormSectionNames.OtherInfo)
                 .GroupIntoTab(L["Tab.DeliveryData"].ToString(), "bi-truck",
                     FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
                     FormSectionNames.AmountInfo, FormSectionNames.OtherInfo, FormSectionNames.ApprovalInfo)
@@ -761,6 +766,7 @@
 
             var layout = formBuilder.BuildAll();
             formSections = layout.FieldSections;
+            sectionColumnAssignments = layout.SectionColumnAssignments;
             tabDefinitions = layout.TabDefinitions;
 
             // 將出貨明細表格嵌入第一個 Tab 的 ExtraContent
@@ -1368,7 +1374,6 @@
                                 OnHasUndeletableDetailsChanged="@HandleHasUndeletableDetailsChanged"
                                 SelectedSupplierId="@(editModalComponent?.Entity?.CustomerId)"
                                 ReturnedQuantities="@returnedQuantities"
-                                ItemEntities="@availableItems"
                                 Warehouses="@warehouses"
                                 WarehouseLocations="@warehouseLocations"
                                 SelectedCustomerId="@(editModalComponent?.Entity?.CustomerId ?? 0)"

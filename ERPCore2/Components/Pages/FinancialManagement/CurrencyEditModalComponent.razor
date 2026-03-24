@@ -2,6 +2,7 @@
 @inject ICurrencyService CurrencyService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Currency"
                           TService="ICurrencyService"
@@ -26,7 +27,8 @@
                           RequiredPermission="@PermissionRegistry.Currency.Read"
                           OnEntitySaved="@OnCurrencySaved"
                           OnCancel="@OnCancel"
-                          ComponentName="CurrencyEditModalComponent" />
+                          ComponentName="CurrencyEditModalComponent"
+                          FeatureGuide="@CurrencyGuide.Create()" />
 
 @code {
     // ===== 參數 =====

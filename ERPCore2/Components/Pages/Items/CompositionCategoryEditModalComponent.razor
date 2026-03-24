@@ -2,6 +2,7 @@
 @inject ICompositionCategoryService CompositionCategoryService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="CompositionCategory"
                           TService="ICompositionCategoryService"
@@ -26,7 +27,8 @@
                           RequiredPermission="@PermissionRegistry.CompositionCategory.Read"
                           OnEntitySaved="@OnCompositionCategorySaved"
                           OnCancel="@OnCancel"
-                          ComponentName="CompositionCategoryEditModalComponent" />
+                          ComponentName="CompositionCategoryEditModalComponent"
+                          FeatureGuide="@CompositionCategoryGuide.Create()" />
 
 @code {
     // ===== 參數 =====

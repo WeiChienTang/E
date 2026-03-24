@@ -15,6 +15,7 @@
 @inject ContactLinkHelper ContactLinkHelper
 @inject IEmployeeDetailReportService EmployeeDetailReportService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Employee"
                           TService="IEmployeeService"
@@ -50,7 +51,8 @@
                           ReportId="@ReportIds.EmployeeDetail"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.Employee"]]"
                           GetReportDocumentName="@(e => $"員工-{e.Code}-{e.Name}")"
-                          ComponentName="EmployeeEditModalComponent">
+                          ComponentName="EmployeeEditModalComponent"
+                          FeatureGuide="@EmployeeGuide.Create()">
     <CustomActionButtons>
         @if (_hasAccountPermission && EmployeeId.HasValue)
         {

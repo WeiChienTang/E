@@ -37,6 +37,7 @@
                           FormFields="@formFields"
                           FormSections="@formSections"
                           TabDefinitions="@tabDefinitions"
+                          SectionColumnAssignments="@sectionColumnAssignments"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
@@ -115,6 +116,7 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     private List<FormTabDefinition>? tabDefinitions;
+    private Dictionary<string, int>? sectionColumnAssignments;
     
     // AutoComplete 配置
     private AutoCompleteConfig? autoCompleteConfig;
@@ -539,6 +541,9 @@
                     "ApprovedByDisplayName",
                     "ApprovedAtText",
                     nameof(PurchaseOrder.RejectReason))
+                .AssignColumn(0, FormSectionNames.BasicInfo)
+                .AssignColumn(1, FormSectionNames.ApprovalInfo)
+                .AssignColumn(2, FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo)
                 .GroupIntoTab(L["Tab.PurchaseOrderData"].ToString(), "bi-cart",
                     FormSectionNames.BasicInfo, FormSectionNames.AmountInfo,
                     FormSectionNames.AdditionalInfo, FormSectionNames.ApprovalInfo)
@@ -547,6 +552,7 @@
 
             var layout = formBuilder.BuildAll();
             formSections = layout.FieldSections;
+            sectionColumnAssignments = layout.SectionColumnAssignments;
             tabDefinitions = layout.TabDefinitions;
 
             // 將採購明細表格嵌入第一個 Tab（採購單資料）的 ExtraContent

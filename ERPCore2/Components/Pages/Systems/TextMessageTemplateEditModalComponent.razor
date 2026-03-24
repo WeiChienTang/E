@@ -3,6 +3,7 @@
 @inject ITextMessageTemplateService TextMessageTemplateService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="TextMessageTemplate"
                           TService="ITextMessageTemplateService"
@@ -33,7 +34,8 @@
                           OnEntityLoaded="@HandleEntityLoaded"
                           CustomModules="@GetCustomModules()"
                           CustomActionButtons="@CustomActionButtonsFragment"
-                          ComponentName="TextMessageTemplateEditModalComponent" />
+                          ComponentName="TextMessageTemplateEditModalComponent"
+                          FeatureGuide="@TextMessageTemplateGuide.Create()" />
 
 @code {
     // ===== 參數 =====

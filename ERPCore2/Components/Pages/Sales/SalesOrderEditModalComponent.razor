@@ -61,7 +61,6 @@
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           OnTaxMethodChanged="@(() => HandleDetailsChanged(salesOrderDetails))"
-                          GetStatusMessage="@GetStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
@@ -752,8 +751,8 @@
                     "ApprovedAtText",
                     nameof(SalesOrder.RejectReason))
                 .AssignColumn(0, FormSectionNames.BasicInfo)
-                .AssignColumn(1, FormSectionNames.FilterConditions, FormSectionNames.AdditionalInfo)
-                .AssignColumn(2, FormSectionNames.AmountInfo, FormSectionNames.ApprovalInfo)
+                .AssignColumn(1, FormSectionNames.FilterConditions, FormSectionNames.ApprovalInfo)
+                .AssignColumn(2, FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo)
                 .GroupIntoTab(L["Tab.OrderData"].ToString(), "bi-cart-check",
                     FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
                     FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo, FormSectionNames.ApprovalInfo)
@@ -1192,39 +1191,6 @@
         if (productFilter != null) productFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
         var quotationFilter = formFields.FirstOrDefault(f => f.PropertyName == "FilterQuotationId");
         if (quotationFilter != null) quotationFilter.IsReadOnly = noCustomer || hasUndeletableDetails;
-    }
-
-    /// <summary>
-    /// 取得狀態訊息（頂部徽章）
-    /// 當有不可刪除的明細時，顯示鎖定提示
-    /// </summary>
-    private async Task<(string Message, GenericEditModalComponent<SalesOrder, ISalesOrderService>.BadgeVariant Variant, string IconClass)?> 
-        GetStatusMessage()
-    {
-        try
-        {
-            // 如果資料還沒準備好，不顯示訊息
-            if (!isDetailDataReady || editModalComponent?.Entity == null)
-                return null;
-            
-            // 只有在有不可刪除的明細時才顯示鎖定訊息
-            if (hasUndeletableDetails)
-            {
-                return (
-                    "部分明細有出貨/排程/收款記錄，主檔欄位已鎖定",
-                    GenericEditModalComponent<SalesOrder, ISalesOrderService>.BadgeVariant.Warning,
-                    "bi bi-lock"
-                );
-            }
-            
-            // 正常狀態不顯示訊息
-            return null;
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"取得狀態訊息時發生錯誤：{ex.Message}");
-            return null;
-        }
     }
 
     /// <summary>

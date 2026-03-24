@@ -5,6 +5,7 @@
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Equipment"
                           TService="IEquipmentService"
@@ -34,7 +35,8 @@
                           RequiredPermission="@PermissionRegistry.Equipment.Read"
                           OnEntitySaved="@OnEquipmentSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="EquipmentEditModalComponent" />
+                          ComponentName="EquipmentEditModalComponent"
+                          FeatureGuide="@EquipmentGuide.Create()" />
 
 @* 設備類別編輯 Modal *@
 <EquipmentCategoryEditModalComponent @ref="equipmentCategoryEditModal"

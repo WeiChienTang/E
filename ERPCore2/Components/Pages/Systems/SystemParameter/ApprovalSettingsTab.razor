@@ -8,27 +8,45 @@
         <button class="btn btn-sm btn-warning" @onclick="SetAllManual">@L["Button.SetAllManual"]</button>
         <button class="btn btn-sm btn-success" @onclick="SetAllAuto">@L["Button.SetAllAuto"]</button>
     </div>
-    <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2 mb-3">
-        @foreach (var setting in approvalSettings)
-        {
-            var s = setting;
-            var isManual = s.GetValue();
-            <div class="col">
-                <div class="card h-100 @(isManual ? "border-warning" : "border-success")"
-                     style="cursor: pointer"
-                     @onclick="@(() => { s.SetValue(!s.GetValue()); StateHasChanged(); })">
-                    <div class="card-body p-2 d-flex flex-column gap-1">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <strong class="small">@s.Label</strong>
-                            <span class="badge @(isManual ? "bg-warning text-dark" : "bg-success") ms-1 flex-shrink-0">
-                                @(isManual ? L["Toggle.Manual"].ToString() : L["Toggle.Auto"].ToString())
-                            </span>
+    @foreach (var group in approvalGroups)
+    {
+        var g = group;
+        var allManual = g.Settings.All(s => s.GetValue());
+        var anyManual = g.Settings.Any(s => s.GetValue());
+        <div class="d-flex align-items-center gap-2 mb-2 mt-3">
+            <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox"
+                       checked="@allManual"
+                       style="@(anyManual && !allManual ? "opacity: 0.5" : "")"
+                       @onchange="@(() => { var target = !allManual; foreach (var s in g.Settings) s.SetValue(target); StateHasChanged(); })" />
+            </div>
+            <h6 class="mb-0">@g.GroupLabel</h6>
+            <span class="badge @(allManual ? "bg-warning text-dark" : anyManual ? "bg-secondary" : "bg-success") small">
+                @(allManual ? L["Toggle.AllManual"].ToString() : anyManual ? L["Toggle.Partial"].ToString() : L["Toggle.AllAuto"].ToString())
+            </span>
+        </div>
+        <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2 mb-3">
+            @foreach (var setting in group.Settings)
+            {
+                var s = setting;
+                var isManual = s.GetValue();
+                <div class="col">
+                    <div class="card h-100 @(isManual ? "border-warning" : "border-success")"
+                         style="cursor: pointer"
+                         @onclick="@(() => { s.SetValue(!s.GetValue()); StateHasChanged(); })">
+                        <div class="card-body p-2 d-flex flex-column gap-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <strong class="small">@s.Label</strong>
+                                <span class="badge @(isManual ? "bg-warning text-dark" : "bg-success") ms-1 flex-shrink-0">
+                                    @(isManual ? L["Toggle.Manual"].ToString() : L["Toggle.Auto"].ToString())
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        }
-    </div>
+            }
+        </div>
+    }
     <hr class="my-3" />
     <div class="form-check">
         <input class="form-check-input" type="checkbox" id="hideApprovalInfoSection"
@@ -45,34 +63,46 @@
     [Parameter]
     public SystemParameter Model { get; set; } = new();
 
-    private List<ApprovalSettingItem> approvalSettings = new();
+    private List<ApprovalSettingGroup> approvalGroups = new();
 
     private record ApprovalSettingItem(string Key, string Label, Func<bool> GetValue, Action<bool> SetValue);
+    private record ApprovalSettingGroup(string GroupLabel, List<ApprovalSettingItem> Settings);
+
+    private IEnumerable<ApprovalSettingItem> AllSettings => approvalGroups.SelectMany(g => g.Settings);
 
     private void SetAllManual()
     {
-        foreach (var setting in approvalSettings)
+        foreach (var setting in AllSettings)
             setting.SetValue(true);
     }
 
     private void SetAllAuto()
     {
-        foreach (var setting in approvalSettings)
+        foreach (var setting in AllSettings)
             setting.SetValue(false);
     }
 
     protected override void OnInitialized()
     {
-        approvalSettings = new List<ApprovalSettingItem>
+        approvalGroups = new List<ApprovalSettingGroup>
         {
-            new("quotation",         L["Field.EnableQuotationApproval"],         () => Model.QuotationManualApproval,         v => Model.QuotationManualApproval = v),
-            new("purchaseOrder",     L["Field.EnablePurchaseOrderApproval"],     () => Model.PurchaseOrderManualApproval,     v => Model.PurchaseOrderManualApproval = v),
-            new("purchaseReceiving", L["Field.EnablePurchaseReceivingApproval"], () => Model.PurchaseReceivingManualApproval, v => Model.PurchaseReceivingManualApproval = v),
-            new("purchaseReturn",    L["Field.EnablePurchaseReturnApproval"],    () => Model.PurchaseReturnManualApproval,    v => Model.PurchaseReturnManualApproval = v),
-            new("salesOrder",        L["Field.EnableSalesOrderApproval"],        () => Model.SalesOrderManualApproval,       v => Model.SalesOrderManualApproval = v),
-            new("salesReturn",       L["Field.EnableSalesReturnApproval"],       () => Model.SalesReturnManualApproval,       v => Model.SalesReturnManualApproval = v),
-            new("salesDelivery",     L["Field.EnableSalesDeliveryApproval"],     () => Model.SalesDeliveryManualApproval,     v => Model.SalesDeliveryManualApproval = v),
-            new("inventoryTransfer", L["Field.EnableInventoryTransferApproval"], () => Model.InventoryTransferManualApproval, v => Model.InventoryTransferManualApproval = v),
+            new(L["Nav.SalesGroup"], new List<ApprovalSettingItem>
+            {
+                new("quotation",     L["Field.EnableQuotationApproval"],      () => Model.QuotationManualApproval,      v => Model.QuotationManualApproval = v),
+                new("salesOrder",    L["Field.EnableSalesOrderApproval"],     () => Model.SalesOrderManualApproval,     v => Model.SalesOrderManualApproval = v),
+                new("salesDelivery", L["Field.EnableSalesDeliveryApproval"],  () => Model.SalesDeliveryManualApproval,  v => Model.SalesDeliveryManualApproval = v),
+                new("salesReturn",   L["Field.EnableSalesReturnApproval"],    () => Model.SalesReturnManualApproval,    v => Model.SalesReturnManualApproval = v),
+            }),
+            new(L["Nav.PurchaseGroup"], new List<ApprovalSettingItem>
+            {
+                new("purchaseOrder",     L["Field.EnablePurchaseOrderApproval"],     () => Model.PurchaseOrderManualApproval,     v => Model.PurchaseOrderManualApproval = v),
+                new("purchaseReceiving", L["Field.EnablePurchaseReceivingApproval"], () => Model.PurchaseReceivingManualApproval, v => Model.PurchaseReceivingManualApproval = v),
+                new("purchaseReturn",    L["Field.EnablePurchaseReturnApproval"],    () => Model.PurchaseReturnManualApproval,    v => Model.PurchaseReturnManualApproval = v),
+            }),
+            new(L["Nav.InventoryGroup"], new List<ApprovalSettingItem>
+            {
+                new("inventoryTransfer", L["Field.EnableInventoryTransferApproval"], () => Model.InventoryTransferManualApproval, v => Model.InventoryTransferManualApproval = v),
+            }),
         };
     }
 }

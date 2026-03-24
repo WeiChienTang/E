@@ -2,6 +2,7 @@
 @inject IAccountItemService AccountItemService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="AccountItem"
                           TService="IAccountItemService"
@@ -24,7 +25,8 @@
                           RequiredPermission="@PermissionRegistry.AccountItem.Read"
                           OnEntitySaved="@OnAccountItemSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="AccountItemEditModalComponent" />
+                          ComponentName="AccountItemEditModalComponent"
+                          FeatureGuide="@AccountItemGuide.Create()" />
 
 @code {
     // ===== 參數 =====

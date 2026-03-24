@@ -2,6 +2,7 @@
 @inject IVehicleTypeService VehicleTypeService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="VehicleType"
                           TService="IVehicleTypeService"
@@ -26,7 +27,8 @@
                           RequiredPermission="@PermissionRegistry.VehicleType.Read"
                           OnEntitySaved="@OnVehicleTypeSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="VehicleTypeEditModalComponent" />
+                          ComponentName="VehicleTypeEditModalComponent"
+                          FeatureGuide="@VehicleTypeGuide.Create()" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; } = false;

@@ -37,6 +37,7 @@
                           FormFields="@formFields"
                           FormSections="@formSections"
                           TabDefinitions="@tabDefinitions"
+                          SectionColumnAssignments="@sectionColumnAssignments"
                           AutoCompletePrefillers="@autoCompleteConfig?.Prefillers"
                           AutoCompleteCollections="@autoCompleteConfig?.Collections"
                           AutoCompleteDisplayProperties="@autoCompleteConfig?.DisplayProperties"
@@ -125,6 +126,7 @@
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
     private List<FormTabDefinition>? tabDefinitions;
+    private Dictionary<string, int>? sectionColumnAssignments;
     
     // Tab 元件參考
     private CustomerInfoTab? customerInfoTab;
@@ -641,6 +643,9 @@
                     "ApprovedByDisplayName",
                     "ApprovedAtText",
                     nameof(Quotation.RejectReason))
+                .AssignColumn(0, FormSectionNames.BasicInfo)
+                .AssignColumn(1, FormSectionNames.TradingTerms, FormSectionNames.ApprovalInfo)
+                .AssignColumn(2, FormSectionNames.AmountInfo, FormSectionNames.OtherInfo)
                 .GroupIntoTab(L["Tab.QuotationData"].ToString(), "bi-file-earmark-text",
                     FormSectionNames.BasicInfo, FormSectionNames.AmountInfo,
                     FormSectionNames.TradingTerms, FormSectionNames.OtherInfo, FormSectionNames.ApprovalInfo)
@@ -651,6 +656,7 @@
 
             var layout = formBuilder.BuildAll();
             formSections = layout.FieldSections;
+            sectionColumnAssignments = layout.SectionColumnAssignments;
             tabDefinitions = layout.TabDefinitions;
 
             // 將報價明細表格嵌入第一個 Tab 的 ExtraContent

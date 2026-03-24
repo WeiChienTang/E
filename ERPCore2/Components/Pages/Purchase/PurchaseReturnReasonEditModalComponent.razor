@@ -2,6 +2,7 @@
 @inject IPurchaseReturnReasonService PurchaseReturnReasonService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="PurchaseReturnReason"
                           TService="IPurchaseReturnReasonService"
@@ -27,7 +28,8 @@
                           OnEntitySaved="@OnPurchaseReturnReasonSaved"
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
-                          ComponentName="PurchaseReturnReasonEditModalComponent" />
+                          ComponentName="PurchaseReturnReasonEditModalComponent"
+                          FeatureGuide="@PurchaseReturnReasonGuide.Create()" />
 
 @code {
     // ===== 必要參數 =====

@@ -4,6 +4,7 @@
 @inject IPayrollItemService PayrollItemService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="EmployeeSalary"
                           TService="IEmployeeSalaryService"
@@ -32,7 +33,8 @@
                           OnCancel="@OnCancel"
                           AdditionalSections="@AllowanceSections"
                           CustomActionButtons="@MinimumWageButton"
-                          ComponentName="EmployeeSalaryEditModalComponent" />
+                          ComponentName="EmployeeSalaryEditModalComponent"
+                          FeatureGuide="@EmployeeSalaryGuide.Create()" />
 
 @* ── 基本工資管理 Modal ─────────────────────────────────── *@
 <MinimumWageManageModalComponent IsVisible="@_showMinimumWageModal"

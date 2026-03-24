@@ -2,6 +2,7 @@
 @inject IEmployeeLicenseService EmployeeLicenseService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="EmployeeLicense"
                           TService="IEmployeeLicenseService"
@@ -23,7 +24,8 @@
                           RequiredPermission="@PermissionRegistry.Employee.Read"
                           OnEntitySaved="@OnEmployeeLicenseSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="EmployeeLicenseEditModalComponent" />
+                          ComponentName="EmployeeLicenseEditModalComponent"
+                          FeatureGuide="@EmployeeLicenseGuide.Create()" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; } = false;

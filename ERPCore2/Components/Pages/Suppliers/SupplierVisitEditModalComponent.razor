@@ -5,6 +5,7 @@
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="SupplierVisit"
                           TService="ISupplierVisitService"
@@ -31,7 +32,8 @@
                           RequiredPermission="@PermissionRegistry.Supplier.Read"
                           OnEntitySaved="@OnSupplierVisitSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="SupplierVisitEditModalComponent" />
+                          ComponentName="SupplierVisitEditModalComponent"
+                          FeatureGuide="@SupplierVisitGuide.Create()" />
 
 @* 廠商編輯 Modal *@
 <SupplierEditModalComponent @ref="supplierEditModal"

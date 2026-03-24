@@ -8,6 +8,7 @@
 @inject IStringLocalizer<SharedResource> L
 @using ERPCore2.Services.Systems
 @using ERPCore2.Data.Entities.Systems
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <BankStatementCsvImportModal IsVisible="@showCsvImportModal"
                              IsVisibleChanged="@(v => { showCsvImportModal = v; StateHasChanged(); })"
@@ -38,7 +39,8 @@
                           OnCancel="@OnCancel"
                           OnFieldChanged="@HandleFieldChanged"
                           CustomModules="@GetCustomModules()"
-                          ComponentName="BankStatementEditModalComponent">
+                          ComponentName="BankStatementEditModalComponent"
+                          FeatureGuide="@BankStatementGuide.Create()">
 </GenericEditModalComponent>
 
 @code {

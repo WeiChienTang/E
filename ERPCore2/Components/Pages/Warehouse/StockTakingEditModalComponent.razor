@@ -15,6 +15,7 @@
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="StockTaking"
                           TService="IStockTakingService"
@@ -54,7 +55,8 @@
                           ReportId="@ReportIds.InventoryCount"
                           ReportPreviewTitle="@L["Label.DocumentPreview", L["Entity.StockTakingReport"]]"
                           GetReportDocumentName="@(e => $"盤點差異表-{e.TakingNumber}")"
-                          ComponentName="StockTakingEditModalComponent">
+                          ComponentName="StockTakingEditModalComponent"
+                          FeatureGuide="@StockTakingGuide.Create()">
 </GenericEditModalComponent>
 
 <!-- 庫存調整確認 Modal -->

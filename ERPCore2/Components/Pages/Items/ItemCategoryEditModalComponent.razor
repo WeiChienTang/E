@@ -2,6 +2,7 @@
 @inject IItemCategoryService ItemCategoryService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="ItemCategory"
                           TService="IItemCategoryService"
@@ -26,7 +27,8 @@
                           RequiredPermission="@PermissionRegistry.ItemCategory.Read"
                           OnEntitySaved="@OnItemCategorySaved"
                           OnCancel="@OnCancel"
-                          ComponentName="ItemCategoryEditModalComponent" />
+                          ComponentName="ItemCategoryEditModalComponent"
+                          FeatureGuide="@ItemCategoryGuide.Create()" />
 
 @code {
     // ===== 必要參數 =====

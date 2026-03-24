@@ -3,6 +3,7 @@
 @inject ICompanyService CompanyService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="FiscalPeriod"
                           TService="IFiscalPeriodService"
@@ -25,7 +26,8 @@
                           RequiredPermission="@PermissionRegistry.FiscalPeriod.Read"
                           OnEntitySaved="@OnFiscalPeriodSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="FiscalPeriodEditModalComponent">
+                          ComponentName="FiscalPeriodEditModalComponent"
+                          FeatureGuide="@FiscalPeriodGuide.Create()">
     <AdditionalSections>
         @* 期間狀態管理區塊（僅編輯現有記錄時顯示） *@
         @if (FiscalPeriodId.HasValue && currentPeriodStatus.HasValue)

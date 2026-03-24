@@ -5,6 +5,7 @@
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="CustomerComplaint"
                           TService="ICustomerComplaintService"
@@ -31,7 +32,8 @@
                           RequiredPermission="@PermissionRegistry.CustomerComplaint.Read"
                           OnEntitySaved="@OnCustomerComplaintSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="CustomerComplaintEditModalComponent" />
+                          ComponentName="CustomerComplaintEditModalComponent"
+                          FeatureGuide="@CustomerComplaintGuide.Create()" />
 
 @* 客戶編輯 Modal *@
 <CustomerEditModalComponent @ref="customerEditModal"

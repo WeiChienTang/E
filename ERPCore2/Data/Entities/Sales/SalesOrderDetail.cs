@@ -56,6 +56,13 @@ namespace ERPCore2.Data.Entities
         [Display(Name = "選用配方")]
         public int? SelectedCompositionId { get; set; }
 
+        /// <summary>
+        /// 是否需要生產排程 - 控制此明細是否出現在生產排程看板
+        /// 預設 true；新增時依品項是否有 BOM 組成自動設定，使用者可手動覆寫
+        /// </summary>
+        [Display(Name = "需要排程")]
+        public bool RequiresProduction { get; set; } = true;
+
         // Foreign Keys
         [Required(ErrorMessage = "銷貨訂單為必填")]
         [Display(Name = "銷貨訂單")]

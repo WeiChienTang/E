@@ -13,6 +13,7 @@
 @inject IStringLocalizer<SharedResource> L
 @inject IJournalEntryService JournalEntryService
 @using ERPCore2.Models.Reports
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="SetoffDocument" 
                           TService="ISetoffDocumentService"
@@ -49,7 +50,8 @@
                           ReportId="@GetCurrentReportId()"
                           ReportPreviewTitle="@GetReportPreviewTitle()"
                           GetReportDocumentName="@(e => GetDocumentName(e))"
-                          ComponentName="SetoffDocumentEditModalComponent">
+                          ComponentName="SetoffDocumentEditModalComponent"
+                          FeatureGuide="@SetoffDocumentGuide.Create()">
 </GenericEditModalComponent>
 
 @* 傳票編輯 Modal *@

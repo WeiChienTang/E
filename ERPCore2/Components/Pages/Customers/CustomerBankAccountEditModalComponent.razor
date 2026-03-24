@@ -3,6 +3,7 @@
 @inject IBankService BankService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="CustomerBankAccount"
                           TService="ICustomerBankAccountService"
@@ -26,7 +27,8 @@
                           RequiredPermission="@PermissionRegistry.Customer.Read"
                           OnEntitySaved="@OnSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="CustomerBankAccountEditModalComponent" />
+                          ComponentName="CustomerBankAccountEditModalComponent"
+                          FeatureGuide="@CustomerBankAccountGuide.Create()" />
 
 @code {
     [Parameter] public bool IsVisible { get; set; } = false;

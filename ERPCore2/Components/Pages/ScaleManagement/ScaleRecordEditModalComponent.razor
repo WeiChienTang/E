@@ -14,6 +14,7 @@
 @inject IStringLocalizer<SharedResource> L
 @inject ISerialPortService SerialPortService
 @implements IDisposable
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="ScaleRecord"
                           TService="IScaleRecordService"
@@ -51,7 +52,8 @@
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoaded"
                           OnFieldChanged="@HandleFieldChangedAsync"
-                          ComponentName="ScaleRecordEditModalComponent">
+                          ComponentName="ScaleRecordEditModalComponent"
+                          FeatureGuide="@ScaleRecordGuide.Create()">
     <CustomActionButtons>
         <GenericButtonComponent Text="參數設定"
                               Variant="ButtonVariant.Purple"

@@ -2,6 +2,7 @@
 @inject IRoleService RoleService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Role"
                           TService="IRoleService"
@@ -24,7 +25,8 @@
                           RequiredPermission="@PermissionRegistry.Role.Read"
                           OnEntitySaved="@OnRoleSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="RoleEditModalComponent" />
+                          ComponentName="RoleEditModalComponent"
+                          FeatureGuide="@RoleGuide.Create()" />
 
 @code {
     // ===== 必要參數 =====

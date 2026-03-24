@@ -2,6 +2,7 @@
 @inject IPaymentMethodService PaymentMethodService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="PaymentMethod"
                           TService="IPaymentMethodService"
@@ -26,7 +27,8 @@
                           RequiredPermission="@PermissionRegistry.PaymentMethod.Read"
                           OnEntitySaved="@OnPaymentMethodSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="PaymentMethodEditModalComponent" />
+                          ComponentName="PaymentMethodEditModalComponent"
+                          FeatureGuide="@PaymentMethodGuide.Create()" />
 
 @code {
     // ===== 參數 =====

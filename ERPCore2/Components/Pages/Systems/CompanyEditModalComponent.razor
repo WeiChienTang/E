@@ -7,6 +7,7 @@
 @inject ICompanyModuleService CompanyModuleService
 @inject INavigationPermissionService NavigationPermissionService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Company"
                           TService="ICompanyService"
@@ -30,7 +31,8 @@
                           RequiredPermission="@PermissionRegistry.Company.Read"
                           OnEntitySaved="@OnCompanySaved"
                           OnCancel="@OnCancel"
-                          ComponentName="CompanyEditModalComponent" />
+                          ComponentName="CompanyEditModalComponent"
+                          FeatureGuide="@CompanyGuide.Create()" />
 
 @code {
     // ===== 參數 =====

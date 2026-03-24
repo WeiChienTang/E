@@ -2,9 +2,6 @@ using System.Runtime.CompilerServices;
 
 namespace ERPCore2.Models.FeatureGuides.GuideDefinitions;
 
-/// <summary>
-/// 出貨單功能說明定義
-/// </summary>
 public static class SalesDeliveryGuide
 {
     private static string GetSourcePath([CallerFilePath] string? path = null) => path!;
@@ -14,7 +11,6 @@ public static class SalesDeliveryGuide
         SourceFile = GetSourcePath(),
         Sections = new()
         {
-            // ===== 功能概述 =====
             new GuideSection
             {
                 Id = "guide-sd-overview",
@@ -25,31 +21,25 @@ public static class SalesDeliveryGuide
                 Type = GuideSectionType.Description,
                 Items =
                 {
-                    new("Guide.SalesDelivery.Description"),
-                    new("Guide.SalesDelivery.TabOverview"),
+                    new("Guide.SalesDelivery.Description")
                 }
             },
 
-            // ===== 操作步驟 =====
             new GuideSection
             {
-                Id = "guide-sd-steps",
-                TitleKey = "Guide.Steps",
-                Icon = "bi-list-ol",
-                BookmarkLabel = "步驟",
-                BookmarkColor = "#10B981",
-                Type = GuideSectionType.Steps,
+                Id = "guide-sd-tabs",
+                TitleKey = "Guide.TabDescriptions",
+                Icon = "bi-folder2-open",
+                BookmarkLabel = "分頁",
+                BookmarkColor = "#8B5CF6",
+                Type = GuideSectionType.FieldList,
                 Items =
                 {
-                    new("Guide.SalesDelivery.Step1"),
-                    new("Guide.SalesDelivery.Step2"),
-                    new("Guide.SalesDelivery.Step3"),
-                    new("Guide.SalesDelivery.Step4"),
-                    new("Guide.SalesDelivery.Step5"),
+                    new("Tab.DeliveryData", "Guide.SalesDelivery.Tab.DeliveryData"),
+                    new("Tab.CustomerInfo", "Guide.SalesDelivery.Tab.CustomerInfo")
                 }
             },
 
-            // ===== 欄位說明 =====
             new GuideSection
             {
                 Id = "guide-sd-fields",
@@ -61,16 +51,16 @@ public static class SalesDeliveryGuide
                 Items =
                 {
                     new("Field.SalesDeliveryCode", "Guide.SalesDelivery.Field.Code"),
-                    new("Field.Customer", "Guide.SalesDelivery.Field.Customer"),
+                    new("Entity.Customer", "Guide.SalesDelivery.Field.Customer"),
                     new("Field.SalesPerson", "Guide.SalesDelivery.Field.Salesperson"),
-                    new("Field.DeliveryDate", "Guide.SalesDelivery.Field.DeliveryDate"),
+                    new("Field.QuotationCreator", "Guide.SalesDelivery.Field.FormCreator"),
+                    new("Field.SalesDeliveryDate", "Guide.SalesDelivery.Field.DeliveryDate"),
                     new("Field.DeliveryAddress", "Guide.SalesDelivery.Field.Address"),
                     new("Field.TaxType", "Guide.SalesDelivery.Field.TaxMethod"),
-                    new("Field.Remarks", "Guide.SalesDelivery.Field.Remarks"),
+                    new("Field.Remarks", "Guide.SalesDelivery.Field.Remarks")
                 }
             },
 
-            // ===== 金額欄位 =====
             new GuideSection
             {
                 Id = "guide-sd-amount",
@@ -84,11 +74,10 @@ public static class SalesDeliveryGuide
                     new("Field.TotalAmount", "Guide.SalesDelivery.Field.TotalAmount"),
                     new("Field.DiscountAmount", "Guide.SalesDelivery.Field.Discount"),
                     new("Field.TaxAmount", "Guide.SalesDelivery.Field.TaxAmount"),
-                    new("Field.TotalAmountWithTax", "Guide.SalesDelivery.Field.TotalWithTax"),
+                    new("Field.TotalAmountWithTax", "Guide.SalesDelivery.Field.TotalWithTax")
                 }
             },
 
-            // ===== 功能按鈕 =====
             new GuideSection
             {
                 Id = "guide-sd-actions",
@@ -101,11 +90,10 @@ public static class SalesDeliveryGuide
                 {
                     new("Guide.SalesDelivery.Action.ReturnLabel", "Guide.SalesDelivery.Action.Return"),
                     new("Guide.SalesDelivery.Action.SetoffLabel", "Guide.SalesDelivery.Action.Setoff"),
-                    new("Guide.SalesDelivery.Action.PrintLabel", "Guide.SalesDelivery.Action.Print"),
+                    new("Guide.SalesDelivery.Action.PrintLabel", "Guide.SalesDelivery.Action.Print")
                 }
             },
 
-            // ===== 提示與警告 =====
             new GuideSection
             {
                 Id = "guide-sd-tips",
@@ -119,11 +107,10 @@ public static class SalesDeliveryGuide
                     new("Guide.SalesDelivery.Tip1", GuideItemStyle.Tip),
                     new("Guide.SalesDelivery.Tip2", GuideItemStyle.Tip),
                     new("Guide.SalesDelivery.Warning1", GuideItemStyle.Warning),
-                    new("Guide.SalesDelivery.Warning2", GuideItemStyle.Warning),
+                    new("Guide.SalesDelivery.Warning2", GuideItemStyle.Warning)
                 }
             },
 
-            // ===== 常見問題 =====
             new GuideSection
             {
                 Id = "guide-sd-faq",
@@ -136,7 +123,7 @@ public static class SalesDeliveryGuide
                 {
                     new("Guide.SalesDelivery.Faq1Q", "Guide.SalesDelivery.Faq1A"),
                     new("Guide.SalesDelivery.Faq2Q", "Guide.SalesDelivery.Faq2A"),
-                    new("Guide.SalesDelivery.Faq3Q", "Guide.SalesDelivery.Faq3A"),
+                    new("Guide.SalesDelivery.Faq3Q", "Guide.SalesDelivery.Faq3A")
                 }
             },
         }

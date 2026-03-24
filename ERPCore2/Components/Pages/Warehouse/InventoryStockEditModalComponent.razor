@@ -5,6 +5,7 @@
 @inject IWarehouseLocationService WarehouseLocationService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="InventoryStock" 
                           TService="IInventoryStockService"
@@ -35,6 +36,7 @@
                           OnEntitySaved="@OnInventoryStockSaved"
                           OnCancel="@OnCancel"
                           ComponentName="InventoryStockEditModalComponent"
+                          FeatureGuide="@InventoryStockGuide.Create()"
 />
 
 @* ==================== 無倉庫提示確認 Modal ==================== *@

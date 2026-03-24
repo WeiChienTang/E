@@ -5,6 +5,7 @@
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 @inject IWebHostEnvironment Environment
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Document"
                           TService="IDocumentService"
@@ -29,7 +30,8 @@
                           RequiredPermission="@PermissionRegistry.Document.Read"
                           OnEntitySaved="@OnDocumentSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="DocumentEditModalComponent">
+                          ComponentName="DocumentEditModalComponent"
+                          FeatureGuide="@DocumentGuide.Create()">
     <CustomFormContent>
         @* 附件檔案區域 *@
         <div class="col-12 mt-3">

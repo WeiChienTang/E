@@ -1,7 +1,7 @@
 # 說明引導系統設計總綱
 
 ## 更新日期
-2026-03-23
+2026-03-24
 
 ---
 
@@ -386,20 +386,24 @@ Guide.{ModuleName}.{ContentType}{Number}
 
 ## ✅ 已實作項目
 
-### 說明定義
+### 覆蓋率
 
-| 模組 | 定義檔案 | 章節數 | 狀態 |
-|------|----------|--------|------|
-| 銷售訂單 | `SalesOrderGuide.cs` | 9（概述、步驟、基本欄位、金額欄位、明細、功能按鈕、審核、提示、FAQ） | ✅ 完成 |
+| 項目 | 數量 | 說明 |
+|------|------|------|
+| **已接入 Guide 的 EditModal** | **64 / 70** | 91.4% 覆蓋率 |
+| **Guide 定義檔** | 65 | `Models/FeatureGuides/GuideDefinitions/` |
+| **未接入（原生 Modal）** | 6 | 使用原生 Bootstrap Modal，無 GenericEditModalComponent |
 
 ### resx key 統計
 
 | 分類 | key 數量 | 說明 |
 |------|----------|------|
 | 共用 UI key | 7 | Modal 按鈕 + Drawer 標題 + 章節通用標題 |
-| SalesOrder 專用 | 60 | Description×2 + Step×6 + Field×15 + Detail×6 + Action×10 + Approval×4 + Tip×3 + Warning×3 + FAQ×10 + Title×4 |
-| 共用 Field key（新增） | 2 | Field.DiscountAmount, Field.TotalAmountWithTax |
-| **合計** | 69 key × 5 語言 |
+| 共用 Field key（新增） | 38 | Field.DiscountAmount, Field.TotalAmountWithTax, Field.PurchasePersonnel 等 |
+| 模組專用 Guide key | ~580 | 65 個模組的 Description + Fields + Steps + Tips + FAQ |
+| **合計** | **~625 key × 5 語言 ≈ 3,125 條翻譯** |
+
+> 詳細的模組清單與變更記錄請參閱 [Readme_說明引導更新日誌.md](Readme_說明引導更新日誌.md)
 
 ---
 
@@ -469,3 +473,4 @@ Guide.{ModuleName}.{ContentType}{Number}
 
 - [README_數據模型與渲染.md](README_數據模型與渲染.md) - 數據模型詳細說明
 - [README_新增模組說明指南.md](README_新增模組說明指南.md) - 新增模組逐步教學
+- [Readme_說明引導更新日誌.md](Readme_說明引導更新日誌.md) - 完整的模組接入記錄與變更歷史

@@ -2,6 +2,7 @@
 @inject ISizeService SizeService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Size"
                           TService="ISizeService"
@@ -26,7 +27,8 @@
                           RequiredPermission="@PermissionRegistry.Size.Read"
                           OnEntitySaved="@OnSizeSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="SizeEditModalComponent" />
+                          ComponentName="SizeEditModalComponent"
+                          FeatureGuide="@SizeGuide.Create()" />
 
 @code {
     // ===== 必要參數 =====

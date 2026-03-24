@@ -2,9 +2,6 @@ using System.Runtime.CompilerServices;
 
 namespace ERPCore2.Models.FeatureGuides.GuideDefinitions;
 
-/// <summary>
-/// 報價單功能說明定義
-/// </summary>
 public static class QuotationGuide
 {
     private static string GetSourcePath([CallerFilePath] string? path = null) => path!;
@@ -14,7 +11,6 @@ public static class QuotationGuide
         SourceFile = GetSourcePath(),
         Sections = new()
         {
-            // ===== 功能概述 =====
             new GuideSection
             {
                 Id = "guide-qt-overview",
@@ -25,31 +21,26 @@ public static class QuotationGuide
                 Type = GuideSectionType.Description,
                 Items =
                 {
-                    new("Guide.Quotation.Description"),
-                    new("Guide.Quotation.TabOverview"),
+                    new("Guide.Quotation.Description")
                 }
             },
 
-            // ===== 操作步驟 =====
             new GuideSection
             {
-                Id = "guide-qt-steps",
-                TitleKey = "Guide.Steps",
-                Icon = "bi-list-ol",
-                BookmarkLabel = "步驟",
-                BookmarkColor = "#10B981",
-                Type = GuideSectionType.Steps,
+                Id = "guide-qt-tabs",
+                TitleKey = "Guide.TabDescriptions",
+                Icon = "bi-folder2-open",
+                BookmarkLabel = "分頁",
+                BookmarkColor = "#8B5CF6",
+                Type = GuideSectionType.FieldList,
                 Items =
                 {
-                    new("Guide.Quotation.Step1"),
-                    new("Guide.Quotation.Step2"),
-                    new("Guide.Quotation.Step3"),
-                    new("Guide.Quotation.Step4"),
-                    new("Guide.Quotation.Step5"),
+                    new("Tab.QuotationData", "Guide.Quotation.Tab.QuotationData"),
+                    new("Tab.CustomerInfo", "Guide.Quotation.Tab.CustomerInfo"),
+                    new("Tab.QuotationPhotos", "Guide.Quotation.Tab.Photos")
                 }
             },
 
-            // ===== 基本資料欄位 =====
             new GuideSection
             {
                 Id = "guide-qt-fields",
@@ -61,19 +52,18 @@ public static class QuotationGuide
                 Items =
                 {
                     new("Field.QuotationCode", "Guide.Quotation.Field.Code"),
-                    new("Field.Customer", "Guide.Quotation.Field.Customer"),
-                    new("Field.Company", "Guide.Quotation.Field.Company"),
+                    new("Entity.Customer", "Guide.Quotation.Field.Customer"),
+                    new("Entity.Company", "Guide.Quotation.Field.Company"),
                     new("Field.SalesPerson", "Guide.Quotation.Field.Salesperson"),
                     new("Field.QuotationDate", "Guide.Quotation.Field.Date"),
                     new("Field.ProjectName", "Guide.Quotation.Field.ProjectName"),
                     new("Field.TaxType", "Guide.Quotation.Field.TaxMethod"),
                     new("Field.PaymentTerms", "Guide.Quotation.Field.PaymentTerms"),
                     new("Field.DeliveryTerms", "Guide.Quotation.Field.DeliveryTerms"),
-                    new("Field.Remarks", "Guide.Quotation.Field.Remarks"),
+                    new("Field.Remarks", "Guide.Quotation.Field.Remarks")
                 }
             },
 
-            // ===== 金額欄位 =====
             new GuideSection
             {
                 Id = "guide-qt-amount",
@@ -87,11 +77,10 @@ public static class QuotationGuide
                     new("Field.SubtotalBeforeDiscount", "Guide.Quotation.Field.Subtotal"),
                     new("Field.DiscountAmount", "Guide.Quotation.Field.Discount"),
                     new("Field.QuotationTaxAmount", "Guide.Quotation.Field.TaxAmount"),
-                    new("Field.TotalAmount", "Guide.Quotation.Field.TotalAmount"),
+                    new("Field.TotalAmount", "Guide.Quotation.Field.TotalAmount")
                 }
             },
 
-            // ===== 功能按鈕 =====
             new GuideSection
             {
                 Id = "guide-qt-actions",
@@ -104,11 +93,10 @@ public static class QuotationGuide
                 {
                     new("Guide.Quotation.Action.ConvertLabel", "Guide.Quotation.Action.Convert"),
                     new("Guide.Quotation.Action.PrintLabel", "Guide.Quotation.Action.Print"),
-                    new("Guide.Quotation.Action.DraftLabel", "Guide.Quotation.Action.Draft"),
+                    new("Guide.Quotation.Action.DraftLabel", "Guide.Quotation.Action.Draft")
                 }
             },
 
-            // ===== 提示與警告 =====
             new GuideSection
             {
                 Id = "guide-qt-tips",
@@ -122,11 +110,10 @@ public static class QuotationGuide
                     new("Guide.Quotation.Tip1", GuideItemStyle.Tip),
                     new("Guide.Quotation.Tip2", GuideItemStyle.Tip),
                     new("Guide.Quotation.Warning1", GuideItemStyle.Warning),
-                    new("Guide.Quotation.Warning2", GuideItemStyle.Warning),
+                    new("Guide.Quotation.Warning2", GuideItemStyle.Warning)
                 }
             },
 
-            // ===== 常見問題 =====
             new GuideSection
             {
                 Id = "guide-qt-faq",
@@ -139,7 +126,7 @@ public static class QuotationGuide
                 {
                     new("Guide.Quotation.Faq1Q", "Guide.Quotation.Faq1A"),
                     new("Guide.Quotation.Faq2Q", "Guide.Quotation.Faq2A"),
-                    new("Guide.Quotation.Faq3Q", "Guide.Quotation.Faq3A"),
+                    new("Guide.Quotation.Faq3Q", "Guide.Quotation.Faq3A")
                 }
             },
         }

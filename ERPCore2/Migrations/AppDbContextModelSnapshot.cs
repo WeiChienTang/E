@@ -7162,6 +7162,9 @@ namespace ERPCore2.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<bool>("RequiresProduction")
+                        .HasColumnType("bit");
+
                     b.Property<int>("SalesOrderId")
                         .HasColumnType("int");
 

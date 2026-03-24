@@ -4,6 +4,7 @@
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="WarehouseLocation"
                           TService="IWarehouseLocationService"
@@ -32,7 +33,8 @@
                           RequiredPermission="@PermissionRegistry.WarehouseLocation.Read"
                           OnEntitySaved="@OnWarehouseLocationSaved"
                           OnCancel="@OnCancel"
-                          ComponentName="WarehouseLocationEditModalComponent" />
+                          ComponentName="WarehouseLocationEditModalComponent"
+                          FeatureGuide="@WarehouseLocationGuide.Create()" />
 
 @* 倉庫編輯 Modal *@
 <WarehouseEditModalComponent @ref="warehouseEditModal"

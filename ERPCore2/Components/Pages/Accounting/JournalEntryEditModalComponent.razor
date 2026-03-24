@@ -10,6 +10,7 @@
 @inject IJournalEntryAttachmentService AttachmentService
 @inject IWebHostEnvironment Environment
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="JournalEntry"
                           TService="IJournalEntryService"
@@ -40,7 +41,8 @@
                           CustomActionButtons="@GetCustomActionButtons()"
                           FormHeaderContent="@GetFormHeaderContent()"
                           OnEntityLoaded="@HandleEntityLoaded"
-                          ComponentName="JournalEntryEditModalComponent">
+                          ComponentName="JournalEntryEditModalComponent"
+                          FeatureGuide="@JournalEntryGuide.Create()">
 </GenericEditModalComponent>
 
 @code {

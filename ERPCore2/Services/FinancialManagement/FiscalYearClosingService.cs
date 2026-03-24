@@ -16,6 +16,8 @@ namespace ERPCore2.Services
     ///       借：各收入科目  / 貸：本期損益
     ///     成本/費用類（AccountType = Cost/Expense，淨借方）：
     ///       借：本期損益    / 貸：各成本費用科目
+    ///     OCI 類（AccountType = ComprehensiveIncome）：
+    ///       同收入/費用邏輯歸零，轉入本期損益
     ///
     ///   Step 2 — 本期損益轉累積盈虧（3351）
     ///     盈利：借 本期損益 / 貸 累積盈虧
@@ -35,12 +37,15 @@ namespace ERPCore2.Services
         private const string RetainedEarningsCode    = "3351"; // 累積盈虧（Accumulated P&L — 最終累積保留盈餘帳）
 
         // 需歸零的科目類型（損益表科目）
+        // 必須與 IncomeStatementReportService / BalanceSheetReportService 的 IncomeStatementTypes 保持一致，
+        // 確保年底結帳歸零範圍涵蓋損益表所有科目（含 OCI）。
         private static readonly AccountType[] IncomeStatementTypes =
         {
             AccountType.Revenue,
             AccountType.Cost,
             AccountType.Expense,
-            AccountType.NonOperatingIncomeAndExpense
+            AccountType.NonOperatingIncomeAndExpense,
+            AccountType.ComprehensiveIncome
         };
 
         public FiscalYearClosingService(
@@ -224,6 +229,7 @@ namespace ERPCore2.Services
                 }
 
                 // ===== Step 2：本期損益轉保留盈餘 =====
+                // 注意：Step 1 已提交，若 Step 2 失敗需自動沖銷 Step 1 的結帳傳票以維持一致性
                 var netIncome = await CalculateNetIncomeAsync(context, year, companyId);
 
                 if (netIncome != 0m)
@@ -277,7 +283,23 @@ namespace ERPCore2.Services
                         step2Lines, company.Id, year, executedBy);
 
                     if (!step2Result.Success)
-                        return (false, $"Step 2 失敗：{step2Result.ErrorMessage}");
+                    {
+                        // Step 2 失敗，嘗試沖銷 Step 1 已建立的結帳傳票
+                        _logger.LogError("年底結帳 Step 2 失敗，嘗試沖銷 Step 1 結帳傳票。Year={Year}, Company={CompanyId}, Error={Error}",
+                            year, companyId, step2Result.ErrorMessage);
+                        var step1Entries = await context.JournalEntries
+                            .Where(je => je.CompanyId == companyId
+                                      && je.FiscalYear == year
+                                      && je.EntryType == JournalEntryType.Closing
+                                      && je.JournalEntryStatus == JournalEntryStatus.Posted)
+                            .ToListAsync();
+                        var reversalDate = new DateTime(year, 12, 31);
+                        foreach (var step1Entry in step1Entries)
+                        {
+                            await _journalEntryService.ReverseEntryAsync(step1Entry.Id, reversalDate, executedBy);
+                        }
+                        return (false, $"Step 2 失敗（已自動沖銷 Step 1）：{step2Result.ErrorMessage}");
+                    }
                 }
 
                 // ===== Step 3：鎖定所有年度期間 =====
@@ -375,6 +397,12 @@ namespace ERPCore2.Services
             int fiscalYear,
             string createdBy)
         {
+            // 使用該年度最後一個期間（通常為 12，但非曆年制可能不同）
+            var periods = await _fiscalPeriodService.GetByYearAsync(fiscalYear, companyId);
+            var lastPeriodNumber = periods.Any()
+                ? periods.Max(p => p.PeriodNumber)
+                : 12; // fallback：無期間資料時預設 12
+
             var entry = new JournalEntry
             {
                 EntryDate          = entryDate,
@@ -383,7 +411,7 @@ namespace ERPCore2.Services
                 Description        = description,
                 CompanyId          = companyId,
                 FiscalYear         = fiscalYear,
-                FiscalPeriod       = 12,
+                FiscalPeriod       = lastPeriodNumber,
                 Lines              = lines
             };
 

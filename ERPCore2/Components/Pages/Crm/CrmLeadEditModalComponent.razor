@@ -7,6 +7,7 @@
 @inject ActionButtonHelper ActionButtonHelper
 @inject ICustomerService CustomerService
 @inject IStringLocalizer<SharedResource> L
+@using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="CrmLead"
                           TService="ICrmLeadService"
@@ -37,7 +38,8 @@
                           OnCancel="@OnCancel"
                           OnEntityLoaded="@HandleEntityLoadedById"
                           CustomActionButtons="@GetConvertButton()"
-                          ComponentName="CrmLeadEditModalComponent" />
+                          ComponentName="CrmLeadEditModalComponent"
+                          FeatureGuide="@CrmLeadGuide.Create()" />
 
 @* 員工編輯 Modal *@
 <EmployeeEditModalComponent @ref="employeeEditModal"
@@ -53,6 +55,8 @@
                               Title="@L["Button.ConvertToCustomer"]"
                               Icon="bi-person-check"
                               Message="@L["Message.ConvertToCustomerConfirm"]"
+                              Conditions="@convertToCustomerConditions"
+                              SummaryMessage="@L["Message.ConvertToCustomerSummary"]"
                               ConfirmButtonText="@L["Button.Confirm"]"
                               CancelButtonText="@L["Button.Cancel"]"
                               ConfirmButtonVariant="ButtonVariant.Green"
@@ -90,6 +94,7 @@
     private bool showConvertModal = false;
     private bool showCustomerEditModal = false;
     private int? convertedCustomerId;
+    private List<string> convertToCustomerConditions = new();
 
     private List<Employee> availableEmployees = new();
 
@@ -381,6 +386,20 @@
 
     private void ShowConvertModal()
     {
+        var entity = editModalComponent?.Entity;
+        if (entity == null) return;
+
+        convertToCustomerConditions = new List<string>();
+        if (!string.IsNullOrWhiteSpace(entity.CompanyName))     convertToCustomerConditions.Add($"{L["Field.CompanyName"]}：{entity.CompanyName}");
+        if (!string.IsNullOrWhiteSpace(entity.ContactPerson))   convertToCustomerConditions.Add($"{L["Field.ContactPerson"]}：{entity.ContactPerson}");
+        if (!string.IsNullOrWhiteSpace(entity.ContactPhone))    convertToCustomerConditions.Add($"{L["Field.ContactPhone"]}：{entity.ContactPhone}");
+        if (!string.IsNullOrWhiteSpace(entity.Email))            convertToCustomerConditions.Add($"{L["Field.Email"]}：{entity.Email}");
+        if (!string.IsNullOrWhiteSpace(entity.Industry))         convertToCustomerConditions.Add($"{L["Field.Industry"]}：{entity.Industry}");
+        if (entity.EstimatedValue.HasValue && entity.EstimatedValue > 0)
+            convertToCustomerConditions.Add($"{L["Field.EstimatedValue"]}：{entity.EstimatedValue:N0}");
+        if (entity.AssignedEmployee != null)
+            convertToCustomerConditions.Add($"{L["Field.AssignedEmployee"]}：{entity.AssignedEmployee.Name}");
+
         showConvertModal = true;
         StateHasChanged();
     }

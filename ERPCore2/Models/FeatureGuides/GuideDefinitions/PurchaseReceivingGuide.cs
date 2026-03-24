@@ -2,9 +2,6 @@ using System.Runtime.CompilerServices;
 
 namespace ERPCore2.Models.FeatureGuides.GuideDefinitions;
 
-/// <summary>
-/// 進貨單功能說明定義
-/// </summary>
 public static class PurchaseReceivingGuide
 {
     private static string GetSourcePath([CallerFilePath] string? path = null) => path!;
@@ -14,7 +11,6 @@ public static class PurchaseReceivingGuide
         SourceFile = GetSourcePath(),
         Sections = new()
         {
-            // ===== 功能概述 =====
             new GuideSection
             {
                 Id = "guide-pr-overview",
@@ -25,31 +21,25 @@ public static class PurchaseReceivingGuide
                 Type = GuideSectionType.Description,
                 Items =
                 {
-                    new("Guide.PurchaseReceiving.Description"),
-                    new("Guide.PurchaseReceiving.TabOverview"),
+                    new("Guide.PurchaseReceiving.Description")
                 }
             },
 
-            // ===== 操作步驟 =====
             new GuideSection
             {
-                Id = "guide-pr-steps",
-                TitleKey = "Guide.Steps",
-                Icon = "bi-list-ol",
-                BookmarkLabel = "步驟",
-                BookmarkColor = "#10B981",
-                Type = GuideSectionType.Steps,
+                Id = "guide-pr-tabs",
+                TitleKey = "Guide.TabDescriptions",
+                Icon = "bi-folder2-open",
+                BookmarkLabel = "分頁",
+                BookmarkColor = "#8B5CF6",
+                Type = GuideSectionType.FieldList,
                 Items =
                 {
-                    new("Guide.PurchaseReceiving.Step1"),
-                    new("Guide.PurchaseReceiving.Step2"),
-                    new("Guide.PurchaseReceiving.Step3"),
-                    new("Guide.PurchaseReceiving.Step4"),
-                    new("Guide.PurchaseReceiving.Step5"),
+                    new("Tab.ReceivingData", "Guide.PurchaseReceiving.Tab.ReceivingData"),
+                    new("Tab.SupplierInfo", "Guide.PurchaseReceiving.Tab.SupplierInfo")
                 }
             },
 
-            // ===== 欄位說明 =====
             new GuideSection
             {
                 Id = "guide-pr-fields",
@@ -61,15 +51,14 @@ public static class PurchaseReceivingGuide
                 Items =
                 {
                     new("Field.PurchaseReceivingCode", "Guide.PurchaseReceiving.Field.Code"),
-                    new("Field.Supplier", "Guide.PurchaseReceiving.Field.Supplier"),
+                    new("Entity.Supplier", "Guide.PurchaseReceiving.Field.Supplier"),
                     new("Field.ReceiptDate", "Guide.PurchaseReceiving.Field.ReceiptDate"),
                     new("Field.TaxType", "Guide.PurchaseReceiving.Field.TaxMethod"),
                     new("Field.BatchNumber", "Guide.PurchaseReceiving.Field.BatchNumber"),
-                    new("Field.Remarks", "Guide.PurchaseReceiving.Field.Remarks"),
+                    new("Field.Remarks", "Guide.PurchaseReceiving.Field.Remarks")
                 }
             },
 
-            // ===== 金額欄位 =====
             new GuideSection
             {
                 Id = "guide-pr-amount",
@@ -82,11 +71,10 @@ public static class PurchaseReceivingGuide
                 {
                     new("Field.TotalAmount", "Guide.PurchaseReceiving.Field.TotalAmount"),
                     new("Field.PurchaseReceivingTaxAmount", "Guide.PurchaseReceiving.Field.TaxAmount"),
-                    new("Field.PurchaseReceivingTotalAmountIncludingTax", "Guide.PurchaseReceiving.Field.TotalWithTax"),
+                    new("Field.PurchaseReceivingTotalAmountIncludingTax", "Guide.PurchaseReceiving.Field.TotalWithTax")
                 }
             },
 
-            // ===== 明細操作 =====
             new GuideSection
             {
                 Id = "guide-pr-details",
@@ -100,11 +88,10 @@ public static class PurchaseReceivingGuide
                     new("Guide.PurchaseReceiving.Detail1"),
                     new("Guide.PurchaseReceiving.Detail2"),
                     new("Guide.PurchaseReceiving.Detail3"),
-                    new("Guide.PurchaseReceiving.Detail4"),
+                    new("Guide.PurchaseReceiving.Detail4")
                 }
             },
 
-            // ===== 功能按鈕 =====
             new GuideSection
             {
                 Id = "guide-pr-actions",
@@ -116,11 +103,10 @@ public static class PurchaseReceivingGuide
                 Items =
                 {
                     new("Guide.PurchaseReceiving.Action.ReturnLabel", "Guide.PurchaseReceiving.Action.Return"),
-                    new("Guide.PurchaseReceiving.Action.SetoffLabel", "Guide.PurchaseReceiving.Action.Setoff"),
+                    new("Guide.PurchaseReceiving.Action.SetoffLabel", "Guide.PurchaseReceiving.Action.Setoff")
                 }
             },
 
-            // ===== 提示與警告 =====
             new GuideSection
             {
                 Id = "guide-pr-tips",
@@ -133,11 +119,10 @@ public static class PurchaseReceivingGuide
                 {
                     new("Guide.PurchaseReceiving.Tip1", GuideItemStyle.Tip),
                     new("Guide.PurchaseReceiving.Tip2", GuideItemStyle.Tip),
-                    new("Guide.PurchaseReceiving.Warning1", GuideItemStyle.Warning),
+                    new("Guide.PurchaseReceiving.Warning1", GuideItemStyle.Warning)
                 }
             },
 
-            // ===== 常見問題 =====
             new GuideSection
             {
                 Id = "guide-pr-faq",
@@ -149,7 +134,7 @@ public static class PurchaseReceivingGuide
                 Items =
                 {
                     new("Guide.PurchaseReceiving.Faq1Q", "Guide.PurchaseReceiving.Faq1A"),
-                    new("Guide.PurchaseReceiving.Faq2Q", "Guide.PurchaseReceiving.Faq2A"),
+                    new("Guide.PurchaseReceiving.Faq2Q", "Guide.PurchaseReceiving.Faq2A")
                 }
             },
         }
