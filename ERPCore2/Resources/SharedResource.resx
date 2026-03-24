@@ -1076,6 +1076,10 @@
   <data name="Column.PurchaseQuantity" xml:space="preserve"><value>採購量</value></data>
   <data name="Column.ReceivedQuantity" xml:space="preserve"><value>入庫量</value></data>
   <data name="Column.AlreadyReturnedQuantity" xml:space="preserve"><value>已退量</value></data>
+  <data name="Column.ReturnedAndAvailable" xml:space="preserve"><value>已退/可退</value></data>
+  <data name="Label.AlreadyReturned" xml:space="preserve"><value>已退 {0}</value></data>
+  <data name="Label.Returnable" xml:space="preserve"><value>可退 {0}</value></data>
+  <data name="Label.AllReturned" xml:space="preserve"><value>已全數退回</value></data>
   <data name="Column.Location" xml:space="preserve"><value>庫位</value></data>
   <data name="Column.PurchaseReceivingQuantity" xml:space="preserve"><value>進貨量</value></data>
   <data name="Column.ReturnQuantity" xml:space="preserve"><value>退回數量</value></data>
@@ -4745,4 +4749,23 @@
   <data name="Column.RequiresProduction" xml:space="preserve"><value>需排程</value></data>
   <data name="Tooltip.RequiresProduction" xml:space="preserve"><value>控制此品項是否出現在生產排程看板，依 BOM 配方自動設定</value></data>
   <data name="Field.RequiresProduction" xml:space="preserve"><value>需要排程</value></data>
+  <data name="Inventory.MergeLocation" xml:space="preserve"><value>合併庫位</value></data>
+  <data name="Inventory.ConfirmMerge" xml:space="preserve"><value>確認合併</value></data>
+  <data name="Inventory.MergeTarget" xml:space="preserve"><value>目標庫位</value></data>
+  <data name="Inventory.MergeSource" xml:space="preserve"><value>選擇要合併的來源庫位</value></data>
+  <data name="Inventory.MergePreview" xml:space="preserve"><value>合併預覽</value></data>
+  <data name="Inventory.MergeConfirmMessage" xml:space="preserve"><value>確定要將選取的庫位合併至目標庫位嗎？此操作需儲存後才會生效。</value></data>
+  <data name="Inventory.MergeSuccess" xml:space="preserve"><value>已合併 {0} 筆庫位明細</value></data>
+  <data name="Inventory.MergeFailed" xml:space="preserve"><value>合併庫位失敗</value></data>
+  <data name="Inventory.MergeTargetCurrent" xml:space="preserve"><value>目前庫存</value></data>
+  <data name="Inventory.MergeSourceTotal" xml:space="preserve"><value>來源合計</value></data>
+  <data name="Inventory.MergeAfter" xml:space="preserve"><value>合併後數量</value></data>
+  <data name="Inventory.MergeWeightedCost" xml:space="preserve"><value>加權平均成本</value></data>
+  <data name="Inventory.MergeNoSource" xml:space="preserve"><value>請至少選擇一個來源庫位</value></data>
+  <data name="Inventory.MergeHasReserved" xml:space="preserve"><value>有預留庫存，無法合併</value></data>
+  <data name="Inventory.MergeHasInTransit" xml:space="preserve"><value>有在途庫存，無法合併</value></data>
+  <data name="Inventory.MergeNoStock" xml:space="preserve"><value>無庫存</value></data>
+  <data name="Inventory.MergeSelectTarget" xml:space="preserve"><value>請先選擇目標庫位</value></data>
+  <data name="Inventory.MergeNoLocation" xml:space="preserve"><value>（無指定庫位）</value></data>
+  <data name="Inventory.MergeNoOtherLocations" xml:space="preserve"><value>目前沒有其他庫位明細可供合併</value></data>
 </root>

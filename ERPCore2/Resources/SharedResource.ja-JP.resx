@@ -1058,6 +1058,10 @@
   <data name="Column.PurchaseQuantity" xml:space="preserve"><value>発注量</value></data>
   <data name="Column.ReceivedQuantity" xml:space="preserve"><value>入庫量</value></data>
   <data name="Column.AlreadyReturnedQuantity" xml:space="preserve"><value>返品済</value></data>
+  <data name="Column.ReturnedAndAvailable" xml:space="preserve"><value>返品済/返品可</value></data>
+  <data name="Label.AlreadyReturned" xml:space="preserve"><value>返品済 {0}</value></data>
+  <data name="Label.Returnable" xml:space="preserve"><value>返品可 {0}</value></data>
+  <data name="Label.AllReturned" xml:space="preserve"><value>全数返品済</value></data>
   <data name="Column.Location" xml:space="preserve"><value>ロケーション</value></data>
   <data name="Column.PurchaseReceivingQuantity" xml:space="preserve"><value>入荷量</value></data>
   <data name="Column.ReturnQuantity" xml:space="preserve"><value>返品数量</value></data>
@@ -4653,4 +4657,23 @@
   <data name="Column.RequiresProduction" xml:space="preserve"><value>生産要</value></data>
   <data name="Tooltip.RequiresProduction" xml:space="preserve"><value>この品目が生産ボードに表示されるかを制御（BOM有無で自動設定）</value></data>
   <data name="Field.RequiresProduction" xml:space="preserve"><value>生産が必要</value></data>
+  <data name="Inventory.MergeLocation" xml:space="preserve"><value>ロケーション統合</value></data>
+  <data name="Inventory.ConfirmMerge" xml:space="preserve"><value>統合を確認</value></data>
+  <data name="Inventory.MergeTarget" xml:space="preserve"><value>統合先ロケーション</value></data>
+  <data name="Inventory.MergeSource" xml:space="preserve"><value>統合元ロケーションを選択</value></data>
+  <data name="Inventory.MergePreview" xml:space="preserve"><value>統合プレビュー</value></data>
+  <data name="Inventory.MergeConfirmMessage" xml:space="preserve"><value>選択したロケーションを統合先に統合しますか？保存後に反映されます。</value></data>
+  <data name="Inventory.MergeSuccess" xml:space="preserve"><value>{0} 件のロケーション明細を統合しました</value></data>
+  <data name="Inventory.MergeFailed" xml:space="preserve"><value>ロケーション統合に失敗しました</value></data>
+  <data name="Inventory.MergeTargetCurrent" xml:space="preserve"><value>現在在庫</value></data>
+  <data name="Inventory.MergeSourceTotal" xml:space="preserve"><value>元合計</value></data>
+  <data name="Inventory.MergeAfter" xml:space="preserve"><value>統合後数量</value></data>
+  <data name="Inventory.MergeWeightedCost" xml:space="preserve"><value>加重平均コスト</value></data>
+  <data name="Inventory.MergeNoSource" xml:space="preserve"><value>統合元を1つ以上選択してください</value></data>
+  <data name="Inventory.MergeHasReserved" xml:space="preserve"><value>予約在庫があるため統合できません</value></data>
+  <data name="Inventory.MergeHasInTransit" xml:space="preserve"><value>輸送中在庫があるため統合できません</value></data>
+  <data name="Inventory.MergeNoStock" xml:space="preserve"><value>在庫なし</value></data>
+  <data name="Inventory.MergeSelectTarget" xml:space="preserve"><value>統合先ロケーションを選択してください</value></data>
+  <data name="Inventory.MergeNoLocation" xml:space="preserve"><value>（ロケーション未指定）</value></data>
+  <data name="Inventory.MergeNoOtherLocations" xml:space="preserve"><value>統合可能なロケーション明細がありません</value></data>
 </root>

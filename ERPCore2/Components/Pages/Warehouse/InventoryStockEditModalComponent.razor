@@ -262,10 +262,12 @@
                 };
             }
             
-            // 載入庫存明細
+            // 載入庫存明細（過濾掉庫存為 0 的批號記錄，避免畫面雜亂）
             if (inventoryStock.InventoryStockDetails != null && inventoryStock.InventoryStockDetails.Any())
             {
-                inventoryStockDetails = inventoryStock.InventoryStockDetails.ToList();
+                inventoryStockDetails = inventoryStock.InventoryStockDetails
+                    .Where(d => d.CurrentStock > 0 || d.ReservedStock > 0 || d.InTransitStock > 0)
+                    .ToList();
             }
             else
             {

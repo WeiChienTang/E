@@ -110,5 +110,12 @@ namespace ERPCore2.Services
         /// <param name="purchaseReceivingDetailId">採購入庫明細ID</param>
         /// <returns>庫存異動記錄清單</returns>
         Task<List<InventoryTransaction>> GetRelatedInventoryTransactionsAsync(int purchaseReceivingDetailId);
+
+        /// <summary>
+        /// 取得指定品項最近一次入庫的倉庫與庫位
+        /// </summary>
+        /// <param name="itemId">品項ID</param>
+        /// <returns>最近一筆入庫明細（含 Warehouse 和 WarehouseLocation），若無紀錄則回傳 null</returns>
+        Task<PurchaseReceivingDetail?> GetLastWarehouseByItemIdAsync(int itemId);
     }
 }

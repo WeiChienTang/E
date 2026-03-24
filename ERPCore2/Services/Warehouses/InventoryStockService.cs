@@ -1117,66 +1117,77 @@ namespace ERPCore2.Services
                         ? $"{stock.Item.Code} {stock.Item.Name}" 
                         : $"品項ID:{productId}";
 
-                    // 2. 取得指定倉庫/庫位的明細
-                    // 🔧 修正：精確匹配庫位ID，包括 null 的情況
-                    // 原本的邏輯 (locationId == null || d.WarehouseLocationId == locationId) 
-                    // 當 locationId 為 null 時會匹配任何庫位，這是錯誤的
-                    var stockDetail = stock.InventoryStockDetails?
-                        .FirstOrDefault(d => d.WarehouseId == warehouseId && 
-                                            d.WarehouseLocationId == locationId);
-                    
-                    if (stockDetail == null)
+                    // 2. 取得指定倉庫/庫位的所有明細（可能有多個批號）
+                    var stockDetails = stock.InventoryStockDetails?
+                        .Where(d => d.WarehouseId == warehouseId &&
+                                    d.WarehouseLocationId == locationId &&
+                                    d.AvailableStock > 0)
+                        .OrderBy(d => d.BatchDate ?? DateTime.MaxValue) // FIFO：先進先出
+                        .ThenBy(d => d.Id)
+                        .ToList() ?? new List<InventoryStockDetail>();
+
+                    if (!stockDetails.Any())
                     {
-                        return ServiceResult.Failure($"找不到倉庫 {warehouseId} 的庫存記錄");
+                        return ServiceResult.Failure($"找不到倉庫 {warehouseId} 的可用庫存記錄");
                     }
 
-                    if (stockDetail.AvailableStock < quantity)
+                    var totalAvailable = stockDetails.Sum(d => d.AvailableStock);
+                    if (totalAvailable < quantity)
                     {
-                        return ServiceResult.Failure($"可用庫存不足，目前可用庫存：{stockDetail.AvailableStock}");
+                        return ServiceResult.Failure($"可用庫存不足，目前可用庫存：{totalAvailable}");
                     }
-                    
-                    // 3. 更新庫存數量
-                    var stockBefore = stockDetail.CurrentStock;
-                    // 修正 Bug-57：在清除平均成本前先保存，確保異動明細能正確記錄本次出庫成本
-                    var costAtTransaction = stockDetail.AverageCost;
-                    stockDetail.CurrentStock -= quantity;
-                    stockDetail.LastTransactionDate = DateTime.Now;
 
-                    // 庫存歸零時清除平均成本，避免舊庫位保留已無意義的成本資料
-                    if (stockDetail.CurrentStock <= 0)
-                        stockDetail.AverageCost = null;
-
-                    // 4. 建立/更新異動主檔
+                    // 3. 建立/更新異動主檔
                     var inventoryTransaction = await GetOrCreateTransactionAsync(
                         context, transactionNumber, transactionType, warehouseId,
                         sourceDocumentType, sourceDocumentId, remarks);
 
-                    // 5. 建立異動明細
-                    var transactionDetail = new InventoryTransactionDetail
+                    // 4. FIFO 扣減：依序從各批次扣除
+                    var remainingQuantity = quantity;
+                    foreach (var stockDetail in stockDetails)
                     {
-                        InventoryTransactionId = inventoryTransaction.Id,
-                        ItemId = productId,
-                        WarehouseLocationId = locationId,
-                        Quantity = -quantity, // 負數表示出庫
-                        UnitCost = costAtTransaction,
-                        Amount = (costAtTransaction ?? 0) * quantity,
-                        StockBefore = stockBefore,
-                        StockAfter = stockDetail.CurrentStock,
-                        SourceDetailId = sourceDetailId,
-                        InventoryStockId = stock.Id,
-                        InventoryStockDetailId = stockDetail.Id,
-                        OperationType = operationType,
-                        OperationNote = operationNote ?? GetDefaultOperationNote(operationType, false),
-                        OperationTime = DateTime.Now,
-                        Remarks = remarks,
-                        Status = EntityStatus.Active
-                    };
+                        if (remainingQuantity <= 0) break;
 
-                    await context.InventoryTransactionDetails.AddAsync(transactionDetail);
+                        var deductQuantity = Math.Min(remainingQuantity, stockDetail.AvailableStock);
+                        var stockBefore = stockDetail.CurrentStock;
+                        var costAtTransaction = stockDetail.AverageCost;
 
-                    // 6. 更新主檔彙總
-                    inventoryTransaction.TotalQuantity += (-quantity);
-                    inventoryTransaction.TotalAmount += transactionDetail.Amount;
+                        stockDetail.CurrentStock -= deductQuantity;
+                        stockDetail.LastTransactionDate = DateTime.Now;
+
+                        // 庫存歸零時清除平均成本
+                        if (stockDetail.CurrentStock <= 0)
+                            stockDetail.AverageCost = null;
+
+                        // 建立異動明細
+                        var transactionDetail = new InventoryTransactionDetail
+                        {
+                            InventoryTransactionId = inventoryTransaction.Id,
+                            ItemId = productId,
+                            WarehouseLocationId = locationId,
+                            Quantity = -deductQuantity, // 負數表示出庫
+                            UnitCost = costAtTransaction,
+                            Amount = (costAtTransaction ?? 0) * deductQuantity,
+                            StockBefore = stockBefore,
+                            StockAfter = stockDetail.CurrentStock,
+                            SourceDetailId = sourceDetailId,
+                            InventoryStockId = stock.Id,
+                            InventoryStockDetailId = stockDetail.Id,
+                            OperationType = operationType,
+                            OperationNote = operationNote ?? GetDefaultOperationNote(operationType, false),
+                            OperationTime = DateTime.Now,
+                            Remarks = remarks,
+                            Status = EntityStatus.Active
+                        };
+
+                        await context.InventoryTransactionDetails.AddAsync(transactionDetail);
+
+                        // 更新主檔彙總
+                        inventoryTransaction.TotalQuantity += (-deductQuantity);
+                        inventoryTransaction.TotalAmount += transactionDetail.Amount;
+
+                        remainingQuantity -= deductQuantity;
+                    }
 
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();

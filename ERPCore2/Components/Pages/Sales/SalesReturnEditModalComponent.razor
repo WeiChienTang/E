@@ -191,7 +191,7 @@
                 await LoadAdditionalDataAsync();
                 await InitializeFormFieldsAsync();
                 isDataLoaded = true;
-                
+
                 // 再次觸發選項更新（在表單欄位初始化後）
                 // 當從出貨單轉單時，確保銷售單選項正確篩選
                 if (PrefilledCustomerId.HasValue && PrefilledCustomerId.Value > 0)
@@ -229,6 +229,9 @@
                     PrefilledCustomerId = customerId;
                     PrefilledSalesDeliveryId = salesDeliveryId;
                     shouldAutoLoadReturnable = true;
+                    // 重置 isDataLoaded，確保 OnParametersSetAsync 會重新初始化
+                    // （當 Modal 已因 @if guard 而提前渲染時，isDataLoaded 可能已為 true）
+                    isDataLoaded = false;
                 },
                 isVisibleChanged: IsVisibleChanged,
                 autoLoadAction: async () =>
@@ -237,6 +240,10 @@
                     if (salesReturnDetailManager != null)
                     {
                         await salesReturnDetailManager.LoadAllReturnableItems();
+                    }
+                    else
+                    {
+                        // salesReturnDetailManager is null, cannot load returnable items
                     }
                 },
                 detailManagerReady: () => salesReturnDetailManager != null,
@@ -252,7 +259,7 @@
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledDelivery), GetType(), 
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(ShowAddModalWithPrefilledDelivery), GetType(),
                 additionalData: $"開啟預填銷售退貨單Modal失敗 - CustomerId: {customerId}, DeliveryId: {salesDeliveryId}");
             await NotificationService.ShowErrorAsync("開啟銷售退貨單時發生錯誤");
         }
@@ -266,7 +273,7 @@
         {
             isDetailDataReady = false;
             hasUndeletableDetails = false;
-            
+
             if (SalesReturnId.HasValue)
             {
                 // 編輯模式：載入現有資料
@@ -275,7 +282,7 @@
                 {
                     // 載入對應的退貨明細
                     await LoadSalesReturnDetails(salesReturn.Id);
-                    
+
                     //  關鍵：載入明細相關資料（沖款記錄）
                     await LoadDetailRelatedDataAsync();
                     isDetailDataReady = true;
@@ -297,7 +304,7 @@
                     TotalReturnAmount = 0,
                     ReturnReasonId = null // 預設為 null，選擇性填寫
                 };
-                
+
                 //  使用預填參數（從出貨單轉單時）
                 if (PrefilledCustomerId.HasValue && PrefilledCustomerId.Value > 0)
                 {
@@ -1321,7 +1328,8 @@
             // 審核守衛：人工審核模式下，需核准後才更新庫存；自動審核模式下，儲存即更新
             if (!salesReturn.IsDraft && result.Data != null)
             {
-                if (ApprovalConfigHelper.ShouldUpdateInventory(isManualApproval, result.Data.IsApproved))
+                var shouldUpdate = ApprovalConfigHelper.ShouldUpdateInventory(isManualApproval, result.Data.IsApproved);
+                if (shouldUpdate)
                 {
                     await UpdateInventoryByDifferenceAsync(result.Data.Id);
                 }
@@ -1329,6 +1337,10 @@
                 // 自動審核：若為系統自動審核模式且尚未審核，儲存後自動核准（ApprovedBy=null 表示系統自動審核）
                 if (!isManualApproval && !result.Data.IsApproved)
                     await SalesReturnService.ApproveAsync(result.Data.Id, null);
+            }
+            else
+            {
+                // Inventory update skipped (draft or no data)
             }
 
             return true;

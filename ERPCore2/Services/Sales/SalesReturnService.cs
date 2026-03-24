@@ -1056,7 +1056,7 @@ namespace ERPCore2.Services
                         // 從關聯的銷貨出貨明細取得倉庫ID
                         int? warehouseId = null;
                         int? locationId = null;
-                        
+
                         if (detail.SalesDeliveryDetailId.HasValue)
                         {
                             var deliveryDetail = await context.SalesDeliveryDetails
@@ -1064,8 +1064,25 @@ namespace ERPCore2.Services
                             warehouseId = deliveryDetail?.WarehouseId;
                             locationId = deliveryDetail?.WarehouseLocationId;
                         }
-                        
-                        // 如果沒有倉庫ID，跳過此明細
+
+                        // 如果出貨明細沒有倉庫ID，嘗試從該品項的庫存記錄中取得倉庫
+                        // （處理舊資料或出貨時未設定倉庫的情況）
+                        if (!warehouseId.HasValue)
+                        {
+                            var stockDetail = await context.InventoryStockDetails
+                                .Include(d => d.InventoryStock)
+                                .Where(d => d.InventoryStock.ItemId == detail.ItemId && d.WarehouseId > 0)
+                                .OrderByDescending(d => d.CurrentStock)
+                                .FirstOrDefaultAsync();
+
+                            if (stockDetail != null)
+                            {
+                                warehouseId = stockDetail.WarehouseId;
+                                locationId = stockDetail.WarehouseLocationId;
+                            }
+                        }
+
+                        // 如果仍然沒有倉庫ID，跳過此明細
                         if (!warehouseId.HasValue)
                         {
                             continue;
@@ -1084,21 +1101,21 @@ namespace ERPCore2.Services
                     
                     // 5. 處理庫存差異 - 使用淨值計算方式
                     var allKeys = processedInventory.Keys.Union(currentInventory.Keys).ToList();
-                    
+
                     foreach (var key in allKeys)
                     {
                         var hasProcessed = processedInventory.ContainsKey(key);
                         var hasCurrent = currentInventory.ContainsKey(key);
-                        
+
                         // 🔑 關鍵：退貨是增加庫存，所以目標數量是正數
                         decimal targetQuantity = hasCurrent ? currentInventory[key].CurrentQuantity : 0m;
-                        
+
                         // 計算已處理的庫存數量（之前所有交易的淨值，已經是正數）
                         decimal processedQuantity = hasProcessed ? processedInventory[key].NetProcessedQuantity : 0m;
-                        
+
                         // 計算需要調整的數量
                         decimal adjustmentNeeded = targetQuantity - processedQuantity;
-                        
+
                         if (adjustmentNeeded != 0)
                         {
                             var productId = hasCurrent ? currentInventory[key].ItemId : processedInventory[key].ItemId;
@@ -1134,7 +1151,7 @@ namespace ERPCore2.Services
                                     sourceDocumentId: currentReturn.Id,
                                     operationType: InventoryOperationTypeEnum.Adjust  // 標記為調整操作
                                 );
-                                
+
                                 if (!addResult.IsSuccess)
                                 {
                                     await transaction.RollbackAsync();
@@ -1168,7 +1185,7 @@ namespace ERPCore2.Services
 
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
-                    
+
                     return ServiceResult.Success();
                 }
                 catch
@@ -1179,7 +1196,7 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateInventoryByDifferenceAsync), GetType(), _logger, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UpdateInventoryByDifferenceAsync), GetType(), _logger, new {
                     Method = nameof(UpdateInventoryByDifferenceAsync),
                     ServiceType = GetType().Name,
                     Id = id 

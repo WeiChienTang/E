@@ -104,11 +104,11 @@
 @if (showSalesReturnModal)
 {
     <SalesReturnEditModalComponent @ref="salesReturnEditModal"
-                                  IsVisible="@showSalesReturnModal"
-                                  IsVisibleChanged="@((bool visible) => showSalesReturnModal = visible)"
+                                  IsVisible="@isSalesReturnModalVisible"
+                                  IsVisibleChanged="@((bool visible) => { isSalesReturnModalVisible = visible; if (!visible) showSalesReturnModal = false; })"
                                   SalesReturnId="@selectedSalesReturnId"
                                   OnSalesReturnSaved="@HandleSalesReturnSaved"
-                                  OnCancel="@(() => showSalesReturnModal = false)" />
+                                  OnCancel="@(() => { isSalesReturnModalVisible = false; showSalesReturnModal = false; })" />
 }
 
 @* 沖款單編輯 Modal *@
@@ -204,7 +204,8 @@
     
     // ===== 相關單據 Modal =====
     private SalesReturnEditModalComponent? salesReturnEditModal;
-    private bool showSalesReturnModal = false;
+    private bool showSalesReturnModal = false;      // 控制 @if 渲染（組件是否存在於 DOM）
+    private bool isSalesReturnModalVisible = false;  // 控制 IsVisible（Modal 是否顯示）
     private int? selectedSalesReturnId = null;
     
     // ===== 沖款單 Modal =====
@@ -1301,6 +1302,9 @@
             // 自動審核：若為系統自動審核模式且尚未審核，儲存後自動核准（ApprovedBy=null 表示系統自動審核）
             if (!salesDelivery.IsDraft && !isManualApproval && !salesDelivery.IsApproved)
                 await SalesDeliveryService.ApproveAsync(salesDelivery.Id, null);
+
+            // 遞增版本號，觸發 SalesDeliveryTable 重新載入（含庫存量刷新）
+            _detailsDataVersion++;
         }
         catch (Exception ex)
         {
@@ -1440,7 +1444,7 @@
                 await NotificationService.ShowWarningAsync("請先儲存出貨單後，才能轉退貨");
                 return;
             }
-            
+
             // 安全檢查：確保 Entity 已載入（canCreateReturn = true 時理論上一定有值）
             if (editModalComponent?.Entity == null)
             {
@@ -1461,14 +1465,14 @@
                 await NotificationService.ShowWarningAsync("出貨單缺少客戶資訊，無法轉退貨");
                 return;
             }
-            
+
             // 檢查是否有明細資料
             if (!salesDeliveryDetails.Any())
             {
                 await NotificationService.ShowWarningAsync("出貨單沒有明細資料，無法轉退貨");
                 return;
             }
-            
+
             // 檢查是否所有明細都已完成退貨（已退貨數量 >= 出貨數量）
             bool hasIncompleteDetails = false;
             foreach (var detail in salesDeliveryDetails)
@@ -1480,29 +1484,40 @@
                     break;
                 }
             }
-            
+
             if (!hasIncompleteDetails)
             {
                 await NotificationService.ShowWarningAsync("出貨單所有明細皆已完成退貨，無需再轉單");
                 return;
             }
-            
+
             // 確保退貨單 Modal 組件已渲染（@if guard 下需要先設定 flag 再等待渲染）
+            // 關鍵：先渲染組件（showSalesReturnModal=true）但不顯示 Modal（isSalesReturnModalVisible=false）
+            // 這樣 GenericEditModalComponent 的 DataLoader 會在 ShowAddModalWithPrefilledDelivery
+            // 設定好預填值並觸發 IsVisible=true 時才執行，確保預填值正確傳入
             if (!showSalesReturnModal)
             {
                 showSalesReturnModal = true;
+                isSalesReturnModalVisible = false; // 先不顯示，等 ShowAddModalWithPrefilledDelivery 觸發
+                StateHasChanged();
                 await Task.Yield(); // 讓 Blazor 完成 SalesReturnEditModalComponent 的渲染
             }
 
+            if (salesReturnEditModal == null)
+            {
+                await NotificationService.ShowErrorAsync("退貨單組件尚未準備就緒，請稍後再試");
+                return;
+            }
+
             // 直接開啟退貨單 Modal，使用 Entity.Id 作為出貨單 ID（最可靠的來源）
-            await salesReturnEditModal!.ShowAddModalWithPrefilledDelivery(
+            await salesReturnEditModal.ShowAddModalWithPrefilledDelivery(
                 editModalComponent.Entity.CustomerId ?? 0,
                 editModalComponent.Entity.Id  // 使用 Entity.Id 而非 SalesDeliveryId 參數
             );
         }
         catch (Exception ex)
         {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCreateReturnFromDelivery), GetType(), 
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCreateReturnFromDelivery), GetType(),
                 additionalData: $"轉退貨單失敗 - DeliveryId: {editModalComponent?.Entity?.Id}");
             await NotificationService.ShowErrorAsync($"轉退貨時發生錯誤: {ex.Message}");
         }
@@ -1520,6 +1535,7 @@
             await ChildDocumentRefreshHelper.HandleChildDocumentSavedAsync(
                 closeModal: () =>
                 {
+                    isSalesReturnModalVisible = false;
                     showSalesReturnModal = false;
                     selectedSalesReturnId = null;
                 },
@@ -1587,9 +1603,10 @@
         {
             if (args.type == RelatedDocumentType.ReturnDocument)
             {
-                // 開啟銷貨退貨 Modal
+                // 開啟銷貨退貨 Modal（直接開啟，不需要預填）
                 selectedSalesReturnId = args.id;
                 showSalesReturnModal = true;
+                isSalesReturnModalVisible = true;
             }
             else if (args.type == RelatedDocumentType.SetoffDocument)
             {

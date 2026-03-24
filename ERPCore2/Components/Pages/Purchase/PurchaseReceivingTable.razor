@@ -690,10 +690,43 @@ else
             item.SelectedItem = null;
             item.ItemSearchValue = string.Empty;
         }
-        
+
+        // 自動帶入上次使用的倉庫與庫位（僅在尚未選擇倉庫時）
+        if (item.SelectedItem != null && item.SelectedWarehouse == null)
+        {
+            await ApplyLastWarehouseAsync(item);
+        }
+
         item.ShowDropdown = false;
         item.SelectedIndex = -1;
         await NotifyDetailsChangedAsync();
+    }
+
+    /// <summary>
+    /// 查詢該品項上一次入庫的倉庫與庫位，自動帶入
+    /// </summary>
+    private async Task ApplyLastWarehouseAsync(ReceivingItem item)
+    {
+        var lastDetail = await PurchaseReceivingDetailService.GetLastWarehouseByItemIdAsync(item.SelectedItem!.Id);
+        if (lastDetail == null) return;
+
+        // 確認該倉庫仍在可用倉庫清單中
+        var warehouse = Warehouses.FirstOrDefault(w => w.Id == lastDetail.WarehouseId);
+        if (warehouse != null)
+        {
+            item.SelectedWarehouse = warehouse;
+
+            // 如果上次有庫位，且該庫位仍在可用庫位清單中，也一併帶入
+            if (lastDetail.WarehouseLocationId.HasValue)
+            {
+                var location = WarehouseLocations.FirstOrDefault(
+                    wl => wl.Id == lastDetail.WarehouseLocationId.Value && wl.WarehouseId == warehouse.Id);
+                if (location != null)
+                {
+                    item.SelectedWarehouseLocation = location;
+                }
+            }
+        }
     }
     
     // 數量變更

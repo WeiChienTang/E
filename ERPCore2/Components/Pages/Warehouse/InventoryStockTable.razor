@@ -18,13 +18,18 @@
         <div class="card-header d-flex align-items-center justify-content-between py-2 px-3 bg-transparent">
             <div class="d-flex gap-2">
                 <GenericButtonComponent Text="新增倉庫"
-                                        Variant="ButtonVariant.OutlineGray"
+                                        Variant="ButtonVariant.DarkBlue"
                                         IconClass="bi bi-building"
                                         OnClick="ToggleAddWarehouseForm" />
                 <GenericButtonComponent Text="新增庫位"
-                                        Variant="ButtonVariant.OutlineGray"
+                                        Variant="ButtonVariant.DarkBlue"
                                         IconClass="bi bi-pin-map"
                                         OnClick="ToggleAddLocationForm" />
+                <GenericButtonComponent Text=@L["Inventory.MergeLocation"]
+                                        Variant="ButtonVariant.DarkBlue"
+                                        IconClass="bi bi-arrows-collapse"
+                                        OnClick="OpenMergeLocationModal"
+                                        IsDisabled="@(GetValidItemCount() < 2)" />
             </div>
         </div>
     }
@@ -52,7 +57,7 @@
                                         IsLoading="_isSavingWarehouse"
                                         IsDisabled="@(_isSavingWarehouse || string.IsNullOrWhiteSpace(_newWarehouseName) || string.IsNullOrWhiteSpace(_newWarehouseCode))"
                                         OnClick="SaveNewWarehouseAsync" />
-                <GenericButtonComponent Variant="ButtonVariant.OutlineGray"
+                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                         IconClass="bi bi-x"
                                         OnClick="CancelAddWarehouse" />
             </div>
@@ -92,7 +97,7 @@
                                         IsLoading="_isSavingLocation"
                                         IsDisabled="@(_isSavingLocation || !_newLocationWarehouseId.HasValue || string.IsNullOrWhiteSpace(_newLocationName) || string.IsNullOrWhiteSpace(_newLocationCode))"
                                         OnClick="SaveNewLocationAsync" />
-                <GenericButtonComponent Variant="ButtonVariant.OutlineGray"
+                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
                                         IconClass="bi bi-x"
                                         OnClick="CancelAddLocation" />
             </div>
@@ -176,6 +181,17 @@
 }
 
 
+@* ===== 庫位合併 Modal ===== *@
+@if (_showMergeModal)
+{
+    <MergeLocationModalComponent @bind-IsVisible="_showMergeModal"
+                                 SourceStockItems="@_mergeSourceItems"
+                                 Warehouses="@Warehouses"
+                                 WarehouseLocations="@WarehouseLocations"
+                                 ShowBatchTracking="@ShowBatchTracking"
+                                 OnMergeCompleted="@HandleMergeCompleted" />
+}
+
 @code {
     // ===== InteractiveTableComponent 參考 =====
     private GenericInteractiveTableComponent<StockDetailItem>? tableComponent;
@@ -202,6 +218,10 @@
     private int? _newLocationWarehouseId = null;
     private bool _isSavingWarehouse = false;
     private bool _isSavingLocation = false;
+
+    // 庫位合併 Modal 狀態
+    private bool _showMergeModal = false;
+    private List<MergeLocationModalComponent.MergeSourceItem> _mergeSourceItems = new();
 
     // ===== 基本參數 =====
     [Parameter] public List<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
@@ -1119,6 +1139,79 @@
               ?? $"#{item.SelectedWarehouseLocationId}"
             : "（無指定庫位）";
         return $"{warehouseName} / {locationName}";
+    }
+
+    // ===== 庫位合併 =====
+
+    private void OpenMergeLocationModal()
+    {
+        // 將 StockDetailItems 轉為 MergeSourceItem 列表
+        _mergeSourceItems = StockDetailItems
+            .Select((item, index) => new MergeLocationModalComponent.MergeSourceItem
+            {
+                WarehouseId = item.SelectedWarehouseId,
+                LocationId = item.SelectedWarehouseLocationId,
+                WarehouseName = item.SelectedWarehouseId.HasValue
+                    ? Warehouses.FirstOrDefault(w => w.Id == item.SelectedWarehouseId.Value)?.Name ?? ""
+                    : "",
+                LocationName = item.SelectedWarehouseLocationId.HasValue
+                    ? WarehouseLocations.FirstOrDefault(l => l.Id == item.SelectedWarehouseLocationId.Value)?.Name ?? L["Inventory.MergeNoLocation"]
+                    : L["Inventory.MergeNoLocation"],
+                CurrentStock = item.CurrentStock,
+                ReservedStock = item.ReservedStock,
+                InTransitStock = item.InTransitStock,
+                AverageCost = item.AverageCost,
+                BatchNumber = item.BatchNumber,
+                OriginalIndex = index
+            })
+            .Where(item => item.WarehouseId.HasValue && item.WarehouseId.Value > 0)
+            .ToList();
+
+        _showMergeModal = true;
+    }
+
+    private async Task HandleMergeCompleted(MergeLocationModalComponent.MergeResult result)
+    {
+        try
+        {
+            // 1. 更新目標行的庫存和成本
+            if (result.TargetOriginalIndex >= 0 && result.TargetOriginalIndex < StockDetailItems.Count)
+            {
+                var target = StockDetailItems[result.TargetOriginalIndex];
+                target.CurrentStock = result.MergedStock;
+                target.AverageCost = result.MergedAverageCost;
+            }
+            else
+            {
+                // 目標庫位原本不存在（選了一個新的庫位組合）— 新增一行
+                StockDetailItems.Add(new StockDetailItem
+                {
+                    SelectedWarehouseId = result.TargetWarehouseId,
+                    SelectedWarehouseLocationId = result.TargetLocationId,
+                    CurrentStock = result.MergedStock,
+                    AverageCost = result.MergedAverageCost
+                });
+            }
+
+            // 2. 移除被合併的來源行（從後往前刪，避免索引偏移）
+            foreach (var index in result.RemovedOriginalIndices)
+            {
+                if (index >= 0 && index < StockDetailItems.Count)
+                {
+                    StockDetailItems.RemoveAt(index);
+                }
+            }
+
+            // 3. 通知父元件（觸發 MarkDirty）
+            await NotifyDetailsChanged();
+            StateHasChanged();
+
+            await NotificationService.ShowSuccessAsync(result.Summary);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"{L["Inventory.MergeFailed"]}：{ex.Message}");
+        }
     }
 
     // ===== 快速新增倉庫/庫位 =====

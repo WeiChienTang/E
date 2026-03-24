@@ -1,0 +1,600 @@
+@* 庫位合併 Modal — 將多個庫位的庫存合併至指定目標庫位 *@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Helpers
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<BaseModalComponent @bind-IsVisible="IsVisible"
+                   Title=@L["Inventory.MergeLocation"]
+                   Icon="bi-arrows-collapse"
+                   Size="BaseModalComponent.ModalSize.Desktop"
+                   HeaderColor="BaseModalComponent.HeaderVariant.Primary"
+                   BodyCssClass="p-4"
+                   OnClose="HandleClose"
+                   DebugComponentName="MergeLocationModalComponent">
+
+    <HeaderButtons>
+        <GenericButtonComponent Text=@L["Button.Confirm"]
+                                Variant="ButtonVariant.Green"
+                                IconClass="bi bi-check2"
+                                IsDisabled="@(!CanMerge())"
+                                IsLoading="_isMerging"
+                                OnClick="ExecuteMergeAsync" />
+    </HeaderButtons>
+
+    <BodyContent>
+        @* ── Step 1: 目標庫位選擇 ── *@
+        <div class="card border-primary mb-3">
+            <div class="card-body py-2 px-3">
+                <h6 class="mb-2">
+                    <i class="bi bi-geo-alt-fill text-primary me-1"></i>
+                    @L["Inventory.MergeTarget"]
+                </h6>
+                <div class="d-flex gap-3 align-items-end flex-wrap">
+                    <div>
+                        <label class="form-label form-label-sm mb-1">@L["Entity.Warehouse"] <span class="text-danger">*</span></label>
+                        <select class="form-select form-select-sm" style="min-width:150px"
+                                value="@(_targetWarehouseId?.ToString() ?? "")"
+                                @onchange="OnTargetWarehouseChanged">
+                            <option value="">@L["Placeholder.PleaseSelect", ""]</option>
+                            @foreach (var wh in Warehouses)
+                            {
+                                <option value="@wh.Id">@wh.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label form-label-sm mb-1">@L["Column.Location"]</label>
+                        <select class="form-select form-select-sm" style="min-width:150px"
+                                value="@(_targetLocationId?.ToString() ?? "")"
+                                @onchange="OnTargetLocationChanged"
+                                disabled="@(!_targetWarehouseId.HasValue)">
+                            <option value="">@L["Inventory.MergeNoLocation"]</option>
+                            @foreach (var loc in GetTargetLocations())
+                            {
+                                <option value="@loc.Id">@loc.Name</option>
+                            }
+                        </select>
+                    </div>
+                    @if (_targetItem != null)
+                    {
+                        <div class="ms-2 small text-muted d-flex align-items-center">
+                            <i class="bi bi-box-seam me-1"></i>
+                            @L["Inventory.MergeTargetCurrent"]：
+                            <strong class="ms-1">@NumberFormatHelper.FormatSmart(_targetItem.CurrentStock, useThousandsSeparator: true)</strong>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ── Step 2: 來源庫位表格 ── *@
+        @if (_targetWarehouseId.HasValue)
+        {
+            <h6 class="mb-2">
+                <i class="bi bi-list-check text-secondary me-1"></i>
+                @L["Inventory.MergeSource"]
+            </h6>
+
+            @if (_sourceItems.Any())
+            {
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body p-0">
+                        <GenericInteractiveTableComponent TItem="MergeSourceItem"
+                                                         Items="@_sourceItems"
+                                                         ColumnDefinitions="@_mergeColumns"
+                                                         ShowSelectColumn="true"
+                                                         AllowMultipleSelection="true"
+                                                         SelectedItems="@_selectedSources"
+                                                         OnSelectionChanged="@HandleSelectionChanged"
+                                                         IsItemSelectable="@CanSelectAsSource"
+                                                         UnselectableTemplate="@GetUnselectableTemplate"
+                                                         EnableRowClick="false"
+                                                         ShowRowNumbers="true"
+                                                         ShowActions="false"
+                                                         IsReadOnly="true"
+                                                         IsStriped="true"
+                                                         IsHoverable="true"
+                                                         IsBordered="true"
+                                                         CssClass="mb-0" />
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-secondary mb-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    @L["Inventory.MergeNoOtherLocations"]
+                </div>
+            }
+
+            @* ── 合併預覽 ── *@
+            @if (_selectedSources.Count > 0 && _targetItem != null)
+            {
+                var totalSource = _selectedSources.Sum(s => s.CurrentStock);
+                var afterMerge = _targetItem.CurrentStock + totalSource;
+                var weightedCost = CalculateMergedWeightedCost();
+
+                <div class="alert alert-info mb-0">
+                    <h6 class="alert-heading mb-2">
+                        <i class="bi bi-calculator me-1"></i>
+                        @L["Inventory.MergePreview"]
+                    </h6>
+                    <div class="d-flex flex-wrap gap-4 small">
+                        <div>
+                            <span class="text-muted">@L["Inventory.MergeTargetCurrent"]：</span>
+                            <strong>@NumberFormatHelper.FormatSmart(_targetItem.CurrentStock, useThousandsSeparator: true)</strong>
+                        </div>
+                        <div>
+                            <span class="text-muted">+ @L["Inventory.MergeSourceTotal"]：</span>
+                            <strong>@NumberFormatHelper.FormatSmart(totalSource, useThousandsSeparator: true)</strong>
+                        </div>
+                        <div>
+                            <span class="text-muted">= @L["Inventory.MergeAfter"]：</span>
+                            <strong class="text-primary">@NumberFormatHelper.FormatSmart(afterMerge, useThousandsSeparator: true)</strong>
+                        </div>
+                        @if (weightedCost.HasValue)
+                        {
+                            <div>
+                                <span class="text-muted">@L["Inventory.MergeWeightedCost"]：</span>
+                                <strong>@NumberFormatHelper.FormatSmart(weightedCost.Value, useThousandsSeparator: true)</strong>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="alert alert-secondary mb-0">
+                <i class="bi bi-arrow-up-circle me-1"></i>
+                @L["Inventory.MergeSelectTarget"]
+            </div>
+        }
+    </BodyContent>
+</BaseModalComponent>
+
+@* ===== 合併確認 Modal ===== *@
+<GenericConfirmModalComponent IsVisible="@_showConfirmModal"
+                             IsVisibleChanged="@((bool v) => _showConfirmModal = v)"
+                             Title=@L["Inventory.ConfirmMerge"]
+                             Icon="bi-arrows-collapse"
+                             Message=@L["Inventory.MergeConfirmMessage"]
+                             Conditions="@_confirmConditions"
+                             SummaryMessage="@_confirmSummary"
+                             ConfirmButtonText=@L["Inventory.ConfirmMerge"]
+                             ConfirmButtonVariant="ButtonVariant.DarkBlue"
+                             HeaderColor="BaseModalComponent.HeaderVariant.Primary"
+                             OnConfirm="@OnConfirmMerge"
+                             OnCancel="@(() => _showConfirmModal = false)" />
+
+@code {
+    // ===== 參數 =====
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public List<MergeSourceItem> SourceStockItems { get; set; } = new();
+    [Parameter] public List<Warehouse> Warehouses { get; set; } = new();
+    [Parameter] public List<WarehouseLocation> WarehouseLocations { get; set; } = new();
+    [Parameter] public bool ShowBatchTracking { get; set; }
+    [Parameter] public EventCallback<MergeResult> OnMergeCompleted { get; set; }
+
+    // ===== 內部狀態 =====
+    private int? _targetWarehouseId;
+    private int? _targetLocationId;
+    private MergeSourceItem? _targetItem;
+    private List<MergeSourceItem> _sourceItems = new();
+    private HashSet<MergeSourceItem> _selectedSources = new();
+    private List<InteractiveColumnDefinition> _mergeColumns = new();
+    private bool _isMerging = false;
+    private bool _isInitialized = false;
+
+    // 確認 Modal 狀態
+    private bool _showConfirmModal = false;
+    private List<string> _confirmConditions = new();
+    private string _confirmSummary = "";
+
+    // ===== 生命週期 =====
+    protected override void OnInitialized()
+    {
+        _mergeColumns = BuildColumnDefinitions();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible && !_isInitialized)
+        {
+            ResetState();
+            _mergeColumns = BuildColumnDefinitions();
+            _isInitialized = true;
+        }
+        else if (!IsVisible && _isInitialized)
+        {
+            _isInitialized = false;
+        }
+    }
+
+    private void ResetState()
+    {
+        _targetWarehouseId = null;
+        _targetLocationId = null;
+        _targetItem = null;
+        _sourceItems.Clear();
+        _selectedSources.Clear();
+    }
+
+    // ===== 欄位定義 =====
+    private List<InteractiveColumnDefinition> BuildColumnDefinitions()
+    {
+        var columns = new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = L["Entity.Warehouse"],
+                PropertyName = nameof(MergeSourceItem.WarehouseName),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "120px"
+            },
+            new()
+            {
+                Title = L["Column.Location"],
+                PropertyName = nameof(MergeSourceItem.LocationName),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "120px"
+            },
+            new()
+            {
+                Title = L["Column.CurrentStock"],
+                PropertyName = nameof(MergeSourceItem.CurrentStock),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100px",
+                CellCssClass = "text-end fw-bold",
+                SmartDecimalDisplay = true
+            },
+            new()
+            {
+                Title = L["Column.ReservedStock"],
+                PropertyName = nameof(MergeSourceItem.ReservedStock),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "80px",
+                CustomTemplate = item =>
+                {
+                    var src = (MergeSourceItem)item;
+                    if (src.ReservedStock > 0)
+                    {
+                        var val = NumberFormatHelper.FormatSmart(src.ReservedStock, useThousandsSeparator: true);
+                        return @<span class="text-danger text-end d-block">@val</span>;
+                    }
+                    return @<span class="text-muted text-end d-block">—</span>;
+                }
+            },
+            new()
+            {
+                Title = L["Column.InTransitStock"],
+                PropertyName = nameof(MergeSourceItem.InTransitStock),
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "80px",
+                CustomTemplate = item =>
+                {
+                    var src = (MergeSourceItem)item;
+                    if (src.InTransitStock > 0)
+                    {
+                        var val = NumberFormatHelper.FormatSmart(src.InTransitStock, useThousandsSeparator: true);
+                        return @<span class="text-warning text-end d-block">@val</span>;
+                    }
+                    return @<span class="text-muted text-end d-block">—</span>;
+                }
+            },
+            new()
+            {
+                Title = L["Column.AverageCost"],
+                PropertyName = nameof(MergeSourceItem.AverageCost),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100px",
+                CellCssClass = "text-end",
+                SmartDecimalDisplay = true
+            }
+        };
+
+        if (ShowBatchTracking)
+        {
+            columns.Add(new()
+            {
+                Title = L["Column.BatchNumber"],
+                PropertyName = nameof(MergeSourceItem.BatchNumber),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "100px"
+            });
+        }
+
+        // 狀態欄 — 顯示不可選原因
+        columns.Add(new()
+        {
+            Title = L["Column.Status"],
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "80px",
+            TextAlign = "center",
+            CustomTemplate = item =>
+            {
+                var src = (MergeSourceItem)item;
+                if (src.ReservedStock > 0)
+                {
+                    return @<span class="text-danger" title="@L["Inventory.MergeHasReserved"]">
+                        <i class="bi bi-lock-fill"></i>
+                    </span>;
+                }
+                if (src.InTransitStock > 0)
+                {
+                    return @<span class="text-warning" title="@L["Inventory.MergeHasInTransit"]">
+                        <i class="bi bi-truck"></i>
+                    </span>;
+                }
+                if (src.CurrentStock <= 0)
+                {
+                    return @<span class="text-muted" title="@L["Inventory.MergeNoStock"]">
+                        <i class="bi bi-dash-circle"></i>
+                    </span>;
+                }
+                return @<span class="text-success">
+                    <i class="bi bi-check-circle"></i>
+                </span>;
+            }
+        });
+
+        return columns;
+    }
+
+    // ===== 不可選項模板 =====
+    private RenderFragment<MergeSourceItem> GetUnselectableTemplate => item => __builder =>
+    {
+        if (item.ReservedStock > 0)
+        {
+            <span class="text-danger small" title="@L["Inventory.MergeHasReserved"]">
+                <i class="bi bi-lock-fill"></i>
+            </span>;
+        }
+        else if (item.InTransitStock > 0)
+        {
+            <span class="text-warning small" title="@L["Inventory.MergeHasInTransit"]">
+                <i class="bi bi-truck"></i>
+            </span>;
+        }
+        else
+        {
+            <span class="text-muted small">
+                <i class="bi bi-dash-circle"></i>
+            </span>;
+        }
+    };
+
+    // ===== 目標庫位變更 =====
+    private void OnTargetWarehouseChanged(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        _targetWarehouseId = string.IsNullOrEmpty(val) ? null : int.TryParse(val, out var id) ? id : null;
+        _targetLocationId = null;
+        _selectedSources.Clear();
+        RefreshSourceItems();
+    }
+
+    private void OnTargetLocationChanged(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        _targetLocationId = string.IsNullOrEmpty(val) ? null : int.TryParse(val, out var id) ? id : null;
+        _selectedSources.Clear();
+        RefreshSourceItems();
+    }
+
+    private List<WarehouseLocation> GetTargetLocations()
+    {
+        if (!_targetWarehouseId.HasValue) return new();
+        return WarehouseLocations.Where(l => l.WarehouseId == _targetWarehouseId.Value).ToList();
+    }
+
+    // ===== 來源列表刷新 =====
+    private void RefreshSourceItems()
+    {
+        _targetItem = null;
+        _sourceItems.Clear();
+
+        if (!_targetWarehouseId.HasValue) return;
+
+        // 顯示該品項的所有庫位明細，只排除目標行本身
+        foreach (var item in SourceStockItems)
+        {
+            // 只取第一個完全匹配（倉庫+庫位）的作為目標，其餘全部放入來源列表
+            if (_targetItem == null
+                && item.WarehouseId == _targetWarehouseId
+                && item.LocationId == _targetLocationId)
+            {
+                _targetItem = item;
+                continue;
+            }
+
+            // 所有其他庫位（含不同倉庫）都列為可選來源
+            _sourceItems.Add(item);
+        }
+
+        // 如果沒有找到目標（使用者選了一個目前無庫存的庫位組合），建立虛擬目標
+        if (_targetItem == null)
+        {
+            _targetItem = new MergeSourceItem
+            {
+                WarehouseId = _targetWarehouseId,
+                LocationId = _targetLocationId,
+                WarehouseName = Warehouses.FirstOrDefault(w => w.Id == _targetWarehouseId)?.Name ?? "",
+                LocationName = _targetLocationId.HasValue
+                    ? WarehouseLocations.FirstOrDefault(l => l.Id == _targetLocationId)?.Name ?? ""
+                    : L["Inventory.MergeNoLocation"],
+                CurrentStock = 0,
+                OriginalIndex = -1
+            };
+
+            // 目標不存在時，所有項目都是來源
+            _sourceItems = SourceStockItems.ToList();
+        }
+    }
+
+    // ===== 選取邏輯 =====
+    private bool CanSelectAsSource(MergeSourceItem item)
+    {
+        if (item.ReservedStock > 0) return false;
+        if (item.InTransitStock > 0) return false;
+        if (item.CurrentStock <= 0) return false;
+        return true;
+    }
+
+    private void HandleSelectionChanged(HashSet<MergeSourceItem> selected)
+    {
+        _selectedSources = selected;
+        StateHasChanged();
+    }
+
+    // ===== 合併驗證 =====
+    private bool CanMerge()
+    {
+        return _targetWarehouseId.HasValue
+            && _targetItem != null
+            && _selectedSources.Count > 0;
+    }
+
+    // ===== 成本計算 =====
+    private decimal? CalculateMergedWeightedCost()
+    {
+        if (_targetItem == null) return null;
+
+        var allItems = new List<(int stock, decimal? cost)>
+        {
+            (_targetItem.CurrentStock, _targetItem.AverageCost)
+        };
+        foreach (var src in _selectedSources)
+        {
+            allItems.Add((src.CurrentStock, src.AverageCost));
+        }
+
+        var itemsWithCost = allItems.Where(i => i.cost.HasValue && i.cost.Value > 0 && i.stock > 0).ToList();
+        if (!itemsWithCost.Any()) return null;
+
+        var totalCost = itemsWithCost.Sum(i => i.cost!.Value * i.stock);
+        var totalStock = itemsWithCost.Sum(i => i.stock);
+
+        return totalStock > 0 ? Math.Round(totalCost / totalStock, 4) : null;
+    }
+
+    // ===== 執行合併 =====
+
+    /// <summary>
+    /// 按下「確認合併」按鈕 — 組裝確認資訊並顯示 GenericConfirmModalComponent
+    /// </summary>
+    private void ExecuteMergeAsync()
+    {
+        if (!CanMerge()) return;
+
+        // 組裝確認清單
+        var totalSource = _selectedSources.Sum(s => s.CurrentStock);
+        var afterMerge = _targetItem!.CurrentStock + totalSource;
+        var targetName = $"{_targetItem.WarehouseName} / {_targetItem.LocationName}";
+
+        _confirmConditions = _selectedSources.Select(s =>
+            $"{s.WarehouseName} / {s.LocationName}：{NumberFormatHelper.FormatSmart(s.CurrentStock, useThousandsSeparator: true)}"
+        ).ToList();
+
+        _confirmSummary = $"{L["Inventory.MergeAfter"]}：{NumberFormatHelper.FormatSmart(afterMerge, useThousandsSeparator: true)}（{L["Inventory.MergeTarget"]}：{targetName}）";
+
+        _showConfirmModal = true;
+    }
+
+    /// <summary>
+    /// GenericConfirmModalComponent 確認後的回呼 — 執行實際合併
+    /// </summary>
+    private async Task OnConfirmMerge()
+    {
+        _showConfirmModal = false;
+        _isMerging = true;
+        StateHasChanged();
+
+        try
+        {
+            var mergedCount = _selectedSources.Count;
+
+            // 計算合併後的目標值
+            var totalSourceStock = _selectedSources.Sum(s => s.CurrentStock);
+            var mergedStock = _targetItem!.CurrentStock + totalSourceStock;
+            var mergedCost = CalculateMergedWeightedCost();
+
+            // 收集被合併的來源 index
+            var removedIndices = _selectedSources
+                .Select(s => s.OriginalIndex)
+                .Where(i => i >= 0)
+                .OrderByDescending(i => i)
+                .ToList();
+
+            // 找到目標的 index
+            var targetIndex = _targetItem.OriginalIndex;
+
+            await OnMergeCompleted.InvokeAsync(new MergeResult
+            {
+                TargetWarehouseId = _targetWarehouseId!.Value,
+                TargetLocationId = _targetLocationId,
+                TargetOriginalIndex = targetIndex,
+                MergedStock = mergedStock,
+                MergedAverageCost = mergedCost,
+                RemovedOriginalIndices = removedIndices,
+                MergedCount = mergedCount,
+                Summary = string.Format(L["Inventory.MergeSuccess"], mergedCount)
+            });
+
+            // 關閉 Modal
+            await IsVisibleChanged.InvokeAsync(false);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"{L["Inventory.MergeFailed"]}：{ex.Message}");
+        }
+        finally
+        {
+            _isMerging = false;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleClose()
+    {
+        ResetState();
+    }
+
+    // ===== 內部類別 =====
+
+    /// <summary>
+    /// 合併來源項目 — 由 InventoryStockTable 建立並傳入
+    /// </summary>
+    public class MergeSourceItem
+    {
+        public int? WarehouseId { get; set; }
+        public int? LocationId { get; set; }
+        public string WarehouseName { get; set; } = "";
+        public string LocationName { get; set; } = "";
+        public int CurrentStock { get; set; }
+        public int ReservedStock { get; set; }
+        public int InTransitStock { get; set; }
+        public decimal? AverageCost { get; set; }
+        public string? BatchNumber { get; set; }
+        /// <summary>在原始 StockDetailItems 中的索引</summary>
+        public int OriginalIndex { get; set; }
+    }
+
+    /// <summary>
+    /// 合併結果 — 回傳給 InventoryStockTable 更新明細
+    /// </summary>
+    public class MergeResult
+    {
+        public int TargetWarehouseId { get; set; }
+        public int? TargetLocationId { get; set; }
+        public int TargetOriginalIndex { get; set; }
+        public int MergedStock { get; set; }
+        public decimal? MergedAverageCost { get; set; }
+        public List<int> RemovedOriginalIndices { get; set; } = new();
+        public int MergedCount { get; set; }
+        public string Summary { get; set; } = "";
+    }
+}

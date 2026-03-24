@@ -320,7 +320,8 @@ namespace ERPCore2.Services
                     .Include(d => d.Warehouse)
                     .Include(d => d.WarehouseLocation)
                     .Where(d => d.PurchaseReceiving.SupplierId == supplierId &&
-                               d.ReceivedQuantity > 0)
+                               d.ReceivedQuantity > 0 &&
+                               d.ReceivedQuantity > d.TotalReturnedQuantity)
                     .OrderByDescending(d => d.CreatedAt)
                     .ToListAsync();
             }
@@ -728,6 +729,33 @@ namespace ERPCore2.Services
                     PurchaseReceivingDetailId = purchaseReceivingDetailId 
                 });
                 return new List<InventoryTransaction>();
+            }
+        }
+
+        /// <summary>
+        /// 取得指定品項最近一次入庫的倉庫與庫位
+        /// </summary>
+        public async Task<PurchaseReceivingDetail?> GetLastWarehouseByItemIdAsync(int itemId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return await context.PurchaseReceivingDetails
+                    .Include(d => d.Warehouse)
+                    .Include(d => d.WarehouseLocation)
+                    .Where(d => d.ItemId == itemId && d.WarehouseId > 0)
+                    .OrderByDescending(d => d.CreatedAt)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetLastWarehouseByItemIdAsync), GetType(), _logger, new
+                {
+                    Method = nameof(GetLastWarehouseByItemIdAsync),
+                    ServiceType = GetType().Name,
+                    ItemId = itemId
+                });
+                return null;
             }
         }
 

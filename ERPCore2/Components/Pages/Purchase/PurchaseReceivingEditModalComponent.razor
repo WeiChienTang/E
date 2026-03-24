@@ -107,11 +107,11 @@
 @if (showPurchaseReturnModal)
 {
     <PurchaseReturnEditModalComponent @ref="purchaseReturnEditModal"
-                                     IsVisible="@showPurchaseReturnModal"
-                                     IsVisibleChanged="@((bool visible) => showPurchaseReturnModal = visible)"
+                                     IsVisible="@isPurchaseReturnModalVisible"
+                                     IsVisibleChanged="@((bool visible) => { isPurchaseReturnModalVisible = visible; if (!visible) showPurchaseReturnModal = false; })"
                                      PurchaseReturnId="@selectedPurchaseReturnId"
                                      OnPurchaseReturnSaved="@HandlePurchaseReturnSaved"
-                                     OnCancel="@(() => showPurchaseReturnModal = false)" />
+                                     OnCancel="@(() => { isPurchaseReturnModalVisible = false; showPurchaseReturnModal = false; })" />
 }
 
 @* 沖款單編輯 Modal *@
@@ -206,7 +206,8 @@
     // ===== 相關單據 Modal =====
     private PurchaseReturnEditModalComponent? purchaseReturnEditModal;
     private SetoffDocumentEditModalComponent? setoffDocumentEditModal;
-    private bool showPurchaseReturnModal = false;
+    private bool showPurchaseReturnModal = false;       // 控制 @if 渲染
+    private bool isPurchaseReturnModalVisible = false;  // 控制 IsVisible
     private bool showSetoffDocumentModal = false;
     private bool showJournalEntryModal = false;
     private int? selectedPurchaseReturnId = null;
@@ -354,9 +355,13 @@
             }
             
             // 5. 呼叫進貨退出組件的公開方法（確保組件已渲染）
+            // 關鍵：先渲染組件但不顯示 Modal，等 ShowAddModalWithPrefilledReceiving
+            // 設定好預填值並觸發 IsVisible=true 時，DataLoader 才會執行
             if (!showPurchaseReturnModal)
             {
                 showPurchaseReturnModal = true;
+                isPurchaseReturnModalVisible = false;
+                StateHasChanged();
                 await Task.Yield(); // 讓 Blazor 完成 PurchaseReturnEditModalComponent 的渲染
             }
             await purchaseReturnEditModal!.ShowAddModalWithPrefilledReceiving(
@@ -607,7 +612,7 @@
             // 確保 suppliers、purchaseOrders 和 products 都已載入
             autoCompleteConfig = new AutoCompleteConfigBuilder<PurchaseReceiving>()
                 .AddField(nameof(PurchaseReceiving.SupplierId), "CompanyName", suppliers)
-                .AddField("FilterPurchaseOrderId", "Code", new List<PurchaseOrder>())  // 初始為空，等廠商選擇後才載入
+                .AddField("FilterPurchaseOrderId", "Code", purchaseOrders)  // 使用已載入的採購單清單，選擇廠商後由 UpdatePurchaseOrderOptions 動態篩選
                 .AddFieldWithMultipleSearchProperties(
                     "FilterItemId",  // 虛擬欄位，不是實體屬性
                     "Name",  // 主要顯示欄位
@@ -1783,9 +1788,10 @@
         {
             if (args.type == RelatedDocumentType.ReturnDocument)
             {
-                // 開啟進貨退出 Modal
+                // 開啟進貨退出 Modal（直接開啟，不需要預填）
                 selectedPurchaseReturnId = args.id;
                 showPurchaseReturnModal = true;
+                isPurchaseReturnModalVisible = true;
             }
             else if (args.type == RelatedDocumentType.SetoffDocument)
             {
@@ -1816,24 +1822,52 @@
     /// </summary>
     private async Task HandlePurchaseReturnSaved(PurchaseReturn savedReturn)
     {
-        await ChildDocumentRefreshHelper.HandleChildDocumentSavedWithCustomRefreshAsync(
-            closeModal: () =>
-            {
-                showPurchaseReturnModal = false;
-                selectedPurchaseReturnId = null;
-            },
-            customRefresh: async () =>
-            {
-                //  關鍵修復：呼叫 Table 組件的公開刷新方法
-                // 重新載入進貨明細的退貨數量資訊
-                if (purchaseReceivingDetailManager != null)
+        try
+        {
+            await ChildDocumentRefreshHelper.HandleChildDocumentSavedAsync(
+                closeModal: () =>
                 {
-                    await purchaseReceivingDetailManager.LoadReturnedQuantitiesAsync();
+                    isPurchaseReturnModalVisible = false;
+                    showPurchaseReturnModal = false;
+                    selectedPurchaseReturnId = null;
+                },
+                reloadDetails: async () =>
+                {
+                    if (PurchaseReceivingId.HasValue)
+                    {
+                        await LoadPurchaseReceivingDetails(PurchaseReceivingId.Value);
+
+                        // 重新計算總金額和稅額
+                        if (editModalComponent?.Entity != null)
+                        {
+                            await HandleReceivingDetailsChanged(purchaseReceivingDetails);
+                        }
+                    }
+                },
+                detailManager: purchaseReceivingDetailManager,
+                notificationMessage: null,
+                stateHasChanged: StateHasChanged,
+                invokeAsync: InvokeAsync,
+                additionalActions: async () =>
+                {
+                    // 重新載入進貨明細的退貨數量資訊
+                    if (purchaseReceivingDetailManager != null)
+                    {
+                        await purchaseReceivingDetailManager.LoadReturnedQuantitiesAsync();
+                    }
+
+                    // 重新檢查鎖定狀態
+                    await LoadDetailRelatedDataAsync();
                 }
-            },
-            stateHasChanged: StateHasChanged,
-            invokeAsync: InvokeAsync
-        );
+            );
+
+            await NotificationService.ShowSuccessAsync($"進貨退出單 {savedReturn.Code} 已更新，進貨明細已刷新");
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandlePurchaseReturnSaved), GetType(),
+                additionalData: $"處理進貨退出儲存事件失敗 - ReturnId: {savedReturn?.Id}");
+        }
     }
 
     /// <summary>

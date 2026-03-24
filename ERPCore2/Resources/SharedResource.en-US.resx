@@ -1058,6 +1058,10 @@
   <data name="Column.PurchaseQuantity" xml:space="preserve"><value>Order Qty</value></data>
   <data name="Column.ReceivedQuantity" xml:space="preserve"><value>Received Qty</value></data>
   <data name="Column.AlreadyReturnedQuantity" xml:space="preserve"><value>Returned</value></data>
+  <data name="Column.ReturnedAndAvailable" xml:space="preserve"><value>Returned/Available</value></data>
+  <data name="Label.AlreadyReturned" xml:space="preserve"><value>Returned {0}</value></data>
+  <data name="Label.Returnable" xml:space="preserve"><value>Available {0}</value></data>
+  <data name="Label.AllReturned" xml:space="preserve"><value>Fully returned</value></data>
   <data name="Column.Location" xml:space="preserve"><value>Location</value></data>
   <data name="Column.PurchaseReceivingQuantity" xml:space="preserve"><value>GR Qty</value></data>
   <data name="Column.ReturnQuantity" xml:space="preserve"><value>Return Qty</value></data>
@@ -4682,4 +4686,23 @@
   <data name="Column.RequiresProduction" xml:space="preserve"><value>Schedule</value></data>
   <data name="Tooltip.RequiresProduction" xml:space="preserve"><value>Controls whether this item appears on the production board, auto-set by BOM</value></data>
   <data name="Field.RequiresProduction" xml:space="preserve"><value>Requires Production</value></data>
+  <data name="Inventory.MergeLocation" xml:space="preserve"><value>Merge Locations</value></data>
+  <data name="Inventory.ConfirmMerge" xml:space="preserve"><value>Confirm Merge</value></data>
+  <data name="Inventory.MergeTarget" xml:space="preserve"><value>Target Location</value></data>
+  <data name="Inventory.MergeSource" xml:space="preserve"><value>Select Source Locations to Merge</value></data>
+  <data name="Inventory.MergePreview" xml:space="preserve"><value>Merge Preview</value></data>
+  <data name="Inventory.MergeConfirmMessage" xml:space="preserve"><value>Merge selected locations into the target? Changes take effect after saving.</value></data>
+  <data name="Inventory.MergeSuccess" xml:space="preserve"><value>Merged {0} location entries</value></data>
+  <data name="Inventory.MergeFailed" xml:space="preserve"><value>Failed to merge locations</value></data>
+  <data name="Inventory.MergeTargetCurrent" xml:space="preserve"><value>Current Stock</value></data>
+  <data name="Inventory.MergeSourceTotal" xml:space="preserve"><value>Source Total</value></data>
+  <data name="Inventory.MergeAfter" xml:space="preserve"><value>After Merge</value></data>
+  <data name="Inventory.MergeWeightedCost" xml:space="preserve"><value>Weighted Avg. Cost</value></data>
+  <data name="Inventory.MergeNoSource" xml:space="preserve"><value>Select at least one source location</value></data>
+  <data name="Inventory.MergeHasReserved" xml:space="preserve"><value>Has reserved stock, cannot merge</value></data>
+  <data name="Inventory.MergeHasInTransit" xml:space="preserve"><value>Has in-transit stock, cannot merge</value></data>
+  <data name="Inventory.MergeNoStock" xml:space="preserve"><value>No stock</value></data>
+  <data name="Inventory.MergeSelectTarget" xml:space="preserve"><value>Please select a target location first</value></data>
+  <data name="Inventory.MergeNoLocation" xml:space="preserve"><value>(No location)</value></data>
+  <data name="Inventory.MergeNoOtherLocations" xml:space="preserve"><value>No other location entries available to merge</value></data>
 </root>

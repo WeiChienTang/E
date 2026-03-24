@@ -1,0 +1,10 @@
+.condition-list .list-group-item {
+    background-color: var(--bg-tertiary);
+    border-left: 3px solid var(--color-primary);
+    font-size: 1rem;
+}
+
+[data-bs-theme=dark] .condition-list .list-group-item {
+    background-color: var(--bg-tertiary);
+    border-left-color: var(--color-primary);
+}

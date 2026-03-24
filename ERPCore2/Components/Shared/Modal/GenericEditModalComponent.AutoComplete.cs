@@ -13,10 +13,30 @@ public partial class GenericEditModalComponent<TEntity, TService>
 
     /// <summary>
     /// 取得處理後的表單欄位（結果快取，僅在資料變更時重建）
+    /// 每次存取時同步 IsReadOnly / IsDisabled / Options，因為父組件可能在快取建立後修改這些屬性
     /// </summary>
     private List<FormFieldDefinition> GetProcessedFormFields()
     {
-        return _processedFormFieldsCache ??= BuildProcessedFormFields();
+        var result = _processedFormFieldsCache ??= BuildProcessedFormFields();
+
+        // 同步可能被父組件動態修改的屬性（避免因快取而使用過時的值）
+        if (FormFields != null)
+        {
+            foreach (var source in FormFields)
+            {
+                var cached = result.FirstOrDefault(f => f.PropertyName == source.PropertyName);
+                if (cached != null)
+                {
+                    cached.IsReadOnly = source.IsReadOnly;
+                    cached.IsDisabled = source.IsDisabled;
+                    cached.IsVisible = source.IsVisible;
+                    cached.Options = source.Options;
+                    cached.Placeholder = source.Placeholder;
+                }
+            }
+        }
+
+        return result;
     }
 
     /// <summary>

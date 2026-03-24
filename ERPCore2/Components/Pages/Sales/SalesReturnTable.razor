@@ -314,7 +314,7 @@ else
                     ? FormatDeliveryDetailDisplayText(deliveryDetail)
                     : (detail.Item != null ? $"[{detail.Item.Code}] {detail.Item.Name}" : ""),
                 OriginalQuantity = (int)(deliveryDetail?.DeliveryQuantity ?? 0),
-                AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(deliveryDetail?.Id ?? 0),
+                AlreadyReturnedQuantity = (int)(deliveryDetail?.TotalReturnedQuantity ?? 0) - (int)detail.ReturnQuantity,
                 ReturnQuantity = (int)detail.ReturnQuantity,
                 OriginalUnitPrice = deliveryDetail?.UnitPrice ?? detail.OriginalUnitPrice,
                 DiscountPercentage = deliveryDetail?.DiscountPercentage ?? detail.DiscountPercentage,
@@ -496,9 +496,48 @@ else
             }
         });
 
+        // 已退/可退欄位 (只讀顯示)
+        columns.Add(new InteractiveColumnDefinition
+        {
+            Title = L["Column.ReturnedAndAvailable"],
+            PropertyName = "",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "120px",
+            Tooltip = "該出貨明細的累計已退數量與剩餘可退數量（唯讀）",
+            CustomTemplate = item =>
+            {
+                var returnItem = (ReturnItem)item;
+                if (returnItem.SelectedDeliveryDetail == null) return @<span class="text-muted">-</span>;
+
+                var already = returnItem.AlreadyReturnedQuantity;
+                var available = returnItem.AvailableQuantity;
+
+                if (available <= 0)
+                {
+                    return @<div class="text-end text-danger fw-bold" title="@L["Label.AllReturned"]">
+                        <i class="bi bi-exclamation-triangle me-1"></i>@L["Label.AllReturned"]
+                    </div>;
+                }
+                else if (already > 0)
+                {
+                    return @<div class="text-end" title="@string.Format(L["Label.AlreadyReturned"], already) / @string.Format(L["Label.Returnable"], available)">
+                        <span class="text-info fw-bold">@already</span>
+                        <span class="text-muted mx-1">/</span>
+                        <span class="text-success fw-bold">@available</span>
+                    </div>;
+                }
+                else
+                {
+                    return @<div class="text-end text-success fw-bold" title="@string.Format(L["Label.Returnable"], available)">
+                        @available
+                    </div>;
+                }
+            }
+        });
+
         // 退貨數量欄位
         columns.Add(new InteractiveColumnDefinition
-        { 
+        {
             Title = L["Column.SalesReturnQuantity"],
             PropertyName = nameof(ReturnItem.ReturnQuantity),
             ColumnType = InteractiveColumnType.Number,
@@ -968,7 +1007,7 @@ else
             item.SelectedDeliveryDetail = detail;
             item.SelectedItem = detail.Item;
             item.OriginalQuantity = (int)detail.DeliveryQuantity;
-            item.AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(detail.Id);
+            item.AlreadyReturnedQuantity = (int)detail.TotalReturnedQuantity;
             item.ReturnQuantity = 0;
             item.OriginalUnitPrice = detail.UnitPrice;
             item.DiscountPercentage = detail.DiscountPercentage;
@@ -1193,7 +1232,7 @@ else
                     SelectedItem = deliveryDetail.Item,
                     DeliveryDetailSearchValue = FormatDeliveryDetailDisplayText(deliveryDetail),
                     OriginalQuantity = (int)deliveryDetail.DeliveryQuantity,
-                    AlreadyReturnedQuantity = GetAlreadyReturnedQuantity(deliveryDetail.Id),
+                    AlreadyReturnedQuantity = (int)deliveryDetail.TotalReturnedQuantity,
                     ReturnQuantity = 0,
                     OriginalUnitPrice = deliveryDetail.UnitPrice,
                     DiscountPercentage = deliveryDetail.DiscountPercentage,
@@ -1308,17 +1347,9 @@ else
     }
 
     // ===== 輔助方法 =====
-    private int GetAlreadyReturnedQuantity(int deliveryDetailId)
-    {
-        // 這裡應該查詢資料庫獲取已退貨數量，目前暫時回傳0
-        // 可能需要呼叫服務來獲取
-        return 0;
-    }
-    
     private int GetAvailableReturnQuantity(SalesDeliveryDetail deliveryDetail)
     {
-        var alreadyReturned = GetAlreadyReturnedQuantity(deliveryDetail.Id);
-        return (int)(deliveryDetail.DeliveryQuantity - alreadyReturned);
+        return (int)deliveryDetail.RemainingReturnableQuantity;
     }
 
     /// <summary>

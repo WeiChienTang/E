@@ -1058,6 +1058,10 @@
   <data name="Column.PurchaseQuantity" xml:space="preserve"><value>Order Qty</value></data>
   <data name="Column.ReceivedQuantity" xml:space="preserve"><value>Natanggap na Dami</value></data>
   <data name="Column.AlreadyReturnedQuantity" xml:space="preserve"><value>Naibalik</value></data>
+  <data name="Column.ReturnedAndAvailable" xml:space="preserve"><value>Naibalik/Maibabalik</value></data>
+  <data name="Label.AlreadyReturned" xml:space="preserve"><value>Naibalik {0}</value></data>
+  <data name="Label.Returnable" xml:space="preserve"><value>Maibabalik {0}</value></data>
+  <data name="Label.AllReturned" xml:space="preserve"><value>Lahat naibalik na</value></data>
   <data name="Column.Location" xml:space="preserve"><value>Lokasyon</value></data>
   <data name="Column.PurchaseReceivingQuantity" xml:space="preserve"><value>GR Qty</value></data>
   <data name="Column.ReturnQuantity" xml:space="preserve"><value>Return Qty</value></data>
@@ -4653,4 +4657,23 @@
   <data name="Column.RequiresProduction" xml:space="preserve"><value>Produksyon</value></data>
   <data name="Tooltip.RequiresProduction" xml:space="preserve"><value>Kinokontrol kung lalabas ang item na ito sa production board, awtomatikong itinakda ng BOM</value></data>
   <data name="Field.RequiresProduction" xml:space="preserve"><value>Kailangan ng Produksyon</value></data>
+  <data name="Inventory.MergeLocation" xml:space="preserve"><value>Pagsamahin ang Lokasyon</value></data>
+  <data name="Inventory.ConfirmMerge" xml:space="preserve"><value>Kumpirmahin ang Pagsasama</value></data>
+  <data name="Inventory.MergeTarget" xml:space="preserve"><value>Target na Lokasyon</value></data>
+  <data name="Inventory.MergeSource" xml:space="preserve"><value>Pumili ng mga Lokasyon na Pagsasamahin</value></data>
+  <data name="Inventory.MergePreview" xml:space="preserve"><value>Preview ng Pagsasama</value></data>
+  <data name="Inventory.MergeConfirmMessage" xml:space="preserve"><value>Sigurado bang isama ang napiling mga lokasyon sa target? Magkakabisa pagkatapos i-save.</value></data>
+  <data name="Inventory.MergeSuccess" xml:space="preserve"><value>Na-merge ang {0} lokasyon</value></data>
+  <data name="Inventory.MergeFailed" xml:space="preserve"><value>Nabigo ang pagsasama ng lokasyon</value></data>
+  <data name="Inventory.MergeTargetCurrent" xml:space="preserve"><value>Kasalukuyang Stock</value></data>
+  <data name="Inventory.MergeSourceTotal" xml:space="preserve"><value>Kabuuan ng Pinagmulan</value></data>
+  <data name="Inventory.MergeAfter" xml:space="preserve"><value>Pagkatapos ng Pagsasama</value></data>
+  <data name="Inventory.MergeWeightedCost" xml:space="preserve"><value>Weighted Avg. na Gastos</value></data>
+  <data name="Inventory.MergeNoSource" xml:space="preserve"><value>Pumili ng kahit isang lokasyon</value></data>
+  <data name="Inventory.MergeHasReserved" xml:space="preserve"><value>May nakalaan na stock, hindi maaaring isama</value></data>
+  <data name="Inventory.MergeHasInTransit" xml:space="preserve"><value>May in-transit na stock, hindi maaaring isama</value></data>
+  <data name="Inventory.MergeNoStock" xml:space="preserve"><value>Walang stock</value></data>
+  <data name="Inventory.MergeSelectTarget" xml:space="preserve"><value>Pumili muna ng target na lokasyon</value></data>
+  <data name="Inventory.MergeNoLocation" xml:space="preserve"><value>(Walang lokasyon)</value></data>
+  <data name="Inventory.MergeNoOtherLocations" xml:space="preserve"><value>Walang ibang lokasyon na maaaring isama</value></data>
 </root>
