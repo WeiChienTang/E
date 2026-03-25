@@ -16,7 +16,6 @@
     <HeaderButtons>
         <GenericButtonComponent Text=@L["Button.Confirm"]
                                 Variant="ButtonVariant.Green"
-                                IconClass="bi bi-check2"
                                 IsDisabled="@(!CanMerge())"
                                 IsLoading="_isMerging"
                                 OnClick="ExecuteMergeAsync" />

@@ -262,6 +262,9 @@ namespace ERPCore2.Services
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(reason))
+                    return (false, "重新開放期間必須填寫原因（稽核要求）");
+
                 using var context = await _contextFactory.CreateDbContextAsync();
                 var period = await context.FiscalPeriods.FindAsync(id);
                 if (period == null)

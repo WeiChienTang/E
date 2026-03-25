@@ -141,6 +141,30 @@ namespace ERPCore2.Services.Reports
                     entry.PeriodCredit += line.Amount;
             }
 
+            // ShowZeroBalance = true 時，補齊從未有傳票的科目（金額全為 0）
+            if (criteria.ShowZeroBalance)
+            {
+                var existingIds = accountMap.Keys.ToHashSet();
+                var missingAccounts = await context.AccountItems
+                    .Where(a => a.Status == EntityStatus.Active && a.IsDetailAccount)
+                    .Where(a => !existingIds.Contains(a.Id))
+                    .Where(a => criteria.AccountTypes.Count == 0 || criteria.AccountTypes.Contains(a.AccountType))
+                    .ToListAsync();
+
+                foreach (var acct in missingAccounts)
+                {
+                    accountMap[acct.Id] = new AccountBalanceLine
+                    {
+                        AccountItemId = acct.Id,
+                        Code = acct.Code ?? string.Empty,
+                        Name = acct.Name,
+                        AccountType = acct.AccountType,
+                        NormalDirection = acct.Direction,
+                        SortOrder = acct.SortOrder
+                    };
+                }
+            }
+
             var result = accountMap.Values
                 .Where(l => criteria.AccountTypes.Count == 0 || criteria.AccountTypes.Contains(l.AccountType))
                 .Where(l => criteria.ShowZeroBalance ||

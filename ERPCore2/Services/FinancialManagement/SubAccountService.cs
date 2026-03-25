@@ -80,6 +80,13 @@ namespace ERPCore2.Services
         {
             try
             {
+                // 先查詢是否已存在主應收子科目，已存在則直接回傳（不受 AutoCreate 開關影響）
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var existing = await context.AccountItems
+                    .FirstOrDefaultAsync(a => a.LinkedCustomerId == customerId
+                        && (a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable));
+                if (existing != null) return existing;
+
                 var param = await _systemParameterService.GetSystemParameterAsync();
                 if (param?.AutoCreateCustomerSubAccount != true) return null;
 
@@ -125,6 +132,13 @@ namespace ERPCore2.Services
         {
             try
             {
+                // 先查詢是否已存在主應付子科目，已存在則直接回傳（不受 AutoCreate 開關影響）
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var existing = await context.AccountItems
+                    .FirstOrDefaultAsync(a => a.LinkedSupplierId == supplierId
+                        && (a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable));
+                if (existing != null) return existing;
+
                 var param = await _systemParameterService.GetSystemParameterAsync();
                 if (param?.AutoCreateSupplierSubAccount != true) return null;
 
@@ -170,6 +184,7 @@ namespace ERPCore2.Services
         {
             try
             {
+                // 先查詢是否已存在品項子科目，已存在則直接回傳（不受 AutoCreate 開關影響）
                 using var context = await _contextFactory.CreateDbContextAsync();
 
                 var existing = await context.AccountItems
@@ -179,7 +194,7 @@ namespace ERPCore2.Services
                 var param = await _systemParameterService.GetSystemParameterAsync();
                 if (param?.AutoCreateItemSubAccount != true) return null;
 
-                return await CreateItemSubAccountCoreAsync(context, productId, createdBy, param);
+                return await CreateItemSubAccountCoreAsync(productId, createdBy, param);
             }
             catch (Exception ex)
             {
@@ -189,8 +204,10 @@ namespace ERPCore2.Services
         }
 
         /// <summary>品項子科目建立核心邏輯（不檢查 AutoCreate 開關，供批次補建直接呼叫）</summary>
-        private async Task<AccountItem?> CreateItemSubAccountCoreAsync(AppDbContext context, int productId, string createdBy, Data.Entities.SystemParameter param)
+        private async Task<AccountItem?> CreateItemSubAccountCoreAsync(int productId, string createdBy, Data.Entities.SystemParameter param)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             var parentCode = param.ItemSubAccountParentCode;
             var parent = await context.AccountItems
                 .FirstOrDefaultAsync(a => a.Code == parentCode);
@@ -243,17 +260,18 @@ namespace ERPCore2.Services
                 {
                     try
                     {
-                        // 以主應收科目是否存在作為「已補建」判斷依據
-                        var hasMain = await context.AccountItems
-                            .AnyAsync(a => a.LinkedCustomerId == id
-                                && (a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable));
-                        if (hasMain)
+                        // 檢查四種子科目是否全部存在，全部齊全才跳過
+                        var existingCount = await context.AccountItems
+                            .CountAsync(a => a.LinkedCustomerId == id);
+                        var expectedCount = BuildCustomerSpecs(param).Count(s => !string.IsNullOrWhiteSpace(s.ParentCode));
+                        if (existingCount >= expectedCount)
                         {
                             skipped++;
                             continue;
                         }
 
                         // 直接呼叫核心邏輯，不經過 AutoCreate 開關檢查
+                        // 核心邏輯會逐類檢查，已存在的類型自動跳過，只補建缺少的
                         var result = await CreateCustomerSubAccountCoreAsync(id, createdBy, param);
                         if (result != null) created++;
                         else skipped++;
@@ -297,16 +315,18 @@ namespace ERPCore2.Services
                 {
                     try
                     {
-                        var hasMain = await context.AccountItems
-                            .AnyAsync(a => a.LinkedSupplierId == id
-                                && (a.SubAccountLinkType == null || a.SubAccountLinkType == SubAccountLinkType.ReceivablePayable));
-                        if (hasMain)
+                        // 檢查四種子科目是否全部存在，全部齊全才跳過
+                        var existingCount = await context.AccountItems
+                            .CountAsync(a => a.LinkedSupplierId == id);
+                        var expectedCount = BuildSupplierSpecs(param).Count(s => !string.IsNullOrWhiteSpace(s.ParentCode));
+                        if (existingCount >= expectedCount)
                         {
                             skipped++;
                             continue;
                         }
 
                         // 直接呼叫核心邏輯，不經過 AutoCreate 開關檢查
+                        // 核心邏輯會逐類檢查，已存在的類型自動跳過，只補建缺少的
                         var result = await CreateSupplierSubAccountCoreAsync(id, createdBy, param);
                         if (result != null) created++;
                         else skipped++;
@@ -359,7 +379,8 @@ namespace ERPCore2.Services
                         }
 
                         // 直接呼叫核心邏輯，不經過 AutoCreate 開關檢查
-                        var result = await CreateItemSubAccountCoreAsync(context, id, createdBy, param);
+                        // 使用獨立 DbContext 避免錯誤累積影響後續迭代
+                        var result = await CreateItemSubAccountCoreAsync(id, createdBy, param);
                         if (result != null) created++;
                         else skipped++;
                     }

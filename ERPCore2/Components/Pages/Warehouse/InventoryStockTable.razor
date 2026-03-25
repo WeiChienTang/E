@@ -124,6 +124,7 @@
                                   CreateEmptyItem="@CreateEmptyItem"
                                   EnableGrouping="true"
                                   GroupKeyFunc="@GetGroupKey"
+                                  GroupHeaderTemplate="@GetGroupHeaderTemplate"
                                   DefaultGroupsExpanded="true" />
     </div>
 </div>
@@ -184,7 +185,8 @@
 @* ===== 庫位合併 Modal ===== *@
 @if (_showMergeModal)
 {
-    <MergeLocationModalComponent @bind-IsVisible="_showMergeModal"
+    <MergeLocationModalComponent IsVisible="@_showMergeModal"
+                                 IsVisibleChanged="@((bool v) => { _showMergeModal = v; StateHasChanged(); })"
                                  SourceStockItems="@_mergeSourceItems"
                                  Warehouses="@Warehouses"
                                  WarehouseLocations="@WarehouseLocations"
@@ -222,6 +224,9 @@
     // 庫位合併 Modal 狀態
     private bool _showMergeModal = false;
     private List<MergeLocationModalComponent.MergeSourceItem> _mergeSourceItems = new();
+
+    // 合併後待歸零的明細（從畫面移除但儲存時仍需帶上，讓 Service 將 DB 庫存歸零）
+    private List<TDetailEntity> _pendingZeroedDetails = new();
 
     // ===== 基本參數 =====
     [Parameter] public List<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
@@ -631,6 +636,7 @@
         _dataLoadCompleted = false;
 
         StockDetailItems.Clear();
+        _pendingZeroedDetails.Clear();
 
         foreach (var detail in ExistingDetails)
         {
@@ -703,6 +709,12 @@
             SetPropertyValue(detail, RemarksPropertyName, item.Remarks);
 
             details.Add(detail);
+        }
+
+        // 加入合併後待歸零的明細（已從畫面移除，但需帶回 Service 讓 DB 庫存歸零）
+        if (_pendingZeroedDetails.Count > 0)
+        {
+            details.AddRange(_pendingZeroedDetails);
         }
 
         return details;
@@ -1141,6 +1153,55 @@
         return $"{warehouseName} / {locationName}";
     }
 
+    /// <summary>
+    /// 群組標題模板：顯示群組名稱、數量徽章，以及「+」新增按鈕
+    /// </summary>
+    private RenderFragment<(string Key, List<StockDetailItem> Items)> GetGroupHeaderTemplate => group => __builder =>
+    {
+        <span class="d-flex align-items-center gap-2">
+            <i class="bi bi-chevron-down text-primary"></i>
+            <span class="fw-semibold">@group.Key</span>
+            @if (!IsReadOnly)
+            {
+                <GenericButtonComponent IconClass="bi bi-plus"
+                                        Variant="ButtonVariant.DarkBlue"
+                                        Size="ButtonSize.Small"
+                                        Title="@L["Button.Add"]"
+                                        OnClick="@(() => AddRowToGroup(group.Items))"
+                                        StopPropagation="true"/>
+            }
+        </span>
+    };
+
+    /// <summary>
+    /// 在指定群組中新增一行，預填相同的倉庫和庫位
+    /// </summary>
+    private async Task AddRowToGroup(List<StockDetailItem> groupItems)
+    {
+        var template = groupItems.FirstOrDefault();
+        if (template == null) return;
+
+        var newItem = new StockDetailItem
+        {
+            SelectedWarehouseId = template.SelectedWarehouseId,
+            SelectedWarehouseLocationId = template.SelectedWarehouseLocationId
+        };
+
+        // 插入到該群組最後一筆之後
+        var lastIndex = StockDetailItems.IndexOf(groupItems.Last());
+        if (lastIndex >= 0 && lastIndex < StockDetailItems.Count - 1)
+        {
+            StockDetailItems.Insert(lastIndex + 1, newItem);
+        }
+        else
+        {
+            StockDetailItems.Add(newItem);
+        }
+
+        await NotifyDetailsChanged();
+        StateHasChanged();
+    }
+
     // ===== 庫位合併 =====
 
     private void OpenMergeLocationModal()
@@ -1193,11 +1254,24 @@
                 });
             }
 
-            // 2. 移除被合併的來源行（從後往前刪，避免索引偏移）
+            // 2. 將被合併的來源行歸零並移至隱藏清單（從後往前處理避免索引偏移）
             foreach (var index in result.RemovedOriginalIndices)
             {
                 if (index >= 0 && index < StockDetailItems.Count)
                 {
+                    var source = StockDetailItems[index];
+
+                    // 如果是已存在 DB 的記錄，歸零後暫存，儲存時帶給 Service
+                    if (source.ExistingDetailEntity != null)
+                    {
+                        SetPropertyValue(source.ExistingDetailEntity, CurrentStockPropertyName, 0m);
+                        SetPropertyValue(source.ExistingDetailEntity, ReservedStockPropertyName, 0m);
+                        SetPropertyValue(source.ExistingDetailEntity, InTransitStockPropertyName, 0m);
+                        SetPropertyValue(source.ExistingDetailEntity, AverageCostPropertyName, 0m);
+                        _pendingZeroedDetails.Add(source.ExistingDetailEntity);
+                    }
+
+                    // 從畫面移除
                     StockDetailItems.RemoveAt(index);
                 }
             }

@@ -165,6 +165,27 @@ namespace ERPCore2.Services.Reports
             var allAccountIds = new HashSet<int>(openingMap.Keys);
             allAccountIds.UnionWith(periodMap.Keys);
 
+            // ShowZeroBalance = true 時，補齊從未有傳票的科目（金額全為 0）
+            if (criteria.ShowZeroBalance)
+            {
+                var missingAccounts = await context.AccountItems
+                    .Where(a => a.Status == EntityStatus.Active && a.IsDetailAccount)
+                    .Where(a => !allAccountIds.Contains(a.Id))
+                    .Where(a => criteria.AccountTypes.Count == 0 || criteria.AccountTypes.Contains(a.AccountType))
+                    .ToListAsync();
+
+                foreach (var acct in missingAccounts)
+                {
+                    allAccountIds.Add(acct.Id);
+                    accountInfoMap[acct.Id] = (
+                        acct.Code ?? string.Empty,
+                        acct.Name,
+                        acct.AccountType,
+                        acct.Direction,
+                        acct.SortOrder);
+                }
+            }
+
             var result = new List<AccountBalanceLine>();
 
             foreach (var accountId in allAccountIds)

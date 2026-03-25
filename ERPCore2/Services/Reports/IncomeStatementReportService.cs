@@ -59,9 +59,7 @@ namespace ERPCore2.Services.Reports
             {
                 var accountLines = await BuildAccountLinesAsync(criteria);
 
-                if (!accountLines.Any())
-                    return BatchPreviewResult.Failure($"無符合條件的傳票資料\n篩選條件：{criteria.GetSummary()}");
-
+                // 即使沒有傳票資料，仍產生金額全為 0 的報表（不回傳錯誤）
                 var company = criteria.CompanyId.HasValue
                     ? await _companyService.GetByIdAsync(criteria.CompanyId.Value)
                     : await _companyService.GetPrimaryCompanyAsync();

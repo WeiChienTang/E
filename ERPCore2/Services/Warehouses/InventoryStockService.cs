@@ -1234,26 +1234,28 @@ namespace ERPCore2.Services
 
                 try
                 {
+                    // 先取得來源倉庫的平均成本（必須在 ReduceStockAsync 之前，
+                    // 因為扣減後若庫存歸零會清除 AverageCost，導致轉入成本為 0）
+                    var fromStock = await GetByItemWarehouseAsync(productId, fromWarehouseId, fromLocationId);
+                    var fromDetail = fromStock?.InventoryStockDetails?
+                        .FirstOrDefault(d => d.WarehouseId == fromWarehouseId &&
+                                            d.WarehouseLocationId == fromLocationId);
+                    var transferCost = fromDetail?.AverageCost;
+
                     // 從來源倉庫扣減
                     var reduceResult = await ReduceStockAsync(productId, fromWarehouseId, quantity,
                         InventoryTransactionTypeEnum.Transfer, transactionNumber, fromLocationId, remarks);
-                    
+
                     if (!reduceResult.IsSuccess)
                     {
                         await transaction.RollbackAsync();
                         return reduceResult;
                     }
 
-                    // 取得來源倉庫的平均成本
-                    var fromStock = await GetByItemWarehouseAsync(productId, fromWarehouseId, fromLocationId);
-                    var fromDetail = fromStock?.InventoryStockDetails?
-                        .FirstOrDefault(d => d.WarehouseId == fromWarehouseId && 
-                                            d.WarehouseLocationId == fromLocationId);
-                    
-                    // 增加到目標倉庫
+                    // 增加到目標倉庫（使用扣減前記錄的成本）
                     var addResult = await AddStockAsync(productId, toWarehouseId, quantity,
-                        InventoryTransactionTypeEnum.Transfer, transactionNumber, 
-                        fromDetail?.AverageCost, toLocationId, remarks);
+                        InventoryTransactionTypeEnum.Transfer, transactionNumber,
+                        transferCost, toLocationId, remarks);
 
                     if (!addResult.IsSuccess)
                     {

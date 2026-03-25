@@ -32,6 +32,10 @@ public partial class GenericEditModalComponent<TEntity, TService>
             {
                 await ShowSuccessMessage("審核通過");
                 await RefreshEntityAsync();
+
+                // 通知父頁面刷新列表（審核狀態已變更）
+                if (OnEntitySaved.HasDelegate && Entity != null)
+                    await OnEntitySaved.InvokeAsync(Entity);
             }
             else
             {
@@ -77,6 +81,10 @@ public partial class GenericEditModalComponent<TEntity, TService>
             {
                 await ShowSuccessMessage("審核駁回");
                 await RefreshEntityAsync();
+
+                // 通知父頁面刷新列表（審核狀態已變更）
+                if (OnEntitySaved.HasDelegate && Entity != null)
+                    await OnEntitySaved.InvokeAsync(Entity);
             }
         }
         catch (Exception ex)

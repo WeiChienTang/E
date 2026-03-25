@@ -427,8 +427,21 @@ namespace ERPCore2.Services
                 if (item == null)
                     return ServiceResult.Failure("生產排程項目不存在");
 
-                if (item.ProductionItemStatus == ProductionItemStatus.Completed)
-                    return ServiceResult.Failure("此項目已完成");
+                // 白名單：僅允許 Pending / WaitingMaterial / InProgress 進行完工入庫
+                var allowedForCompletion = item.ProductionItemStatus == ProductionItemStatus.Pending
+                    || item.ProductionItemStatus == ProductionItemStatus.WaitingMaterial
+                    || item.ProductionItemStatus == ProductionItemStatus.InProgress;
+                if (!allowedForCompletion)
+                {
+                    var reason = item.ProductionItemStatus switch
+                    {
+                        ProductionItemStatus.Completed => "此項目已完成",
+                        ProductionItemStatus.Paused    => "項目已暫停，請先繼續生產再進行完工入庫",
+                        ProductionItemStatus.Aborted   => "此項目已中止",
+                        _                              => $"目前狀態（{item.ProductionItemStatus}）不允許完工入庫"
+                    };
+                    return ServiceResult.Failure(reason);
+                }
 
                 if (completedQuantity <= 0)
                     return ServiceResult.Failure("完成數量必須大於0");
@@ -536,6 +549,11 @@ namespace ERPCore2.Services
                     // 用料結算：退料入庫（§3.5，settlements != null 時執行）
                     if (settlements != null && bomDetails.Any())
                     {
+                        // 驗證：ReturnQty > 0 時 ReturnWarehouseId 必填
+                        var invalidReturn = settlements.FirstOrDefault(s => s.ReturnQty > 0 && !s.ReturnWarehouseId.HasValue);
+                        if (invalidReturn != null)
+                            return ServiceResult.Failure("退料數量大於 0 時，退料倉庫為必填");
+
                         foreach (var settlement in settlements)
                         {
                             var bomDetail = bomDetails.FirstOrDefault(d => d.Id == settlement.ProductionScheduleDetailId);
@@ -560,13 +578,22 @@ namespace ERPCore2.Services
                                     transactionCode,
                                     locationId: settlement.ReturnLocationId,
                                     remarks: $"生產退料 排程:{transactionCode}",
-                                    sourceDocumentType: InventorySourceDocumentTypes.ProductionCompletion,
+                                    sourceDocumentType: InventorySourceDocumentTypes.MaterialReturn,
                                     sourceDocumentId: itemId);
 
                                 if (!returnResult.IsSuccess)
                                     return ServiceResult.Failure($"退料入庫失敗：{returnResult.ErrorMessage}");
                             }
                         }
+                    }
+                }
+                else
+                {
+                    // 非最後完工：若狀態仍為 Pending 或 WaitingMaterial，自動更新為 InProgress
+                    if (item.ProductionItemStatus == ProductionItemStatus.Pending ||
+                        item.ProductionItemStatus == ProductionItemStatus.WaitingMaterial)
+                    {
+                        item.ProductionItemStatus = ProductionItemStatus.InProgress;
                     }
                 }
 
@@ -1004,6 +1031,11 @@ namespace ERPCore2.Services
                 // 用料結算：退料入庫
                 if (settlements != null && settlements.Any())
                 {
+                    // 驗證：ReturnQty > 0 時 ReturnWarehouseId 必填
+                    var invalidReturn = settlements.FirstOrDefault(s => s.ReturnQty > 0 && !s.ReturnWarehouseId.HasValue);
+                    if (invalidReturn != null)
+                        return ServiceResult.Failure("退料數量大於 0 時，退料倉庫為必填");
+
                     var bomDetails = await context.ProductionScheduleDetails
                         .Where(d => d.ProductionScheduleItemId == itemId && d.Status == EntityStatus.Active)
                         .ToListAsync();
@@ -1030,7 +1062,7 @@ namespace ERPCore2.Services
                                 transactionCode,
                                 locationId: settlement.ReturnLocationId,
                                 remarks: $"停產退料 排程:{transactionCode}",
-                                sourceDocumentType: InventorySourceDocumentTypes.ProductionCompletion,
+                                sourceDocumentType: InventorySourceDocumentTypes.MaterialReturn,
                                 sourceDocumentId: itemId);
 
                             if (!returnResult.IsSuccess)

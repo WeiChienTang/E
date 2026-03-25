@@ -278,7 +278,14 @@
             var userId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
             if (!userId.HasValue) return false;
             var result = await SalesDeliveryService.ApproveAsync(entity.Id, userId.Value);
-            return result.IsSuccess;
+            if (!result.IsSuccess) return false;
+
+            // 核准後觸發庫存扣減（與 EditModal 的 HandleSalesDeliveryApprove 一致）
+            var inventoryResult = await SalesDeliveryService.UpdateInventoryByDifferenceAsync(entity.Id);
+            if (!inventoryResult.IsSuccess)
+                await NotificationService.ShowWarningAsync($"核准成功，但庫存更新失敗：{inventoryResult.ErrorMessage}");
+
+            return true;
         }
         catch (Exception ex)
         {
@@ -297,7 +304,16 @@
             try
             {
                 var result = await SalesDeliveryService.ApproveAsync(item.Id, userId.Value);
-                if (result.IsSuccess) successCount++; else failCount++;
+                if (result.IsSuccess)
+                {
+                    // 核准後觸發庫存扣減（與 EditModal 的 HandleSalesDeliveryApprove 一致）
+                    var inventoryResult = await SalesDeliveryService.UpdateInventoryByDifferenceAsync(item.Id);
+                    if (!inventoryResult.IsSuccess)
+                        await NotificationService.ShowWarningAsync($"核准成功，但庫存更新失敗：{inventoryResult.ErrorMessage}");
+
+                    successCount++;
+                }
+                else failCount++;
             }
             catch (Exception ex)
             {

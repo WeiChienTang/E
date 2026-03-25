@@ -96,6 +96,19 @@ namespace ERPCore2.Services
                 if (!salesOrderDetailExists)
                     errors.Add("銷售訂單明細不存在");
 
+                // 檢查分配總量是否超過排程數量
+                if (item != null && entity.AllocatedQuantity > 0)
+                {
+                    var existingTotal = await context.ProductionScheduleAllocations
+                        .Where(a => a.ProductionScheduleItemId == entity.ProductionScheduleItemId
+                                 && a.Id != entity.Id
+                                 && a.Status == EntityStatus.Active)
+                        .SumAsync(a => a.AllocatedQuantity);
+
+                    if (existingTotal + entity.AllocatedQuantity > item.ScheduledQuantity)
+                        errors.Add($"分配總量（{existingTotal + entity.AllocatedQuantity}）超過排程數量（{item.ScheduledQuantity}）");
+                }
+
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
 

@@ -152,11 +152,40 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                return await context.JournalEntries
+
+                // 取得來源單據編號，用於交叉查詢已沖銷的傳票
+                // （ReverseEntryAsync 會清除 SourceDocumentType/Id 以釋放唯一索引，
+                //   但保留 SourceDocumentCode 供稽核追蹤）
+                var sourceCode = await context.JournalEntries
+                    .Where(je => je.SourceDocumentType == sourceDocumentType &&
+                                 je.SourceDocumentId == sourceDocumentId)
+                    .Select(je => je.SourceDocumentCode)
+                    .FirstOrDefaultAsync();
+
+                // 若無直接匹配的傳票（全部已沖銷），從來源單據實體取得編號
+                if (string.IsNullOrEmpty(sourceCode))
+                {
+                    sourceCode = sourceDocumentType switch
+                    {
+                        "PurchaseReceiving" => (await context.PurchaseReceivings.FindAsync(sourceDocumentId))?.Code,
+                        "PurchaseReturn"    => (await context.PurchaseReturns.FindAsync(sourceDocumentId))?.Code,
+                        "SalesDelivery"     => (await context.SalesDeliveries.FindAsync(sourceDocumentId))?.Code,
+                        "SalesReturn"       => (await context.SalesReturns.FindAsync(sourceDocumentId))?.Code,
+                        "SetoffDocument"    => (await context.SetoffDocuments.FindAsync(sourceDocumentId))?.Code,
+                        "MaterialIssue"     => (await context.MaterialIssues.FindAsync(sourceDocumentId))?.Code,
+                        "ProductionScheduleCompletion" => (await context.ProductionScheduleCompletions.FindAsync(sourceDocumentId))?.Code,
+                        _ => null
+                    };
+                }
+
+                // 查詢條件：直接匹配 OR 已沖銷但 SourceDocumentCode 相符的傳票
+                var query = context.JournalEntries
                     .Include(je => je.Lines)
                     .Where(je =>
-                        je.SourceDocumentType == sourceDocumentType &&
-                        je.SourceDocumentId == sourceDocumentId)
+                        (je.SourceDocumentType == sourceDocumentType && je.SourceDocumentId == sourceDocumentId) ||
+                        (!string.IsNullOrEmpty(sourceCode) && je.SourceDocumentCode == sourceCode && je.SourceDocumentType == null));
+
+                return await query
                     .OrderBy(je => je.EntryDate)
                     .ThenBy(je => je.Id)
                     .ToListAsync();
@@ -261,11 +290,14 @@ namespace ERPCore2.Services
                     var period = await _fiscalPeriodService.GetByYearAndPeriodAsync(
                         entry.FiscalYear, entry.FiscalPeriod, entry.CompanyId);
 
-                    if (period != null && period.PeriodStatus == FiscalPeriodStatus.Locked)
+                    if (period == null)
+                        return (false, $"會計期間 {entry.FiscalYear}/{entry.FiscalPeriod:D2} 尚未建立，請先初始化年度");
+
+                    if (period.PeriodStatus == FiscalPeriodStatus.Locked)
                         return (false, $"會計期間 {entry.FiscalYear}/{entry.FiscalPeriod:D2} 已永久鎖定，不允許過帳");
 
                     if (entry.EntryType != JournalEntryType.Closing &&
-                        period != null && period.PeriodStatus == FiscalPeriodStatus.Closed)
+                        period.PeriodStatus == FiscalPeriodStatus.Closed)
                         return (false, $"會計期間 {entry.FiscalYear}/{entry.FiscalPeriod:D2} 已關帳，如需補登請先重開期間");
                 }
 
@@ -310,24 +342,34 @@ namespace ERPCore2.Services
                     return (false, "沖銷傳票本身不能再被沖銷", null);
 
                 // 驗證沖銷日期所在的會計期間是否開放
+                // Closing 類型傳票允許在 Closed 期間沖銷（與 PostEntryAsync 一致：
+                // 年底結帳在所有期間 Closed 後執行，若 Step 2 失敗需回滾 Step 1 的 Closing 傳票）
                 {
                     var reversalYear   = reversalDate.Year;
                     var reversalPeriod = reversalDate.Month;
                     var period = await _fiscalPeriodService.GetByYearAndPeriodAsync(
                         reversalYear, reversalPeriod, original.CompanyId);
 
-                    if (period != null && period.PeriodStatus == FiscalPeriodStatus.Locked)
+                    if (period == null)
+                        return (false, $"沖銷日期 {reversalDate:yyyy/MM/dd} 所在期間（{reversalYear}/{reversalPeriod:D2}）尚未建立，請先初始化年度", null);
+
+                    if (period.PeriodStatus == FiscalPeriodStatus.Locked)
                         return (false, $"沖銷日期 {reversalDate:yyyy/MM/dd} 所在期間（{reversalYear}/{reversalPeriod:D2}）已永久鎖定，請選擇開放中的期間（建議：次月 1 日）", null);
 
-                    if (period != null && period.PeriodStatus == FiscalPeriodStatus.Closed)
+                    if (original.EntryType != JournalEntryType.Closing &&
+                        period.PeriodStatus == FiscalPeriodStatus.Closed)
                         return (false, $"沖銷日期 {reversalDate:yyyy/MM/dd} 所在期間（{reversalYear}/{reversalPeriod:D2}）已關帳，請選擇開放中的期間（建議：次月 1 日）", null);
                 }
 
                 // 建立沖銷傳票（借貸對調）
                 // 沖銷傳票不繼承 SourceDocumentType/Id/Code，避免與原傳票索引衝突，
                 // 且沖銷傳票本身不代表一張業務單據
+                var reversalCode = await EntityCodeGenerationHelper
+                    .GenerateForEntity<JournalEntry, IJournalEntryService>(this, "JE");
+
                 var reversalEntry = new JournalEntry
                 {
+                    Code = reversalCode,
                     EntryDate = reversalDate,
                     EntryType = JournalEntryType.Reversing,
                     JournalEntryStatus = JournalEntryStatus.Posted,
@@ -450,6 +492,23 @@ namespace ERPCore2.Services
                     // 強制 FiscalYear/FiscalPeriod 與 EntryDate 一致，不允許傳入值覆蓋
                     journalEntry.FiscalYear = journalEntry.EntryDate.Year;
                     journalEntry.FiscalPeriod = journalEntry.EntryDate.Month;
+
+                    // 驗證會計期間狀態（OpeningBalance 跳過，與 PostEntryAsync 一致）
+                    if (journalEntry.EntryType != JournalEntryType.OpeningBalance)
+                    {
+                        var period = await _fiscalPeriodService.GetByYearAndPeriodAsync(
+                            journalEntry.FiscalYear, journalEntry.FiscalPeriod, journalEntry.CompanyId);
+
+                        if (period == null)
+                            return (false, $"會計期間 {journalEntry.FiscalYear}/{journalEntry.FiscalPeriod:D2} 尚未建立，請先初始化年度");
+
+                        if (period.PeriodStatus == FiscalPeriodStatus.Locked)
+                            return (false, $"會計期間 {journalEntry.FiscalYear}/{journalEntry.FiscalPeriod:D2} 已永久鎖定，不允許建立傳票");
+
+                        if (journalEntry.EntryType != JournalEntryType.Closing &&
+                            period.PeriodStatus == FiscalPeriodStatus.Closed)
+                            return (false, $"會計期間 {journalEntry.FiscalYear}/{journalEntry.FiscalPeriod:D2} 已關帳，如需補登請先重開期間");
+                    }
 
                     // 若傳票編號為空，自動產生
                     if (string.IsNullOrWhiteSpace(journalEntry.Code))
@@ -645,6 +704,14 @@ namespace ERPCore2.Services
                     var doc = await context.SetoffDocuments.FindAsync(sourceDocumentId);
                     if (doc != null) { doc.IsJournalized = false; doc.JournalizedAt = null; }
                     break;
+                case "MaterialIssue":
+                    var mi = await context.MaterialIssues.FindAsync(sourceDocumentId);
+                    if (mi != null) { mi.IsJournalized = false; mi.JournalizedAt = null; }
+                    break;
+                case "ProductionScheduleCompletion":
+                    var psc = await context.ProductionScheduleCompletions.FindAsync(sourceDocumentId);
+                    if (psc != null) { psc.IsJournalized = false; psc.JournalizedAt = null; }
+                    break;
             }
         }
 
@@ -653,13 +720,16 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
+                // 只查找有效的期初餘額傳票（Draft 或 Posted），忽略已作廢/已沖銷的記錄
                 return await context.JournalEntries
                     .Include(je => je.Lines)
                         .ThenInclude(l => l.AccountItem)
                     .Where(je =>
                         je.FiscalYear == fiscalYear &&
                         je.CompanyId == companyId &&
-                        je.EntryType == JournalEntryType.OpeningBalance)
+                        je.EntryType == JournalEntryType.OpeningBalance &&
+                        (je.JournalEntryStatus == JournalEntryStatus.Draft ||
+                         je.JournalEntryStatus == JournalEntryStatus.Posted))
                     .OrderByDescending(je => je.EntryDate)
                     .FirstOrDefaultAsync();
             }
@@ -677,21 +747,42 @@ namespace ERPCore2.Services
         {
             try
             {
+                // 過濾有效分錄行（Amount > 0）
+                var validLines = lines.Where(l => l.Amount > 0).ToList();
+
+                // 驗證至少有一筆分錄
+                if (!validLines.Any())
+                    return (false, "期初餘額至少需要一筆金額大於零的分錄");
+
                 // 驗證借貸平衡
-                var totalDebit  = lines.Where(l => l.Direction == AccountDirection.Debit).Sum(l => l.Amount);
-                var totalCredit = lines.Where(l => l.Direction == AccountDirection.Credit).Sum(l => l.Amount);
+                var totalDebit  = validLines.Where(l => l.Direction == AccountDirection.Debit).Sum(l => l.Amount);
+                var totalCredit = validLines.Where(l => l.Direction == AccountDirection.Credit).Sum(l => l.Amount);
                 if (totalDebit != totalCredit)
                     return (false, $"借貸不平衡：借方合計 {totalDebit:N2}，貸方合計 {totalCredit:N2}");
 
+                if (totalDebit == 0)
+                    return (false, "傳票金額不能為零");
+
                 using var context = await _contextFactory.CreateDbContextAsync();
 
-                // 查找是否已存在期初餘額傳票
+                // 驗證所有分錄只能使用明細科目（IsDetailAccount = true）
+                var accountIds = validLines.Select(l => l.AccountItemId).Distinct().ToList();
+                var nonDetailAccounts = await context.AccountItems
+                    .Where(a => accountIds.Contains(a.Id) && !a.IsDetailAccount)
+                    .Select(a => $"[{a.Code}] {a.Name}")
+                    .ToListAsync();
+                if (nonDetailAccounts.Any())
+                    return (false, $"以下科目非明細科目，不可記帳：{string.Join("、", nonDetailAccounts)}");
+
+                // 查找是否已存在有效的期初餘額傳票（Draft 或 Posted），忽略已作廢/已沖銷的記錄
                 var existing = await context.JournalEntries
                     .Include(je => je.Lines)
                     .Where(je =>
                         je.FiscalYear == fiscalYear &&
                         je.CompanyId == companyId &&
-                        je.EntryType == JournalEntryType.OpeningBalance)
+                        je.EntryType == JournalEntryType.OpeningBalance &&
+                        (je.JournalEntryStatus == JournalEntryStatus.Draft ||
+                         je.JournalEntryStatus == JournalEntryStatus.Posted))
                     .OrderByDescending(je => je.EntryDate)
                     .FirstOrDefaultAsync();
 
@@ -706,6 +797,8 @@ namespace ERPCore2.Services
                     existing.FiscalYear = fiscalYear;
                     existing.FiscalPeriod = 1;
                     existing.Description = $"{fiscalYear} 年期初餘額";
+                    existing.TotalDebitAmount = totalDebit;
+                    existing.TotalCreditAmount = totalCredit;
                     existing.UpdatedAt = DateTime.UtcNow;
                     existing.UpdatedBy = savedBy;
 
@@ -714,7 +807,7 @@ namespace ERPCore2.Services
 
                     // 加入新分錄行
                     var lineNum = 1;
-                    foreach (var line in lines.Where(l => l.Amount > 0))
+                    foreach (var line in validLines)
                     {
                         line.JournalEntryId = existing.Id;
                         line.LineNumber = lineNum++;
@@ -725,9 +818,14 @@ namespace ERPCore2.Services
                 }
                 else
                 {
+                    // 自動產生傳票編號
+                    var code = await EntityCodeGenerationHelper
+                        .GenerateForEntity<JournalEntry, IJournalEntryService>(this, "JE");
+
                     // 建立新傳票
                     var entry = new JournalEntry
                     {
+                        Code = code,
                         EntryDate = entryDate,
                         EntryType = JournalEntryType.OpeningBalance,
                         JournalEntryStatus = JournalEntryStatus.Draft,
@@ -735,6 +833,8 @@ namespace ERPCore2.Services
                         CompanyId = companyId,
                         FiscalYear = fiscalYear,
                         FiscalPeriod = 1,
+                        TotalDebitAmount = totalDebit,
+                        TotalCreditAmount = totalCredit,
                         CreatedAt = DateTime.UtcNow,
                         CreatedBy = savedBy
                     };
@@ -742,7 +842,7 @@ namespace ERPCore2.Services
                     await context.SaveChangesAsync();
 
                     var lineNum = 1;
-                    foreach (var line in lines.Where(l => l.Amount > 0))
+                    foreach (var line in validLines)
                     {
                         line.JournalEntryId = entry.Id;
                         line.LineNumber = lineNum++;

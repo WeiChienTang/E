@@ -671,6 +671,36 @@ namespace ERPCore2.Services
                     detail.SalesReturnId = salesReturnId;
                     detail.UpdatedAt = DateTime.UtcNow;
 
+                    // 超退驗證：退貨數量不得超過出貨明細的可退數量
+                    if (detail.SalesDeliveryDetailId.HasValue && detail.SalesDeliveryDetailId.Value > 0)
+                    {
+                        var deliveryDetail = await context.SalesDeliveryDetails
+                            .FirstOrDefaultAsync(dd => dd.Id == detail.SalesDeliveryDetailId.Value);
+
+                        if (deliveryDetail != null)
+                        {
+                            // 可退數量 = 出貨數量 - 已退數量 + 本筆明細原本的退貨數量（編輯時不重複扣除自身）
+                            var existingReturnQty = 0m;
+                            if (detail.Id > 0)
+                            {
+                                var existingDetail = existingDetails.FirstOrDefault(ed => ed.Id == detail.Id);
+                                if (existingDetail != null && existingDetail.SalesDeliveryDetailId == detail.SalesDeliveryDetailId)
+                                    existingReturnQty = existingDetail.ReturnQuantity;
+                            }
+
+                            var availableReturnQty = deliveryDetail.DeliveryQuantity
+                                                     - deliveryDetail.TotalReturnedQuantity
+                                                     + existingReturnQty;
+
+                            if (detail.ReturnQuantity > availableReturnQty)
+                            {
+                                var itemName = (await context.Items.FindAsync(detail.ItemId))?.Name ?? "未知品項";
+                                return ServiceResult<List<(SalesReturnDetail detail, decimal quantityDifference)>>.Failure(
+                                    $"品項「{itemName}」的退貨數量 {detail.ReturnQuantity} 超過可退數量 {availableReturnQty}");
+                            }
+                        }
+                    }
+
                     if (detail.Id > 0)
                     {
                         // 更新現有明細

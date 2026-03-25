@@ -1689,6 +1689,27 @@ else
                 return false;
             }
 
+            //  檢查出貨數量是否超過訂單剩餘可出量
+            if (item.SelectedSalesDetail != null)
+            {
+                var orderQty = item.SelectedSalesDetail.OrderQuantity;
+                var deliveredQty = item.SelectedSalesDetail.DeliveredQuantity;
+                var remainingQty = orderQty - deliveredQty;
+
+                // 編輯模式：加回本筆明細原本的出貨數量（避免重複扣除自身）
+                if (item.OriginalDeliveryQuantity.HasValue)
+                    remainingQty += item.OriginalDeliveryQuantity.Value;
+
+                if (item.DeliveryQuantity.Value > remainingQty)
+                {
+                    var product = AvailableItems.FirstOrDefault(p => p.Id == item.ItemId);
+                    var productName = product?.Name ?? $"品項ID: {item.ItemId}";
+                    await NotificationService.ShowWarningAsync(
+                        $"品項「{productName}」出貨數量 {item.DeliveryQuantity.Value:N0} 超過訂單剩餘可出量 {remainingQty:N0}");
+                    return false;
+                }
+            }
+
             //  檢查是否已選擇倉庫
             if (!item.WarehouseId.HasValue || item.WarehouseId.Value <= 0)
             {

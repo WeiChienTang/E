@@ -634,6 +634,25 @@ namespace ERPCore2.Services
         }
 
         /// <summary>
+        /// 重新計算採購訂單明細的已退回數量（從所有關聯進貨明細的 TotalReturnedQuantity 彙算）
+        /// </summary>
+        private async Task RecalculateOrderDetailReturnedQuantityAsync(AppDbContext context, int purchaseOrderDetailId)
+        {
+            var orderDetail = await context.PurchaseOrderDetails
+                .FirstOrDefaultAsync(d => d.Id == purchaseOrderDetailId);
+
+            if (orderDetail == null) return;
+
+            var totalReturned = await context.PurchaseReceivingDetails
+                .Where(prd => prd.PurchaseOrderDetailId == purchaseOrderDetailId
+                           && prd.Status == EntityStatus.Active)
+                .SumAsync(prd => prd.TotalReturnedQuantity);
+
+            orderDetail.ReturnedQuantity = totalReturned;
+            orderDetail.UpdatedAt = DateTime.UtcNow;
+        }
+
+        /// <summary>
         /// 儲存採購退貨連同明細
         /// </summary>
         public async Task<ServiceResult<PurchaseReturn>> SaveWithDetailsAsync(PurchaseReturn purchaseReturn, List<PurchaseReturnDetail> details, bool updateInventory = true)
@@ -918,25 +937,41 @@ namespace ERPCore2.Services
                 }
 
                 // 🔥 更新進貨明細的累計退貨數量
+                var affectedPurchaseOrderDetailIds = new HashSet<int>();
                 foreach (var (detail, quantityDiff) in quantityChanges)
                 {
                     if (detail.PurchaseReceivingDetailId.HasValue && detail.PurchaseReceivingDetailId.Value > 0)
                     {
                         var receivingDetail = await context.PurchaseReceivingDetails
                             .FirstOrDefaultAsync(rd => rd.Id == detail.PurchaseReceivingDetailId.Value);
-                        
+
                         if (receivingDetail != null)
                         {
                             // 累加退貨數量（quantityDiff 可能為正或負）
                             receivingDetail.TotalReturnedQuantity += quantityDiff;
-                            
+
                             // 確保不會變成負數
                             if (receivingDetail.TotalReturnedQuantity < 0)
                             {
                                 receivingDetail.TotalReturnedQuantity = 0;
                             }
+
+                            // 記錄需要回寫的採購訂單明細
+                            if (receivingDetail.PurchaseOrderDetailId.HasValue)
+                            {
+                                affectedPurchaseOrderDetailIds.Add(receivingDetail.PurchaseOrderDetailId.Value);
+                            }
                         }
                     }
+                }
+
+                // 先儲存 TotalReturnedQuantity 的變更到資料庫，確保後續 SumAsync 查詢能取得最新值
+                await context.SaveChangesAsync();
+
+                // 🔥 回寫採購訂單明細的已退回數量（從所有關聯進貨明細重新彙算）
+                foreach (var podId in affectedPurchaseOrderDetailIds)
+                {
+                    await RecalculateOrderDetailReturnedQuantityAsync(context, podId);
                 }
 
                 await context.SaveChangesAsync();
@@ -1075,6 +1110,7 @@ namespace ERPCore2.Services
                     }
                     
                     // 3. 回復庫存 - 將之前因退貨而扣減的庫存回復
+                    var affectedPurchaseOrderDetailIds = new HashSet<int>();
                     if (_inventoryStockService != null)
                     {
                         var eligibleDetails = entity.PurchaseReturnDetails.Where(d => d.ReturnQuantity > 0).ToList();
@@ -1144,9 +1180,24 @@ namespace ERPCore2.Services
                                     {
                                         receivingDetail.TotalReturnedQuantity = 0;
                                     }
+
+                                    // 記錄需要回寫的採購訂單明細
+                                    if (receivingDetail.PurchaseOrderDetailId.HasValue)
+                                    {
+                                        affectedPurchaseOrderDetailIds.Add(receivingDetail.PurchaseOrderDetailId.Value);
+                                    }
                                 }
                             }
                         }
+                    }
+
+                    // 3.5 先儲存 TotalReturnedQuantity 的變更，確保後續 SumAsync 查詢能取得最新值
+                    await context.SaveChangesAsync();
+
+                    // 3.6 回寫採購訂單明細的已退回數量
+                    foreach (var podId in affectedPurchaseOrderDetailIds)
+                    {
+                        await RecalculateOrderDetailReturnedQuantityAsync(context, podId);
                     }
 
                     // 4. 執行實體刪除

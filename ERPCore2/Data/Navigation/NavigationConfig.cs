@@ -1022,7 +1022,7 @@ public static class NavigationConfig
                         NameKey = "Nav.EquipmentCategories",
                         Description = "管理設備類別設定",
                         Route = "/equipment-categories",
-                        IconClass = "bi bi-caret-right-fill",
+                        IconClass = "",
                         Category = "設備管理",
                         RequiredPermission = PermissionRegistry.EquipmentCategory.Read,
                         SearchKeywords = new List<string> { "設備類別", "設備分類", "equipment category", "设备类别", "設備種別" },

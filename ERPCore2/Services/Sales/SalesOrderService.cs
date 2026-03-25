@@ -17,18 +17,21 @@ namespace ERPCore2.Services
         private readonly IInventoryStockService _inventoryStockService;
         private readonly ISalesOrderDetailService? _detailService;
         private readonly ISalesReturnDetailService? _salesReturnDetailService;
+        private readonly ISystemParameterService _systemParameterService;
 
         /// <summary>
         /// 完整建構子 - 使用 ILogger、InventoryStockService 和 SalesOrderDetailService
         /// </summary>
         public SalesOrderService(
-            IDbContextFactory<AppDbContext> contextFactory, 
+            IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<SalesOrder>> logger,
             IInventoryStockService inventoryStockService,
+            ISystemParameterService systemParameterService,
             ISalesOrderDetailService? detailService = null,
             ISalesReturnDetailService? salesReturnDetailService = null) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
+            _systemParameterService = systemParameterService;
             _detailService = detailService;
             _salesReturnDetailService = salesReturnDetailService;
         }
@@ -38,9 +41,11 @@ namespace ERPCore2.Services
         /// </summary>
         public SalesOrderService(
             IDbContextFactory<AppDbContext> contextFactory,
-            IInventoryStockService inventoryStockService) : base(contextFactory)
+            IInventoryStockService inventoryStockService,
+            ISystemParameterService systemParameterService) : base(contextFactory)
         {
             _inventoryStockService = inventoryStockService;
+            _systemParameterService = systemParameterService;
         }
 
         #region 覆寫基底方法
@@ -237,7 +242,8 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("找不到指定的銷貨訂單");
 
                 var totalAmount = order.SalesOrderDetails.Sum(d => d.SubtotalAmount);
-                var taxAmount = totalAmount * 0.05m; // 假設稅率 5%
+                var taxRate = await _systemParameterService.GetTaxRateAsync();
+                var taxAmount = Math.Round(totalAmount * (taxRate / 100m), 2);
                 var totalAmountWithTax = totalAmount + taxAmount;
 
                 order.TotalAmount = totalAmount;
@@ -284,65 +290,6 @@ namespace ERPCore2.Services
                     OrderId = orderId
                 });
                 return null;
-            }
-        }
-
-        /// <summary>
-        /// 驗證銷貨訂單明細的倉庫選擇和庫存是否足夠
-        /// </summary>
-        /// <param name="salesOrderDetails">銷貨訂單明細清單</param>
-        /// <returns>驗證結果，包含倉庫和庫存不足的詳細訊息</returns>
-        public async Task<ServiceResult> ValidateWarehouseInventoryStockAsync(List<SalesOrderDetail> salesOrderDetails)
-        {
-            try
-            {
-                if (salesOrderDetails == null || !salesOrderDetails.Any())
-                {
-                    return ServiceResult.Success();
-                }
-
-                var errors = new List<string>();
-                
-                foreach (var detail in salesOrderDetails.Where(d => d.ItemId > 0 && d.OrderQuantity > 0))
-                {
-                    using var context = await _contextFactory.CreateDbContextAsync();
-                    var product = await context.Items.FindAsync(detail.ItemId);
-                    var productName = $"{product?.Code ?? "N/A"} - {product?.Name ?? "未知品項"}";
-                    
-                    // 1. 檢查是否選擇倉庫
-                    if (!detail.WarehouseId.HasValue)
-                    {
-                        errors.Add($"{productName} 必須選擇倉庫");
-                        continue;
-                    }
-
-                    // 2. 檢查指定倉庫的庫存（合併計算該倉庫內所有位置的庫存）
-                    var availableStock = await _inventoryStockService.GetTotalAvailableStockByWarehouseAsync(
-                        detail.ItemId, detail.WarehouseId.Value);
-                        
-                    if (availableStock < detail.OrderQuantity)
-                    {
-                        var warehouse = await context.Warehouses.FindAsync(detail.WarehouseId.Value);
-                        var warehouseName = warehouse?.Name ?? "未知倉庫";
-                        
-                        errors.Add($"{productName} 在倉庫 {warehouseName} 庫存不足");
-                        errors.Add($"可用庫存: {availableStock}，需要: {detail.OrderQuantity}");
-                        errors.Add(""); // 空行分隔
-                    }
-                }
-                
-                return errors.Any() 
-                    ? ServiceResult.Failure(string.Join("\n", errors).TrimEnd())
-                    : ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ValidateWarehouseInventoryStockAsync), GetType(), _logger, new {
-                    Method = nameof(ValidateWarehouseInventoryStockAsync),
-                    ServiceType = GetType().Name,
-                    DetailCount = salesOrderDetails?.Count ?? 0
-                });
-                return ServiceResult.Failure("驗證倉庫庫存時發生錯誤");
             }
         }
 
@@ -552,13 +499,13 @@ namespace ERPCore2.Services
         /// </summary>
         /// <param name="customerId">客戶ID</param>
         /// <param name="includeCompleted">是否包含已完成的明細</param>
-        /// <param name="checkApproval">是否檢查審核狀態（銷貨訂單無審核機制，此參數保留以保持介面一致性）</param>
+        /// <param name="checkApproval">是否檢查審核狀態（true=只載入已審核的訂單明細，false=不檢查審核）</param>
         public async Task<List<SalesOrderDetail>> GetDeliveryDetailsByCustomerAsync(int customerId, bool includeCompleted, bool checkApproval = true)
         {
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                
+
                 var query = context.SalesOrderDetails
                     .Include(sod => sod.SalesOrder)
                         .ThenInclude(so => so.Customer)
@@ -566,8 +513,11 @@ namespace ERPCore2.Services
                     .Include(sod => sod.Warehouse)
                     .Where(sod => sod.SalesOrder.CustomerId == customerId);
 
-                // 注意：銷貨訂單沒有審核機制，checkApproval 參數保留但不使用
-                // 此參數僅為保持與採購訂單 API 一致性
+                // 審核過濾：僅載入已核准的銷貨訂單明細，防止未核准訂單被帶入出貨單
+                if (checkApproval)
+                {
+                    query = query.Where(sod => sod.SalesOrder.IsApproved);
+                }
 
                 if (!includeCompleted)
                 {

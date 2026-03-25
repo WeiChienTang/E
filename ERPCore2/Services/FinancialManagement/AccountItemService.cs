@@ -282,17 +282,16 @@ namespace ERPCore2.Services
                     errors.Add("科目代碼已存在");
 
                 // 驗證科目大類與借貸方向的對應關係
-                // 資產/成本/費用 → 借方正常；負債/權益/收入 → 貸方正常
+                // 資產/費用 → 借方正常；負債/權益 → 貸方正常
+                // 收入/成本 允許反方向（抵銷科目：銷貨折讓為借方、進貨折讓為貸方）
                 // 營業外收益及費損、綜合損益總額可為任意方向（跳過驗證）
                 var expectedDirection = entity.AccountType switch
                 {
-                    AccountType.Asset    => AccountDirection.Debit,
-                    AccountType.Cost     => AccountDirection.Debit,
-                    AccountType.Expense  => AccountDirection.Debit,
+                    AccountType.Asset     => AccountDirection.Debit,
+                    AccountType.Expense   => AccountDirection.Debit,
                     AccountType.Liability => AccountDirection.Credit,
-                    AccountType.Equity   => AccountDirection.Credit,
-                    AccountType.Revenue  => AccountDirection.Credit,
-                    _ => (AccountDirection?)null  // NonOperating / ComprehensiveIncome 不驗證
+                    AccountType.Equity    => AccountDirection.Credit,
+                    _ => (AccountDirection?)null  // Revenue / Cost / NonOperating / ComprehensiveIncome 不強制
                 };
                 if (expectedDirection.HasValue && entity.Direction != expectedDirection.Value)
                 {

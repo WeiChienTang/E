@@ -782,9 +782,12 @@ namespace ERPCore2.Services
                 if (detail == null)
                     return ServiceResult.Failure("找不到指定的採購訂單明細");
 
-                // 重新計算已進貨數量和金額
+                // 重新計算已進貨數量和金額（只計算 Active 狀態且其父進貨單也是 Active 的明細）
                 var receivingDetails = await context.PurchaseReceivingDetails
-                    .Where(prd => prd.PurchaseOrderDetailId == purchaseOrderDetailId)
+                    .Include(prd => prd.PurchaseReceiving)
+                    .Where(prd => prd.PurchaseOrderDetailId == purchaseOrderDetailId
+                               && prd.Status == EntityStatus.Active
+                               && prd.PurchaseReceiving.Status == EntityStatus.Active)
                     .ToListAsync();
 
                 var totalReceivedQuantity = receivingDetails.Sum(prd => prd.ReceivedQuantity);
