@@ -2340,6 +2340,10 @@
   <data name="Home.EditThisPanelTooltip" xml:space="preserve"><value>I-edit ang Panel na Ito</value></data>
   <data name="Home.Create" xml:space="preserve"><value>Lumikha</value></data>
   <data name="Home.WelcomeMessage" xml:space="preserve"><value>Kumusta, {0}</value></data>
+  <data name="Home.SearchPlaceholder" xml:space="preserve"><value>Maghanap ng pahina, ulat o feature...</value></data>
+  <data name="Home.SearchNoResults" xml:space="preserve"><value>Walang nahanap na resulta</value></data>
+  <data name="Home.SearchGroupPages" xml:space="preserve"><value>Mga Pahina</value></data>
+  <data name="Home.SearchGroupReports" xml:space="preserve"><value>Mga Ulat</value></data>
   <data name="Home.NoPanelItemsHint" xml:space="preserve"><value>I-click ang edit button para i-customize ang panel na ito</value></data>
   <data name="Home.NoPanelsHint" xml:space="preserve"><value>Lumikha ng unang panel para simulan ang pag-customize ng workspace</value></data>
 

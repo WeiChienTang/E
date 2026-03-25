@@ -18,35 +18,16 @@ else if (_isLoading)
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-sm table-hover mb-3">
-            <thead class="table-light">
-                <tr>
-                    <th style="width:160px">@L["Accounting.SubAccountType"]</th>
-                    <th style="width:140px">@L["Accounting.AccountCode"]</th>
-                    <th>@L["Accounting.AccountName"]</th>
-                    <th style="width:90px">@L["Column.Status"]</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>@L["Accounting.Inventory"]</td>
-                    <td class="font-monospace small">@(_subAccount?.Code ?? "—")</td>
-                    <td class="small">@(_subAccount?.Name ?? "—")</td>
-                    <td>
-                        @if (_subAccount != null)
-                        {
-                            <span class="text-success small"><i class="bi bi-check-circle me-1"></i>@L["Accounting.Created"]</span>
-                        }
-                        else
-                        {
-                            <span class="text-warning small"><i class="bi bi-exclamation-circle me-1"></i>@L["Accounting.NotCreated"]</span>
-                        }
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <GenericInteractiveTableComponent TItem="AccountItem"
+                                     Items="@_tableItems"
+                                     ColumnDefinitions="@GetColumnDefinitions()"
+                                     ShowHeader="true"
+                                     IsStriped="true"
+                                     IsHoverable="true"
+                                     IsBordered="true"
+                                     IsReadOnly="true"
+                                     ShowBuiltInActions="false"
+                                     EnableAutoEmptyRow="false" />
 
     @if (_subAccount == null)
     {
@@ -68,6 +49,52 @@ else
     private bool _isLoading;
     private bool _isCreating;
     private AccountItem? _subAccount;
+    private List<AccountItem> _tableItems = new();
+
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new InteractiveColumnDefinition
+            {
+                Title = L["Accounting.SubAccountType"],
+                PropertyName = "SubAccountType",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "160px",
+                DisplayFormatter = _ => L["Accounting.Inventory"]
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = L["Accounting.AccountCode"],
+                PropertyName = nameof(AccountItem.Code),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "140px",
+                CellCssClass = "font-monospace small",
+                NullDisplayText = "—"
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = L["Accounting.AccountName"],
+                PropertyName = nameof(AccountItem.Name),
+                ColumnType = InteractiveColumnType.Display,
+                CellCssClass = "small",
+                NullDisplayText = "—"
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = L["Column.Status"],
+                PropertyName = "Status",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "90px",
+                DisplayFormatter = item =>
+                {
+                    if (item is AccountItem acct && acct.Id > 0)
+                        return L["Accounting.Created"];
+                    return L["Accounting.NotCreated"];
+                }
+            }
+        };
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -95,6 +122,7 @@ else
         _productId = 0;
         _lastLoadedId = 0;
         _subAccount = null;
+        _tableItems = new();
         StateHasChanged();
     }
 
@@ -106,6 +134,9 @@ else
         StateHasChanged();
 
         _subAccount = await SubAccountService.GetSubAccountForItemAsync(_productId);
+        _tableItems = _subAccount != null
+            ? new List<AccountItem> { _subAccount }
+            : new List<AccountItem> { new AccountItem() };
 
         _isLoading = false;
     }

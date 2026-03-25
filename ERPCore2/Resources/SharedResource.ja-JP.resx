@@ -2340,6 +2340,10 @@
   <data name="Home.EditThisPanelTooltip" xml:space="preserve"><value>このパネルを編集</value></data>
   <data name="Home.Create" xml:space="preserve"><value>作成</value></data>
   <data name="Home.WelcomeMessage" xml:space="preserve"><value>こんにちは、{0}</value></data>
+  <data name="Home.SearchPlaceholder" xml:space="preserve"><value>ページ、レポート、機能を検索...</value></data>
+  <data name="Home.SearchNoResults" xml:space="preserve"><value>一致する結果が見つかりません</value></data>
+  <data name="Home.SearchGroupPages" xml:space="preserve"><value>ページ</value></data>
+  <data name="Home.SearchGroupReports" xml:space="preserve"><value>レポート</value></data>
   <data name="Home.NoPanelItemsHint" xml:space="preserve"><value>編集ボタンをクリックしてこのパネルをカスタマイズ</value></data>
   <data name="Home.NoPanelsHint" xml:space="preserve"><value>最初のパネルを作成してワークスペースをカスタマイズしましょう</value></data>
 

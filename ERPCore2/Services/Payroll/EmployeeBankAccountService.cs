@@ -165,9 +165,17 @@ namespace ERPCore2.Services.Payroll
             try
             {
                 if (entity.IsPrimary)
-                    return ServiceResult.Failure("主要轉帳帳戶不可直接刪除，請先設定其他帳戶為主要帳戶");
+                {
+                    // 若該員工只剩這一個帳戶，允許刪除（刪除後無主要帳戶）
+                    using var context = await _contextFactory.CreateDbContextAsync();
+                    int accountCount = await context.EmployeeBankAccounts
+                        .CountAsync(x => x.EmployeeId == entity.EmployeeId);
 
-                return await Task.FromResult(ServiceResult.Success());
+                    if (accountCount > 1)
+                        return ServiceResult.Failure("主要轉帳帳戶不可直接刪除，請先設定其他帳戶為主要帳戶");
+                }
+
+                return ServiceResult.Success();
             }
             catch (Exception ex)
             {

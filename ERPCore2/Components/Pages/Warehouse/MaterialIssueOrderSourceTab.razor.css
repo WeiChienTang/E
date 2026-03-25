@@ -4,7 +4,7 @@
     background-color: var(--bg-tertiary);
     color: var(--text-primary);
     border-color: var(--border-color);
-    font-size: 0.85rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
 }
 
@@ -16,7 +16,7 @@
 
 .product-code {
     color: var(--primary-blue);
-    font-size: 0.85rem;
+    font-size: var(--fs-sm);
 }
 
 /* ===== 空白狀態 ===== */

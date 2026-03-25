@@ -8,7 +8,6 @@
                    Title=@L["Inventory.MergeLocation"]
                    Icon="bi-arrows-collapse"
                    Size="BaseModalComponent.ModalSize.Desktop"
-                   HeaderColor="BaseModalComponent.HeaderVariant.Primary"
                    BodyCssClass="p-4"
                    OnClose="HandleClose"
                    DebugComponentName="MergeLocationModalComponent">
@@ -163,7 +162,6 @@
                              SummaryMessage="@_confirmSummary"
                              ConfirmButtonText=@L["Inventory.ConfirmMerge"]
                              ConfirmButtonVariant="ButtonVariant.DarkBlue"
-                             HeaderColor="BaseModalComponent.HeaderVariant.Primary"
                              OnConfirm="@OnConfirmMerge"
                              OnCancel="@(() => _showConfirmModal = false)" />
 

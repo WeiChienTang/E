@@ -54,7 +54,7 @@
 }
 
 .form-section-title {
-    font-size: 1rem;
+    font-size: var(--fs-base);
     font-weight: 600;
     color: var(--primary-blue);
 }
@@ -79,7 +79,7 @@
 
 /* 篩選區段圖示 */
 .form-section-filter-icon {
-    font-size: 0.75rem;
+    font-size: var(--fs-xs);
     color: var(--warning-text-dark);
     flex-shrink: 0;
 }
@@ -103,7 +103,7 @@
 .form-field-label {
     flex: 0 0 auto;
     min-width: 80px;
-    font-size: 1rem;
+    font-size: var(--fs-base);
     font-weight: 500;
     color: var(--text-primary);
     white-space: normal;
@@ -270,7 +270,7 @@
     justify-content: center;
     border: none !important;
     border-radius: 6px;
-    font-size: 1rem;
+    font-size: var(--fs-base);
     transition: all 0.2s ease;
     cursor: pointer;
     background-color: transparent;
@@ -279,7 +279,7 @@
 /* 圖示樣式 */
 .input-action-button i {
     margin: 0 !important;
-    font-size: 1rem; /* 從 0.875rem 增加到 1rem */
+    font-size: var(--fs-base); /* 從 0.875rem 增加到 1rem */
 }
 
 /* ===== 統一使用藍色樣式 ===== */
@@ -329,9 +329,9 @@
     .input-action-button {
         width: 30px;
         height: 30px;
-        font-size: 1rem;
+        font-size: var(--fs-base);
     }
-    
+
     .input-with-action-buttons .has-action-buttons {
         padding-right: 42px !important;
     }
@@ -385,7 +385,7 @@
     ::deep .form-field-input select,
     ::deep .form-field-input textarea {
         width: 100% !important;
-        font-size: 16px !important; /* 防止 iOS 自動縮放 */
+        font-size: var(--fs-base) !important; /* 防止 iOS 自動縮放 */
     }
 
     /* Checkbox 在手機版保持同行 - Label 在左、Checkbox 在右 */
@@ -468,7 +468,7 @@
     align-items: center;
     gap: 0.3rem;
     padding: 0.25rem 0.75rem;
-    font-size: 1rem;
+    font-size: var(--fs-base);
     font-weight: 500;
     color: var(--text-secondary);
     background-color: var(--bg-secondary);
@@ -511,7 +511,7 @@
 
 /* Tab 按鈕圖示 */
 .form-tab-btn i {
-    font-size: 1rem;
+    font-size: var(--fs-base);
 }
 
 /* Tab 內容區域 */
@@ -554,7 +554,7 @@
         flex-shrink: 0;
         flex-direction: row;
         padding: 0.45rem 0.65rem;
-        font-size: 1rem;
+        font-size: var(--fs-base);
         border-radius: 0;
         border: none;
         border-bottom: 2px solid transparent;
@@ -564,7 +564,7 @@
     }
 
     .form-tab-btn i {
-        font-size: 1rem;
+        font-size: var(--fs-base);
     }
 
     /* 作用中：底線藍色 + 文字藍色 */

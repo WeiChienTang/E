@@ -36,7 +36,7 @@
     text-align: left;
     color: var(--text-primary);
     cursor: pointer;
-    font-size: 0.875rem;
+    font-size: var(--fs-sm);
     line-height: 1.4;
     transition: background-color 0.12s;
     white-space: nowrap;

@@ -17,7 +17,6 @@
                    IsVisibleChanged="@IsVisibleChanged"
                    Title="@Title"
                    Size="BaseModalComponent.ModalSize.ExtraLarge"
-                   HeaderColor="BaseModalComponent.HeaderVariant.Warning"
                    CloseOnEscape="true"
                    CloseOnBackdropClick="true"
                    OnClose="@HandleClose"
@@ -92,7 +91,6 @@
                               SummaryMessage="@(!string.IsNullOrEmpty(_currentUserName) ? $"{L["Approval.ApprovedBy"]}：{_currentUserName}" : "")"
                               ConfirmButtonText="@L["Button.Confirm"].ToString()"
                               ConfirmButtonVariant="ButtonVariant.Green"
-                              HeaderColor="BaseModalComponent.HeaderVariant.Success"
                               OnConfirm="HandleApproveConfirm" />
 
 @code {

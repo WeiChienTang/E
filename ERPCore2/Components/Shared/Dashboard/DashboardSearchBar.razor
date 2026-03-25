@@ -1,0 +1,254 @@
+@using ERPCore2.Models.Navigation
+@inject IStringLocalizer<SharedResource> L
+@inject NavigationManager NavigationManager
+
+<div class="dashboard-search-bar" @onfocusout="HandleFocusOut" @ref="containerRef">
+    <div class="search-input-wrapper">
+        <i class="bi bi-search search-icon"></i>
+        <input type="text"
+               class="search-input"
+               placeholder="@L["Home.SearchPlaceholder"]"
+               @bind="searchTerm"
+               @bind:event="oninput"
+               @bind:after="OnSearchInput"
+               @onfocus="HandleFocus"
+               @onkeydown="HandleKeyDown"
+               @ref="inputRef"
+               autocomplete="off" />
+        @if (!string.IsNullOrEmpty(searchTerm))
+        {
+            <button class="search-clear-btn" @onclick="ClearSearch" tabindex="-1">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        }
+        <span class="search-shortcut-hint">Alt+S</span>
+    </div>
+
+    @if (showDropdown && !string.IsNullOrEmpty(searchTerm))
+    {
+        <div class="search-dropdown">
+            @if (!pageResults.Any() && !reportResults.Any())
+            {
+                <div class="search-empty">
+                    <i class="bi bi-search"></i>
+                    <span>@L["Home.SearchNoResults"]</span>
+                </div>
+            }
+            else
+            {
+                <div class="search-results-meta">
+                    <span>@string.Format(L["Search.ResultCount"], pageResults.Count + reportResults.Count)</span>
+                    <span class="search-keyboard-hint">
+                        <kbd>↑</kbd><kbd>↓</kbd> @L["Search.KeyHintNavigate"]
+                        <kbd>Enter</kbd> @L["Search.KeyHintSelect"]
+                    </span>
+                </div>
+
+                @if (pageResults.Any())
+                {
+                    <div class="search-group-header">
+                        <i class="bi bi-window-stack"></i>
+                        <span>@L["Home.SearchGroupPages"]</span>
+                        <span class="search-group-count">@pageResults.Count</span>
+                    </div>
+                    @for (var i = 0; i < pageResults.Count; i++)
+                    {
+                        var idx = i;
+                        var item = pageResults[i];
+                        var isSelected = idx == selectedIndex;
+                        <div class="search-result-item @(isSelected ? "selected" : "")"
+                             @onclick="@(() => SelectItem(item, isReport: false))"
+                             @onmouseenter="@(() => selectedIndex = idx)">
+                            @if (!string.IsNullOrEmpty(item.IconClass))
+                            {
+                                <span class="search-result-icon"><i class="@item.IconClass"></i></span>
+                            }
+                            <div class="search-result-content">
+                                <span class="search-result-name">@item.Name</span>
+                                @if (!string.IsNullOrEmpty(item.Category))
+                                {
+                                    <span class="search-result-category">@item.Category</span>
+                                }
+                            </div>
+                            <i class="bi bi-chevron-right search-result-arrow"></i>
+                        </div>
+                    }
+                }
+
+                @if (reportResults.Any())
+                {
+                    <div class="search-group-header">
+                        <i class="bi bi-printer"></i>
+                        <span>@L["Home.SearchGroupReports"]</span>
+                        <span class="search-group-count">@reportResults.Count</span>
+                    </div>
+                    @for (var i = 0; i < reportResults.Count; i++)
+                    {
+                        var idx = pageResults.Count + i;
+                        var item = reportResults[i];
+                        var isSelected = idx == selectedIndex;
+                        <div class="search-result-item @(isSelected ? "selected" : "")"
+                             @onclick="@(() => SelectItem(item, isReport: true))"
+                             @onmouseenter="@(() => selectedIndex = idx)">
+                            @if (!string.IsNullOrEmpty(item.IconClass))
+                            {
+                                <span class="search-result-icon"><i class="@item.IconClass"></i></span>
+                            }
+                            <div class="search-result-content">
+                                <span class="search-result-name">@item.Name</span>
+                                @if (!string.IsNullOrEmpty(item.Category))
+                                {
+                                    <span class="search-result-category">@(CategoryDisplayNameFunc?.Invoke(item.Category) ?? item.Category)</span>
+                                }
+                            </div>
+                            <i class="bi bi-chevron-right search-result-arrow"></i>
+                        </div>
+                    }
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public Func<string, List<ISearchableItem>>? SearchPages { get; set; }
+
+    [Parameter]
+    public Func<string, List<ISearchableItem>>? SearchReports { get; set; }
+
+    [Parameter]
+    public Func<string, string>? CategoryDisplayNameFunc { get; set; }
+
+    [Parameter]
+    public EventCallback<ISearchableItem> OnPageSelected { get; set; }
+
+    [Parameter]
+    public EventCallback<ISearchableItem> OnReportSelected { get; set; }
+
+    private string searchTerm = "";
+    private bool showDropdown = false;
+    private int selectedIndex = -1;
+    private List<ISearchableItem> pageResults = new();
+    private List<ISearchableItem> reportResults = new();
+    private ElementReference inputRef;
+    private ElementReference containerRef;
+    private CancellationTokenSource? _debounceCts;
+
+    private async Task OnSearchInput()
+    {
+        _debounceCts?.Cancel();
+        _debounceCts = new CancellationTokenSource();
+        var token = _debounceCts.Token;
+
+        try
+        {
+            await Task.Delay(200, token);
+            PerformSearch();
+        }
+        catch (TaskCanceledException) { }
+    }
+
+    private void PerformSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            pageResults.Clear();
+            reportResults.Clear();
+            showDropdown = false;
+            return;
+        }
+
+        pageResults = SearchPages?.Invoke(searchTerm) ?? new();
+        reportResults = SearchReports?.Invoke(searchTerm) ?? new();
+        selectedIndex = (pageResults.Any() || reportResults.Any()) ? 0 : -1;
+        showDropdown = true;
+    }
+
+    private void HandleFocus()
+    {
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            showDropdown = true;
+        }
+    }
+
+    private async Task HandleFocusOut()
+    {
+        // Delay to allow click events on dropdown items to fire
+        await Task.Delay(200);
+        showDropdown = false;
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        var totalCount = pageResults.Count + reportResults.Count;
+        if (totalCount == 0) return;
+
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                selectedIndex = (selectedIndex + 1) % totalCount;
+                break;
+            case "ArrowUp":
+                selectedIndex = selectedIndex <= 0 ? totalCount - 1 : selectedIndex - 1;
+                break;
+            case "Enter":
+                if (selectedIndex >= 0 && selectedIndex < totalCount)
+                {
+                    var isReport = selectedIndex >= pageResults.Count;
+                    var item = GetItemByIndex(selectedIndex);
+                    if (item != null) _ = SelectItem(item, isReport);
+                }
+                break;
+            case "Escape":
+                showDropdown = false;
+                break;
+        }
+    }
+
+    private ISearchableItem? GetItemByIndex(int index)
+    {
+        if (index < pageResults.Count)
+            return pageResults[index];
+        index -= pageResults.Count;
+        if (index < reportResults.Count)
+            return reportResults[index];
+        return null;
+    }
+
+    private async Task SelectItem(ISearchableItem item, bool isReport)
+    {
+        showDropdown = false;
+        searchTerm = "";
+        pageResults.Clear();
+        reportResults.Clear();
+
+        if (isReport)
+        {
+            if (OnReportSelected.HasDelegate)
+            {
+                await OnReportSelected.InvokeAsync(item);
+            }
+        }
+        else
+        {
+            if (!string.IsNullOrEmpty(item.Route) && item.Route != "#")
+            {
+                NavigationManager.NavigateTo(item.Route);
+            }
+            else if (!string.IsNullOrEmpty(item.ActionId) && OnPageSelected.HasDelegate)
+            {
+                await OnPageSelected.InvokeAsync(item);
+            }
+        }
+    }
+
+    private void ClearSearch()
+    {
+        searchTerm = "";
+        pageResults.Clear();
+        reportResults.Clear();
+        showDropdown = false;
+    }
+}

@@ -4,6 +4,6 @@
 }
 
 .badge-lg {
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     padding: 0.5em 0.75em;
 }

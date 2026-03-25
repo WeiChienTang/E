@@ -1,23 +1,3 @@
-/* ===== 歡迎橫幅 ===== */
-.welcome-banner {
-    background: linear-gradient(135deg, rgba(var(--primary-blue-rgb), 0.06), rgba(var(--primary-blue-rgb), 0.02));
-    border: 1px solid rgba(var(--primary-blue-rgb), 0.1);
-    border-radius: 0.75rem;
-    padding: 1rem 1.25rem;
-}
-
-.welcome-title {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    line-height: 1.4;
-}
-
-.welcome-subtitle {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-}
-
 /* ===== 面板容器 ===== */
 .dashboard-panel {
     background-color: var(--bg-primary);
@@ -39,8 +19,11 @@
     border-bottom: 1px solid var(--border-light);
 }
 
-/* 面板內容區域 */
+/* 面板內容區域 - CSS Grid 自適應佈局 */
 .panel-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 0.75rem;
     padding-top: 0.25rem;
 }
 
@@ -68,7 +51,7 @@
 }
 
 .add-shortcut-card i {
-    font-size: 1.3rem;
+    font-size: var(--fs-lg);
     transition: transform 0.25s ease;
     flex-shrink: 0;
 }
@@ -78,7 +61,7 @@
 }
 
 .add-shortcut-card span {
-    font-size: 0.82rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     white-space: nowrap;
 }
@@ -97,7 +80,7 @@
     transition: all 0.25s ease;
     color: var(--text-secondary);
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: var(--fs-sm);
 }
 
 .add-panel-card:hover {
@@ -108,7 +91,7 @@
 }
 
 .add-panel-card i {
-    font-size: 1.1rem;
+    font-size: var(--fs-md);
     transition: transform 0.25s ease;
 }
 
@@ -132,7 +115,7 @@
 }
 
 .empty-panel-icons > i:first-child {
-    font-size: 2.5rem;
+    font-size: var(--fs-2xl);
     color: var(--border-color);
 }
 
@@ -140,7 +123,7 @@
     position: absolute;
     bottom: 0;
     right: -4px;
-    font-size: 1rem;
+    font-size: var(--fs-base);
     color: var(--primary-blue);
     background: var(--bg-primary);
     border-radius: 50%;
@@ -171,7 +154,7 @@
 }
 
 .empty-state-illustration > i:first-child {
-    font-size: 3.5rem;
+    font-size: var(--fs-2xl);
     color: var(--border-color);
 }
 
@@ -179,22 +162,19 @@
     position: absolute;
     bottom: 0;
     right: -6px;
-    font-size: 1.3rem;
+    font-size: var(--fs-lg);
     color: var(--primary-blue);
 }
 
 /* ===== 響應式調整 - 平板 ===== */
 @media (max-width: 768px) {
-    .welcome-banner {
-        padding: 0.75rem 1rem;
-    }
-
-    .welcome-title {
-        font-size: 1rem;
-    }
-
     .dashboard-panel {
         padding: 0.75rem 0.85rem 1rem;
+    }
+
+    .panel-content {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.6rem;
     }
 
     .add-shortcut-card {
@@ -203,27 +183,24 @@
     }
 
     .add-shortcut-card i {
-        font-size: 1.1rem;
+        font-size: var(--fs-md);
     }
 
     .add-shortcut-card span {
-        font-size: 0.78rem;
+        font-size: var(--fs-sm);
     }
 }
 
 /* ===== 響應式調整 - 手機 ===== */
 @media (max-width: 576px) {
-    .welcome-banner {
-        padding: 0.6rem 0.75rem;
-    }
-
-    .welcome-subtitle {
-        font-size: 0.85rem;
-    }
-
     .dashboard-panel {
         padding: 0.6rem 0.65rem 0.8rem;
         border-radius: 0.5rem;
+    }
+
+    .panel-content {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
     }
 
     .add-shortcut-card {
@@ -233,7 +210,7 @@
 
     .add-panel-card {
         padding: 0.65rem 0.75rem;
-        font-size: 0.9rem;
+        font-size: var(--fs-sm);
     }
 }
 
@@ -258,7 +235,7 @@
     position: absolute;
     bottom: -2px;
     right: 0;
-    font-size: 0.6rem;
+    font-size: var(--fs-2xs);
     color: var(--primary-blue);
     opacity: 0;
     transition: opacity 0.2s ease;

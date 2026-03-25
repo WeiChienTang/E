@@ -31,19 +31,20 @@
 
 /* --- 表格容器 --- */
 .table-container-hover {
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    border-radius: 6px;
+    transition: box-shadow 0.2s ease-in-out;
+    border-radius: 8px;
     background: var(--bg-primary);
     padding: 0;
     border: 1px solid var(--border-light, #E5E7EB);
     width: 100%;
     max-width: 100%;
     overflow-x: auto;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .table-container-hover:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     border-color: var(--border-color, #D1D5DB);
 }
 
@@ -55,45 +56,44 @@
 
 /* --- .table-responsive 功能性覆寫 --- */
 .table-responsive {
-    border-radius: 6px;
+    border-radius: 8px;
     overflow-x: auto !important;
     overflow-y: visible;
     -webkit-overflow-scrolling: touch;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
-/* --- 表頭 — 輕色底 + 主色下邊框（兩個 Table 組件共用，與 section-header-primary 設計語言一致）--- */
+/* --- 表頭 — Minimal 風格（低調退後，讓資料成為焦點）--- */
 .table-header-primary {
-    background: var(--bg-secondary) !important;
-    color: var(--text-primary) !important;
-    border-radius: 6px 6px 0 0 !important;
+    background: var(--bg-tertiary) !important;
+    color: var(--text-secondary) !important;
+    border-radius: 8px 8px 0 0 !important;
 }
 
 .table-header-primary th {
     background: transparent !important;
-    color: var(--text-primary) !important;
-    border-color: var(--border-light) !important;
-    border-left: 1px solid var(--border-light) !important;
-    border-right: 1px solid var(--border-light) !important;
-    border-bottom: 2px solid var(--primary-blue) !important;
+    color: var(--text-secondary) !important;
+    border-color: transparent !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
     border-top: none !important;
-    padding: 0.2rem 0.75rem !important;
+    padding: 0.55rem 1rem !important;
     font-weight: 600 !important;
-    font-size: 1rem !important;
-    letter-spacing: 0.03em !important;
-    text-transform: none !important;
+    font-size: var(--fs-sm) !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
     vertical-align: middle !important;
     transition: all 0.2s ease !important;
 }
 
 /* 表頭首尾圓角 */
 .table-header-primary tr th:first-child {
-    border-top-left-radius: 6px !important;
+    border-top-left-radius: 8px !important;
     border-left: none !important;
 }
 
 .table-header-primary tr th:last-child {
-    border-top-right-radius: 6px !important;
+    border-top-right-radius: 8px !important;
     border-right: none !important;
 }
 
@@ -113,9 +113,9 @@
 .table-container-hover .table td,
 .table-container-hover .table th:not(.table-header-primary th) {
     vertical-align: middle;
-    padding: 0.2rem 0.75rem;
-    line-height: 1.4;
-    font-size: 1rem;
+    padding: 0.55rem 1rem;
+    line-height: 1.6;
+    font-size: var(--fs-sm);
 }
 
 /* --- 表體過渡動畫 --- */
@@ -127,11 +127,15 @@
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
-/* --- Hover 效果（使用 CSS 變數，支援深色模式）--- */
+/* --- Hover 效果 — 微妙背景變化 + 左側 accent bar --- */
 .table-hover > tbody > tr:hover > td,
 .table-hover > tbody > tr:hover > th {
     background-color: var(--table-hover-bg) !important;
     color: var(--table-hover-text) !important;
+}
+
+.table-hover > tbody > tr:hover > td:first-child {
+    box-shadow: inset 3px 0 0 var(--table-hover-accent);
 }
 
 .table-striped.table-hover > tbody > tr:hover > td,
@@ -140,47 +144,49 @@
     color: var(--table-hover-text) !important;
 }
 
-/* --- Striped 效果 --- */
+.table-striped.table-hover > tbody > tr:hover > td:first-child {
+    box-shadow: inset 3px 0 0 var(--table-hover-accent);
+}
+
+/* --- Striped 效果（加大對比度） --- */
 .table-striped > tbody > tr:nth-of-type(odd) > td {
-    background-color: var(--bg-secondary);
+    background-color: var(--table-stripe-bg);
 }
 
-/* --- 欄位邊框（tbody 使用 CSS 變數，thead 由 .table-header-primary th 處理白色半透明邊框）--- */
+/* --- 欄位邊框 — Minimal 風格：移除垂直邊框，僅保留水平分隔線 --- */
 .table-with-column-borders td {
-    border-left: 1px solid var(--border-color);
-    border-right: 1px solid var(--border-color);
-}
-
-.table-with-column-borders td:first-child {
     border-left: none;
-}
-
-.table-with-column-borders td:last-child {
     border-right: none;
+    border-bottom: 1px solid var(--border-light);
 }
 
 /* --- 表格圓角處理 --- */
 .table-container-hover .table thead th:first-child {
-    border-top-left-radius: 6px;
+    border-top-left-radius: 8px;
 }
 
 .table-container-hover .table thead th:last-child {
-    border-top-right-radius: 6px;
+    border-top-right-radius: 8px;
 }
 
 .table-container-hover .table tbody tr:last-child td:first-child {
-    border-bottom-left-radius: 6px;
+    border-bottom-left-radius: 8px;
 }
 
 .table-container-hover .table tbody tr:last-child td:last-child {
-    border-bottom-right-radius: 6px;
+    border-bottom-right-radius: 8px;
+}
+
+/* 最後一行移除底線（容器邊框已提供） */
+.table-container-hover .table tbody tr:last-child td {
+    border-bottom: none;
 }
 
 /* --- 表格內按鈕壓縮（防止撐高行距）--- */
 .table td .btn,
 .table td button {
     padding: 0.125rem 0.3rem;
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     line-height: 1;
     vertical-align: middle;
     max-height: 1.5rem;
@@ -196,7 +202,7 @@
 .table td .btn svg,
 .table td button i,
 .table td button svg {
-    font-size: 0.75rem;
+    font-size: var(--fs-xs);
     line-height: 1;
     vertical-align: middle;
 }
@@ -249,7 +255,7 @@
     white-space: nowrap;
     min-width: fit-content;
     padding: 0.125rem 0.3rem;
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     line-height: 1;
     border-radius: 0.2rem;
     border-width: 1px;
@@ -264,7 +270,7 @@
 .table-actions-column .btn .far,
 .table-actions-column .btn .bi,
 .table-actions-column .btn svg {
-    font-size: 0.75rem;
+    font-size: var(--fs-xs);
     line-height: 1;
     width: auto;
     height: auto;
@@ -439,7 +445,7 @@
 
 /* 容器覆寫 — overflow: visible 支援下拉選單溢出 */
 .interactive-table-container {
-    border-radius: 6px;
+    border-radius: 8px;
     overflow: visible;
 }
 
@@ -475,21 +481,21 @@
     pointer-events: none;
 }
 
-/* --- Interactive 儲存格（較緊湊的垂直 padding）--- */
+/* --- Interactive 儲存格 --- */
 .interactive-table tbody td {
-    padding: 0.15rem 0.75rem !important;
+    padding: 0.35rem 0.75rem !important;
     vertical-align: middle;
-    font-size: 1rem;
-    line-height: 1.4;
+    font-size: var(--fs-sm);
+    line-height: 1.5;
 }
 
-/* --- Interactive Striped --- */
+/* --- Interactive Striped（加大對比度） --- */
 .interactive-table.table-striped > tbody > tr:nth-of-type(odd) > td {
-    background-color: #f8fafc !important;
+    background-color: var(--table-stripe-bg) !important;
 }
 
 .interactive-table.table-striped > tbody > tr:nth-of-type(even) > td {
-    background-color: #ffffff !important;
+    background-color: var(--bg-primary) !important;
 }
 
 /* --- Interactive Hover（覆蓋上方 striped !important，確保 hover 變色）--- */
@@ -498,14 +504,22 @@
     color: var(--table-hover-text) !important;
 }
 
+.interactive-table.table-hover > tbody > tr:hover > td:first-child {
+    box-shadow: inset 3px 0 0 var(--table-hover-accent);
+}
+
 .interactive-table.table-striped.table-hover > tbody > tr:hover > td {
     background-color: var(--table-hover-bg-striped) !important;
     color: var(--table-hover-text) !important;
 }
 
+.interactive-table.table-striped.table-hover > tbody > tr:hover > td:first-child {
+    box-shadow: inset 3px 0 0 var(--table-hover-accent);
+}
+
 /* tbody 第一行與 thead 無縫連接 */
 .interactive-table tbody tr:first-child td {
-    border-top: 2px solid var(--border-light) !important;
+    border-top: none !important;
 }
 
 /* --- 序號欄位 --- */
@@ -517,50 +531,51 @@
 }
 
 .interactive-table tbody .row-number-column {
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     font-weight: 500;
     color: #6b7280 !important;
     letter-spacing: 0.02em;
 }
 
-/* --- 表格內輸入控件壓縮 --- */
+/* --- 表格內輸入控件 — Underline 風格（Material Design 啟發）--- */
 .interactive-table-container .form-control,
 .interactive-table-container .form-select,
 .interactive-table .form-control,
 .interactive-table .form-select,
 .interactive-table tbody .form-control,
 .interactive-table tbody .form-select {
-    padding: 0 0.5rem !important;
-    min-height: unset !important;   /* 覆寫 Bootstrap min-height (~38px)，防止撐高 row */
+    padding: 0.15rem 0.5rem !important;
+    min-height: unset !important;
     height: auto !important;
-    line-height: 1.4 !important;    /* 與 td 的 line-height 一致 */
+    line-height: 1.5 !important;
     margin: 0;
-    font-size: 1rem !important;
-    border-radius: 0.25rem;
-    border: 1px solid transparent;          /* 平常透明，不顯示框 */
-    background-color: transparent !important; /* 融入 td 背景 */
+    font-size: var(--fs-sm) !important;
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px dashed var(--border-light);
+    background-color: transparent !important;
     box-shadow: none;
-    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Hover 時顯示淡底色，暗示可互動 */
+/* Hover 時加深底線，暗示可互動 */
 .interactive-table tbody tr:not(:hover) .form-control,
 .interactive-table tbody tr:not(:hover) .form-select {
-    border-color: transparent;
+    border-bottom-color: var(--border-light);
 }
 
 .interactive-table tbody tr:hover .form-control:not(:focus),
 .interactive-table tbody tr:hover .form-select:not(:focus) {
-    border-color: rgba(0, 0, 0, 0.15);
-    background-color: rgba(255, 255, 255, 0.7) !important;
+    border-bottom: 1px solid var(--border-color);
+    background-color: rgba(0, 0, 0, 0.015) !important;
 }
 
-/* 聚焦效果 — 藍色邊框 + 光暈，白色背景 */
+/* 聚焦效果 — 藍色實線底框 */
 .interactive-table .form-control:focus,
 .interactive-table .form-select:focus {
-    border-color: var(--primary-blue, #1E3A8A) !important;
-    background-color: #fff !important;
-    box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.15) !important;
+    border-bottom: 2px solid var(--primary-blue, #1E3A8A) !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
     outline: none;
 }
 
@@ -568,7 +583,7 @@
 .interactive-table-container textarea.form-control,
 .interactive-table textarea.form-control {
     padding: 0.1rem 0.5rem !important;
-    font-size: 1rem !important;
+    font-size: var(--fs-base) !important;
 }
 
 /* 驗證錯誤 */
@@ -590,7 +605,7 @@
 /* 小按鈕 */
 .interactive-table-container .btn-sm {
     padding: 0.2rem 0.4rem;
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     line-height: 1;
     max-height: 1.5rem;
 }
@@ -652,11 +667,13 @@ input[type="number"] {
     font-variant-numeric: tabular-nums;
 }
 
-/* 唯讀 / 停用控件 */
+/* 唯讀 / 停用控件 — 無底線 */
 .interactive-table-container .form-control[readonly],
 .interactive-table-container .form-select[disabled] {
-    background-color: #f8f9fa;
+    background-color: transparent;
+    border-bottom: none;
     cursor: not-allowed;
+    color: var(--text-secondary);
 }
 
 /* 必填標記 */
@@ -669,21 +686,21 @@ input[type="number"] {
 .interactive-table-container .row-number {
     color: #6c757d;
     font-weight: 500;
-    font-size: 1rem;
+    font-size: var(--fs-base);
 }
 
 /* --- 合計行（tfoot）--- */
 .interactive-table-total-row {
-    background-color: #f0f4f8 !important;
+    background-color: var(--bg-tertiary) !important;
 }
 
 .interactive-table-total-row th {
     font-weight: 600 !important;
-    font-size: 1rem !important;
-    color: #1e293b !important;
-    padding: 0.2rem 0.75rem !important;
-    background-color: #f0f4f8 !important;
-    border-top: 2px solid var(--primary-blue) !important;
+    font-size: var(--fs-sm) !important;
+    color: var(--text-primary) !important;
+    padding: 0.5rem 0.75rem !important;
+    background-color: var(--bg-tertiary) !important;
+    border-top: 1px solid var(--border-color) !important;
     letter-spacing: 0.02em;
 }
 
@@ -697,7 +714,7 @@ input[type="number"] {
 }
 
 .interactive-table tbody td.text-center.py-4 .mt-1 {
-    font-size: 1rem;
+    font-size: var(--fs-base);
     color: #9ca3af;
     font-weight: 400;
 }
@@ -865,7 +882,7 @@ tr.dragging .drag-handle {
     /* Interactive 表頭手機版 */
     .interactive-table thead th {
         padding: 0.35rem 0.5rem !important;
-        font-size: 1rem !important;
+        font-size: var(--fs-base) !important;
     }
 
     /* 行號手機版 */
@@ -892,7 +909,7 @@ tr.dragging .drag-handle {
 
     .table-responsive .table .table-actions-column .btn {
         padding: 0.125rem 0.3rem;
-        font-size: 0.8rem;
+        font-size: var(--fs-sm);
         margin: 0 0.125rem;
         min-width: 24px;
         min-height: unset;
@@ -905,7 +922,7 @@ tr.dragging .drag-handle {
     }
 
     .table-responsive .table .table-actions-column .btn i {
-        font-size: 0.75rem !important;
+        font-size: var(--fs-xs) !important;
         line-height: 1;
     }
 
@@ -921,7 +938,7 @@ tr.dragging .drag-handle {
     /* Interactive 輸入控件手機版 */
     .interactive-table-container .form-control-sm,
     .interactive-table-container .form-select-sm {
-        font-size: 0.875rem;
+        font-size: var(--fs-sm);
         padding: 0.2rem 0.4rem;
         min-height: 30px;
         min-width: 120px;
@@ -931,11 +948,11 @@ tr.dragging .drag-handle {
         min-height: 30px;
         padding: 0.2rem 0.4rem;
         min-width: 60px;
-        font-size: 0.85rem;
+        font-size: var(--fs-sm);
     }
 
     .interactive-table-container .btn i {
-        font-size: 0.75rem;
+        font-size: var(--fs-xs);
         line-height: 1;
     }
 
@@ -974,7 +991,7 @@ tr.dragging .drag-handle {
     .dropdown-item {
         padding: 12px 16px !important;
         line-height: 1.4;
-        font-size: 1rem;
+        font-size: var(--fs-base);
     }
 
     .dropdown-item.active {
@@ -988,7 +1005,7 @@ tr.dragging .drag-handle {
         padding: 0.5rem;
         background-color: #f8f9fa;
         color: #6c757d;
-        font-size: 1rem;
+        font-size: var(--fs-base);
         border-top: 1px solid #dee2e6;
     }
 }
@@ -1001,13 +1018,13 @@ tr.dragging .drag-handle {
     }
 
     .table thead th {
-        font-size: 1rem;
+        font-size: var(--fs-base);
         padding: 0.25rem 0.375rem;
         line-height: 1.2;
     }
 
     .table td {
-        font-size: 1rem;
+        font-size: var(--fs-base);
         padding: 0.25rem 0.375rem;
     }
 
@@ -1019,7 +1036,7 @@ tr.dragging .drag-handle {
 
     .table-actions-column .btn {
         padding: 0.1rem 0.15rem;
-        font-size: 0.7rem;
+        font-size: var(--fs-2xs);
         margin: 0;
         max-height: 1.3rem;
     }
@@ -1054,7 +1071,7 @@ tr.dragging .drag-handle {
     .table thead th {
         display: table-cell !important;
         position: relative !important;
-        border-bottom: 2px solid rgba(255, 255, 255, 0.18) !important;
+        border-bottom: 1px solid var(--border-color) !important;
         font-weight: 600 !important;
         z-index: 1 !important;
     }
@@ -1090,7 +1107,7 @@ tr.dragging .drag-handle {
 
 /* Interactive Striped */
 [data-bs-theme=dark] .interactive-table.table-striped > tbody > tr:nth-of-type(odd) > td {
-    background-color: var(--bg-tertiary) !important;
+    background-color: var(--table-stripe-bg) !important;
 }
 
 [data-bs-theme=dark] .interactive-table.table-striped > tbody > tr:nth-of-type(even) > td {
@@ -1115,19 +1132,19 @@ tr.dragging .drag-handle {
     color: var(--text-primary) !important;
 }
 
-/* 輸入控件 hover（深色模式 — 覆寫硬編碼的白色半透明背景） */
+/* 輸入控件 hover（深色模式 — underline 風格） */
 [data-bs-theme=dark] .interactive-table tbody tr:hover .form-control:not(:focus),
 [data-bs-theme=dark] .interactive-table tbody tr:hover .form-select:not(:focus) {
-    border-color: rgba(255, 255, 255, 0.1);
-    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.15);
+    background-color: rgba(255, 255, 255, 0.02) !important;
 }
 
-/* 輸入控件聚焦（深色模式 — 補全 background-color，避免繼承淺色模式的 #fff） */
+/* 輸入控件聚焦（深色模式 — 藍色底線） */
 [data-bs-theme=dark] .interactive-table .form-control:focus,
 [data-bs-theme=dark] .interactive-table .form-select:focus {
-    border-color: var(--primary-blue) !important;
-    background-color: var(--bg-tertiary) !important;
-    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2) !important;
+    border-bottom: 2px solid var(--primary-blue) !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
 }
 
 /* 容器邊框 */

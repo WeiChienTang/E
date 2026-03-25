@@ -14,10 +14,8 @@
         </button>
     }
 
-    <div class="shortcut-icon-wrapper">
-        <div class="shortcut-icon">
-            <i class="@GetEffectiveIcon()"></i>
-        </div>
+    <div class="shortcut-icon">
+        <i class="@GetEffectiveIcon()"></i>
         @if (NavigationItem.ItemType == NavigationItemType.QuickAction)
         {
             <span class="type-badge type-badge-quick">

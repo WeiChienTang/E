@@ -208,7 +208,7 @@ namespace ERPCore2.Services.Payroll
             }
         }
 
-        public async Task<ServiceResult> LockAsync(int employeeId, int year, int month)
+        public async Task<ServiceResult> LockAsync(int employeeId, int year, int month, string? lockedBy = null)
         {
             try
             {
@@ -217,10 +217,11 @@ namespace ERPCore2.Services.Payroll
                     .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.Year == year && a.Month == month);
 
                 if (item == null) return ServiceResult.Success(); // 無記錄無需鎖定
+                if (item.IsLocked) return ServiceResult.Success(); // 已鎖定無需重複操作
 
                 item.IsLocked = true;
                 item.LockedAt = DateTime.UtcNow;
-                item.LockedBy = null; // TODO: 傳入操作者參數
+                item.LockedBy = lockedBy;
                 item.UpdatedAt = DateTime.UtcNow;
                 await context.SaveChangesAsync();
                 return ServiceResult.Success();
@@ -229,6 +230,31 @@ namespace ERPCore2.Services.Payroll
             {
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(LockAsync), GetType(), _logger);
                 return ServiceResult.Failure("鎖定出勤記錄時發生錯誤");
+            }
+        }
+
+        public async Task<ServiceResult> UnlockAsync(int employeeId, int year, int month)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var item = await context.MonthlyAttendanceSummaries
+                    .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.Year == year && a.Month == month);
+
+                if (item == null) return ServiceResult.Success();
+                if (!item.IsLocked) return ServiceResult.Success(); // 未鎖定無需操作
+
+                item.IsLocked = false;
+                item.LockedAt = null;
+                item.LockedBy = null;
+                item.UpdatedAt = DateTime.UtcNow;
+                await context.SaveChangesAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(UnlockAsync), GetType(), _logger);
+                return ServiceResult.Failure("解鎖出勤記錄時發生錯誤");
             }
         }
 
@@ -268,8 +294,36 @@ namespace ERPCore2.Services.Payroll
                 // 彙總各項數字
                 // ActualWorkDays 固定等於 ScheduledWorkDays（比例維持 1），
                 // 由各假別的明細扣款欄位處理薪資減項，避免比例計算與明細扣款雙重扣薪。
-                // 部分月（月中到職/離職）應由使用者手動調整 ScheduledWorkDays。
+                // 月中到職/離職時自動依 HireDate/ResignationDate 調整 ScheduledWorkDays。
                 int scheduledDays = GetWorkDaysInMonth(adYear, month);
+
+                // ── 月中到職/離職自動調整 ScheduledWorkDays ──────────────
+                var employee = await context.Employees.FindAsync(employeeId);
+                if (employee != null)
+                {
+                    DateOnly effectiveFrom = from;
+                    DateOnly effectiveTo = to;
+
+                    // 到職日在本月中 → 起算日調整為到職日
+                    if (employee.HireDate.HasValue)
+                    {
+                        var hireDate = DateOnly.FromDateTime(employee.HireDate.Value);
+                        if (hireDate > from && hireDate <= to)
+                            effectiveFrom = hireDate;
+                    }
+
+                    // 離職日在本月中 → 截止日調整為離職日
+                    if (employee.ResignationDate.HasValue)
+                    {
+                        var resignDate = DateOnly.FromDateTime(employee.ResignationDate.Value);
+                        if (resignDate >= from && resignDate < to)
+                            effectiveTo = resignDate;
+                    }
+
+                    // 若有調整，重新計算部分月的應出勤天數
+                    if (effectiveFrom != from || effectiveTo != to)
+                        scheduledDays = GetWorkDaysInRange(effectiveFrom, effectiveTo);
+                }
                 decimal actualWorkDays = scheduledDays;
                 decimal absentDays = daily.Count(r => r.Status == DailyAttendanceStatus.Absent);
                 decimal sickLeaveDays = daily.Count(r => r.Status == DailyAttendanceStatus.SickLeave);
@@ -325,12 +379,18 @@ namespace ERPCore2.Services.Payroll
 
         private static int GetWorkDaysInMonth(int adYear, int month)
         {
-            int totalDays = DateTime.DaysInMonth(adYear, month);
+            var from = new DateOnly(adYear, month, 1);
+            var to = new DateOnly(adYear, month, DateTime.DaysInMonth(adYear, month));
+            return GetWorkDaysInRange(from, to);
+        }
+
+        /// <summary>計算指定日期區間內的工作日數（排除週六日）</summary>
+        private static int GetWorkDaysInRange(DateOnly from, DateOnly to)
+        {
             int workDays = 0;
-            for (int d = 1; d <= totalDays; d++)
+            for (var date = from; date <= to; date = date.AddDays(1))
             {
-                var dow = new DateTime(adYear, month, d).DayOfWeek;
-                if (dow != DayOfWeek.Saturday && dow != DayOfWeek.Sunday)
+                if (date.DayOfWeek != DayOfWeek.Saturday && date.DayOfWeek != DayOfWeek.Sunday)
                     workDays++;
             }
             return workDays;

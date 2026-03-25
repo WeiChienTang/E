@@ -66,63 +66,75 @@ namespace ERPCore2.Components.Shared.UI.Button
         OutlineBlue,
 
         /// <summary>
-        /// 青色按鈕
+        /// 青色按鈕（已棄用，自動映射至 Blue/btn-info）
         /// </summary>
+        [Obsolete("請改用 Blue（btn-info）")]
         Cyan,
 
         /// <summary>
-        /// 紫色按鈕
+        /// 紫色按鈕（已棄用，自動映射至 DarkBlue/btn-primary）
         /// </summary>
+        [Obsolete("請改用 DarkBlue（btn-primary）")]
         Purple,
 
         /// <summary>
-        /// 粉紅色按鈕
+        /// 粉紅色按鈕（已棄用，自動映射至 Red/btn-danger）
         /// </summary>
+        [Obsolete("請改用 Red（btn-danger）")]
         Pink,
 
         /// <summary>
-        /// 橙色按鈕
+        /// 橙色按鈕（已棄用，自動映射至 Yellow/btn-warning）
         /// </summary>
+        [Obsolete("請改用 Yellow（btn-warning）")]
         Orange,
 
         /// <summary>
-        /// 黑色按鈕
+        /// 黑色按鈕（已棄用，自動映射至 Gray/btn-secondary）
         /// </summary>
+        [Obsolete("請改用 Gray（btn-secondary）")]
         Black,
 
         /// <summary>
-        /// 白色按鈕
+        /// 白色按鈕（已棄用，自動映射至 OutlineGray/btn-outline-secondary）
         /// </summary>
+        [Obsolete("請改用 OutlineGray（btn-outline-secondary）")]
         White,
 
         /// <summary>
-        /// 青色輪廓按鈕
+        /// 青色輪廓按鈕（已棄用，自動映射至 OutlineBlue/btn-outline-info）
         /// </summary>
+        [Obsolete("請改用 OutlineBlue（btn-outline-info）")]
         OutlineCyan,
 
         /// <summary>
-        /// 紫色輪廓按鈕
+        /// 紫色輪廓按鈕（已棄用，自動映射至 OutlineDarkBlue/btn-outline-primary）
         /// </summary>
+        [Obsolete("請改用 OutlineDarkBlue（btn-outline-primary）")]
         OutlinePurple,
 
         /// <summary>
-        /// 粉紅色輪廓按鈕
+        /// 粉紅色輪廓按鈕（已棄用，自動映射至 OutlineRed/btn-outline-danger）
         /// </summary>
+        [Obsolete("請改用 OutlineRed（btn-outline-danger）")]
         OutlinePink,
 
         /// <summary>
-        /// 橙色輪廓按鈕
+        /// 橙色輪廓按鈕（已棄用，自動映射至 OutlineYellow/btn-outline-warning）
         /// </summary>
+        [Obsolete("請改用 OutlineYellow（btn-outline-warning）")]
         OutlineOrange,
 
         /// <summary>
-        /// 黑色輪廓按鈕
+        /// 黑色輪廓按鈕（已棄用，自動映射至 OutlineGray/btn-outline-secondary）
         /// </summary>
+        [Obsolete("請改用 OutlineGray（btn-outline-secondary）")]
         OutlineBlack,
 
         /// <summary>
-        /// 白色輪廓按鈕
+        /// 白色輪廓按鈕（已棄用，自動映射至 OutlineGray/btn-outline-secondary）
         /// </summary>
+        [Obsolete("請改用 OutlineGray（btn-outline-secondary）")]
         OutlineWhite
     }
 }

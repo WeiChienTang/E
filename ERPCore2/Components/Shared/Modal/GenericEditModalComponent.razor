@@ -34,7 +34,6 @@
                    Title="@GetModalTitle()"
                    Icon="@GetModalIcon()"
                    Size="@ConvertToBaseModalSize(Size)"
-                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                    CloseOnEscape="true"
                    CloseOnBackdropClick="false"
                    ShowCloseButton="true"
@@ -265,7 +264,6 @@
                               SummaryMessage="@(!string.IsNullOrEmpty(_currentUserName) ? $"{L["Approval.ApprovedBy"]}：{_currentUserName}" : "")"
                               ConfirmButtonText="@L["Button.Confirm"]"
                               ConfirmButtonVariant="ButtonVariant.Green"
-                              HeaderColor="BaseModalComponent.HeaderVariant.Success"
                               OnConfirm="HandleApproveConfirm" />
 
 @* 駁回確認 Modal *@
@@ -294,7 +292,6 @@
                        Title="@L["Modal.SaveAsDraftTitle"]"
                        Icon="bi-exclamation-circle"
                        Size="BaseModalComponent.ModalSize.Default"
-                       HeaderColor="BaseModalComponent.HeaderVariant.Warning"
                        CloseOnEscape="true"
                        CloseOnBackdropClick="true"
                        ShowCloseButton="false"
@@ -329,7 +326,6 @@
         IsVisibleChanged="@((bool v) => _showDeleteConfirmModal = v)"
         Title="@L["Button.ConfirmDelete"]"
         Icon="bi-trash"
-        HeaderColor="BaseModalComponent.HeaderVariant.Danger"
         Message="@GetDeleteConfirmMessage(GetEntityDisplayName(Entity))"
         ConfirmButtonText="@L["Button.Delete"]"
         ConfirmButtonVariant="ButtonVariant.Red"

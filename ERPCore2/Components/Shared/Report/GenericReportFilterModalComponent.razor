@@ -22,8 +22,6 @@
                    Title="@GetTitle()"
                    Icon="@GetIcon()"
                    Size="BaseModalComponent.ModalSize.Desktop"
-                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
-                   UseWhiteCloseButton="true"
                    BodyCssClass="p-4"
                    OnClose="@HandleCancel"
                    DebugComponentName="@($"GenericReportFilterModalComponent > {filterConfig?.CriteriaType?.Name ?? ReportId}")">

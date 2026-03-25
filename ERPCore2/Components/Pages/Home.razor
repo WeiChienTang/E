@@ -37,31 +37,14 @@
     }
     else
     {
-        @* ==================== 歡迎區塊 ==================== *@
-        <div class="welcome-banner mb-4">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <h4 class="welcome-title mb-1">
-                        <i class="bi bi-hand-wave me-2"></i>@string.Format(L["Home.WelcomeMessage"], currentUserName)
-                    </h4>
-                    <p class="welcome-subtitle mb-0">
-                        @DateTime.Now.ToString("yyyy/MM/dd dddd")
-                        @if (primaryCompany != null)
-                        {
-                            <span class="ms-2">·</span>
-                            <span class="ms-2">@primaryCompany.CompanyName</span>
-                        }
-                    </p>
-                </div>
-                <div class="d-none d-md-flex align-items-center gap-2">
-                    <GenericButtonComponent Variant="ButtonVariant.Orange"
-                                            Size="ButtonSize.Small"
-                                            IconClass="bi bi-arrow-counterclockwise"
-                                            Text="@L["Home.RestoreDefault"]"
-                                            Title="@L["Home.RestoreDefaultTooltip"]"
-                                            OnClick="@HandleResetAllToDefault" />
-                </div>
-            </div>
+        @* ==================== 恢復預設按鈕 ==================== *@
+        <div class="d-flex justify-content-end mb-3">
+            <GenericButtonComponent Variant="ButtonVariant.Orange"
+                                    Size="ButtonSize.Small"
+                                    IconClass="bi bi-arrow-counterclockwise"
+                                    Text="@L["Home.RestoreDefault"]"
+                                    Title="@L["Home.RestoreDefaultTooltip"]"
+                                    OnClick="@HandleResetAllToDefault" />
         </div>
 
         @* ==================== 動態區塊列表 ==================== *@
@@ -131,13 +114,12 @@
                 @* 區塊內容 *@
                 @if (panelWithItems.Items.Any())
                 {
-                    <div class="row g-3 panel-content">
+                    <div class="panel-content">
                         @foreach (var configWithNav in panelWithItems.Items)
                         {
                             var capturedConfig = configWithNav;
                             var capturedPanelId = panel.Id;
-                            <div class="col-xl-2 col-lg-2 col-md-3 col-sm-4 col-4"
-                                 draggable="@(isEditMode ? "true" : "false")"
+                            <div draggable="@(isEditMode ? "true" : "false")"
                                  @ondragstart="@(() => HandleDragStart(capturedConfig, capturedPanelId))"
                                  @ondragover:preventDefault="true"
                                  @ondragover="@(() => HandleDragOver(capturedConfig))"
@@ -152,11 +134,9 @@
 
                         @if (isEditMode)
                         {
-                            <div class="col-xl-2 col-lg-2 col-md-3 col-sm-4 col-4">
-                                <div class="add-shortcut-card" @onclick="@(() => OpenWidgetPicker(panel.Id))">
-                                    <i class="bi bi-plus-circle"></i>
-                                    <span>@L["Home.AddItem"]</span>
-                                </div>
+                            <div class="add-shortcut-card" @onclick="@(() => OpenWidgetPicker(panel.Id))">
+                                <i class="bi bi-plus-circle"></i>
+                                <span>@L["Home.AddItem"]</span>
                             </div>
                         }
                     </div>
@@ -164,10 +144,10 @@
                 else
                 {
                     <div class="empty-panel-state">
-                        <div class="empty-panel-icons">
+                        <span class="empty-panel-icons">
                             <i class="bi bi-grid"></i>
                             <i class="bi bi-plus-lg empty-panel-plus"></i>
-                        </div>
+                        </span>
                         <p class="text-muted mt-3 mb-1">@L["Home.NoPanelItems"]</p>
                         <p class="text-muted mb-2">@L["Home.NoPanelItemsHint"]</p>
                         @if (isEditMode)
@@ -206,10 +186,10 @@
         @if (!panels.Any())
         {
             <div class="global-empty-state">
-                <div class="empty-state-illustration">
+                <span class="empty-state-illustration">
                     <i class="bi bi-grid-3x3-gap"></i>
                     <i class="bi bi-cursor empty-state-cursor"></i>
-                </div>
+                </span>
                 <h5 class="text-muted mt-3 mb-2">@L["Home.NoPanels"]</h5>
                 <p class="text-muted mb-3">@L["Home.NoPanelsHint"]</p>
                 <div class="d-flex gap-2 justify-content-center">
@@ -246,7 +226,6 @@
                              Icon="bi-arrow-counterclockwise"
                              Message="@L["Home.ConfirmRestoreMessage"]"
                              ConfirmButtonText="@L["Home.ConfirmRestoreButton"]"
-                             HeaderColor="BaseModalComponent.HeaderVariant.Warning"
                              OnConfirm="@ConfirmResetAllToDefault" />
 
 @* 刪除區塊確認 Modal *@
@@ -256,7 +235,6 @@
                              Icon="bi-trash"
                              Message="@deleteConfirmMessage"
                              ConfirmButtonText="@L["Button.Confirm"]"
-                             HeaderColor="BaseModalComponent.HeaderVariant.Danger"
                              OnConfirm="@ConfirmDeletePanel" />
 
 @* 新增區塊 Modal *@
@@ -264,8 +242,6 @@
                     IsVisibleChanged="@((bool v) => showCreatePanelModal = v)"
                     Title="@L["Home.CreatePanelTitle"]"
                     Size="BaseModalComponent.ModalSize.Small"
-                    HeaderColor="BaseModalComponent.HeaderVariant.Primary"
-                    UseWhiteCloseButton="true"
                     DebugComponentName="Home.CreatePanel">
     <HeaderButtons>
         <GenericButtonComponent Variant="ButtonVariant.Blue"
@@ -304,7 +280,6 @@
                              Message="@L["Home.CompanySetupMessage"]"
                              ConfirmButtonText="@L["Home.CompanySetupNow"]"
                              CancelButtonText="@L["Home.CompanySetupLater"]"
-                             HeaderColor="BaseModalComponent.HeaderVariant.Primary"
                              OnConfirm="@OpenCompanySetupModal" />
 
 @* ==================== 公司編輯 Modal ==================== *@
@@ -321,7 +296,6 @@
 @code {
     // ===== 狀態欄位 =====
     private int currentEmployeeId = 0;
-    private string currentUserName = "";
     private bool isLoading = true;
 
     // 公司資料
@@ -373,9 +347,6 @@
     {
         // 載入預設公司資料
         await LoadPrimaryCompanyAsync();
-
-        // 載入使用者名稱
-        currentUserName = await CurrentUserHelper.GetCurrentUserFullNameAsync(AuthenticationStateProvider);
 
         var employeeId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
 

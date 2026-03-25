@@ -6,7 +6,7 @@
 }
 
 .notification-section-title {
-    font-size: 1rem;
+    font-size: var(--fs-base);
     font-weight: 600;
     color: var(--primary-blue);
 }

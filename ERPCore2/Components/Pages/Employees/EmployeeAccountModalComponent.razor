@@ -9,7 +9,6 @@
                    Title="@($"{L["Employee.AccountManagement"]}{(employee != null ? $" - {employee.Name}" : "")}")"
                    Icon="bi bi-person-lock"
                    Size="BaseModalComponent.ModalSize.Default"
-                   HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
                    IsLoading="@isSaving"
                    LoadingMessage="@L["Label.Saving"]"
                    OnClose="@HandleCancel"

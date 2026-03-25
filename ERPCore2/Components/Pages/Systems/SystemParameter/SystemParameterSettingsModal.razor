@@ -16,8 +16,6 @@
                     Title="@L["SystemParam.Title"]"
                     Icon="bi-gear-fill"
                     Size="BaseModalComponent.ModalSize.Desktop"
-                    HeaderColor="BaseModalComponent.HeaderVariant.ProjectPrimary"
-                    UseWhiteCloseButton="true"
                     CloseOnEscape="true"
                     CloseOnBackdropClick="false"
                     IsLoading="@isLoading"
@@ -67,7 +65,6 @@
                               Message="@L["SystemParam.ResetConfirmMessage"]"
                               ConfirmButtonText="@L["SystemParam.ResetConfirmButton"]"
                               ConfirmButtonVariant="ButtonVariant.Orange"
-                              HeaderColor="BaseModalComponent.HeaderVariant.Warning"
                               OnConfirm="ConfirmResetToDefault" />
 
 @code {

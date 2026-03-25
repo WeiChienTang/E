@@ -45,7 +45,7 @@
 }
 
 .composition-section-icon {
-    font-size: 1rem;
+    font-size: var(--fs-base);
     flex-shrink: 0;
 }
 
@@ -65,7 +65,7 @@
 }
 
 .composition-section-title {
-    font-size: 0.9375rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     white-space: nowrap;
 }
@@ -84,7 +84,7 @@
     align-items: center;
     gap: 0.35rem;
     padding: 0.4rem 0.75rem;
-    font-size: 1rem;
+    font-size: var(--fs-base);
     font-weight: 500;
     color: var(--text-secondary);
     background-color: var(--bg-tertiary);
@@ -138,7 +138,7 @@
     display: inline-flex;
     align-items: center;
     padding: 0.1rem 0.45rem;
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     line-height: 1.3;
     border-radius: 1rem;

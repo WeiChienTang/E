@@ -21,7 +21,7 @@
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: var(--fs-sm);
     transition: all 0.2s;
 }
 
@@ -38,7 +38,7 @@
 
 .step-label {
     margin-top: 4px;
-    font-size: 0.75rem;
+    font-size: var(--fs-xs);
     color: var(--text-secondary);
 }
 
@@ -103,12 +103,12 @@
 /* ===== Step 2：預覽確認表格 ===== */
 
 .preview-confirm-table th {
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     white-space: nowrap;
 }
 
 .preview-confirm-table td {
-    font-size: 0.85rem;
+    font-size: var(--fs-sm);
     vertical-align: middle;
 }
 

@@ -20,7 +20,7 @@
 }
 
 .section-title {
-    font-size: 1rem;
+    font-size: var(--fs-base);
     font-weight: 600;
     color: var(--primary-blue);
 }
@@ -36,7 +36,7 @@
 }
 
 .theme-icon {
-    font-size: 1.25rem;
+    font-size: var(--fs-lg);
     line-height: 1;
     display: flex;
     align-items: center;
@@ -46,7 +46,7 @@
 }
 
 .theme-label {
-    font-size: 0.7rem;
+    font-size: var(--fs-2xs);
     line-height: 1;
     display: block;
 }
@@ -68,7 +68,7 @@
 }
 
 .zoom-label {
-    font-size: 0.7rem;
+    font-size: var(--fs-2xs);
     line-height: 1;
     display: block;
 }

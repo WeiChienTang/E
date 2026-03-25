@@ -26,13 +26,13 @@
 }
 
 .stat-label {
-    font-size: 0.78rem;
+    font-size: var(--fs-xs);
     color: var(--text-secondary);
     white-space: nowrap;
 }
 
 .stat-value {
-    font-size: 1.05rem;
+    font-size: var(--fs-base);
     font-weight: 600;
     color: var(--text-primary);
 }

@@ -29,7 +29,7 @@
             <div class="modal-content shadow-lg" @onclick="DismissPopups">
                 
                 @* ===== Modal Header ===== *@
-                <div class="modal-header @GetHeaderCssClass()" style="@GetHeaderStyle()">
+                <div class="modal-header">
                     <h5 class="modal-title fw-bold">
                         @if (!string.IsNullOrEmpty(Icon))
                         {
@@ -37,13 +37,13 @@
                         }
                         @Title
                     </h5>
-                    
+
                     @* 右上角按鈕群組（全景 + 關閉） *@
                     <div class="d-flex align-items-center gap-1 ms-auto">
                         @if (AllowFullscreen)
                         {
                             <button type="button"
-                                    class="btn btn-sm btn-link @(ShouldUseWhiteCloseButton() ? "text-white" : "text-secondary") p-0"
+                                    class="btn btn-sm btn-link text-secondary p-0"
                                     @onclick="ToggleModalFullscreen"
                                     title="@(_isModalFullscreen ? "還原視窗" : "全螢幕")"
                                     style="font-size: 1.1rem; line-height: 1; opacity: 0.8; text-decoration: none;">
@@ -53,7 +53,7 @@
                         @if (ShowCloseButton)
                         {
                             <button type="button"
-                                    class="btn-close @(ShouldUseWhiteCloseButton() ? "btn-close-white" : "")"
+                                    class="btn-close"
                                     @onclick="HandleClose"
                                     title="@L["Button.Close"]"
                                     aria-label="@L["Button.Close"]"></button>
@@ -293,26 +293,6 @@
     public ModalSize Size { get; set; } = ModalSize.Desktop;
     
     /// <summary>
-    /// Header 顏色變體
-    /// </summary>
-    [Parameter]
-    public HeaderVariant HeaderColor { get; set; } = HeaderVariant.Default;
-    
-    /// <summary>
-    /// 自訂 Header 背景顏色（HEX 格式，例如 "#1F2937"）
-    /// 當設定此值時，將覆蓋 HeaderColor 的預設顏色
-    /// </summary>
-    [Parameter]
-    public string? CustomHeaderColor { get; set; }
-    
-    /// <summary>
-    /// 自訂 Header 文字顏色（HEX 格式，預設為白色 "#FFFFFF"）
-    /// 僅在設定 CustomHeaderColor 時有效
-    /// </summary>
-    [Parameter]
-    public string CustomHeaderTextColor { get; set; } = "#FFFFFF";
-    
-    /// <summary>
     /// 是否顯示關閉按鈕
     /// </summary>
     [Parameter]
@@ -329,12 +309,6 @@
     /// </summary>
     [Parameter]
     public bool CloseOnEscape { get; set; } = true;
-    
-    /// <summary>
-    /// 是否使用白色關閉按鈕（用於深色 Header）
-    /// </summary>
-    [Parameter]
-    public bool UseWhiteCloseButton { get; set; } = false;
     
     /// <summary>
     /// 是否顯示載入中狀態
@@ -777,84 +751,6 @@
         _isModalFullscreen = !_isModalFullscreen;
     }
     
-    /// <summary>
-    /// 取得 Header CSS 類別
-    /// </summary>
-    private string GetHeaderCssClass()
-    {
-        // 如果使用自訂顏色，不使用 Bootstrap 的背景色類別
-        if (!string.IsNullOrEmpty(CustomHeaderColor))
-        {
-            return string.Empty;
-        }
-        
-        var cssClass = HeaderColor switch
-        {
-            HeaderVariant.Primary => "bg-primary text-white",
-            HeaderVariant.Secondary => "bg-secondary text-white",
-            HeaderVariant.Success => "bg-success text-white",
-            HeaderVariant.Danger => "bg-danger text-white",
-            HeaderVariant.Warning => "bg-warning text-dark",
-            HeaderVariant.Info => "bg-info text-white",
-            HeaderVariant.Dark => "bg-dark text-white",
-            HeaderVariant.ProjectPrimary => "text-white",  // 專案主色
-            _ => ""
-        };
-        
-        return cssClass;
-    }
-    
-    /// <summary>
-    /// 取得 Header 內聯樣式
-    /// </summary>
-    private string GetHeaderStyle()
-    {
-        if (!string.IsNullOrEmpty(CustomHeaderColor))
-        {
-            return $"background-color: {CustomHeaderColor}; color: {CustomHeaderTextColor};";
-        }
-        
-        // 專案主色 #1F2937
-        if (HeaderColor == HeaderVariant.ProjectPrimary)
-        {
-            return "background-color: #1F2937; color: #FFFFFF;";
-        }
-        
-        return string.Empty;
-    }
-    
-    /// <summary>
-    /// 判斷是否應該使用白色關閉按鈕
-    /// </summary>
-    private bool ShouldUseWhiteCloseButton()
-    {
-        // 如果手動設定了，優先使用手動設定
-        if (UseWhiteCloseButton)
-        {
-            return true;
-        }
-        
-        // 自動判斷：如果有自訂 Header 顏色，使用白色按鈕
-        if (!string.IsNullOrEmpty(CustomHeaderColor))
-        {
-            return true;
-        }
-        
-        // 根據 Header 顏色變體判斷
-        return HeaderColor switch
-        {
-            HeaderVariant.Primary => true,
-            HeaderVariant.Secondary => true,
-            HeaderVariant.Success => true,
-            HeaderVariant.Danger => true,
-            HeaderVariant.Info => true,
-            HeaderVariant.Dark => true,
-            HeaderVariant.ProjectPrimary => true,
-            HeaderVariant.Warning => false,  // 黃色背景用黑色按鈕
-            HeaderVariant.Default => false,
-            _ => false
-        };
-    }
     
     /// <summary>
     /// 點擊 modal-content 時關閉所有彈出元素（審計 popup 等）
@@ -999,22 +895,6 @@
         Large,          // 大型 (modal-lg)
         ExtraLarge,     // 超大型 (modal-xl)
         Desktop         // 桌面尺寸 (modal-xl modal-desktop)
-    }
-    
-    /// <summary>
-    /// Header 顏色變體列舉
-    /// </summary>
-    public enum HeaderVariant
-    {
-        Default,        // 預設白底黑字
-        Primary,        // Bootstrap 藍色
-        Secondary,      // Bootstrap 灰色
-        Success,        // Bootstrap 綠色
-        Danger,         // Bootstrap 紅色
-        Warning,        // Bootstrap 黃色
-        Info,           // Bootstrap 淺藍色
-        Dark,           // Bootstrap 深色
-        ProjectPrimary  // 專案主色 #1F2937
     }
     
     /// <summary>

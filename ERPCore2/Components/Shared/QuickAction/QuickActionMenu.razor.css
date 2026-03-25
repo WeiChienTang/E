@@ -18,7 +18,7 @@
     border: none;
     background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-alt) 100%);
     color: white;
-    font-size: 1rem;
+    font-size: var(--fs-base);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -80,7 +80,7 @@
     border: 1px solid var(--border-color);
     border-radius: 24px;
     color: var(--text-primary);
-    font-size: 1rem;
+    font-size: var(--fs-base);
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     transition: all 0.2s ease;
@@ -118,7 +118,7 @@
 }
 
 .quick-action-item .bi {
-    font-size: 1rem;
+    font-size: var(--fs-base);
     flex-shrink: 0;
 }
 
@@ -136,7 +136,7 @@
     color: white;
     border-radius: 10px;
     padding: 2px 6px;
-    font-size: 11px;
+    font-size: var(--fs-2xs);
     font-weight: bold;
     min-width: 18px;
     text-align: center;
@@ -152,7 +152,7 @@
     color: white;
     border-radius: 10px;
     padding: 2px 5px;
-    font-size: 10px;
+    font-size: var(--fs-2xs);
     font-weight: bold;
     min-width: 16px;
     text-align: center;

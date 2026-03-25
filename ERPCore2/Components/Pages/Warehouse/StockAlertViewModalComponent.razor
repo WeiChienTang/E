@@ -17,8 +17,6 @@
                    Title="@GetTitle()"
                    Icon="@GetHeaderIcon()"
                    Size="BaseModalComponent.ModalSize.Desktop"
-                   HeaderColor="@GetHeaderColor()"
-                   UseWhiteCloseButton="@(AlertType == StockAlertType.OverStock)"
                    IsLoading="@isLoading"
                    LoadingMessage="@L["Warehouse.LoadingStock"]"
                    BodyCssClass="p-4"
@@ -264,13 +262,6 @@
     }
 
     // ===== UI 輔助方法 =====
-
-    private BaseModalComponent.HeaderVariant GetHeaderColor()
-    {
-        return AlertType == StockAlertType.LowStock 
-            ? BaseModalComponent.HeaderVariant.Warning
-            : BaseModalComponent.HeaderVariant.Info;
-    }
 
     private string GetHeaderIcon()
     {

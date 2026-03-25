@@ -20,8 +20,11 @@ namespace ERPCore2.Services.Payroll
         /// </summary>
         Task<ServiceResult> BatchInitializeAsync(int year, int month, string? createdBy = null);
 
-        /// <summary>鎖定出勤彙總（薪資計算後呼叫）</summary>
-        Task<ServiceResult> LockAsync(int employeeId, int year, int month);
+        /// <summary>鎖定出勤彙總（薪資確認時自動呼叫）</summary>
+        Task<ServiceResult> LockAsync(int employeeId, int year, int month, string? lockedBy = null);
+
+        /// <summary>解鎖出勤彙總（薪資取消確認時自動呼叫）</summary>
+        Task<ServiceResult> UnlockAsync(int employeeId, int year, int month);
 
         /// <summary>取得所有已有出勤記錄的年月組合</summary>
         Task<List<(int Year, int Month)>> GetAvailablePeriodsAsync();

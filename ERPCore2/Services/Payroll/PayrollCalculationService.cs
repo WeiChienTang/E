@@ -16,6 +16,7 @@ namespace ERPCore2.Services.Payroll
     public class PayrollCalculationService : IPayrollCalculationService
     {
         private readonly IDbContextFactory<AppDbContext> _contextFactory;
+        private readonly IMonthlyAttendanceSummaryService _attendanceService;
         private readonly ILogger<PayrollCalculationService>? _logger;
 
         // ── 費率備援常數（InsuranceRate 資料表無資料時使用）───────────
@@ -38,9 +39,11 @@ namespace ERPCore2.Services.Payroll
 
         public PayrollCalculationService(
             IDbContextFactory<AppDbContext> contextFactory,
+            IMonthlyAttendanceSummaryService attendanceService,
             ILogger<PayrollCalculationService>? logger = null)
         {
             _contextFactory = contextFactory;
+            _attendanceService = attendanceService;
             _logger = logger;
         }
 
@@ -354,6 +357,11 @@ namespace ERPCore2.Services.Payroll
                 record.UpdatedAt = DateTime.UtcNow;
                 record.UpdatedBy = confirmedBy ?? "System";
                 await context.SaveChangesAsync();
+
+                // 自動鎖定該員工本期出勤彙總，防止確認後出勤被修改
+                await _attendanceService.LockAsync(
+                    record.EmployeeId, record.Period.Year, record.Period.Month, confirmedBy);
+
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -384,6 +392,11 @@ namespace ERPCore2.Services.Payroll
                 record.UpdatedAt = DateTime.UtcNow;
                 record.UpdatedBy = operatedBy ?? "System";
                 await context.SaveChangesAsync();
+
+                // 自動解鎖該員工本期出勤彙總，允許重新編輯出勤資料
+                await _attendanceService.UnlockAsync(
+                    record.EmployeeId, record.Period.Year, record.Period.Month);
+
                 return ServiceResult.Success();
             }
             catch (Exception ex)
@@ -429,6 +442,22 @@ namespace ERPCore2.Services.Payroll
             decimal restDay1Rate = (rate?.RestDayRate1       > 0) ? rate!.RestDayRate1       : DefaultRestDayRate1;
             decimal restDay2Rate = (rate?.RestDayRate2       > 0) ? rate!.RestDayRate2       : DefaultRestDayRate2;
             decimal natHolRate   = (rate?.NationalHolidayRate > 0) ? rate!.NationalHolidayRate : DefaultNationalHolidayRate;
+
+            // ── 0b. 雙重扣薪防護檢查 ──────────────────────────────────
+            // 設計原則：ActualWorkDays 應等於 ScheduledWorkDays（比例維持 1），
+            // 各假別（曠職/病假/事假）以獨立扣款明細處理，避免比例縮減 + 扣款同時套用。
+            // 若手動編輯出勤彙總導致 ActualWorkDays < ScheduledWorkDays 且同時有假別天數，
+            // 系統自動修正為 ratio=1 並記錄警告。
+            if (salary.SalaryType != SalaryType.Hourly
+                && record.ScheduledWorkDays > 0
+                && record.ActualWorkDays < record.ScheduledWorkDays
+                && (record.AbsentDays > 0 || record.SickLeaveDays > 0 || record.PersonalLeaveDays > 0))
+            {
+                warnings?.Add($"[PayrollCalculation] 員工薪資單出勤比例（{record.ActualWorkDays}/{record.ScheduledWorkDays}）" +
+                    $"與假別天數（曠職{record.AbsentDays}/病假{record.SickLeaveDays}/事假{record.PersonalLeaveDays}）同時存在，" +
+                    "為避免雙重扣薪，已自動將實際出勤天數修正為應出勤天數（比例=1），薪資減項僅以各假別扣款計算。");
+                record.ActualWorkDays = record.ScheduledWorkDays;
+            }
 
             // ── 1. 工資基準（月薪 / 時薪分開計算）────────────────────
             decimal basePay;
@@ -624,6 +653,20 @@ namespace ERPCore2.Services.Payroll
             record.EmployerLaborInsurance = Math.Round(laborInsuredSalary * laborInsuranceEmployerRate, 0);
             record.EmployerHealthInsurance = Math.Round(healthInsuredAmount * healthInsuranceEmployerRate * multiplier, 0);
             record.EmployerRetirement = Math.Round(salary.BaseSalary * retirementEmployerRate, 0);
+
+            // ── 16. 基本工資檢查（僅產生警告，不阻擋計算）──────────────
+            var minimumWage = await context.MinimumWages
+                .Where(w => w.EffectiveDate <= periodDate)
+                .OrderByDescending(w => w.EffectiveDate)
+                .FirstOrDefaultAsync();
+
+            if (minimumWage != null)
+            {
+                if (salary.SalaryType == SalaryType.Monthly && salary.BaseSalary < minimumWage.MonthlyAmount)
+                    warnings?.Add($"[PayrollCalculation] 警告：員工月薪 {salary.BaseSalary:N0} 低於基本工資 {minimumWage.MonthlyAmount:N0}（生效日 {minimumWage.EffectiveDate}）");
+                else if (salary.SalaryType == SalaryType.Hourly && salary.BaseSalary < minimumWage.HourlyAmount)
+                    warnings?.Add($"[PayrollCalculation] 警告：員工時薪 {salary.BaseSalary:N0} 低於基本工資 {minimumWage.HourlyAmount:N0}（生效日 {minimumWage.EffectiveDate}）");
+            }
 
             // 掛載明細到 record
             foreach (var d in details)

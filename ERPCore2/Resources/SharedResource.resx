@@ -2363,6 +2363,10 @@
   <data name="Home.EditThisPanelTooltip" xml:space="preserve"><value>編輯此區塊</value></data>
   <data name="Home.Create" xml:space="preserve"><value>建立</value></data>
   <data name="Home.WelcomeMessage" xml:space="preserve"><value>你好，{0}</value></data>
+  <data name="Home.SearchPlaceholder" xml:space="preserve"><value>搜尋頁面、報表或功能...</value></data>
+  <data name="Home.SearchNoResults" xml:space="preserve"><value>沒有找到符合的結果</value></data>
+  <data name="Home.SearchGroupPages" xml:space="preserve"><value>頁面</value></data>
+  <data name="Home.SearchGroupReports" xml:space="preserve"><value>報表</value></data>
   <data name="Home.NoPanelItemsHint" xml:space="preserve"><value>點擊編輯按鈕開始自訂此區塊</value></data>
   <data name="Home.NoPanelsHint" xml:space="preserve"><value>建立您的第一個區塊，開始自訂工作區</value></data>
 

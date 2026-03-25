@@ -1,4 +1,5 @@
 ﻿@using ERPCore2.Components.Shared
+@using ERPCore2.Components.Shared.Dashboard
 @using ERPCore2.Components.Shared.Report
 @using ERPCore2.Data.Entities
 @using ERPCore2.Components.Shared.PersonalTools
@@ -25,12 +26,19 @@
 @implements IAsyncDisposable
 
 <CascadingValue Value="@((Action<string>)HandleNavigationAction)" Name="NavigationActionHandler">
-<div class="page">    
+<div class="page">
     <div class="sidebar">
         <NavMenu @ref="navMenuRef" OnActionTriggered="@HandleNavigationAction" />
     </div>
 
     <main class="main-content">
+        <div class="global-search-bar px-4">
+            <DashboardSearchBar SearchPages="@SearchNavigationItems"
+                                SearchReports="@SearchReports"
+                                CategoryDisplayNameFunc="@ReportSearchService.GetCategoryDisplayName"
+                                OnPageSelected="@HandleSearchBarPageSelected"
+                                OnReportSelected="@HandleSearchBarReportSelected" />
+        </div>
         <article class="content px-4">
             @Body
         </article>
@@ -216,7 +224,6 @@
                     Title="@L["Module.NotAvailable"]"
                     Icon="bi bi-lock-fill"
                     Size="BaseModalComponent.ModalSize.Default"
-                    UseWhiteCloseButton="false"
                     DebugComponentName="MainLayout.ModuleDisabled">
     <BodyContent>
         <div class="d-flex flex-column align-items-center justify-content-center py-4">
@@ -1057,6 +1064,24 @@
             .ToList();
     }
     
+    // ===== 全域搜尋列處理 =====
+
+    private void HandleSearchBarPageSelected(ISearchableItem item)
+    {
+        if (!string.IsNullOrEmpty(item.ActionId))
+        {
+            HandleNavigationAction(item.ActionId);
+        }
+    }
+
+    private async Task HandleSearchBarReportSelected(ISearchableItem item)
+    {
+        if (!string.IsNullOrEmpty(item.ActionId))
+        {
+            await HandleReportSelected(item.ActionId);
+        }
+    }
+
     /// <summary>
     /// 處理導航動作觸發
     /// 執行前依序檢查：模組是否啟用、使用者是否有所需權限（SuperAdmin 自動繞過）

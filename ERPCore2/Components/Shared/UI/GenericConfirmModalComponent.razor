@@ -10,8 +10,6 @@
                    Title="@Title"
                    Icon="@Icon"
                    Size="BaseModalComponent.ModalSize.Default"
-                   HeaderColor="@HeaderColor"
-                   UseWhiteCloseButton="@(HeaderColor != BaseModalComponent.HeaderVariant.Default)"
                    CloseOnEscape="true"
                    CloseOnBackdropClick="true"
                    OnClose="@HandleCancel"
@@ -135,11 +133,6 @@
     [Parameter]
     public ButtonVariant ConfirmButtonVariant { get; set; } = ButtonVariant.Blue;
     
-    /// <summary>
-    /// 標題列顏色
-    /// </summary>
-    [Parameter]
-    public BaseModalComponent.HeaderVariant HeaderColor { get; set; } = BaseModalComponent.HeaderVariant.Primary;
     
     /// <summary>
     /// 第二按鈕文字（選填，有值時才顯示）

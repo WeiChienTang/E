@@ -44,7 +44,7 @@
 
 .error-message .lead {
     color: #6c757d;
-    font-size: 1.1rem;
+    font-size: var(--fs-md);
 }
 
 .error-actions {
@@ -78,7 +78,7 @@
 .technical-details .card-body {
     background-color: white;
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    font-size: 0.9rem;
+    font-size: var(--fs-sm);
 }
 
 /* 響應式設計 */
@@ -88,11 +88,11 @@
     }
     
     .error-icon i {
-        font-size: 3rem;
+        font-size: var(--fs-2xl);
     }
     
     .error-title {
-        font-size: 1.5rem;
+        font-size: var(--fs-xl);
     }
     
     .error-actions {

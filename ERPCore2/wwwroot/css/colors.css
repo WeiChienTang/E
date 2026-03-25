@@ -27,16 +27,7 @@
   --danger-color-hover: #b91c1c;
   --info-color: #0891B2;
   --info-color-hover: #0e7490;
-  --cyan-color: #06B6D4;
-  --cyan-color-hover: #0891B2;
-  --purple-color: #8B5CF6;
-  --purple-color-hover: #7C3AED;
-  --pink-color: #EC4899;
-  --pink-color-hover: #DB2777;
-  --orange-color: #F97316;
-  --orange-color-hover: #EA580C;
-  --black-color: #000000;
-  --black-color-hover: #333333;
+  /* 自訂色已精簡至標準 Bootstrap 語意色（2026-03-25） */
 
   /* warning 深色文字（橙色系在淡背景上需要更深的文字色） */
   --warning-text-dark: #9a3412;
@@ -56,9 +47,13 @@
   --bg-tertiary: #F3F4F6;
   
   /* 表格 hover 色彩 */
-  --table-hover-bg: #eff6ff;
-  --table-hover-bg-striped: #dbeafe;
-  --table-hover-text: #1e40af;
+  --table-hover-bg: #f1f5f9;
+  --table-hover-bg-striped: #e8eef6;
+  --table-hover-text: inherit;
+  --table-hover-accent: var(--primary-blue);
+
+  /* 表格 striped 色彩（加大對比度） */
+  --table-stripe-bg: #F3F6F9;
   
   /* 陰影 */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -143,7 +138,11 @@
   /* 表格 hover 色彩 */
   --table-hover-bg: #1c2a3e;
   --table-hover-bg-striped: #1e3255;
-  --table-hover-text: #93c5fd;
+  --table-hover-text: inherit;
+  --table-hover-accent: #58a6ff;
+
+  /* 表格 striped 色彩 */
+  --table-stripe-bg: #1a2233;
 
   /* 警告框背景色 */
   --alert-success-bg: rgba(46, 160, 67, 0.15);
@@ -248,7 +247,7 @@
 .field-debug-name,
 .field-debug-i18n {
   display: none;
-  font-size: 0.6rem;
+  font-size: var(--fs-2xs);
   font-family: monospace;
   padding: 0 0.3rem;
   border-radius: 3px;
@@ -280,7 +279,7 @@ html.debug-i18n .field-debug-i18n {
 .col-debug-name,
 .col-debug-i18n {
   display: none;
-  font-size: 0.55rem;
+  font-size: var(--fs-2xs);
   font-family: monospace;
   padding: 0 0.25rem;
   border-radius: 3px;
@@ -310,7 +309,7 @@ html.debug-i18n .col-debug-i18n {
 /* 方式五：表格名稱 Badge（預設隱藏）*/
 .table-debug-name {
   display: none;
-  font-size: 0.6rem;
+  font-size: var(--fs-2xs);
   font-family: monospace;
   color: #7ec8e3;
   background: #1a1a2e;
@@ -334,7 +333,7 @@ html.debug-i18n .table-debug-name {
 .debug-component-label {
   display: inline;
   font-family: monospace;
-  font-size: 0.65rem;
+  font-size: var(--fs-2xs);
   background: #1a1a2e;
   color: #7ec8e3;
   padding: 1px 6px;

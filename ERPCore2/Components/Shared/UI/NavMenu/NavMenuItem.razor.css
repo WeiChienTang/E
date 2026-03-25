@@ -6,25 +6,26 @@
     box-shadow: none;
     background-color: transparent;
     border-radius: var(--radius-lg);
-    margin-bottom: 2px;
+    margin-bottom: 1px;
 }
 
 .nav-menu-dropdown-toggle-btn {
     color: var(--nav-text);
     background-color: transparent;
     border: none;
-    border-radius: var(--radius-lg);
-    min-height: 2.75rem;
+    border-radius: var(--radius-md);
+    min-height: 2.5rem;
     height: auto;
     display: flex;
     align-items: center;
     width: 100%;
     text-decoration: none;
     cursor: pointer;
-    padding: 0.375rem 1rem;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    padding: 0.4rem 0.75rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
     box-sizing: border-box;
     font-weight: normal;
+    font-size: var(--fs-sm);
     position: relative;
 }
 
@@ -36,45 +37,40 @@
 /* 展開狀態背景 */
 .nav-menu-dropdown-container.expanded .nav-menu-dropdown-toggle-btn:not(:hover) {
     background-color: var(--nav-expanded-bg);
-    border-radius: var(--radius-lg);
 }
 
 /* 展開且 hover */
 .nav-menu-dropdown-container.expanded .nav-menu-dropdown-toggle-btn:hover {
     background-color: var(--nav-hover-bg);
     color: var(--nav-active-border);
-    border-radius: var(--radius-lg);
 }
 
 /* 下拉內容 - 平滑展開動畫 */
 .nav-menu-dropdown-content {
-    background-color: var(--nav-content-bg);
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    background-color: transparent;
+    border-radius: 0;
     margin-top: 0;
     overflow: hidden;
     max-height: 0;
     opacity: 0;
-    transition: max-height 0.1s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.1s ease,
-                margin-top 0.1s ease,
-                border-color 0.1s ease;
+    transition: max-height 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.12s ease,
+                margin-top 0.12s ease;
     border: none;
-    border-left: 2px solid transparent;
-    margin-left: 0.75rem;
-    padding-left: 0.25rem;
+    margin-left: 0.5rem;
+    padding-left: 0;
 }
 
 .nav-menu-dropdown-content.show {
     max-height: 600px;
     opacity: 1;
     margin-top: 2px;
-    border-left-color: var(--nav-content-left-border);
 }
 
 /* 下拉箭頭 - 使用 bi-chevron-down */
 .nav-menu-dropdown-arrow {
     margin-left: auto;
-    font-size: 0.75rem;
+    font-size: var(--fs-2xs);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     color: var(--nav-text-dim);
     flex-shrink: 0;
@@ -93,19 +89,20 @@
     color: var(--nav-text);
     background-color: transparent;
     border: none;
-    border-radius: var(--radius-lg);
-    min-height: 2.75rem;
+    border-radius: var(--radius-md);
+    min-height: 2.5rem;
     height: auto;
     display: flex;
     align-items: center;
     width: 100%;
     text-decoration: none;
-    padding: 0.375rem 1rem;
-    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    padding: 0.4rem 0.75rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
     box-sizing: border-box;
     font-weight: normal;
-    border-left: 3px solid transparent;
-    margin-bottom: 2px;
+    font-size: var(--fs-sm);
+    border-left: 2px solid transparent;
+    margin-bottom: 1px;
 }
 
 .nav-menu-nav-link:hover {
@@ -129,9 +126,17 @@
 /* Icon 樣式 */
 .nav-menu-nav-link span[aria-hidden="true"],
 .nav-menu-dropdown-toggle-btn span[aria-hidden="true"] {
-    font-size: 1.25rem;
-    margin-right: 0.75rem;
+    font-size: var(--fs-md);
+    margin-right: 0.625rem;
     flex-shrink: 0;
+    opacity: 0.7;
+    transition: opacity 0.15s ease;
+}
+
+.nav-menu-nav-link:hover span[aria-hidden="true"],
+.nav-menu-dropdown-toggle-btn:hover span[aria-hidden="true"],
+.nav-menu-nav-link.active span[aria-hidden="true"] {
+    opacity: 1;
 }
 
 /* 選單文字 */
