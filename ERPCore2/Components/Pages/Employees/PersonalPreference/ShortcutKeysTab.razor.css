@@ -71,7 +71,6 @@
 kbd {
     display: inline-block;
     padding: 3px 8px;
-    font-size: var(--fs-sm);
     font-family: 'Consolas', 'Monaco', monospace;
     background-color: #1a1a2e;
     color: #e8e8e8;

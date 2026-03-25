@@ -34,6 +34,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PermissionCode", "權限明細編號"),
                             FilterPlaceholder = Fp("Field.PermissionCode", "輸入權限明細編號搜尋"),
                             TableOrder = 1,
+                            Width = "140px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Permission.Code), p => p.Code)
                         }
@@ -46,6 +47,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PermissionName", "權限明細名稱"),
                             FilterPlaceholder = Fp("Field.PermissionName", "輸入權限明細名稱搜尋"),
                             TableOrder = 2,
+                            Width = "160px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Permission.Name), p => p.Name)
                         }
@@ -58,6 +60,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PermissionLevel", "權限級別"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
+                            Width = "100px",
                             Options = new List<SelectOption>
                             {
                                 new SelectOption { Text = "一般權限", Value = ((int)PermissionLevel.Normal).ToString() },

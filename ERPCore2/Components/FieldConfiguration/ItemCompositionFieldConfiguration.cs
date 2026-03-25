@@ -41,6 +41,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CompositionCode", "配方編號"),
                             FilterPlaceholder = Fp("Field.CompositionCode", "輸入配方編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ItemComposition.Code), pc => pc.Code)
                         }
@@ -53,6 +54,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CompositionName", "清單名稱"),
                             FilterPlaceholder = Fp("Field.CompositionName", "輸入清單名稱搜尋"),
                             TableOrder = 2,
+                            Width = "150px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ItemComposition.Name), pc => pc.Name)
                         }
@@ -66,6 +68,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Entity.Item", "品項"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
+                            Width = "130px",
                             Options = _products.Select(p => new SelectOption 
                             { 
                                 Text = $"{p.Name}", 
@@ -100,6 +103,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Spec", "規格"),
                             FilterPlaceholder = Fp("Field.Spec", "輸入規格搜尋"),
                             TableOrder = 4,
+                            Width = "120px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ItemComposition.Specification), pc => pc.Specification)
                         }
@@ -113,6 +117,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CompositionType", "配方類型"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
+                            Width = "110px",
                             Options = _compositionCategories.Select(cc => new SelectOption
                             {
                                 Text = cc.Name,
@@ -152,6 +157,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ComponentCount", "組件數"),
                             ShowInFilter = false,
                             TableOrder = 6,
+                            Width = "90px",
                             CustomTemplate = item => builder =>
                             {
                                 var composition = (ItemComposition)item;

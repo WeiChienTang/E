@@ -34,6 +34,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.TypeCode", "類型編號"),
                             FilterPlaceholder = Fp("Field.TypeCode", "輸入類型編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(CompositionCategory.Code), cc => cc.Code)
@@ -47,6 +48,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.TypeName", "類型名稱"),
                             FilterPlaceholder = Fp("Field.TypeName", "輸入類型名稱搜尋"),
                             TableOrder = 2,
+                            Width = "150px",
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(CompositionCategory.Name), cc => cc.Name)
@@ -60,6 +62,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.UsageCount", "使用次數"),
                             ShowInFilter = false,
                             TableOrder = 3,
+                            Width = "100px",
                             CustomTemplate = item => builder =>
                             {
                                 var category = (CompositionCategory)item;

@@ -30,14 +30,12 @@
 }
 
 .filter-section-title {
-    font-size: var(--fs-base);
     font-weight: 600;
     color: var(--primary-blue);
     white-space: nowrap;
 }
 
 .filter-section-icon {
-    font-size: var(--fs-base);
     color: var(--primary-blue);
     flex-shrink: 0;
 }

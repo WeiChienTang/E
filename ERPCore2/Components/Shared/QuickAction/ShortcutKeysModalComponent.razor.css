@@ -7,7 +7,6 @@
 /* 快捷鍵按鍵樣式 */
 .shortcut-keys-content kbd {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    font-size: var(--fs-sm);
     font-weight: 600;
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

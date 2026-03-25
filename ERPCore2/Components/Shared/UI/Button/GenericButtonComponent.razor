@@ -164,7 +164,8 @@
             ButtonVariant.OutlineYellow => "btn-outline-warning",
             ButtonVariant.OutlineRed => "btn-outline-danger",
             ButtonVariant.OutlineBlue => "btn-outline-info",
-            // 自訂色 → 標準語意色（精簡色彩系統）
+            // 舊名稱 → 標準語意色（向下相容，抑制過時警告）
+            #pragma warning disable CS0618
             ButtonVariant.Cyan => "btn-info",
             ButtonVariant.Purple => "btn-primary",
             ButtonVariant.Pink => "btn-danger",
@@ -177,6 +178,7 @@
             ButtonVariant.OutlineOrange => "btn-outline-warning",
             ButtonVariant.OutlineBlack => "btn-outline-secondary",
             ButtonVariant.OutlineWhite => "btn-outline-secondary",
+            #pragma warning restore CS0618
             _ => "btn-primary"
         };
     }

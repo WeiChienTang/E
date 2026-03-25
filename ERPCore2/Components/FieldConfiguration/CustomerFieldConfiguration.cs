@@ -38,6 +38,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CustomerCode", "客戶編號"),
                             FilterPlaceholder = Fp("Field.CustomerCode", "輸入客戶編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Customer.Code), c => c.Code)
                         }
@@ -50,6 +51,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CompanyName", "公司名稱"),
                             FilterPlaceholder = Fp("Field.CompanyName", "輸入公司名稱搜尋"),
                             TableOrder = 2,
+                            Width = "160px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Customer.CompanyName), c => c.CompanyName)
                         }
@@ -62,6 +64,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ContactPerson", "聯絡人"),
                             FilterPlaceholder = Fp("Field.ContactPerson", "輸入聯絡人姓名搜尋"),
                             TableOrder = 3,
+                            Width = "100px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Customer.ContactPerson), c => c.ContactPerson)
                         }
@@ -74,6 +77,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.TaxNumber", "統一編號"),
                             FilterPlaceholder = Fp("Field.TaxNumber", "輸入統一編號搜尋"),
                             TableOrder = 4,
+                            Width = "120px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Customer.TaxNumber), c => c.TaxNumber, allowNull: true)
                         }
@@ -85,6 +89,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(Customer.CustomerStatus),
                             DisplayName = Dn("Field.CustomerStatus", "客戶狀態"),
                             TableOrder = 5,
+                            Width = "100px",
                             FilterType = SearchFilterType.Select,
                             FilterPlaceholder = "選擇狀態",
                             Options = new List<SelectOption>
@@ -128,6 +133,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CustomerType", "客戶類型"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 6,
+                            Width = "100px",
                             FilterPlaceholder = "選擇類型",
                             Options = new List<SelectOption>
                             {

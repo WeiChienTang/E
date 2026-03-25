@@ -43,6 +43,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ManufacturingOrderCode", "製令單號"),
                             FilterPlaceholder = Fp("Field.ManufacturingOrderCode", "輸入製令單號搜尋"),
                             TableOrder = 1,
+                            Width = "130px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ProductionScheduleItem.Code), psi => psi.Code)
                         }
@@ -56,6 +57,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Entity.Item", "品項"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
+                            Width = "150px",
                             Options = _products.Select(p => new SelectOption
                             {
                                 Text = $"{p.Code} - {p.Name}".Trim(' ', '-'),
@@ -79,6 +81,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ProductionStatus", "生產狀態"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
+                            Width = "100px",
                             Options = Enum.GetValues<ProductionItemStatus>().Select(s => new SelectOption
                             {
                                 Text = s switch
@@ -128,6 +131,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(ProductionScheduleItem.ScheduledQuantity),
                             DisplayName = Dn("Field.ScheduledQuantity", "計劃數量"),
                             TableOrder = 4,
+                            Width = "100px",
                             ColumnType = ColumnDataType.Number,
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
@@ -144,6 +148,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(ProductionScheduleItem.CompletedQuantity),
                             DisplayName = Dn("Field.CompletedQuantity", "完成數量"),
                             TableOrder = 5,
+                            Width = "100px",
                             ColumnType = ColumnDataType.Number,
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
@@ -161,6 +166,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PlannedStartDate", "預計開始"),
                             FilterType = SearchFilterType.Date,
                             TableOrder = 6,
+                            Width = "110px",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(ProductionScheduleItem.PlannedStartDate),
                                 psi => psi.PlannedStartDate ?? DateTime.MinValue),
@@ -178,6 +184,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(ProductionScheduleItem.PlannedEndDate),
                             DisplayName = Dn("Field.PlannedEndDate", "預計完成"),
                             TableOrder = 7,
+                            Width = "110px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -195,6 +202,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ResponsibleEmployee", "負責人員"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 8,
+                            Width = "110px",
                             Options = _employees.Select(e => new SelectOption
                             {
                                 Text = $"{e.Code} - {e.Name}".Trim(' ', '-'),

@@ -78,7 +78,6 @@
 .technical-details .card-body {
     background-color: white;
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    font-size: var(--fs-sm);
 }
 
 /* 響應式設計 */
@@ -88,11 +87,11 @@
     }
     
     .error-icon i {
-        font-size: var(--fs-2xl);
+        font-size: var(--fs-lg);
     }
     
     .error-title {
-        font-size: var(--fs-xl);
+        font-size: var(--fs-lg);
     }
     
     .error-actions {

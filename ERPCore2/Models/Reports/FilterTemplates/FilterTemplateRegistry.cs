@@ -52,7 +52,7 @@ public static class FilterTemplateRegistry
             ReportId = ReportIds.AccountsReceivable,
             FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(AccountsReceivableCriteria),
-            ReportServiceType = null,  // TODO: 待實作 IAccountsReceivableReportService
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.IAccountsReceivableReportService),
             PreviewTitle = "應收帳款報表預覽",
             FilterTitle = "應收帳款報表篩選條件",
             IconClass = "bi-cash-stack",
@@ -144,7 +144,7 @@ public static class FilterTemplateRegistry
             ReportId = ReportIds.CustomerVisitReport,
             FilterTemplateTypeName = "ERPCore2.Components.Shared.Report.FilterTemplates.DynamicFilterTemplate",
             CriteriaType = typeof(CustomerVisitReportCriteria),
-            ReportServiceType = null,  // TODO: 待實作 ICustomerVisitReportService
+            ReportServiceType = typeof(ERPCore2.Services.Reports.Interfaces.ICustomerVisitReportService),
             PreviewTitle = "拜訪報告預覽",
             FilterTitle = "拜訪報告篩選條件",
             IconClass = "bi-journal-check",

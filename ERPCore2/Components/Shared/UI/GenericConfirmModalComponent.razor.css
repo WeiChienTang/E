@@ -1,7 +1,6 @@
 .condition-list .list-group-item {
     background-color: var(--bg-tertiary);
     border-left: 3px solid var(--color-primary);
-    font-size: var(--fs-base);
 }
 
 [data-bs-theme=dark] .condition-list .list-group-item {

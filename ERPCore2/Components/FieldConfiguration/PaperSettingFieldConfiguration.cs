@@ -37,6 +37,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PaperCode", "紙張編號"),
                             FilterPlaceholder = Fp("Field.PaperCode", "輸入紙張編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PaperSetting.Code), p => p.Code)
                         }
@@ -49,6 +50,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PaperName", "紙張名稱"),
                             FilterPlaceholder = Fp("Field.PaperName", "輸入紙張名稱搜尋"),
                             TableOrder = 2,
+                            Width = "130px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PaperSetting.Name), p => p.Name)
                         }
@@ -61,6 +63,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PaperWidth", "寬度 (cm)"),
                             FilterPlaceholder = Fp("Field.PaperWidth", "輸入寬度搜尋"),
                             TableOrder = 3,
+                            Width = "100px",
                             // 自訂模板顯示數值並右對齊
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
@@ -84,6 +87,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PaperHeight", "高度 (cm)"),
                             FilterPlaceholder = Fp("Field.PaperHeight", "輸入高度搜尋"),
                             TableOrder = 4,
+                            Width = "100px",
                             // 自訂模板顯示數值並右對齊
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
@@ -106,6 +110,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PaperSetting.TopMargin),
                             DisplayName = Dn("Field.PaperTopMargin", "上邊距 (cm)"),
                             TableOrder = 5,
+                            Width = "100px",
                             FilterPlaceholder = Fp("Field.PaperTopMargin", "輸入上邊距搜尋"),
                             ColumnType = ColumnDataType.Number,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
@@ -127,6 +132,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PaperSetting.BottomMargin),
                             DisplayName = Dn("Field.PaperBottomMargin", "下邊距 (cm)"),
                             TableOrder = 6,
+                            Width = "100px",
                             FilterPlaceholder = Fp("Field.PaperBottomMargin", "輸入下邊距搜尋"),
                             ColumnType = ColumnDataType.Number,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
@@ -148,6 +154,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PaperSetting.LeftMargin),
                             DisplayName = Dn("Field.PaperLeftMargin", "左邊距 (cm)"),
                             TableOrder = 7,
+                            Width = "100px",
                             FilterPlaceholder = Fp("Field.PaperLeftMargin", "輸入左邊距搜尋"),
                             ColumnType = ColumnDataType.Number,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
@@ -169,6 +176,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PaperSetting.RightMargin),
                             DisplayName = Dn("Field.PaperRightMargin", "右邊距 (cm)"),
                             TableOrder = 8,
+                            Width = "100px",
                             FilterPlaceholder = Fp("Field.PaperRightMargin", "輸入右邊距搜尋"),
                             ColumnType = ColumnDataType.Number,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>

@@ -35,6 +35,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.EquipmentCode", "設備編號"),
                             FilterPlaceholder = Fp("Field.EquipmentCode", "輸入設備編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Equipment.Code), e => e.Code, allowNull: true)
@@ -48,6 +49,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.EquipmentName", "設備名稱"),
                             FilterPlaceholder = Fp("Field.EquipmentName", "輸入設備名稱搜尋"),
                             TableOrder = 2,
+                            Width = "150px",
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Equipment.Name), e => e.Name)
@@ -63,6 +65,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterPlaceholder = Fp("Field.EquipmentCategory", "選擇設備類別"),
                             NullDisplayText = Nd("Label.Uncategorized", "未分類"),
                             TableOrder = 3,
+                            Width = "120px",
                             FilterOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(Equipment.EquipmentCategoryId), e => e.EquipmentCategoryId)
@@ -76,6 +79,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Brand", "品牌"),
                             FilterPlaceholder = Fp("Field.Brand", "輸入品牌搜尋"),
                             TableOrder = 4,
+                            Width = "100px",
                             FilterOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Equipment.Brand), e => e.Brand, allowNull: true)
@@ -89,6 +93,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Location", "放置地點"),
                             FilterPlaceholder = Fp("Field.Location", "輸入地點搜尋"),
                             TableOrder = 5,
+                            Width = "130px",
                             FilterOrder = 5,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Equipment.Location), e => e.Location, allowNull: true)
@@ -103,6 +108,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 6,
+                            Width = "120px",
                             FilterOrder = 6,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableDateRangeFilter(
                                 model, query, nameof(Equipment.NextMaintenanceDate), e => e.NextMaintenanceDate)

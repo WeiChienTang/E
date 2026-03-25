@@ -247,7 +247,6 @@
 .field-debug-name,
 .field-debug-i18n {
   display: none;
-  font-size: var(--fs-2xs);
   font-family: monospace;
   padding: 0 0.3rem;
   border-radius: 3px;
@@ -279,7 +278,6 @@ html.debug-i18n .field-debug-i18n {
 .col-debug-name,
 .col-debug-i18n {
   display: none;
-  font-size: var(--fs-2xs);
   font-family: monospace;
   padding: 0 0.25rem;
   border-radius: 3px;
@@ -309,7 +307,6 @@ html.debug-i18n .col-debug-i18n {
 /* 方式五：表格名稱 Badge（預設隱藏）*/
 .table-debug-name {
   display: none;
-  font-size: var(--fs-2xs);
   font-family: monospace;
   color: #7ec8e3;
   background: #1a1a2e;
@@ -333,7 +330,6 @@ html.debug-i18n .table-debug-name {
 .debug-component-label {
   display: inline;
   font-family: monospace;
-  font-size: var(--fs-2xs);
   background: #1a1a2e;
   color: #7ec8e3;
   padding: 1px 6px;

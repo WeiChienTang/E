@@ -22,7 +22,7 @@
         {
             <div class="d-flex align-items-center gap-2">
                 <span class="text-warning fw-semibold">確定退回至待排清單？</span>
-                <GenericButtonComponent Variant="ButtonVariant.Orange" Size="ButtonSize.Small"
+                <GenericButtonComponent Variant="ButtonVariant.Yellow" Size="ButtonSize.Small"
                     Text="確定退回" OnClick="HandleReturnConfirmed" />
                 <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
                     Text="取消" OnClick="@(() => showReturnConfirm = false)" />
@@ -32,7 +32,7 @@
         {
             <div class="d-flex align-items-center gap-2">
                 <span class="text-warning fw-semibold">材料未齊，確定強制開始生產？</span>
-                <GenericButtonComponent Variant="ButtonVariant.Orange" Size="ButtonSize.Small"
+                <GenericButtonComponent Variant="ButtonVariant.Yellow" Size="ButtonSize.Small"
                     Text="確定開始" OnClick="HandleStartProduction" IsLoading="@isProcessing" />
                 <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
                     Text="取消" OnClick="@(() => showForceStartConfirm = false)" />
@@ -42,7 +42,7 @@
         {
             <div class="d-flex align-items-center gap-2">
                 <span class="text-warning fw-semibold">確定暫停生產？</span>
-                <GenericButtonComponent Variant="ButtonVariant.Orange" Size="ButtonSize.Small"
+                <GenericButtonComponent Variant="ButtonVariant.Yellow" Size="ButtonSize.Small"
                     Text="確定暫停" OnClick="HandlePauseProduction" IsLoading="@isProcessing" />
                 <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
                     Text="取消" OnClick="@(() => showPauseConfirm = false)" />
@@ -81,7 +81,7 @@
                     }
                     else
                     {
-                        <GenericButtonComponent Variant="ButtonVariant.Orange" Size="ButtonSize.Small"
+                        <GenericButtonComponent Variant="ButtonVariant.Yellow" Size="ButtonSize.Small"
                             Text="強制開始" OnClick="@(() => showForceStartConfirm = true)"
                             IsDisabled="@isProcessing"
                             Title="材料尚未領齊，點擊確認強制開始生產" />
@@ -90,7 +90,7 @@
                 @* 暫停：僅限生產中 *@
                 @if (Item?.ProductionItemStatus == ProductionItemStatus.InProgress)
                 {
-                    <GenericButtonComponent Variant="ButtonVariant.Orange" Size="ButtonSize.Small"
+                    <GenericButtonComponent Variant="ButtonVariant.Yellow" Size="ButtonSize.Small"
                         Text="暫停"
                         OnClick="@(() => showPauseConfirm = true)"
                         IsDisabled="@isProcessing"
@@ -129,6 +129,31 @@
     <BodyContent>
         @if (Item != null)
         {
+            @* Tab 切換列：有訂單照片時顯示 *@
+            @if (Item.SalesOrderId.HasValue)
+            {
+                <ul class="nav nav-tabs mb-3">
+                    <li class="nav-item">
+                        <button class="nav-link @(activeTab == "schedule" ? "active" : "")"
+                                type="button" @onclick="@(() => activeTab = "schedule")">
+                            <i class="bi bi-clipboard-data me-1"></i>排程資訊
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link @(activeTab == "photos" ? "active" : "")"
+                                type="button" @onclick="@(() => activeTab = "photos")">
+                            <i class="bi bi-images me-1"></i>訂單照片
+                        </button>
+                    </li>
+                </ul>
+            }
+
+            @if (activeTab == "photos" && Item.SalesOrderId.HasValue)
+            {
+                <SalesOrderPhotoTab SalesOrderId="@Item.SalesOrderId" ReadOnly="true" />
+            }
+            else
+            {
             @* 品項與訂單資訊 *@
             @if (!string.IsNullOrEmpty(Item.ItemCode))
             {
@@ -429,6 +454,7 @@
                     }
                 </div>
             }
+            } @* end else (schedule tab) *@
         }
     </BodyContent>
 
@@ -449,6 +475,7 @@
     [Parameter] public EventCallback OnSaved { get; set; }
     [Parameter] public EventCallback OnDeleted { get; set; }
 
+    private string activeTab = "schedule";
     private bool isProcessing;
     private bool showReturnConfirm;
     private bool showForceStartConfirm;
@@ -477,6 +504,7 @@
     {
         if (Item != null && IsVisible)
         {
+            activeTab = "schedule";
             showReturnConfirm = false;
             showForceStartConfirm = false;
             showPauseConfirm = false;

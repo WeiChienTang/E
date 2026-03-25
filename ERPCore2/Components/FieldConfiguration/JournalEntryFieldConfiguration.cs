@@ -32,6 +32,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.VoucherCode", "傳票號碼"),
                             FilterPlaceholder = Fp("Field.VoucherCode", "輸入傳票號碼搜尋"),
                             TableOrder = 1,
+                            Width = "130px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(JournalEntry.Code), je => je.Code)
                         }
@@ -43,6 +44,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(JournalEntry.EntryDate),
                             DisplayName = Dn("Field.VoucherDate", "傳票日期"),
                             TableOrder = 2,
+                            Width = "110px",
                             FilterType = SearchFilterType.DateRange,
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(JournalEntry.EntryDate), je => je.EntryDate),
@@ -60,6 +62,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(JournalEntry.EntryType),
                             DisplayName = Dn("Field.VoucherType", "傳票類型"),
                             TableOrder = 3,
+                            Width = "100px",
                             FilterType = SearchFilterType.Select,
                             Options = new List<SelectOption>
                             {
@@ -107,6 +110,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(JournalEntry.JournalEntryStatus),
                             DisplayName = Dn("Field.Status", "狀態"),
                             TableOrder = 4,
+                            Width = "100px",
                             FilterType = SearchFilterType.Select,
                             Options = new List<SelectOption>
                             {
@@ -153,6 +157,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.VoucherDescription", "傳票說明"),
                             FilterPlaceholder = Fp("Field.VoucherDescription", "輸入說明搜尋"),
                             TableOrder = 5,
+                            Width = "180px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(JournalEntry.Description), je => je.Description, allowNull: true),
                             NullDisplayText = "-"
@@ -165,6 +170,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(JournalEntry.TotalDebitAmount),
                             DisplayName = Dn("Field.TotalDebit", "借方合計"),
                             TableOrder = 6,
+                            Width = "120px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -180,6 +186,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(JournalEntry.TotalCreditAmount),
                             DisplayName = Dn("Field.TotalCredit", "貸方合計"),
                             TableOrder = 7,
+                            Width = "120px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -196,6 +203,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.SourceCode", "來源單號"),
                             FilterPlaceholder = Fp("Field.SourceCode", "輸入來源單號搜尋"),
                             TableOrder = 8,
+                            Width = "130px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(JournalEntry.SourceDocumentCode), je => je.SourceDocumentCode, allowNull: true),
                             NullDisplayText = "-"

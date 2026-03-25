@@ -53,6 +53,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.SalesReturnCode", "退貨單號"),
                             FilterPlaceholder = Fp("Field.SalesReturnCode", "輸入退貨單號搜尋"),
                             TableOrder = 1,
+                            Width = "130px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(SalesReturn.Code), sr => sr.Code)
                         }
@@ -64,6 +65,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = "Customer.CompanyName", // 使用客戶公司名稱
                             DisplayName = Dn("Field.Customer", "客戶"),
                             TableOrder = 2,
+                            Width = "160px",
                             FilterType = SearchFilterType.Text,
                             FilterPlaceholder = Fp("Field.Customer", "輸入客戶名稱搜尋"),
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -79,6 +81,7 @@ namespace ERPCore2.FieldConfiguration
                             ColumnType = ColumnDataType.Date,
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 3,
+                            Width = "110px",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(SalesReturn.ReturnDate), sr => sr.ReturnDate)
                         }
@@ -90,6 +93,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = "ReturnReason.Name",
                             DisplayName = Dn("Field.ReturnReason", "退貨原因"),
                             TableOrder = 4,
+                            Width = "120px",
                             FilterType = SearchFilterType.Select,
                             Options = _returnReasons.Select(r => new SelectOption
                             {
@@ -108,6 +112,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.TotalAmount", "總額"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 5,
+                            Width = "110px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -130,6 +135,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ApprovalStatus", "核准狀態"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 6,
+                            Width = "100px",
                             Options = new List<SelectOption>
                             {
                                 new SelectOption { Text = "已核准", Value = "true" },

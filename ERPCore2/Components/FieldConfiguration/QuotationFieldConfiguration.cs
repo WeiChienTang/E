@@ -48,6 +48,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.QuotationCode", "報價單號"),
                             FilterPlaceholder = Fp("Field.QuotationCode", "輸入報價單號搜尋"),
                             TableOrder = 1,
+                            Width = "130px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Quotation.Code), q => q.Code)
                         }
@@ -61,6 +62,7 @@ namespace ERPCore2.FieldConfiguration
                             ColumnType = ColumnDataType.Date,
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 2,
+                            Width = "110px",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(Quotation.QuotationDate), q => q.QuotationDate)
                         }
@@ -74,6 +76,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Customer", "客戶"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
+                            Width = "160px",
                             Options = _customers.Select(c => new SelectOption 
                             { 
                                 Text = c.CompanyName ?? "", 
@@ -92,6 +95,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.SalesPerson", "業務人員"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
+                            Width = "110px",
                             NullDisplayText = Nd("Label.Unassigned", "未指派"),
                             Options = _employees.Select(e => new SelectOption 
                             { 
@@ -110,6 +114,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.TotalAmount", "總額"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 5,
+                            Width = "110px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -133,6 +138,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ApprovalStatus", "核准狀態"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 8,
+                            Width = "100px",
                             Options = new List<SelectOption>
                             {
                                 new SelectOption { Text = "已核准", Value = "true" },

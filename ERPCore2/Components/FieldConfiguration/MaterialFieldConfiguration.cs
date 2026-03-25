@@ -34,6 +34,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.MaterialCode", "材質編號"),
                             FilterPlaceholder = Fp("Field.MaterialCode", "輸入材質編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Code", m => m.Code, allowNull: true)
                         }
@@ -46,6 +47,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.MaterialName", "材質名稱"),
                             FilterPlaceholder = Fp("Field.MaterialName", "輸入材質名稱搜尋"),
                             TableOrder = 2,
+                            Width = "150px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Name", m => m.Name)
                         }
@@ -58,6 +60,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Description", "描述"),
                             FilterPlaceholder = Fp("Field.Description", "輸入描述搜尋"),
                             TableOrder = 3,
+                            Width = "160px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Description", m => m.Description, allowNull: true)
                         }
@@ -69,6 +72,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(Material.Remarks),
                             DisplayName = Dn("Field.Remarks", "備註"),
                             TableOrder = 4,
+                            Width = "160px",
                             ShowInFilter = false, // 備註不加入篩選器
                             FilterFunction = (model, query) => query // 不需要篩選邏輯
                         }

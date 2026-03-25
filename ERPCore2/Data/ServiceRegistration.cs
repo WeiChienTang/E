@@ -354,6 +354,10 @@ namespace ERPCore2.Data
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IDetailAccountBalanceReportService, DetailAccountBalanceReportService>();
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IARAgingReportService, ARAgingReportService>();
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.IAPAgingReportService, APAgingReportService>();
+            // 應收帳款報表服務（AR001）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.IAccountsReceivableReportService, AccountsReceivableReportService>();
+            // 客戶拜訪報告服務（AR007）
+            services.AddScoped<ERPCore2.Services.Reports.Interfaces.ICustomerVisitReportService, CustomerVisitReportService>();
             // 現金流量表報表服務（FN014）
             services.AddScoped<ERPCore2.Services.Reports.Interfaces.ICashFlowReportService, CashFlowReportService>();
             // 銀行存款餘額調節表報表服務（FN015）

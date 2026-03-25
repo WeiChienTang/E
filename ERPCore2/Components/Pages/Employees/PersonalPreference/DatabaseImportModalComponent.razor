@@ -130,14 +130,14 @@
                                             <span class="@(prop.IsRequired ? "text-danger fw-bold" : "text-muted")">
                                                 @prop.PropertyName
                                             </span>
-                                            <span class="text-muted" style="font-size:0.75rem;">(@prop.TypeDisplayName)</span>
+                                            <span class="text-muted" style="font-size:1rem;">(@prop.TypeDisplayName)</span>
                                             @if (prop.IsRequired)
                                             {
-                                                <span class="badge bg-danger" style="font-size:0.6rem;">必填</span>
+                                                <span class="badge bg-danger" style="font-size:1rem;">必填</span>
                                             }
                                             @if (prop.IsForeignKeyLike)
                                             {
-                                                <span class="badge bg-info" style="font-size:0.6rem;">FK</span>
+                                                <span class="badge bg-info" style="font-size:1rem;">FK</span>
                                             }
                                         </div>
                                     }
@@ -239,7 +239,7 @@
                                             <strong>@mapping.TargetPropertyName</strong>
                                             @if (mapping.TargetProperty.IsForeignKeyLike)
                                             {
-                                                <span class="badge bg-info ms-1" style="font-size:0.6rem;">FK</span>
+                                                <span class="badge bg-info ms-1" style="font-size:1rem;">FK</span>
                                             }
                                         </td>
                                         <td class="text-muted small">@mapping.TargetProperty.TypeDisplayName</td>

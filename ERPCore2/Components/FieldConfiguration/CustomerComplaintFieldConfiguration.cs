@@ -37,6 +37,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 1,
+                            Width = "110px",
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(CustomerComplaint.ComplaintDate), c => c.ComplaintDate)
@@ -51,6 +52,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Customer", "客戶"),
                             FilterPlaceholder = Fp("Field.Customer", "輸入客戶名稱搜尋"),
                             TableOrder = 2,
+                            Width = "160px",
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
                                 model, query, nameof(CustomerComplaint.CustomerId), c => c.CustomerId)
@@ -64,6 +66,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ComplaintTitle", "投訴標題"),
                             FilterPlaceholder = Fp("Field.ComplaintTitle", "輸入投訴標題搜尋"),
                             TableOrder = 3,
+                            Width = "180px",
                             FilterOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(CustomerComplaint.Title), c => c.Title)
@@ -77,6 +80,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ComplaintCategory", "投訴類別"),
                             ShowInFilter = false,
                             TableOrder = 4,
+                            Width = "100px",
                             CustomTemplate = item =>
                             {
                                 var complaint = item as CustomerComplaint;
@@ -102,6 +106,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ComplaintStatus", "處理狀態"),
                             ShowInFilter = false,
                             TableOrder = 5,
+                            Width = "100px",
                             CustomTemplate = item =>
                             {
                                 var complaint = item as CustomerComplaint;
@@ -133,6 +138,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ResponsibleEmployee", "負責人員"),
                             FilterPlaceholder = Fp("Field.ResponsibleEmployee", "選擇負責人員"),
                             TableOrder = 6,
+                            Width = "110px",
                             FilterOrder = 4,
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(

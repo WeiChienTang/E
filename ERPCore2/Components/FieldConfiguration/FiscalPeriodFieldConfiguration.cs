@@ -32,6 +32,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.FiscalYear", "會計年度"),
                             FilterPlaceholder = Fp("Field.FiscalYear", "輸入會計年度搜尋"),
                             TableOrder = 1,
+                            Width = "100px",
                             FilterFunction = (model, query) =>
                             {
                                 var v = model.GetFilterValue(nameof(FiscalPeriod.FiscalYear))?.ToString();
@@ -49,6 +50,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PeriodNumber", "期間編號"),
                             FilterPlaceholder = Fp("Field.PeriodNumber", "輸入期間編號搜尋"),
                             TableOrder = 2,
+                            Width = "100px",
                             FilterFunction = (model, query) =>
                             {
                                 var v = model.GetFilterValue(nameof(FiscalPeriod.PeriodNumber))?.ToString();
@@ -65,6 +67,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(FiscalPeriod.StartDate),
                             DisplayName = Dn("Field.StartDate", "開始日期"),
                             TableOrder = 3,
+                            Width = "110px",
                             ShowInFilter = false,
                             FilterFunction = (model, query) => query
                         }
@@ -76,6 +79,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(FiscalPeriod.EndDate),
                             DisplayName = Dn("Field.EndDate", "結束日期"),
                             TableOrder = 4,
+                            Width = "110px",
                             ShowInFilter = false,
                             FilterFunction = (model, query) => query
                         }
@@ -87,6 +91,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(FiscalPeriod.PeriodStatus),
                             DisplayName = Dn("Field.PeriodStatus", "期間狀態"),
                             TableOrder = 5,
+                            Width = "100px",
                             FilterType = SearchFilterType.Select,
                             Options = new List<SelectOption>
                             {

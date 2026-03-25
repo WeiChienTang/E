@@ -37,6 +37,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 1,
+                            Width = "110px",
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(CustomerVisit.VisitDate), v => v.VisitDate)
@@ -51,6 +52,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Customer", "客戶"),
                             FilterPlaceholder = Fp("Field.Customer", "輸入客戶名稱搜尋"),
                             TableOrder = 2,
+                            Width = "160px",
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
                                 model, query, nameof(CustomerVisit.CustomerId), v => v.CustomerId)
@@ -64,6 +66,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.VisitMethod", "拜訪方式"),
                             ShowInFilter = false,
                             TableOrder = 3,
+                            Width = "100px",
                             CustomTemplate = item =>
                             {
                                 var visit = item as CustomerVisit;
@@ -90,6 +93,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.SalesPerson", "業務人員"),
                             FilterPlaceholder = Fp("Field.SalesPerson", "選擇業務人員"),
                             TableOrder = 4,
+                            Width = "110px",
                             FilterOrder = 3,
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
@@ -104,6 +108,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.VisitPurpose", "拜訪目的"),
                             FilterPlaceholder = Fp("Field.VisitPurpose", "輸入拜訪目的搜尋"),
                             TableOrder = 5,
+                            Width = "160px",
                             FilterOrder = 4,
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(

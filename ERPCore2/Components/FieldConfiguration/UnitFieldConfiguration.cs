@@ -34,6 +34,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.UnitCode", "單位編號"),
                             FilterPlaceholder = Fp("Field.UnitCode", "輸入單位編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Code", u => u.Code, allowNull: true)
@@ -47,6 +48,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.UnitName", "單位名稱"),
                             FilterPlaceholder = Fp("Field.UnitName", "輸入單位名稱搜尋"),
                             TableOrder = 2,
+                            Width = "160px",
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Name", u => u.Name)

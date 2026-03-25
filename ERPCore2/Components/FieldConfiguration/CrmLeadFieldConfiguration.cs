@@ -35,6 +35,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CompanyName", "公司名稱"),
                             FilterPlaceholder = Fp("Field.CompanyName", "輸入公司名稱搜尋"),
                             TableOrder = 1,
+                            Width = "160px",
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(CrmLead.CompanyName), v => v.CompanyName)
@@ -47,6 +48,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(CrmLead.LeadStage),
                             DisplayName = Dn("Field.LeadStage", "開發階段"),
                             TableOrder = 2,
+                            Width = "100px",
                             FilterOrder = 2,
                             FilterType = SearchFilterType.Select,
                             Options = Enum.GetValues(typeof(LeadStage))
@@ -97,6 +99,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(CrmLead.LeadSource),
                             DisplayName = Dn("Field.LeadSource", "來源"),
                             TableOrder = 3,
+                            Width = "100px",
                             FilterOrder = 3,
                             FilterType = SearchFilterType.Select,
                             Options = Enum.GetValues(typeof(LeadSource))
@@ -143,6 +146,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.AssignedEmployee", "負責業務員"),
                             FilterPlaceholder = Fp("Field.AssignedEmployee", "選擇業務員"),
                             TableOrder = 4,
+                            Width = "120px",
                             FilterOrder = 4,
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
@@ -157,6 +161,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ContactPerson", "聯絡人"),
                             FilterPlaceholder = Fp("Field.ContactPerson", "輸入聯絡人搜尋"),
                             TableOrder = 5,
+                            Width = "100px",
                             FilterOrder = 5,
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
@@ -171,6 +176,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Industry", "行業"),
                             FilterPlaceholder = Fp("Field.Industry", "輸入行業搜尋"),
                             TableOrder = 6,
+                            Width = "100px",
                             FilterOrder = 6,
                             ShowInTable = false,
                             NullDisplayText = "-",
@@ -186,6 +192,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ConvertedCustomer", "已轉換"),
                             ShowInFilter = false,
                             TableOrder = 7,
+                            Width = "90px",
                             CustomTemplate = item =>
                             {
                                 var lead = item as CrmLead;

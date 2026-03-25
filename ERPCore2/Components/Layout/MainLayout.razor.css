@@ -37,6 +37,16 @@ main {
     text-overflow: ellipsis;
 }
 
+/* 全域搜尋列（基底樣式，必須在 media query 之前） */
+.global-search-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--nav-bg);
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
 @media (max-width: 640.98px) {
     /* 手機模式：sidebar 不佔流式空間，NavMenu 子元素自行處理 fixed 定位 */
     .sidebar {
@@ -45,9 +55,28 @@ main {
         position: static;
     }
 
-    /* 主內容為 NavMenu 的固定 Header（3rem）留出空間 */
+    /* 主內容為 NavMenu 的固定 Header（3rem）+ 搜尋列留出空間 */
     .main-content {
         margin-top: 3rem;
+    }
+
+    /* 搜尋列嵌入手機版頂部固定列，與漢堡按鈕同排 */
+    .global-search-bar {
+        position: fixed;
+        top: 0;
+        /* 漢堡按鈕寬度(2.25rem) + top-row左padding(0.875rem) + gap(0.75rem) */
+        left: 3.875rem;
+        right: 0.875rem;
+        height: 3rem;
+        z-index: 1060;
+        display: flex;
+        align-items: center;
+        background-color: var(--nav-bg);
+        border-bottom: none;
+        padding-top: 0;
+        padding-bottom: 0;
+        padding-left: 0;
+        padding-right: 0;
     }
 }
 
@@ -93,17 +122,6 @@ main {
     }
 }
 
-/* 全域搜尋列 */
-.global-search-bar {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background-color: var(--bg-secondary);
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border-light);
-}
-
 /* 內容區域樣式 */
 .content {
     padding-top: 1.1rem;
@@ -141,7 +159,6 @@ main {
     border-radius: 8px;
     padding: 10px 14px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    font-size: var(--fs-sm);
     animation: toastSlideIn 0.3s ease-out;
 }
 
@@ -155,7 +172,6 @@ main {
 }
 
 .reminder-time {
-    font-size: var(--fs-xs);
     color: var(--text-secondary, #6c757d);
     flex-shrink: 0;
 }
@@ -166,7 +182,6 @@ main {
     cursor: pointer;
     color: var(--text-secondary, #6c757d);
     padding: 0 0 0 8px;
-    font-size: var(--fs-base);
     line-height: 1;
     flex-shrink: 0;
     opacity: 0.6;

@@ -12,7 +12,6 @@
 
 .cal-weekday {
     text-align: center;
-    font-size: var(--fs-xs);
     font-weight: 600;
     padding: 2px 0;
     color: var(--text-secondary, #6c757d);
@@ -52,14 +51,12 @@
 
 /* ── 格子內容 ───────────────────────────────────────────────── */
 .cal-day-num {
-    font-size: var(--fs-2xs);
     font-weight: 700;
     line-height: 1;
     color: var(--text-secondary, #6c757d);
 }
 
 .cal-status-badge {
-    font-size: var(--fs-2xs);
     font-weight: 600;
     text-align: center;
     border-radius: 3px;
@@ -69,7 +66,6 @@
 }
 
 .cal-hours {
-    font-size: var(--fs-2xs);
     text-align: center;
     color: #0d6efd;
     font-weight: 600;

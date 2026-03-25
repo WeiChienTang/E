@@ -36,6 +36,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 1,
+                            Width = "110px",
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(CrmLeadFollowUp.FollowUpDate), v => v.FollowUpDate)
@@ -50,6 +51,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Entity.CrmLead", "潛在客戶"),
                             FilterPlaceholder = Fp("Entity.CrmLead", "輸入潛在客戶搜尋"),
                             TableOrder = 2,
+                            Width = "160px",
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
                                 model, query, nameof(CrmLeadFollowUp.CrmLeadId), v => v.CrmLeadId)
@@ -63,6 +65,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.FollowUpType", "跟進方式"),
                             ShowInFilter = false,
                             TableOrder = 3,
+                            Width = "100px",
                             CustomTemplate = item =>
                             {
                                 var f = item as CrmLeadFollowUp;
@@ -89,6 +92,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.SalesPerson", "跟進人員"),
                             FilterPlaceholder = Fp("Field.SalesPerson", "選擇跟進人員"),
                             TableOrder = 4,
+                            Width = "110px",
                             FilterOrder = 3,
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
@@ -103,6 +107,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.FollowUpContent", "跟進內容"),
                             FilterPlaceholder = Fp("Field.FollowUpContent", "輸入跟進內容搜尋"),
                             TableOrder = 5,
+                            Width = "180px",
                             FilterOrder = 4,
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(

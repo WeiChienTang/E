@@ -29,7 +29,7 @@ public static class ReportRegistry
                 RequiredPermission = PermissionRegistry.Customer.Read,
                 ActionId = "OpenAccountsReceivableReport",
                 SortOrder = 1,
-                IsEnabled = false  // 尚未實作 IAccountsReceivableReportService
+                IsEnabled = true
             },
             new ReportDefinition
             {
@@ -120,7 +120,7 @@ public static class ReportRegistry
                 RequiredPermission = PermissionRegistry.Customer.Read,
                 ActionId = "OpenCustomerVisitReport",
                 SortOrder = 7,
-                IsEnabled = false  // 尚未實作 ICustomerVisitReportService
+                IsEnabled = true
             },
             new ReportDefinition
             {

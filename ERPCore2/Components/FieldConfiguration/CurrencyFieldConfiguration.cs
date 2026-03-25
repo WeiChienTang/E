@@ -35,6 +35,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CurrencyCode", "貨幣編號"),
                             FilterPlaceholder = Fp("Field.CurrencyCode", "輸入貨幣編號搜尋"),
                             TableOrder = 1,
+                            Width = "110px",
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Currency.Code), c => c.Code)
@@ -48,6 +49,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CurrencyName", "貨幣名稱"),
                             FilterPlaceholder = Fp("Field.CurrencyName", "輸入貨幣名稱搜尋"),
                             TableOrder = 2,
+                            Width = "130px",
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Currency.Name), c => c.Name)
@@ -61,6 +63,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CurrencySymbol", "符號"),
                             ShowInFilter = false,
                             TableOrder = 3,
+                            Width = "80px",
                             NullDisplayText = "-"
                         }
                     },
@@ -72,6 +75,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ExchangeRate", "匯率"),
                             ShowInFilter = false,
                             TableOrder = 4,
+                            Width = "110px",
                             CustomTemplate = item => builder =>
                             {
                                 var currency = (Currency)item;
@@ -97,6 +101,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.IsBaseCurrency", "本位幣"),
                             ShowInFilter = true,
                             TableOrder = 5,
+                            Width = "90px",
                             FilterOrder = 3,
                             FilterType = SearchFilterType.Select,
                             Options = new List<SelectOption>

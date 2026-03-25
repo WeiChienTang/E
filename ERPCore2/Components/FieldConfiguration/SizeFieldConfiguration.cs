@@ -34,6 +34,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.SizeCode", "尺寸編號"),
                             FilterPlaceholder = Fp("Field.SizeCode", "輸入尺寸編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Size.Code), s => s.Code, allowNull: true)
@@ -47,6 +48,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.SizeName", "尺寸名稱"),
                             FilterPlaceholder = Fp("Field.SizeName", "輸入尺寸名稱搜尋"),
                             TableOrder = 2,
+                            Width = "160px",
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Size.Name), s => s.Name)

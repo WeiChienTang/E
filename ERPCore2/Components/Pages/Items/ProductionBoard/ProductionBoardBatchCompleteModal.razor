@@ -30,7 +30,7 @@
         @if (rows.Any())
         {
             <div class="mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <span class="text-muted" style="font-size:0.88rem;">
+                <span class="text-muted" style="font-size:1rem;">
                     勾選項目並調整入庫數量與倉庫，確認後一次完工。數量為 0 或未選倉庫的項目將略過。
                 </span>
                 <div class="d-flex gap-2">
@@ -64,14 +64,14 @@
                                            @onchange="e => row.IsSelected = (bool)(e.Value ?? false)" />
                                 </td>
                                 <td>
-                                    <div class="fw-semibold" style="font-size:0.9rem;">@row.Item.ItemName</div>
-                                    <div class="text-muted" style="font-size:0.8rem;">@row.Item.ItemCode</div>
+                                    <div class="fw-semibold" style="font-size:1rem;">@row.Item.ItemName</div>
+                                    <div class="text-muted" style="font-size:1rem;">@row.Item.ItemCode</div>
                                 </td>
                                 <td>
-                                    <div style="font-size:0.85rem;">@row.Item.CustomerName</div>
+                                    <div style="font-size:1rem;">@row.Item.CustomerName</div>
                                     @if (!string.IsNullOrEmpty(row.Item.SalesOrderCode))
                                     {
-                                        <div class="text-muted" style="font-size:0.8rem;">@row.Item.SalesOrderCode</div>
+                                        <div class="text-muted" style="font-size:1rem;">@row.Item.SalesOrderCode</div>
                                     }
                                 </td>
                                 <td class="text-end">@NumberFormatHelper.FormatSmart(row.Item.ScheduledQuantity)</td>

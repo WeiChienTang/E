@@ -36,6 +36,7 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             PropertyName = nameof(SalesTarget.Year),
                             DisplayName = Dn("SalesTarget.Year", "年度"),
                             TableOrder = 1,
+                            Width = "90px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(SalesTarget.Year), t => t.Year.ToString())
                         }
@@ -47,6 +48,7 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             PropertyName = nameof(SalesTarget.Month),
                             DisplayName = Dn("SalesTarget.Month", "月份"),
                             TableOrder = 2,
+                            Width = "80px",
                             CustomTemplate = (data) => (builder) =>
                             {
                                 if (data is SalesTarget t)
@@ -61,6 +63,7 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             PropertyName = nameof(SalesTarget.SalespersonId),
                             DisplayName = Dn("Field.SalesPerson", "業務員"),
                             TableOrder = 3,
+                            Width = "110px",
                             CustomTemplate = (data) => (builder) =>
                             {
                                 if (data is SalesTarget t)
@@ -77,6 +80,7 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             PropertyName = nameof(SalesTarget.TargetAmount),
                             DisplayName = Dn("SalesTarget.TargetAmount", "目標金額"),
                             TableOrder = 4,
+                            Width = "120px",
                             CustomTemplate = (data) => (builder) =>
                             {
                                 if (data is SalesTarget t)

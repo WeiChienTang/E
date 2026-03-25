@@ -33,7 +33,6 @@
     border: 1px solid var(--border-color);
     border-radius: 4px;
     padding: 3px 12px;
-    font-size: var(--fs-sm);
     color: var(--text-secondary);
     cursor: pointer;
     white-space: nowrap;
@@ -63,7 +62,7 @@
     width: 72px !important;
     padding: 2px 6px !important;
     height: auto !important;
-    font-size: var(--fs-base) !important;
+    font-size: 1rem !important;
 }
 
 /* ════════════════════════════════════════════════
@@ -87,7 +86,6 @@
     border: 1px solid var(--border-color);
     border-radius: 4px;
     padding: 4px 10px;
-    font-size: var(--fs-base);
     color: var(--text-secondary);
     background: transparent;
     cursor: pointer;
@@ -102,7 +100,6 @@
 /* ── 有資料 badge ── */
 .has-data-badge {
     background-color: var(--primary-blue) !important;
-    font-size: var(--fs-base);
     padding: 2px 5px;
 }
 

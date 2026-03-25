@@ -35,6 +35,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.VehicleCode", "車輛編號"),
                             FilterPlaceholder = Fp("Field.VehicleCode", "輸入車輛編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Vehicle.Code), v => v.Code, allowNull: true)
@@ -48,6 +49,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.LicensePlate", "車牌號碼"),
                             FilterPlaceholder = Fp("Field.LicensePlate", "輸入車牌號碼搜尋"),
                             TableOrder = 2,
+                            Width = "120px",
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Vehicle.LicensePlate), v => v.LicensePlate)
@@ -61,6 +63,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.VehicleName", "車輛名稱"),
                             FilterPlaceholder = Fp("Field.VehicleName", "輸入車輛名稱搜尋"),
                             TableOrder = 3,
+                            Width = "150px",
                             FilterOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Vehicle.VehicleName), v => v.VehicleName)
@@ -75,6 +78,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.VehicleType", "車型"),
                             FilterPlaceholder = Fp("Field.VehicleType", "選擇車型"),
                             TableOrder = 4,
+                            Width = "100px",
                             FilterOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(Vehicle.VehicleTypeId), v => v.VehicleTypeId)
@@ -88,6 +92,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Brand", "廠牌"),
                             FilterPlaceholder = Fp("Field.Brand", "輸入廠牌搜尋"),
                             TableOrder = 5,
+                            Width = "100px",
                             FilterOrder = 5,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Vehicle.Brand), v => v.Brand, allowNull: true)

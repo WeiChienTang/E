@@ -45,6 +45,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.StockTakingCode", "盤點單號"),
                             FilterPlaceholder = Fp("Field.StockTakingCode", "輸入盤點單號搜尋"),
                             TableOrder = 1,
+                            Width = "130px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(StockTaking.TakingNumber), st => st.TakingNumber)
                         }
@@ -58,6 +59,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 2,
+                            Width = "110px",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(StockTaking.TakingDate), st => st.TakingDate)
                         }
@@ -71,6 +73,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Warehouse", "倉庫"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
+                            Width = "120px",
                             Options = _warehouses.Select(w => new SelectOption
                             {
                                 Text = w.Name ?? "",
@@ -88,6 +91,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.StockTakingType", "盤點類型"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
+                            Width = "100px",
                             Options = GetTakingTypeOptions(),
                             CustomTemplate = CreateTakingTypeTemplate(),
                             FilterFunction = (model, query) => ApplyTakingTypeFilter(model, query)
@@ -101,6 +105,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.TotalItems", "盤點項目數"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 6,
+                            Width = "100px",
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>
                             {
@@ -119,6 +124,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CompletedItems", "已盤點數"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 7,
+                            Width = "100px",
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>
                             {
@@ -137,6 +143,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.DifferenceItems", "差異項目數"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 8,
+                            Width = "100px",
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>
                             {
@@ -155,6 +162,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.DifferenceAmount", "盤盈盤虧"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 9,
+                            Width = "110px",
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>
                             {
@@ -182,6 +190,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CompletionRate", "完成率(%)"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 10,
+                            Width = "100px",
                         }
                     },
                     {
@@ -192,6 +201,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Remarks", "備註"),
                             FilterPlaceholder = Fp("Field.Remarks", "輸入備註搜尋"),
                             TableOrder = 11,
+                            Width = "160px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(StockTaking.Remarks), st => st.Remarks, allowNull: true)
                         }

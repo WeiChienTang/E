@@ -36,6 +36,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Code", "編號"),
                             FilterPlaceholder = Fp("Field.Code", "輸入編號搜尋"),
                             TableOrder = 0,
+                            Width = "110px",
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(DocumentCategory.Code), c => c.Code)
@@ -49,6 +50,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CategoryName", "分類名稱"),
                             FilterPlaceholder = Fp("Field.CategoryName", "輸入分類名稱搜尋"),
                             TableOrder = 1,
+                            Width = "150px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(DocumentCategory.Name), c => c.Name)
                         }
@@ -61,6 +63,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.DefaultAccessLevel", "預設存取層級"),
                             ShowInFilter = false,
                             TableOrder = 2,
+                            Width = "120px",
                             CustomTemplate = obj =>
                             {
                                 var item = obj as DocumentCategory;

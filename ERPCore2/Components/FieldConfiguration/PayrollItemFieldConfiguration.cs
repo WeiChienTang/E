@@ -30,6 +30,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PayrollItemCode", "代碼"),
                             FilterPlaceholder = Fp("Field.PayrollItemCode", "輸入代碼搜尋"),
                             TableOrder = 1,
+                            Width = "110px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PayrollItem.Code), x => x.Code)
                         }
@@ -42,6 +43,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PayrollItemName", "名稱"),
                             FilterPlaceholder = Fp("Field.PayrollItemName", "輸入名稱搜尋"),
                             TableOrder = 2,
+                            Width = "130px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PayrollItem.Name), x => x.Name)
                         }
@@ -53,6 +55,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PayrollItem.ItemType),
                             DisplayName = Dn("Field.PayrollItemType", "類型"),
                             TableOrder = 3,
+                            Width = "90px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -77,6 +80,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PayrollItem.Category),
                             DisplayName = Dn("Field.PayrollItemCategory", "類別"),
                             TableOrder = 4,
+                            Width = "90px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -102,6 +106,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PayrollItem.IsProrated),
                             DisplayName = Dn("Field.PayrollItemIsProrated", "按出勤比例"),
                             TableOrder = 5,
+                            Width = "100px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -123,6 +128,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PayrollItem.IsSystemItem),
                             DisplayName = Dn("Field.PayrollItemIsSystem", "系統內建"),
                             TableOrder = 6,
+                            Width = "90px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -144,6 +150,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PayrollItem.Status),
                             DisplayName = Dn("Field.Status", "狀態"),
                             TableOrder = 7,
+                            Width = "90px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {

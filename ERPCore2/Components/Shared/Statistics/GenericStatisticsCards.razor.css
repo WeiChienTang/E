@@ -15,7 +15,6 @@
     gap: 0.35rem;
     padding: 0.3rem 0.75rem;
     border-radius: 20px;
-    font-size: var(--fs-sm);
     font-weight: 500;
     background-color: var(--bg-tertiary);
     border: 1px solid var(--border-color);
@@ -26,17 +25,14 @@
 
 .statistics-badge .badge-title {
     color: var(--text-secondary);
-    font-size: var(--fs-sm);
     font-weight: 500;
 }
 
 .statistics-badge .badge-value {
     font-weight: 700;
-    font-size: var(--fs-sm);
 }
 
 .statistics-badge .badge-arrow {
-    font-size: var(--fs-2xs);
     opacity: 0.5;
 }
 
@@ -95,7 +91,6 @@
     gap: 0.3rem;
     padding: 0.3rem 0.6rem;
     border-radius: 20px;
-    font-size: var(--fs-sm);
     font-weight: 500;
     color: var(--text-secondary);
     background-color: var(--bg-tertiary);
@@ -112,11 +107,9 @@
 }
 
 .statistics-toggle-btn .toggle-label {
-    font-size: var(--fs-sm);
 }
 
 .statistics-toggle-btn .toggle-chevron {
-    font-size: var(--fs-2xs);
     transition: transform 0.2s ease;
 }
 
@@ -165,7 +158,6 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 0.85rem;
-    font-size: var(--fs-sm);
     transition: background-color 0.15s ease;
 }
 
@@ -187,16 +179,13 @@
 .statistics-dropdown-item .dropdown-item-title {
     color: var(--text-secondary);
     flex: 1;
-    font-size: var(--fs-sm);
 }
 
 .statistics-dropdown-item .dropdown-item-value {
     font-weight: 700;
-    font-size: var(--fs-sm);
 }
 
 .statistics-dropdown-item .dropdown-item-arrow {
-    font-size: var(--fs-2xs);
     opacity: 0.4;
     color: var(--text-secondary);
 }

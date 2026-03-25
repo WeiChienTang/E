@@ -20,7 +20,6 @@
 }
 
 .section-title {
-    font-size: var(--fs-base);
     font-weight: 600;
     color: var(--primary-blue);
 }
@@ -46,7 +45,6 @@
 }
 
 .theme-label {
-    font-size: var(--fs-2xs);
     line-height: 1;
     display: block;
 }
@@ -68,7 +66,6 @@
 }
 
 .zoom-label {
-    font-size: var(--fs-2xs);
     line-height: 1;
     display: block;
 }

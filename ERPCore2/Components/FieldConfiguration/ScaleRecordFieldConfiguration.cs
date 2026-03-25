@@ -35,6 +35,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.WasteRecordCode", "磅秤紀錄單號"),
                             FilterPlaceholder = Fp("Field.WasteRecordCode", "輸入單號搜尋"),
                             TableOrder = 1,
+                            Width = "140px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ScaleRecord.Code), sr => sr.Code, allowNull: true)
                         }
@@ -47,6 +48,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.RecordDate", "記錄日期"),
                             FilterPlaceholder = Fp("Field.RecordDate", "選擇日期範圍"),
                             TableOrder = 2,
+                            Width = "110px",
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
@@ -62,6 +64,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Vehicle", "車輛"),
                             FilterPlaceholder = Fp("Field.Vehicle", "輸入車牌搜尋"),
                             TableOrder = 3,
+                            Width = "110px",
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(ScaleRecord.VehicleId), sr => sr.VehicleId)
                         }
@@ -75,6 +78,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Customer", "客戶"),
                             FilterPlaceholder = Fp("Field.Customer", "輸入客戶搜尋"),
                             TableOrder = 4,
+                            Width = "150px",
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(ScaleRecord.CustomerId), sr => sr.CustomerId)
                         }
@@ -88,6 +92,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = "品項",
                             FilterPlaceholder = "輸入品項搜尋",
                             TableOrder = 5,
+                            Width = "130px",
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(ScaleRecord.ItemId), sr => sr.ItemId)
                         }
@@ -99,6 +104,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(ScaleRecord.EntryWeight),
                             DisplayName = "進場重量 (kg)",
                             TableOrder = 6,
+                            Width = "110px",
                             ColumnType = ColumnDataType.Number,
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>
@@ -115,6 +121,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(ScaleRecord.ExitWeight),
                             DisplayName = "出場重量 (kg)",
                             TableOrder = 7,
+                            Width = "110px",
                             ColumnType = ColumnDataType.Number,
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>
@@ -131,6 +138,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(ScaleRecord.NetWeight),
                             DisplayName = "淨重 (kg)",
                             TableOrder = 8,
+                            Width = "100px",
                             ColumnType = ColumnDataType.Number,
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>
@@ -149,6 +157,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.InboundWarehouse", "入庫倉庫"),
                             FilterPlaceholder = Fp("Field.InboundWarehouse", "輸入倉庫搜尋"),
                             TableOrder = 9,
+                            Width = "120px",
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableIntIdFilter(
                                 model, query, nameof(ScaleRecord.WarehouseId), sr => sr.WarehouseId)
                         }
@@ -160,6 +169,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(ScaleRecord.DisposalFee),
                             DisplayName = Dn("Field.DisposalFee", "處理費"),
                             TableOrder = 10,
+                            Width = "110px",
                             ColumnType = ColumnDataType.Currency,
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>
@@ -176,6 +186,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(ScaleRecord.PurchaseFee),
                             DisplayName = Dn("Field.PurchaseFee", "採購費"),
                             TableOrder = 11,
+                            Width = "110px",
                             ColumnType = ColumnDataType.Currency,
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>
@@ -192,6 +203,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(ScaleRecord.NetAmount),
                             DisplayName = Dn("Field.NetAmount", "淨額"),
                             TableOrder = 12,
+                            Width = "110px",
                             ColumnType = ColumnDataType.Currency,
                             ShowInFilter = false,
                             CustomTemplate = value => builder =>

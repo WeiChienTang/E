@@ -28,7 +28,7 @@
     justify-content: center;
     background-color: var(--bg-secondary, #f8f9fa);
     color: var(--text-secondary, #6c757d);
-    font-size: var(--fs-2xl);
+    font-size: var(--fs-lg);
 }
 
 [data-bs-theme=dark] .avatar-preview-placeholder {
@@ -44,7 +44,6 @@
 }
 
 .section-title {
-    font-size: var(--fs-base);
     font-weight: 600;
     color: var(--primary-blue);
 }

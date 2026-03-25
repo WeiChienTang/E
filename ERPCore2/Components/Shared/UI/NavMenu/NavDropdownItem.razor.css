@@ -22,7 +22,6 @@
     width: 100%;
     clear: both;
     font-weight: 400;
-    font-size: var(--fs-sm);
     line-height: 1.5;
     white-space: normal;
     word-break: break-word;
@@ -49,7 +48,6 @@
 
 /* 下拉選單圖示樣式 */
 .nav-dropdown-item .nav-dropdown-bi {
-    font-size: var(--fs-base);
     width: 1rem;
     height: 1rem;
     line-height: 1;
@@ -62,7 +60,6 @@
 }
 
 .nav-dropdown-item .nav-dropdown-bi::before {
-    font-size: var(--fs-base);
     width: 1rem;
     height: 1rem;
     line-height: 1;

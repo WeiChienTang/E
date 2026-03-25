@@ -33,6 +33,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.AccountCode", "科目代碼"),
                             FilterPlaceholder = Fp("Field.AccountCode", "輸入科目代碼搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(AccountItem.Code), a => a.Code)
                         }
@@ -45,6 +46,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.AccountName", "科目名稱"),
                             FilterPlaceholder = Fp("Field.AccountName", "輸入科目名稱搜尋"),
                             TableOrder = 2,
+                            Width = "150px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(AccountItem.Name), a => a.Name)
                         }
@@ -56,6 +58,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(AccountItem.AccountType),
                             DisplayName = Dn("Field.AccountType", "科目大類"),
                             TableOrder = 4,
+                            Width = "100px",
                             FilterType = SearchFilterType.Select,
                             Options = new List<SelectOption>
                             {
@@ -108,6 +111,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(AccountItem.Direction),
                             DisplayName = Dn("Field.DebitCreditDirection", "借貸方向"),
                             TableOrder = 5,
+                            Width = "100px",
                             FilterType = SearchFilterType.Select,
                             Options = new List<SelectOption>
                             {
@@ -144,6 +148,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(AccountItem.IsDetailAccount),
                             DisplayName = Dn("Field.IsDetailAccount", "明細科目"),
                             TableOrder = 6,
+                            Width = "90px",
                             FilterType = SearchFilterType.Select,
                             Options = new List<SelectOption>
                             {
@@ -176,6 +181,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(AccountItem.CashFlowCategory),
                             DisplayName = Dn("Field.CashFlowCategory", "現金流量分類"),
                             TableOrder = 7,
+                            Width = "120px",
                             FilterType = SearchFilterType.Select,
                             Options = new List<SelectOption>
                             {

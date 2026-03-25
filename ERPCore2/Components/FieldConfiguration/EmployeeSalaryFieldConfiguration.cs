@@ -30,6 +30,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Employee", "員工"),
                             FilterPlaceholder = Fp("Field.Employee", "輸入員工姓名搜尋"),
                             TableOrder = 1,
+                            Width = "110px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "EmployeeName", x => x.Employee != null ? x.Employee.Name : ""),
                             CustomTemplate = item => builder =>
@@ -55,6 +56,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(EmployeeSalary.SalaryType),
                             DisplayName = Dn("Field.SalaryType", "薪資制度"),
                             TableOrder = 2,
+                            Width = "100px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -79,6 +81,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(EmployeeSalary.BaseSalary),
                             DisplayName = Dn("Field.BaseSalary", "本薪"),
                             TableOrder = 3,
+                            Width = "110px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -94,6 +97,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(EmployeeSalary.EffectiveDate),
                             DisplayName = Dn("Field.EffectiveDate", "生效日期"),
                             TableOrder = 4,
+                            Width = "110px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -109,6 +113,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(EmployeeSalary.ExpiryDate),
                             DisplayName = Dn("Field.ExpiryDate", "失效日期"),
                             TableOrder = 5,
+                            Width = "110px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {

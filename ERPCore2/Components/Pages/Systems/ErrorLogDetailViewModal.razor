@@ -185,7 +185,7 @@
                                                 OnClick="() => CopyToClipboard(errorLog.StackTrace)" />
                                         </div>
                                         <div class="card-body">
-                                            <pre class="bg-dark text-light p-3 rounded" style="max-height: 300px; overflow-y: auto; font-size: 12px;">@errorLog.StackTrace</pre>
+                                            <pre class="bg-dark text-light p-3 rounded" style="max-height: 300px; overflow-y: auto; font-size: 1rem;">@errorLog.StackTrace</pre>
                                         </div>
                                     </div>
                                 </div>
@@ -211,7 +211,7 @@
                                                 OnClick="() => CopyToClipboard(errorLog.InnerException)" />
                                         </div>
                                         <div class="card-body">
-                                            <pre class="bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto; font-size: 12px;">@errorLog.InnerException</pre>
+                                            <pre class="bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto; font-size: 1rem;">@errorLog.InnerException</pre>
                                         </div>
                                     </div>
                                 </div>
@@ -237,7 +237,7 @@
                                                 OnClick="() => CopyToClipboard(errorLog.AdditionalData)" />
                                         </div>
                                         <div class="card-body">
-                                            <pre class="bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto; font-size: 12px;">@FormatJson(errorLog.AdditionalData)</pre>
+                                            <pre class="bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto; font-size: 1rem;">@FormatJson(errorLog.AdditionalData)</pre>
                                         </div>
                                     </div>
                                 </div>

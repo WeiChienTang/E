@@ -93,6 +93,11 @@ namespace ERPCore2.FieldConfiguration
         /// 空值顯示文字
         /// </summary>
         public string? NullDisplayText { get; set; }
+
+        /// <summary>
+        /// 表格欄位寬度 (CSS width 值，例如: "150px", "auto")
+        /// </summary>
+        public string? Width { get; set; }
         
         /// <summary>
         /// 是否可排序
@@ -113,7 +118,8 @@ namespace ERPCore2.FieldConfiguration
                     DataType = ColumnType,
                     CustomTemplate = CustomTemplate,
                     NullDisplayText = NullDisplayText,
-                    IsSortable = IsSortable
+                    IsSortable = IsSortable,
+                    Width = Width
                 };
             }
             
@@ -130,8 +136,10 @@ namespace ERPCore2.FieldConfiguration
             
             if (!string.IsNullOrEmpty(NullDisplayText))
                 column.NullDisplayText = NullDisplayText;
+            if (!string.IsNullOrEmpty(Width))
+                column.Width = Width;
             column.IsSortable = IsSortable;
-            
+
             return column;
         }
     }

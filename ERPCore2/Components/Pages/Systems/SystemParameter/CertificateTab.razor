@@ -38,7 +38,7 @@
                     @L["System.ExternalSANHint"]
                 </div>
             </div>
-            <GenericButtonComponent Variant="@(certFileExists ? ButtonVariant.Orange : ButtonVariant.DarkBlue)"
+            <GenericButtonComponent Variant="@(certFileExists ? ButtonVariant.Yellow : ButtonVariant.DarkBlue)"
                                    Text="@(certFileExists ? L["System.ReGenCert"].ToString() : L["System.GenCert"].ToString())"
                                    OnClick="HandleGenerateCertAsync"
                                    IsDisabled="@isGeneratingCert"

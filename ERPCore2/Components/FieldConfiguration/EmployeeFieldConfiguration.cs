@@ -44,6 +44,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.EmployeeCode", "員工編號"),
                             FilterPlaceholder = Fp("Field.EmployeeCode", "輸入員工編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Employee.Code), e => e.Code)
@@ -57,6 +58,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.FullName", "姓名"),
                             FilterPlaceholder = Fp("Field.FullName", "輸入姓名搜尋"),
                             TableOrder = 2,
+                            Width = "100px",
                             FilterOrder = 2,
                             FilterFunction = (model, query) => {
                                 var fullNameFilter = model.GetFilterValue("FullName")?.ToString();
@@ -87,6 +89,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Department", "部門"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
+                            Width = "120px",
                             FilterOrder = 3,
                             NullDisplayText = Nd("Label.Unassigned", "未指派"),
                             Options = _departments.Select(d => new SelectOption
@@ -107,6 +110,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.EmployeePosition", "職位"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
+                            Width = "120px",
                             FilterOrder = 4,
                             NullDisplayText = Nd("Label.Unassigned", "未指派"),
                             Options = _employeePositions.Select(p => new SelectOption
@@ -127,6 +131,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Role", "權限組"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
+                            Width = "120px",
                             FilterOrder = 5,
                             NullDisplayText = Nd("Label.Unassigned", "未指派"),
                             Options = _roles.Select(r => new SelectOption
@@ -146,6 +151,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.IsSystemUser", "系統操控"),
                             ShowInFilter = false,
                             TableOrder = 6,
+                            Width = "90px",
                             CustomTemplate = item => builder =>
                             {
                                 var employee = (Employee)item;
@@ -165,6 +171,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.LastLogin", "最後登入"),
                             ShowInFilter = false,
                             TableOrder = 7,
+                            Width = "140px",
                             NullDisplayText = Nd("Label.NeverLoggedIn", "從未登入")
                         }
                     }

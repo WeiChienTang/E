@@ -36,7 +36,7 @@
                                OnClick="ReloadData"
                                IsDisabled="@(isSaving || isLoading)"
                                Title="@L["SystemParam.RefreshTitle"]" />
-        <GenericButtonComponent Variant="ButtonVariant.Orange"
+        <GenericButtonComponent Variant="ButtonVariant.Yellow"
                                Text="@L["Button.ResetToDefault"]"
                                OnClick="HandleResetToDefault"
                                IsDisabled="@(isSaving || isLoading)"
@@ -64,7 +64,7 @@
                               Icon="bi-arrow-counterclockwise"
                               Message="@L["SystemParam.ResetConfirmMessage"]"
                               ConfirmButtonText="@L["SystemParam.ResetConfirmButton"]"
-                              ConfirmButtonVariant="ButtonVariant.Orange"
+                              ConfirmButtonVariant="ButtonVariant.Yellow"
                               OnConfirm="ConfirmResetToDefault" />
 
 @code {

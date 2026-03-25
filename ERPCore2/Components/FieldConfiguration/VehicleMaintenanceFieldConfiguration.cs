@@ -35,6 +35,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.MaintenanceCode", "保養編號"),
                             FilterPlaceholder = Fp("Field.MaintenanceCode", "輸入保養編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(VehicleMaintenance.Code), vm => vm.Code, allowNull: true)
@@ -49,6 +50,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Vehicle", "車輛"),
                             FilterPlaceholder = Fp("Field.Vehicle", "選擇車輛"),
                             TableOrder = 2,
+                            Width = "120px",
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
                                 model, query, nameof(VehicleMaintenance.VehicleId), vm => vm.VehicleId ?? 0)
@@ -64,6 +66,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 3,
+                            Width = "110px",
                             FilterOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(VehicleMaintenance.MaintenanceDate), vm => vm.MaintenanceDate)
@@ -77,6 +80,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ServiceProvider", "維修廠/服務商"),
                             FilterPlaceholder = Fp("Field.ServiceProvider", "輸入維修廠搜尋"),
                             TableOrder = 4,
+                            Width = "150px",
                             FilterOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(VehicleMaintenance.ServiceProvider), vm => vm.ServiceProvider, allowNull: true)

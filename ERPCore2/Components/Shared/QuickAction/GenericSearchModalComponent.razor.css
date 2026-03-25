@@ -9,12 +9,10 @@
 .search-keyboard-hint {
     display: flex;
     gap: 0.75rem;
-    font-size: var(--fs-xs);
     color: var(--text-secondary);
 }
 
 .search-keyboard-hint kbd {
-    font-size: var(--fs-2xs);
     padding: 0.1rem 0.35rem;
     border-radius: 0.2rem;
 }
@@ -79,7 +77,6 @@
 }
 
 .search-result-description {
-    font-size: var(--fs-sm);
     color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -88,7 +85,6 @@
 }
 
 .search-result-category {
-    font-size: var(--fs-2xs);
     padding: 0.15rem 0.5rem;
     background-color: var(--bg-tertiary);
     color: var(--text-secondary);
@@ -100,7 +96,6 @@
 .search-result-arrow {
     color: var(--text-secondary);
     flex-shrink: 0;
-    font-size: var(--fs-sm);
 }
 
 /* ===== 深色模式 ===== */

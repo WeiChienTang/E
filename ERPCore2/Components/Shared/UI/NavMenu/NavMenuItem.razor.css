@@ -25,7 +25,6 @@
     transition: background-color 0.15s ease, color 0.15s ease;
     box-sizing: border-box;
     font-weight: normal;
-    font-size: var(--fs-sm);
     position: relative;
 }
 
@@ -70,7 +69,6 @@
 /* 下拉箭頭 - 使用 bi-chevron-down */
 .nav-menu-dropdown-arrow {
     margin-left: auto;
-    font-size: var(--fs-2xs);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     color: var(--nav-text-dim);
     flex-shrink: 0;
@@ -100,7 +98,6 @@
     transition: background-color 0.15s ease, color 0.15s ease;
     box-sizing: border-box;
     font-weight: normal;
-    font-size: var(--fs-sm);
     border-left: 2px solid transparent;
     margin-bottom: 1px;
 }

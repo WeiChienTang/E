@@ -43,6 +43,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.MaterialIssueCode", "領貨單號"),
                             FilterPlaceholder = Fp("Field.MaterialIssueCode", "輸入領貨單號搜尋"),
                             TableOrder = 1,
+                            Width = "130px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(MaterialIssue.Code), mi => mi.Code)
                         }
@@ -55,6 +56,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.MaterialIssueDate", "領貨日期"),
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 2,
+                            Width = "110px",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(MaterialIssue.IssueDate), mi => mi.IssueDate)
                         }
@@ -68,6 +70,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.MaterialIssueStaff", "領料人員"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
+                            Width = "110px",
                             Options = _employees.Select(e => new SelectOption
                             {
                                 Text = e.Name ?? "",
@@ -86,6 +89,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.MaterialIssueDept", "領料部門"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
+                            Width = "120px",
                             Options = _departments.Select(d => new SelectOption
                             {
                                 Text = d.Name ?? "",
@@ -102,6 +106,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(MaterialIssue.TotalQuantity),
                             DisplayName = Dn("Field.TotalQuantity", "總數量"),
                             TableOrder = 5,
+                            Width = "100px",
                             ShowInFilter = false,
                         }
                     },
@@ -112,6 +117,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(MaterialIssue.DetailCount),
                             DisplayName = Dn("Field.DetailCount", "明細筆數"),
                             TableOrder = 6,
+                            Width = "100px",
                             ShowInFilter = false,
                         }
                     },
@@ -123,6 +129,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Remarks", "備註"),
                             FilterPlaceholder = Fp("Field.Remarks", "輸入備註搜尋"),
                             TableOrder = 7,
+                            Width = "160px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(MaterialIssue.Remarks), mi => mi.Remarks, allowNull: true)
                         }

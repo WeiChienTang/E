@@ -63,14 +63,12 @@ img.nav-user-avatar-photo {
     min-width: 0;
     color: var(--nav-text);
     font-weight: 500;
-    font-size: var(--fs-sm);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .nav-user-chevron {
-    font-size: var(--fs-2xs);
     color: var(--nav-text-dim);
     transition: transform 0.25s ease, color 0.2s;
     flex-shrink: 0;
@@ -114,7 +112,6 @@ img.nav-user-avatar-photo {
     width: 100%;
     border-radius: var(--radius-md);
     box-sizing: border-box;
-    font-size: var(--fs-sm);
 }
 
 .nav-user-dropdown-item:hover {
@@ -200,7 +197,6 @@ img.nav-user-avatar-photo {
     height: 22px;
     border-radius: 50%;
     background-color: var(--nav-hover-bg);
-    font-size: var(--fs-2xs);
     color: var(--nav-text-dim);
     flex-shrink: 0;
 }
@@ -251,7 +247,7 @@ img.nav-user-avatar-photo {
 }
 
 .navbar-toggler-label .bi-list {
-    font-size: var(--fs-xl);
+    font-size: var(--fs-lg);
     color: var(--nav-text);
     line-height: 1;
     display: block;

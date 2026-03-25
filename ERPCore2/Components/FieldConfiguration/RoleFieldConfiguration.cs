@@ -34,6 +34,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.RoleCode", "權限組編號"),
                             FilterPlaceholder = Fp("Field.RoleCode", "輸入權限組編號搜尋"),
                             TableOrder = 1,
+                            Width = "130px",
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Role.Code), r => r.Code)
@@ -48,6 +49,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.RoleName", "權限組名稱"),
                             FilterPlaceholder = Fp("Field.RoleName", "輸入權限組名稱搜尋"),
                             TableOrder = 2,
+                            Width = "160px",
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "RoleName", r => r.Name)

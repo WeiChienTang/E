@@ -64,7 +64,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--fs-2xs);
     cursor: pointer;
     opacity: 0;
     transition: opacity 0.2s ease, transform 0.2s ease;
@@ -137,7 +136,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--fs-2xs);
     color: #ffffff;
     border: 2px solid var(--bg-primary);
     line-height: 1;
@@ -153,7 +151,6 @@
 
 /* ===== 名稱 ===== */
 .shortcut-name {
-    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--text-primary);
     text-align: center;
@@ -189,11 +186,9 @@
     .shortcut-icon {
         width: 36px;
         height: 36px;
-        font-size: var(--fs-base);
     }
 
     .shortcut-name {
-        font-size: var(--fs-sm);
     }
 }
 
@@ -208,17 +203,14 @@
     .shortcut-icon {
         width: 30px;
         height: 30px;
-        font-size: var(--fs-sm);
     }
 
     .shortcut-name {
-        font-size: var(--fs-2xs);
     }
 
     .btn-remove {
         width: 18px;
         height: 18px;
-        font-size: var(--fs-2xs);
         top: 0.2rem;
         right: 0.2rem;
     }
@@ -226,7 +218,6 @@
     .type-badge {
         width: 14px;
         height: 14px;
-        font-size: var(--fs-2xs);
     }
 }
 

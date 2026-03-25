@@ -31,6 +31,7 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             DisplayName = Dn("Field.ReasonCode", "原因編號"),
                             FilterPlaceholder = Fp("Field.ReasonCode", "輸入原因編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PurchaseReturnReason.Code), r => r.Code)
                         }
@@ -43,6 +44,7 @@ namespace ERPCore2.Helpers.FieldConfiguration
                             DisplayName = Dn("Field.ReasonName", "原因名稱"),
                             FilterPlaceholder = Fp("Field.ReasonName", "輸入原因名稱搜尋"),
                             TableOrder = 2,
+                            Width = "160px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PurchaseReturnReason.Name), r => r.Name)
                         }

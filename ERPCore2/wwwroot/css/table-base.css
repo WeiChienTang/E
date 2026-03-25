@@ -39,7 +39,7 @@
     width: 100%;
     max-width: 100%;
     overflow-x: auto;
-    overflow: hidden;
+    overflow-y: hidden;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
@@ -79,7 +79,7 @@
     border-top: none !important;
     padding: 0.55rem 1rem !important;
     font-weight: 600 !important;
-    font-size: var(--fs-sm) !important;
+    font-size: 1rem !important;
     letter-spacing: 0.05em !important;
     text-transform: uppercase !important;
     vertical-align: middle !important;
@@ -115,7 +115,6 @@
     vertical-align: middle;
     padding: 0.55rem 1rem;
     line-height: 1.6;
-    font-size: var(--fs-sm);
 }
 
 /* --- 表體過渡動畫 --- */
@@ -186,7 +185,6 @@
 .table td .btn,
 .table td button {
     padding: 0.125rem 0.3rem;
-    font-size: var(--fs-sm);
     line-height: 1;
     vertical-align: middle;
     max-height: 1.5rem;
@@ -202,7 +200,6 @@
 .table td .btn svg,
 .table td button i,
 .table td button svg {
-    font-size: var(--fs-xs);
     line-height: 1;
     vertical-align: middle;
 }
@@ -255,7 +252,6 @@
     white-space: nowrap;
     min-width: fit-content;
     padding: 0.125rem 0.3rem;
-    font-size: var(--fs-sm);
     line-height: 1;
     border-radius: 0.2rem;
     border-width: 1px;
@@ -270,7 +266,6 @@
 .table-actions-column .btn .far,
 .table-actions-column .btn .bi,
 .table-actions-column .btn svg {
-    font-size: var(--fs-xs);
     line-height: 1;
     width: auto;
     height: auto;
@@ -343,7 +338,8 @@
 /* 固定佈局表格（搭配欄位 Resize） */
 .resizable-table {
     table-layout: fixed;
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
 }
 
 /* 固定佈局的儲存格文字截斷 */
@@ -485,7 +481,6 @@
 .interactive-table tbody td {
     padding: 0.35rem 0.75rem !important;
     vertical-align: middle;
-    font-size: var(--fs-sm);
     line-height: 1.5;
 }
 
@@ -531,7 +526,6 @@
 }
 
 .interactive-table tbody .row-number-column {
-    font-size: var(--fs-sm);
     font-weight: 500;
     color: #6b7280 !important;
     letter-spacing: 0.02em;
@@ -549,7 +543,7 @@
     height: auto !important;
     line-height: 1.5 !important;
     margin: 0;
-    font-size: var(--fs-sm) !important;
+    font-size: 1rem !important;
     border-radius: 0;
     border: none;
     border-bottom: 1px dashed var(--border-light);
@@ -583,7 +577,7 @@
 .interactive-table-container textarea.form-control,
 .interactive-table textarea.form-control {
     padding: 0.1rem 0.5rem !important;
-    font-size: var(--fs-base) !important;
+    font-size: 1rem !important;
 }
 
 /* 驗證錯誤 */
@@ -605,7 +599,6 @@
 /* 小按鈕 */
 .interactive-table-container .btn-sm {
     padding: 0.2rem 0.4rem;
-    font-size: var(--fs-sm);
     line-height: 1;
     max-height: 1.5rem;
 }
@@ -686,7 +679,6 @@ input[type="number"] {
 .interactive-table-container .row-number {
     color: #6c757d;
     font-weight: 500;
-    font-size: var(--fs-base);
 }
 
 /* --- 合計行（tfoot）--- */
@@ -696,7 +688,7 @@ input[type="number"] {
 
 .interactive-table-total-row th {
     font-weight: 600 !important;
-    font-size: var(--fs-sm) !important;
+    font-size: 1rem !important;
     color: var(--text-primary) !important;
     padding: 0.5rem 0.75rem !important;
     background-color: var(--bg-tertiary) !important;
@@ -714,7 +706,6 @@ input[type="number"] {
 }
 
 .interactive-table tbody td.text-center.py-4 .mt-1 {
-    font-size: var(--fs-base);
     color: #9ca3af;
     font-weight: 400;
 }
@@ -882,7 +873,7 @@ tr.dragging .drag-handle {
     /* Interactive 表頭手機版 */
     .interactive-table thead th {
         padding: 0.35rem 0.5rem !important;
-        font-size: var(--fs-base) !important;
+        font-size: 1rem !important;
     }
 
     /* 行號手機版 */
@@ -909,7 +900,6 @@ tr.dragging .drag-handle {
 
     .table-responsive .table .table-actions-column .btn {
         padding: 0.125rem 0.3rem;
-        font-size: var(--fs-sm);
         margin: 0 0.125rem;
         min-width: 24px;
         min-height: unset;
@@ -922,7 +912,7 @@ tr.dragging .drag-handle {
     }
 
     .table-responsive .table .table-actions-column .btn i {
-        font-size: var(--fs-xs) !important;
+        font-size: 1rem !important;
         line-height: 1;
     }
 
@@ -938,7 +928,6 @@ tr.dragging .drag-handle {
     /* Interactive 輸入控件手機版 */
     .interactive-table-container .form-control-sm,
     .interactive-table-container .form-select-sm {
-        font-size: var(--fs-sm);
         padding: 0.2rem 0.4rem;
         min-height: 30px;
         min-width: 120px;
@@ -948,11 +937,9 @@ tr.dragging .drag-handle {
         min-height: 30px;
         padding: 0.2rem 0.4rem;
         min-width: 60px;
-        font-size: var(--fs-sm);
     }
 
     .interactive-table-container .btn i {
-        font-size: var(--fs-xs);
         line-height: 1;
     }
 
@@ -991,7 +978,6 @@ tr.dragging .drag-handle {
     .dropdown-item {
         padding: 12px 16px !important;
         line-height: 1.4;
-        font-size: var(--fs-base);
     }
 
     .dropdown-item.active {
@@ -1005,7 +991,6 @@ tr.dragging .drag-handle {
         padding: 0.5rem;
         background-color: #f8f9fa;
         color: #6c757d;
-        font-size: var(--fs-base);
         border-top: 1px solid #dee2e6;
     }
 }
@@ -1018,13 +1003,11 @@ tr.dragging .drag-handle {
     }
 
     .table thead th {
-        font-size: var(--fs-base);
         padding: 0.25rem 0.375rem;
         line-height: 1.2;
     }
 
     .table td {
-        font-size: var(--fs-base);
         padding: 0.25rem 0.375rem;
     }
 
@@ -1036,7 +1019,6 @@ tr.dragging .drag-handle {
 
     .table-actions-column .btn {
         padding: 0.1rem 0.15rem;
-        font-size: var(--fs-2xs);
         margin: 0;
         max-height: 1.3rem;
     }

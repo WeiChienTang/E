@@ -67,6 +67,12 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
     public Dictionary<string, int>? SectionColumnAssignments { get; set; }
 
     /// <summary>
+    /// 緊湊模式 - 縮小間距、Label 寬度、字體，以在同樣空間顯示更多欄位
+    /// </summary>
+    [Parameter]
+    public bool CompactMode { get; set; } = false;
+
+    /// <summary>
     /// 是否停用非第一個 Tab（新增模式或草稿模式下使用）
     /// true = 除第一個 Tab 外，其餘 Tab 按鈕皆呈現灰色且無法點擊
     /// </summary>

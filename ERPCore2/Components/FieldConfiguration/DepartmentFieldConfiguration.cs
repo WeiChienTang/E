@@ -34,6 +34,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.DepartmentCode", "部門編號"),
                             FilterPlaceholder = Fp("Field.DepartmentCode", "輸入部門編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Department.Code), d => d.Code)
                         }
@@ -46,6 +47,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.DepartmentName", "部門名稱"),
                             FilterPlaceholder = Fp("Field.DepartmentName", "輸入部門名稱搜尋"),
                             TableOrder = 2,
+                            Width = "130px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Department.Name), d => d.Name)
                         }
@@ -58,6 +60,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.DepartmentManager", "部門主管"),
                             ShowInFilter = false,
                             TableOrder = 3,
+                            Width = "110px",
                             NullDisplayText = Nd("Label.Unassigned", "未指派"),
                             CustomTemplate = item => builder =>
                             {
@@ -87,6 +90,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ParentDepartment", "上級部門"),
                             ShowInFilter = false,
                             TableOrder = 4,
+                            Width = "120px",
                             NullDisplayText = Nd("Label.NotSet", "未設定"),
                             CustomTemplate = item => builder =>
                             {
@@ -112,7 +116,8 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(Department.Phone),
                             DisplayName = Dn("Field.DepartmentPhone", "部門電話"),
                             ShowInFilter = false,
-                            TableOrder = 5
+                            TableOrder = 5,
+                            Width = "120px"
                         }
                     },
                     {
@@ -122,7 +127,8 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(Department.Location),
                             DisplayName = Dn("Field.DepartmentLocation", "辦公地點"),
                             ShowInFilter = false,
-                            TableOrder = 6
+                            TableOrder = 6,
+                            Width = "130px"
                         }
                     }
                 };

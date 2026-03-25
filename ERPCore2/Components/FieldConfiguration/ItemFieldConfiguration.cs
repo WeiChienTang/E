@@ -48,6 +48,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ItemCode", "品項編號"),
                             FilterPlaceholder = Fp("Field.ItemCode", "輸入品項編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Item.Code), p => p.Code)
                         }
@@ -60,6 +61,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ItemName", "品項名稱"),
                             FilterPlaceholder = Fp("Field.ItemName", "輸入品項名稱搜尋"),
                             TableOrder = 2,
+                            Width = "150px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Item.Name), p => p.Name)
                         }
@@ -72,6 +74,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Barcode", "條碼編號"),
                             FilterPlaceholder = Fp("Field.Barcode", "輸入條碼編號搜尋"),
                             TableOrder = 3,
+                            Width = "130px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Item.Barcode), p => p.Barcode)
                         }
@@ -85,6 +88,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Size", "尺寸"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
+                            Width = "90px",
                             Options = _sizes.Select(s => new SelectOption
                             {
                                 Text = s.Name!,
@@ -103,6 +107,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CategoryName", "品項分類"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
+                            Width = "120px",
                             Options = _productCategories.Select(pc => new SelectOption
                             {
                                 Text = pc.Name!,
@@ -121,6 +126,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PurchaseUnit", "採購單位"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 6,
+                            Width = "100px",
                             Options = _units.Select(u => new SelectOption
                             {
                                 Text = u.Name!,
@@ -139,6 +145,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ProductionUnit", "製程單位"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 7,
+                            Width = "100px",
                             Options = _units.Select(u => new SelectOption
                             {
                                 Text = u.Name!,

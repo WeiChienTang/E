@@ -3,7 +3,6 @@
 }
 
 .character-count-info {
-    font-size: var(--fs-sm);
 }
 
 .character-count-textarea-container textarea:focus + .character-count-info {

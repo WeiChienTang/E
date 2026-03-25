@@ -14,7 +14,7 @@
 }
 
 .report-action-icon {
-    font-size: var(--fs-2xl);
+    font-size: var(--fs-lg);
     color: #0d6efd;
     flex-shrink: 0;
     line-height: 1;
@@ -36,7 +36,6 @@
 }
 
 .report-action-meta {
-    font-size: var(--fs-sm);
     color: #6c757d;
     display: flex;
     flex-wrap: wrap;
@@ -70,7 +69,6 @@
 }
 
 .export-progress-message {
-    font-size: var(--fs-base);
     font-weight: 600;
     color: #495057;
     margin-bottom: 1rem;
@@ -83,7 +81,6 @@
 }
 
 .export-progress-bar .progress-bar {
-    font-size: var(--fs-sm);
     font-weight: 600;
     display: flex;
     align-items: center;

@@ -30,6 +30,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PayrollYear", "年份（民國）"),
                             FilterPlaceholder = Fp("Field.PayrollYear", "輸入年份搜尋"),
                             TableOrder = 1,
+                            Width = "100px",
                             FilterFunction = (model, query) => FilterHelper.ApplyIntIdFilter(
                                 model, query, nameof(PayrollPeriod.Year), x => x.Year)
                         }
@@ -41,6 +42,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PayrollPeriod.Month),
                             DisplayName = Dn("Field.PayrollMonth", "月份"),
                             TableOrder = 2,
+                            Width = "80px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -56,6 +58,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PayrollPeriod.PeriodStatus),
                             DisplayName = Dn("Field.PayrollPeriodStatus", "週期狀態"),
                             TableOrder = 3,
+                            Width = "100px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -81,6 +84,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = "RecordCount",
                             DisplayName = Dn("Field.PayrollRecordCount", "薪資筆數"),
                             TableOrder = 4,
+                            Width = "100px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -96,6 +100,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(PayrollPeriod.ClosedAt),
                             DisplayName = Dn("Field.ClosedAt", "關帳時間"),
                             TableOrder = 5,
+                            Width = "140px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {

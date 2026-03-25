@@ -53,14 +53,12 @@
 }
 
 .product-name {
-    font-size: var(--fs-base);
     font-weight: 600;
     color: var(--text-primary);
     word-break: break-word;
 }
 
 .product-code {
-    font-size: var(--fs-base);
     color: var(--text-secondary);
     font-weight: 400;
 }
@@ -79,14 +77,12 @@
 }
 
 .info-label {
-    font-size: var(--fs-base);
     color: var(--text-secondary);
     white-space: nowrap;
     flex-shrink: 0;
 }
 
 .info-value {
-    font-size: var(--fs-base);
     color: var(--text-primary);
     word-break: break-word;
 }
@@ -111,7 +107,6 @@
 .card-status-badge {
     flex-shrink: 0;
     display: inline-block;
-    font-size: var(--fs-base);
     padding: 1px 6px;
     border-radius: 10px;
     font-weight: 500;
@@ -140,8 +135,8 @@
 .status-aborted .card-status-badge         { background: #dc354522; color: #dc3545; }
 
 /* 看板上的卡片比 sidebar 稍大 */
-.on-board.board-item-card  { font-size: var(--fs-base); }
-.in-sidebar.board-item-card { font-size: var(--fs-sm); }
+.on-board.board-item-card  { font-size: 1rem; }
+.in-sidebar.board-item-card { font-size: 1rem; }
 
 /* 日內拖曳中的卡片（半透明淡化） */
 .board-item-card.sort-dragging {

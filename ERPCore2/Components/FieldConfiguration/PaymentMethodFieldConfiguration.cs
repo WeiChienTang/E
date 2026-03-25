@@ -35,6 +35,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PaymentMethodCode", "付款方式編號"),
                             FilterPlaceholder = Fp("Field.PaymentMethodCode", "輸入付款方式編號搜尋"),
                             TableOrder = 0,
+                            Width = "140px",
                             ColumnType = ColumnDataType.Text,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PaymentMethod.Code), pm => pm.Code)
@@ -48,6 +49,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PaymentMethodName", "付款方式名稱"),
                             FilterPlaceholder = Fp("Field.PaymentMethodName", "輸入付款方式名稱搜尋"),
                             TableOrder = 1,
+                            Width = "160px",
                             ColumnType = ColumnDataType.Text,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(PaymentMethod.Name), pm => pm.Name)

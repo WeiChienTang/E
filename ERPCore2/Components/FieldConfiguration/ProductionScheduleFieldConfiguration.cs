@@ -41,6 +41,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ScheduleCode", "排程單號"),
                             FilterPlaceholder = Fp("Field.ScheduleCode", "輸入排程單號搜尋"),
                             TableOrder = 1,
+                            Width = "130px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ProductionSchedule.Code), ps => ps.Code)
                         }
@@ -53,6 +54,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ScheduleDate", "排程日期"),
                             FilterType = SearchFilterType.Date,
                             TableOrder = 2,
+                            Width = "110px",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(ProductionSchedule.ScheduleDate), ps => ps.ScheduleDate),
                             CustomTemplate = item => builder =>
@@ -71,6 +73,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ScheduleCreator", "製單人員"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 4,
+                            Width = "110px",
                             Options = _employees.Select(e => new SelectOption
                             {
                                 Text = $"{e.Code} - {e.Name}".Trim(),

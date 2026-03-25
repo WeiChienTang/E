@@ -36,6 +36,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CategoryCode", "分類編號"),
                             FilterPlaceholder = Fp("Field.CategoryCode", "輸入分類編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ItemCategory.Code), pc => pc.Code, allowNull: true)
                         }
@@ -48,6 +49,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CategoryName", "分類名稱"),
                             FilterPlaceholder = Fp("Field.CategoryName", "輸入分類名稱搜尋"),
                             TableOrder = 2,
+                            Width = "150px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ItemCategory.Name), pc => pc.Name)
                         }
@@ -59,6 +61,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(ItemCategory.IsSaleable),
                             DisplayName = Dn("Field.ForSale", "可販售"),
                             TableOrder = 3,
+                            Width = "90px",
                             FilterFunction = (model, query) =>
                             {
                                 var filterValue = model.GetFilterValue(nameof(ItemCategory.IsSaleable))?.ToString();

@@ -71,7 +71,7 @@
 /* 標題圖示 */
 .title-icon {
     color: var(--primary-blue);
-    font-size: 1.2em;
+    font-size: var(--fs-md);
 }
 
 .card-title-icon {
@@ -84,7 +84,7 @@
     color: var(--text-secondary);
     margin-bottom: 0;
     margin-top: 0.25rem;
-    font-size: 0.95em;
+    font-size: 1rem;
     line-height: 1.4;
 }
 
@@ -101,7 +101,6 @@
 }
 
 .page-subtitle-compact {
-    font-size: var(--fs-sm);
     margin-top: 0.125rem;
 }
 
@@ -130,7 +129,6 @@
     display: flex;
     align-items: center;
     color: var(--text-secondary);
-    font-size: var(--fs-sm);
 }
 
 .loading-indicator .spinner-border-sm {
@@ -145,7 +143,6 @@
 }
 
 .breadcrumb-item {
-    font-size: var(--fs-sm);
 }
 
 .breadcrumb-item + .breadcrumb-item::before {
@@ -198,7 +195,7 @@ hr.header-divider {
     }
     
     .page-title {
-        font-size: var(--fs-xl);
+        font-size: var(--fs-lg);
     }
 }
 
@@ -217,6 +214,5 @@ hr.header-divider {
     }
 
     .breadcrumb-item {
-        font-size: var(--fs-sm);
     }
 }

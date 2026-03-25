@@ -1,3 +1,4 @@
+using ERPCore2.Data.Entities;
 using ERPCore2.Models.Reports.FilterAttributes;
 using ERPCore2.Services;
 
@@ -53,6 +54,11 @@ public class AccountsReceivableCriteria : IReportFilterCriteria
     /// </summary>
     [FilterToggle(Group = FilterGroup.Quick, Label = "顯示選項", CheckboxLabel = "僅顯示逾期帳款", DefaultValue = false, Order = 2)]
     public bool OnlyOverdue { get; set; } = false;
+
+    /// <summary>
+    /// 紙張設定
+    /// </summary>
+    public PaperSetting? PaperSetting { get; set; }
 
     public bool Validate(out string? errorMessage)
     {

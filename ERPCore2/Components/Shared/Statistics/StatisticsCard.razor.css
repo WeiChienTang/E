@@ -16,7 +16,6 @@
 
 /* 卡片內容樣式調整 */
 .statistics-card-title {
-    font-size: var(--fs-xs);
     font-weight: 700;
     text-transform: uppercase;
     margin-bottom: 0.25rem;
@@ -30,6 +29,6 @@
 }
 
 .statistics-card-icon {
-    font-size: var(--fs-2xl);
+    font-size: var(--fs-lg);
     color: var(--text-light);
 }

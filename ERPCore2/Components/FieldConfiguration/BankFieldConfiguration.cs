@@ -34,6 +34,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.BankCode", "銀行編號"),
                             FilterPlaceholder = Fp("Field.BankCode", "輸入銀行編號搜尋"),
                             TableOrder = 0,
+                            Width = "120px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Bank.Code), b => b.Code)
                         }  
@@ -46,6 +47,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.BankName", "銀行名稱"),
                             FilterPlaceholder = Fp("Field.BankName", "輸入銀行名稱搜尋"),
                             TableOrder = 1,
+                            Width = "150px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Bank.BankName), b => b.BankName)
                         }
@@ -58,6 +60,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.EnglishName", "英文名稱"),
                             FilterPlaceholder = Fp("Field.EnglishName", "輸入英文名稱搜尋"),
                             TableOrder = 2,
+                            Width = "150px",
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Bank.BankNameEn), b => b.BankNameEn)
@@ -71,6 +74,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.SwiftCode", "SWIFT編號"),
                             FilterPlaceholder = Fp("Field.SwiftCode", "輸入SWIFT編號搜尋"),
                             TableOrder = 3,
+                            Width = "120px",
                             NullDisplayText = "-",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Bank.SwiftCode), b => b.SwiftCode)

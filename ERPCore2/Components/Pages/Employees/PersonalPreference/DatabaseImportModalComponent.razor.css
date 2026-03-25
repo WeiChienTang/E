@@ -21,7 +21,6 @@
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: var(--fs-sm);
     transition: all 0.2s;
 }
 
@@ -38,7 +37,6 @@
 
 .step-label {
     margin-top: 4px;
-    font-size: var(--fs-xs);
     color: var(--text-secondary);
 }
 
@@ -106,18 +104,15 @@
 /* ===== Step 3：對應表格 ===== */
 
 .mapping-table th {
-    font-size: var(--fs-sm);
     white-space: nowrap;
 }
 
 .mapping-table td {
-    font-size: var(--fs-sm);
     vertical-align: middle;
 }
 
 .mapping-table .form-select-sm,
 .mapping-table .form-control-sm {
-    font-size: var(--fs-sm);
 }
 
 
@@ -125,7 +120,6 @@
 
 .preview-table th,
 .preview-table td {
-    font-size: var(--fs-xs);
     padding: 0.25rem 0.5rem;
     white-space: nowrap;
 }

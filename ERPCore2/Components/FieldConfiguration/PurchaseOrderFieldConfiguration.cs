@@ -46,6 +46,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.PurchaseOrderCode", "採購單號"),
                             FilterPlaceholder = Fp("Field.PurchaseOrderCode", "輸入採購單號搜尋"),
                             TableOrder = 1,
+                            Width = "130px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
 
                                 model, query, nameof(PurchaseOrder.Code), po => po.Code)
@@ -61,6 +62,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.Text,
                             FilterPlaceholder = Fp("Field.PurchasingCompany", "輸入公司名稱搜尋"),
                             TableOrder = 2,
+                            Width = "140px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Company.CompanyName", po => po.Company!.CompanyName)
                         }
@@ -75,6 +77,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.Text,
                             FilterPlaceholder = Fp("Field.Supplier", "輸入廠商名稱搜尋"),
                             TableOrder = 3,
+                            Width = "160px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Supplier.CompanyName", po => po.Supplier != null ? po.Supplier.CompanyName : null, allowNull: true)
                         }
@@ -88,6 +91,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 4,
+                            Width = "110px",
                             FilterFunction = (model, query) => FilterHelper.ApplyDateRangeFilter(
                                 model, query, nameof(PurchaseOrder.OrderDate), po => po.OrderDate)
                         }
@@ -101,6 +105,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.DateRange,
                             ColumnType = ColumnDataType.Date,
                             TableOrder = 5,
+                            Width = "110px",
                             FilterFunction = (model, query) => FilterHelper.ApplyNullableDateRangeFilter(
                                 model, query, nameof(PurchaseOrder.ExpectedDeliveryDate), po => po.ExpectedDeliveryDate)
                         }
@@ -113,6 +118,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.TotalAmount", "總額"),
                             ColumnType = ColumnDataType.Number,
                             TableOrder = 6,
+                            Width = "110px",
                             ShowInFilter = false, // 通常不會用金額篩選
                             CustomTemplate = item => builder =>
                             {
@@ -136,6 +142,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ApprovalStatus", "核准狀態"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 7,
+                            Width = "100px",
                             Options = new List<SelectOption>
                             {
                                 new SelectOption { Text = "已核准", Value = "true" },

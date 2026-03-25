@@ -34,6 +34,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.WarehouseCode", "倉庫編號"),
                             FilterPlaceholder = Fp("Field.WarehouseCode", "輸入倉庫編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Code", w => w.Code, allowNull: true)
@@ -47,6 +48,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.WarehouseName", "倉庫名稱"),
                             FilterPlaceholder = Fp("Field.WarehouseName", "輸入倉庫名稱搜尋"),
                             TableOrder = 2,
+                            Width = "150px",
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Name", w => w.Name)
@@ -60,6 +62,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ContactPerson", "聯絡人"),
                             FilterPlaceholder = Fp("Field.ContactPerson", "輸入聯絡人姓名搜尋"),
                             TableOrder = 3,
+                            Width = "100px",
                             FilterOrder = 3,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "ContactPerson", w => w.ContactPerson, allowNull: true)
@@ -72,6 +75,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(Warehouse.Phone),
                             DisplayName = Dn("Field.ContactPhone", "聯絡電話"),
                             TableOrder = 4,
+                            Width = "120px",
                             FilterOrder = 0, // 不在篩選器中顯示
                             ShowInFilter = false
                         }
@@ -84,6 +88,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Address", "地址"),
                             FilterPlaceholder = Fp("Field.Address", "輸入地址搜尋"),
                             TableOrder = 5,
+                            Width = "200px",
                             FilterOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Address", w => w.Address, allowNull: true)

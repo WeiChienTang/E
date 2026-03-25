@@ -61,7 +61,6 @@
 }
 
 .add-shortcut-card span {
-    font-size: var(--fs-sm);
     font-weight: 600;
     white-space: nowrap;
 }
@@ -80,7 +79,6 @@
     transition: all 0.25s ease;
     color: var(--text-secondary);
     font-weight: 600;
-    font-size: var(--fs-sm);
 }
 
 .add-panel-card:hover {
@@ -115,7 +113,7 @@
 }
 
 .empty-panel-icons > i:first-child {
-    font-size: var(--fs-2xl);
+    font-size: var(--fs-lg);
     color: var(--border-color);
 }
 
@@ -123,7 +121,6 @@
     position: absolute;
     bottom: 0;
     right: -4px;
-    font-size: var(--fs-base);
     color: var(--primary-blue);
     background: var(--bg-primary);
     border-radius: 50%;
@@ -154,7 +151,7 @@
 }
 
 .empty-state-illustration > i:first-child {
-    font-size: var(--fs-2xl);
+    font-size: var(--fs-lg);
     color: var(--border-color);
 }
 
@@ -187,7 +184,6 @@
     }
 
     .add-shortcut-card span {
-        font-size: var(--fs-sm);
     }
 }
 
@@ -210,7 +206,6 @@
 
     .add-panel-card {
         padding: 0.65rem 0.75rem;
-        font-size: var(--fs-sm);
     }
 }
 
@@ -235,7 +230,6 @@
     position: absolute;
     bottom: -2px;
     right: 0;
-    font-size: var(--fs-2xs);
     color: var(--primary-blue);
     opacity: 0;
     transition: opacity 0.2s ease;

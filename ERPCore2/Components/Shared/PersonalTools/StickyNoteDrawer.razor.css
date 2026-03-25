@@ -48,7 +48,6 @@
 }
 
 .drawer-title {
-    font-size: var(--fs-base);
     font-weight: 600;
     color: var(--text-primary);
     display: flex;
@@ -59,7 +58,6 @@
     background: none;
     border: none;
     color: var(--text-secondary);
-    font-size: var(--fs-base);
     cursor: pointer;
     padding: 4px 8px;
     border-radius: 4px;
@@ -91,7 +89,6 @@
     position: absolute;
     left: 10px;
     color: var(--text-secondary);
-    font-size: var(--fs-sm);
     pointer-events: none;
 }
 
@@ -100,7 +97,6 @@
     padding: 7px 32px 7px 32px;
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    font-size: var(--fs-sm);
     background-color: var(--bg-primary);
     color: var(--text-primary);
     outline: none;
@@ -119,7 +115,6 @@
     color: var(--text-secondary);
     cursor: pointer;
     padding: 2px;
-    font-size: var(--fs-sm);
     line-height: 1;
 }
 
@@ -130,7 +125,6 @@
     border: 1px solid var(--primary-blue);
     background-color: var(--primary-blue);
     color: white;
-    font-size: var(--fs-base);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -161,12 +155,11 @@
     justify-content: center;
     padding: 48px 16px;
     color: var(--text-secondary);
-    font-size: var(--fs-sm);
     gap: 8px;
 }
 
 .empty-icon {
-    font-size: var(--fs-2xl);
+    font-size: var(--fs-lg);
     opacity: 0.4;
 }
 
@@ -200,7 +193,6 @@
 
 .note-content {
     margin: 0;
-    font-size: var(--fs-sm);
     color: #374151;
     line-height: 1.5;
     white-space: pre-wrap;
@@ -211,7 +203,6 @@
 }
 
 .note-time {
-    font-size: var(--fs-2xs);
     color: #9ca3af;
 }
 
@@ -236,7 +227,6 @@
     border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 8px;
-    font-size: var(--fs-sm);
     resize: vertical;
     min-height: 72px;
     background-color: var(--bg-primary);
@@ -251,7 +241,6 @@
 
 .char-count {
     text-align: right;
-    font-size: var(--fs-2xs);
     color: var(--text-secondary);
     margin-top: -4px;
 }
@@ -301,7 +290,6 @@
 .btn-save, .btn-cancel, .btn-delete {
     padding: 4px 12px;
     border-radius: 6px;
-    font-size: var(--fs-xs);
     cursor: pointer;
     border: 1px solid;
     transition: opacity 0.2s;
@@ -361,7 +349,6 @@
 
 .delete-confirm-box p {
     margin: 0 0 16px;
-    font-size: var(--fs-sm);
     color: var(--text-primary);
 }
 

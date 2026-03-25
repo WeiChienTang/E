@@ -49,6 +49,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.Text,
                             FilterPlaceholder = Fp("Field.ItemCode", "輸入品項編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterFunction = (model, query) => {
                                 var filterValue = model.GetFilterValue("ItemCode")?.ToString();
                                 if (!string.IsNullOrWhiteSpace(filterValue))
@@ -71,6 +72,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ItemName", "品項名稱"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 2,
+                            Width = "150px",
                             Options = _products.Select(p => new SelectOption
                             {
                                 Text = $"{p.Code} - {p.Name}",
@@ -89,6 +91,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ItemCategory", "品項類型"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
+                            Width = "120px",
                             Options = _productCategories.Select(pc => new SelectOption
                             {
                                 Text = pc.Name!,
@@ -113,6 +116,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CurrentStock", "現有庫存"),
                             FilterType = SearchFilterType.Text,
                             TableOrder = 4,
+                            Width = "110px",
                             ShowInFilter = false,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
@@ -133,6 +137,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ProductionUnitStock", "製程庫存"),
                             FilterType = SearchFilterType.Text,
                             TableOrder = 5,
+                            Width = "110px",
                             ShowInFilter = false,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
@@ -165,6 +170,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ProductionUnitConversion", "製程換算"),
                             FilterType = SearchFilterType.Text,
                             TableOrder = 6,
+                            Width = "120px",
                             ShowInFilter = false,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {
@@ -207,6 +213,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.AverageCost", "平均成本"),
                             FilterType = SearchFilterType.Text,
                             TableOrder = 7,
+                            Width = "120px",
                             ShowInFilter = false,
                             CustomTemplate = (data) => (RenderFragment)((builder) =>
                             {

@@ -35,6 +35,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.SupplierCode", "廠商編號"),
                             FilterPlaceholder = Fp("Field.SupplierCode", "輸入廠商編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Supplier.Code), s => s.Code)
                         }
@@ -48,6 +49,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.Select,
                             FilterPlaceholder = "選擇類型",
                             TableOrder = 2,
+                            Width = "100px",
                             Options = new List<SelectOption>
                             {
                                 new() { Value = ((int)SupplierType.Manufacturer).ToString(),          Text = L?["SupplierType.Manufacturer"].ToString() ?? "製造商" },
@@ -91,6 +93,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.CompanyName", "公司名稱"),
                             FilterPlaceholder = Fp("Field.CompanyName", "輸入公司名稱搜尋"),
                             TableOrder = 4,
+                            Width = "160px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Supplier.CompanyName), s => s.CompanyName)
                         }
@@ -103,6 +106,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.ContactPerson", "聯絡人"),
                             FilterPlaceholder = Fp("Field.ContactPerson", "輸入聯絡人姓名搜尋"),
                             TableOrder = 3,
+                            Width = "100px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Supplier.ContactPerson), s => s.ContactPerson, allowNull: true)
                         }
@@ -115,6 +119,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.TaxNumber", "統一編號"),
                             FilterPlaceholder = Fp("Field.TaxNumber", "輸入統一編號搜尋"),
                             TableOrder = 4,
+                            Width = "120px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(Supplier.TaxNumber), s => s.TaxNumber, allowNull: true)
                         }
@@ -126,6 +131,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(Supplier.SupplierStatus),
                             DisplayName = Dn("Field.SupplierStatus", "廠商狀態"),
                             TableOrder = 5,
+                            Width = "100px",
                             FilterType = SearchFilterType.Select,
                             FilterPlaceholder = "選擇狀態",
                             Options = new List<SelectOption>

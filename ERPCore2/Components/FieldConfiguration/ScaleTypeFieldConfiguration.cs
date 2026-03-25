@@ -35,6 +35,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.WasteTypeCode", "磅秤類型編號"),
                             FilterPlaceholder = Fp("Field.WasteTypeCode", "輸入編號搜尋"),
                             TableOrder = 1,
+                            Width = "130px",
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ScaleType.Code), st => st.Code, allowNull: true)
@@ -48,6 +49,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.WasteTypeName", "磅秤類型名稱"),
                             FilterPlaceholder = Fp("Field.WasteTypeName", "輸入名稱搜尋"),
                             TableOrder = 2,
+                            Width = "150px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ScaleType.Name), st => st.Name)
                         }
@@ -60,6 +62,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.MeasurementUnit", "計量單位"),
                             FilterPlaceholder = Fp("Field.MeasurementUnit", "輸入單位搜尋"),
                             TableOrder = 3,
+                            Width = "100px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ScaleType.Unit), st => st.Unit, allowNull: true)
                         }
@@ -72,6 +75,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Description", "描述"),
                             FilterPlaceholder = Fp("Field.Description", "輸入描述搜尋"),
                             TableOrder = 4,
+                            Width = "160px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(ScaleType.Description), st => st.Description, allowNull: true)
                         }

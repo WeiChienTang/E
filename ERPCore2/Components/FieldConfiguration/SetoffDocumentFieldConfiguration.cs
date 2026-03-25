@@ -37,6 +37,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.SetoffCode", "沖款單號"),
                             FilterPlaceholder = Fp("Field.SetoffCode", "輸入沖款單號搜尋"),
                             TableOrder = 1,
+                            Width = "130px",
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, nameof(SetoffDocument.Code), s => s.Code)
                         }
@@ -49,6 +50,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.SetoffDate", "沖款日期"),
                             FilterType = SearchFilterType.DateRange,
                             TableOrder = 3,
+                            Width = "110px",
                             CustomTemplate = (context) => builder =>
                             {
                                 var setoffDoc = context as SetoffDocument;
@@ -69,6 +71,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.RelatedPartyName", "關聯方名稱"),
                             FilterPlaceholder = Fp("Field.RelatedPartyName", "輸入客戶或供應商名稱搜尋"),
                             TableOrder = 4,
+                            Width = "150px",
                             ShowInFilter = false, // NotMapped 屬性無法在資料庫查詢中篩選
                             CustomTemplate = (context) => builder =>
                             {
@@ -90,6 +93,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Company", "公司"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 5,
+                            Width = "140px",
                             Options = _companies.Select(c => new SelectOption 
                             { 
                                 Text = c.CompanyName, 

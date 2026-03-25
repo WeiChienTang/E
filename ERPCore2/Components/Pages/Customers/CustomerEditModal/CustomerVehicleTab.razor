@@ -38,6 +38,21 @@
     // 車輛配給緩衝（等主檔儲存時才寫入 DB）
     private List<Vehicle> _pendingVehicleLinks = new();
     private List<Vehicle> _pendingVehicleUnlinks = new();
+    private int? _loadedCustomerId;
+
+    // ===== 生命週期 =====
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (CustomerId != _loadedCustomerId)
+        {
+            _loadedCustomerId = CustomerId;
+            if (CustomerId.HasValue && CustomerId.Value > 0)
+                await LoadAsync(CustomerId.Value);
+            else
+                Clear();
+        }
+    }
 
     // ===== 公開方法（供主組件透過 @ref 呼叫） =====
 

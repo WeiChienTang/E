@@ -36,6 +36,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.LocationCode", "庫位編號"),
                             FilterPlaceholder = Fp("Field.LocationCode", "輸入庫位編號搜尋"),
                             TableOrder = 1,
+                            Width = "120px",
                             FilterOrder = 1,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Code", wl => wl.Code, allowNull: true)
@@ -49,6 +50,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.LocationName", "庫位名稱"),
                             FilterPlaceholder = Fp("Field.LocationName", "輸入庫位名稱搜尋"),
                             TableOrder = 2,
+                            Width = "130px",
                             FilterOrder = 2,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Name", wl => wl.Name)
@@ -63,6 +65,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.BelongsToWarehouse", "所屬倉庫"),
                             FilterType = SearchFilterType.Select,
                             TableOrder = 3,
+                            Width = "120px",
                             FilterOrder = 3,
                             Options = _warehouses.Select(w => new SelectOption 
                             { 
@@ -81,6 +84,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Zone", "區域"),
                             FilterPlaceholder = Fp("Field.Zone", "輸入區域搜尋"),
                             TableOrder = 4,
+                            Width = "80px",
                             FilterOrder = 4,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Zone", wl => wl.Zone, allowNull: true)
@@ -94,6 +98,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Row", "排號"),
                             FilterPlaceholder = Fp("Field.Row", "輸入排號搜尋"),
                             TableOrder = 5,
+                            Width = "80px",
                             FilterOrder = 5,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Aisle", wl => wl.Aisle, allowNull: true)
@@ -107,6 +112,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.Level", "層號"),
                             FilterPlaceholder = Fp("Field.Level", "輸入層號搜尋"),
                             TableOrder = 6,
+                            Width = "80px",
                             FilterOrder = 6,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Level", wl => wl.Level, allowNull: true)
@@ -120,6 +126,7 @@ namespace ERPCore2.FieldConfiguration
                             DisplayName = Dn("Field.LocationPosition", "位號"),
                             FilterPlaceholder = Fp("Field.LocationPosition", "輸入位號搜尋"),
                             TableOrder = 7,
+                            Width = "80px",
                             FilterOrder = 7,
                             FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
                                 model, query, "Position", wl => wl.Position, allowNull: true)
@@ -134,6 +141,7 @@ namespace ERPCore2.FieldConfiguration
                             FilterType = SearchFilterType.Number,
                             FilterPlaceholder = Fp("Field.MaxCapacity", "輸入最大容量搜尋"),
                             TableOrder = 8,
+                            Width = "100px",
                             FilterOrder = 8,
                             FilterFunction = (model, query) => 
                             {

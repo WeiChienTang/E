@@ -11,7 +11,7 @@
 @inject IStringLocalizer<SharedResource> L
 @typeparam TModel
 
-<div class="generic-form-container">
+<div class="generic-form-container @(CompactMode ? "compact" : "")">
     @* 添加假的隱藏欄位來欺騙瀏覽器的自動填入功能 *@
     <input type="text" style="display:none" autocomplete="off" />
     <input type="password" style="display:none" autocomplete="new-password" />
@@ -259,7 +259,8 @@
         {
             1 => "section-col-full",
             2 => "section-col-half",
-            _ => "section-col-third"  // 3個以上時，每列最多3個，超過自動換行
+            3 => "section-col-third",
+            _ => "section-col-quarter"  // 4個以上時，每列最多4個，超過自動換行
         };
     }
 
@@ -292,7 +293,7 @@
                     {
                         <button type="button"
                                 class="btn btn-link p-0 ms-1 align-baseline label-help-btn"
-                                style="font-size: 0.85em; line-height: 1;"
+                                style="font-size: 1rem; line-height: 1;"
                                 tabindex="-1"
                                 data-bs-toggle="popover"
                                 data-bs-trigger="focus"

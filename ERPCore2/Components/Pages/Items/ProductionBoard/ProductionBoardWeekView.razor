@@ -65,7 +65,7 @@
                 }
                 @if (IsLoading)
                 {
-                    <span class="text-secondary" style="font-size:0.8rem;">
+                    <span class="text-secondary" style="font-size:1rem;">
                         <span class="spinner-border spinner-border-sm me-1"></span>載入中...
                     </span>
                 }
@@ -406,6 +406,7 @@
             PlannedStartDate       = i.PlannedStartDate,
             PlannedEndDate         = i.PlannedEndDate,
             SalesOrderDetailId     = i.SalesOrderDetailId,
+            SalesOrderId           = i.SalesOrderDetail?.SalesOrderId,
             SalesOrderCode         = i.SalesOrderDetail?.SalesOrder?.Code,
             CustomerName           = i.SalesOrderDetail?.SalesOrder?.Customer?.CompanyName,
             ExpectedDeliveryDate   = i.SalesOrderDetail?.SalesOrder?.ExpectedDeliveryDate,

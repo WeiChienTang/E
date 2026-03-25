@@ -49,6 +49,9 @@ namespace ERPCore2.Models.Schedule
         /// <summary>來源銷售訂單明細 ID</summary>
         public int? SalesOrderDetailId { get; set; }
 
+        /// <summary>來源銷售訂單 ID（照片 Tab 用）</summary>
+        public int? SalesOrderId { get; set; }
+
         /// <summary>來源訂單編號（顯示用）</summary>
         public string? SalesOrderCode { get; set; }
 

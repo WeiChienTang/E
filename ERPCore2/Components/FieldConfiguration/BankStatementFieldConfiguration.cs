@@ -35,6 +35,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(BankStatement.CompanyBankAccountId),
                             DisplayName = Dn("Field.BankAccount", "銀行帳號"),
                             TableOrder = 0,
+                            Width = "140px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -53,6 +54,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(BankStatement.StatementDate),
                             DisplayName = Dn("Field.StatementDate", "對帳單日期"),
                             TableOrder = 1,
+                            Width = "110px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -68,6 +70,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = "Period",
                             DisplayName = Dn("Field.ReconciliationPeriod", "對帳期間"),
                             TableOrder = 2,
+                            Width = "160px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -83,6 +86,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(BankStatement.OpeningBalance),
                             DisplayName = Dn("Field.OpeningBalance", "期初餘額"),
                             TableOrder = 3,
+                            Width = "120px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -98,6 +102,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(BankStatement.ClosingBalance),
                             DisplayName = Dn("Field.ClosingBalance", "期末餘額"),
                             TableOrder = 4,
+                            Width = "120px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -113,6 +118,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = "MatchStatus",
                             DisplayName = Dn("Field.MatchStatus", "配對狀態"),
                             TableOrder = 5,
+                            Width = "100px",
                             ShowInFilter = false,
                             CustomTemplate = item => builder =>
                             {
@@ -129,6 +135,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(BankStatement.StatementStatus),
                             DisplayName = Dn("Field.StatementStatus", "對帳狀態"),
                             TableOrder = 6,
+                            Width = "100px",
                             FilterType = SearchFilterType.Select,
                             Options = new List<SelectOption>
                             {
