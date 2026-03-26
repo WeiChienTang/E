@@ -1,0 +1,420 @@
+@* 可重用的公家機關編輯組件 - 可在任何頁面中嵌入 *@
+@inject IGovernmentAgencyService GovernmentAgencyService
+@inject INotificationService NotificationService
+@inject ContactLinkHelper ContactLinkHelper
+@inject ICompanyModuleService CompanyModuleService
+@inject INavigationPermissionService NavigationPermissionService
+@inject IStringLocalizer<SharedResource> L
+@inject ICodeSettingService CodeSettingService
+
+<GenericEditModalComponent TEntity="GovernmentAgency"
+                          TService="IGovernmentAgencyService"
+                          @ref="editModalComponent"
+                          IsVisible="@IsVisible"
+                          IsVisibleChanged="@IsVisibleChanged"
+                          @bind-Id="@GovernmentAgencyId"
+                          Service="@GovernmentAgencyService"
+                          EntityName="@L["Entity.GovernmentAgency"]"
+                          EntityNamePlural="@L["Entity.GovernmentAgency"]"
+                          ModalTitle="@(GovernmentAgencyId.HasValue ? L["Message.EditTitle", L["Entity.GovernmentAgency"]].ToString() : L["Message.CreateTitle", L["Entity.GovernmentAgency"]].ToString())"
+                          Size="GenericEditModalComponent<GovernmentAgency, IGovernmentAgencyService>.ModalSize.Desktop"
+                          UseGenericForm="true"
+                          FormFields="@formFields"
+                          FormSections="@formSections"
+                          TabDefinitions="@tabDefinitions"
+                          DataLoader="@LoadAgencyData"
+                          SaveHandler="@SaveAgency"
+                          ShowDraftButton="true"
+                          DraftSuccessMessage="公家機關草稿已儲存，請記得補齊必填資料"
+                          OnSaveSuccess="@OnSaveSuccess"
+                          RequiredPermission="@PermissionRegistry.GovernmentAgency.Read"
+                          OnCancel="@OnCancel"
+                          OnEntityLoaded="@HandleEntityLoaded"
+                          ComponentName="GovernmentAgencyEditModalComponent" />
+
+@* 文件 Tab（條件渲染） *@
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? GovernmentAgencyId { get; set; }
+    [Parameter] public EventCallback<GovernmentAgency> OnGovernmentAgencySaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Dictionary<string, object?>? PrefilledValues { get; set; }
+
+    private GenericEditModalComponent<GovernmentAgency, IGovernmentAgencyService>? editModalComponent;
+    private List<FormFieldDefinition> formFields = new();
+    private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
+
+    // 資料載入狀態標記
+    private bool isDataLoaded = false;
+
+    // Tab 元件參考
+    private DocumentsTab? documentsTab;
+    private BusinessCardTab? businessCardTab;
+
+    // ===== Tab 內容 RenderFragment =====
+
+    private RenderFragment CreateBusinessCardTabContent() => __builder =>
+    {
+        <BusinessCardTab @ref="businessCardTab" OwnerType="GovernmentAgency" OwnerId="@GovernmentAgencyId" />
+    };
+
+    private RenderFragment CreateDocumentsTabContent() => __builder =>
+    {
+        <DocumentsTab @ref="documentsTab" RelatedEntityType="GovernmentAgency" EntityId="@GovernmentAgencyId" />
+    };
+
+    // ===== 生命週期 =====
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && !isDataLoaded)
+        {
+            await InitializeFormFieldsAsync();
+            isDataLoaded = true;
+        }
+        else if (!IsVisible)
+        {
+            isDataLoaded = false;
+        }
+    }
+
+    // ===== 事件處理 =====
+
+    private async Task HandleEntityLoaded(int loadedEntityId)
+    {
+        try
+        {
+            if (loadedEntityId > 0)
+            {
+                if (businessCardTab != null) await businessCardTab.LoadAsync(loadedEntityId);
+                if (documentsTab != null) await documentsTab.LoadAsync(loadedEntityId);
+            }
+            else
+            {
+                businessCardTab?.Clear();
+                documentsTab?.Clear();
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入資料時發生錯誤：{ex.Message}");
+        }
+    }
+
+    private async Task OnSaveSuccess()
+    {
+        try
+        {
+            if (editModalComponent?.Entity != null)
+            {
+                await OnGovernmentAgencySaved.InvokeAsync(editModalComponent.Entity);
+            }
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("儲存成功回調時發生錯誤");
+        }
+    }
+
+    // ===== 資料載入 =====
+
+    private async Task<GovernmentAgency?> LoadAgencyData()
+    {
+        try
+        {
+            if (!GovernmentAgencyId.HasValue)
+            {
+                businessCardTab?.Clear();
+                documentsTab?.Clear();
+
+                var newAgency = new GovernmentAgency
+                {
+                    Code = await EntityCodeGenerationHelper.GenerateWithCodeSetting<GovernmentAgency, IGovernmentAgencyService>(CodeSettingService, "GovernmentAgency", GovernmentAgencyService, "GA"),
+                    Status = EntityStatus.Active
+                };
+
+                PrefilledValueHelper.ApplyPrefilledValues(newAgency, PrefilledValues);
+                return newAgency;
+            }
+
+            var agency = await GovernmentAgencyService.GetByIdAsync(GovernmentAgencyId.Value);
+
+            if (agency == null)
+            {
+                _ = NotificationService.ShowErrorAsync("找不到指定的公家機關資料");
+                return null;
+            }
+
+            return agency;
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("載入公家機關資料時發生錯誤");
+            return new GovernmentAgency
+            {
+                Code = "",
+                Status = EntityStatus.Active
+            };
+        }
+    }
+
+    // ===== 自訂儲存 =====
+
+    private async Task<bool> SaveAgency(GovernmentAgency entity)
+    {
+        try
+        {
+            if (!entity.IsDraft)
+            {
+                bool isDraftEligible = editModalComponent?.ShowDraftButton == true &&
+                                       (!GovernmentAgencyId.HasValue || editModalComponent?.WasOriginallyDraft == true);
+
+                var validationResult = await GovernmentAgencyService.ValidateAsync(entity);
+                if (!validationResult.IsSuccess)
+                {
+                    if (isDraftEligible)
+                        editModalComponent!.PendingSaveError = validationResult.ErrorMessage;
+                    else
+                        _ = NotificationService.ShowErrorAsync(validationResult.ErrorMessage);
+                    return false;
+                }
+            }
+
+            ServiceResult result;
+
+            if (GovernmentAgencyId.HasValue)
+                result = await GovernmentAgencyService.UpdateAsync(entity);
+            else
+                result = await GovernmentAgencyService.CreateAsync(entity);
+
+            if (!result.IsSuccess)
+                return false;
+
+            return true;
+        }
+        catch (Exception)
+        {
+            _ = NotificationService.ShowErrorAsync("儲存公家機關資料時發生錯誤");
+            return false;
+        }
+    }
+
+    // ===== 表單欄位定義 =====
+
+    private async Task InitializeFormFieldsAsync()
+    {
+        try
+        {
+            formFields = new List<FormFieldDefinition>
+            {
+                new()
+                {
+                    PropertyName = nameof(GovernmentAgency.Code),
+                    Label = L["Field.GovernmentAgencyCode"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.GovernmentAgencyCode"]],
+                    IsRequired = true,
+                    MaxLength = 20,
+                    HelpText = "機關的唯一識別編號"
+                },
+                new()
+                {
+                    PropertyName = nameof(GovernmentAgency.AgencyName),
+                    Label = L["Field.AgencyName"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.AgencyName"]],
+                    IsRequired = true,
+                    MaxLength = 100,
+                    HelpText = "公家機關的正式名稱"
+                },
+                new()
+                {
+                    PropertyName = nameof(GovernmentAgency.AgencyCode),
+                    Label = L["Field.AgencyCode"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.AgencyCode"]],
+                    IsRequired = false,
+                    MaxLength = 20,
+                    HelpText = "政府機關代碼（OID）"
+                },
+                new()
+                {
+                    PropertyName = nameof(GovernmentAgency.ContactPerson),
+                    Label = L["Field.ContactPerson"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ContactPerson"]],
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "主要聯絡人姓名"
+                },
+                new()
+                {
+                    PropertyName = nameof(GovernmentAgency.JobTitle),
+                    Label = L["Field.JobTitle"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.JobTitle"]],
+                    IsRequired = false,
+                    MaxLength = 50,
+                    HelpText = "聯絡人職稱"
+                },
+                new()
+                {
+                    PropertyName = nameof(GovernmentAgency.ContactPhone),
+                    Label = L["Field.ContactPhone"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.ContactPhone"]],
+                    IsRequired = false,
+                    MaxLength = 20,
+                    HelpText = "機關聯絡電話",
+                    ActionButtons = ContactLinkHelper.CreatePhoneButtons(() => editModalComponent?.Entity?.ContactPhone, IsSaved)
+                },
+                new()
+                {
+                    PropertyName = nameof(GovernmentAgency.Fax),
+                    Label = L["Field.Fax"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Fax"]],
+                    IsRequired = false,
+                    MaxLength = 20,
+                    HelpText = "機關傳真號碼",
+                    ActionButtons = ContactLinkHelper.CreatePhoneButtons(() => editModalComponent?.Entity?.Fax, IsSaved)
+                },
+                new()
+                {
+                    PropertyName = nameof(GovernmentAgency.Email),
+                    Label = L["Field.Email"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Email"]],
+                    IsRequired = false,
+                    MaxLength = 100,
+                    HelpText = "聯絡人電子郵件地址",
+                    ActionButtons = ContactLinkHelper.CreateEmailButtons(() => editModalComponent?.Entity?.Email, IsSaved)
+                },
+                new()
+                {
+                    PropertyName = nameof(GovernmentAgency.Website),
+                    Label = L["Field.Website"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Website"]],
+                    MaxLength = 100,
+                    HelpText = "機關官方網站網址",
+                    ActionButtons = ContactLinkHelper.CreateWebsiteButtons(() => editModalComponent?.Entity?.Website, IsSaved)
+                },
+                new()
+                {
+                    PropertyName = nameof(GovernmentAgency.Address),
+                    Label = L["Field.Address"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Address"]],
+                    IsRequired = false,
+                    MaxLength = 200,
+                    HelpText = "機關地址",
+                    ContainerCssClass = "col-4",
+                    ActionButtons = ContactLinkHelper.CreateAddressButtons(() => editModalComponent?.Entity?.Address, IsSaved)
+                },
+                new()
+                {
+                    PropertyName = nameof(GovernmentAgency.Jurisdiction),
+                    Label = L["Field.Jurisdiction"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.Jurisdiction"]],
+                    IsRequired = false,
+                    MaxLength = 100,
+                    HelpText = "機關管轄區域或業務範圍"
+                },
+                new()
+                {
+                    PropertyName = nameof(GovernmentAgency.SupervisorAgency),
+                    Label = L["Field.SupervisorAgency"],
+                    FieldType = FormFieldType.Text,
+                    Placeholder = L["Placeholder.PleaseInput", L["Field.SupervisorAgency"]],
+                    IsRequired = false,
+                    MaxLength = 100,
+                    HelpText = "上級主管機關名稱"
+                },
+                new()
+                {
+                    PropertyName = nameof(GovernmentAgency.AgencyStatus),
+                    Label = L["Field.AgencyStatus"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = true,
+                    HelpText = "機關目前的往來狀態",
+                    Options = new List<SelectOption>
+                    {
+                        new() { Value = ((int)GovernmentAgencyStatus.Active).ToString(),   Text = L["GovernmentAgencyStatus.Active"] },
+                        new() { Value = ((int)GovernmentAgencyStatus.Inactive).ToString(), Text = L["GovernmentAgencyStatus.Inactive"] }
+                    }
+                },
+                new()
+                {
+                    PropertyName = nameof(GovernmentAgency.AgencyType),
+                    Label = L["Field.AgencyType"],
+                    FieldType = FormFieldType.Select,
+                    IsRequired = false,
+                    HelpText = "機關的類型分類",
+                    Options = new List<SelectOption>
+                    {
+                        new() { Value = "",                                                        Text = L["Label.NotSet"] },
+                        new() { Value = ((int)GovernmentAgencyType.Central).ToString(),            Text = L["GovernmentAgencyType.Central"] },
+                        new() { Value = ((int)GovernmentAgencyType.Municipal).ToString(),          Text = L["GovernmentAgencyType.Municipal"] },
+                        new() { Value = ((int)GovernmentAgencyType.County).ToString(),             Text = L["GovernmentAgencyType.County"] },
+                        new() { Value = ((int)GovernmentAgencyType.Township).ToString(),           Text = L["GovernmentAgencyType.Township"] },
+                        new() { Value = ((int)GovernmentAgencyType.Other).ToString(),              Text = L["GovernmentAgencyType.Other"] }
+                    }
+                },
+                FormFieldConfigurationHelper.CreateRemarksField<GovernmentAgency>()
+            };
+
+            // 模組狀態
+            bool? isSuperAdmin = null;
+            var isDocumentsEnabled = await CompanyModuleService.IsModuleEnabledAsync("Documents");
+            if (!isDocumentsEnabled)
+            {
+                isSuperAdmin ??= await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+                isDocumentsEnabled = isSuperAdmin.Value;
+            }
+
+            var builder = FormSectionHelper<GovernmentAgency>.Create()
+                .AddToSection(FormSectionNames.BasicInfo,
+                    g => g.Code,
+                    g => g.AgencyName,
+                    g => g.AgencyCode,
+                    g => g.ContactPhone,
+                    g => g.Fax,
+                    g => g.Website,
+                    g => g.Address)
+                .AddToSection(FormSectionNames.ContactPersonInfo,
+                    g => g.ContactPerson,
+                    g => g.JobTitle,
+                    g => g.Email)
+                .AddToSection(FormSectionNames.OtherInfo,
+                    g => g.Jurisdiction,
+                    g => g.SupervisorAgency,
+                    g => g.AgencyStatus,
+                    g => g.AgencyType,
+                    g => g.Remarks)
+                .GroupIntoTab(L["Tab.GovernmentAgencyData"].ToString(), "bi-building", FormSectionNames.BasicInfo, FormSectionNames.ContactPersonInfo, FormSectionNames.OtherInfo)
+                .GroupIntoCustomTab(L["Tab.BusinessCards"].ToString(), "bi-person-vcard", CreateBusinessCardTabContent(), nameof(BusinessCardTab));
+
+            if (isDocumentsEnabled)
+                builder = builder.GroupIntoCustomTab(L["Tab.Documents"].ToString(), "bi-file-earmark-text", CreateDocumentsTabContent(), nameof(DocumentsTab));
+
+            var layout = builder.BuildAll();
+
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
+        }
+        catch (Exception)
+        {
+            await NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
+        }
+    }
+
+    // ===== 輔助方法 =====
+
+    private bool IsSaved() => GovernmentAgencyId.HasValue && GovernmentAgencyId.Value > 0;
+}

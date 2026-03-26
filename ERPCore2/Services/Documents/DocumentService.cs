@@ -33,7 +33,6 @@ namespace ERPCore2.Services
                     .Include(d => d.DocumentCategory)
                     .Include(d => d.DocumentFiles)
                     .Where(d => d.Title.Contains(searchTerm) ||
-                               (d.IssuedBy != null && d.IssuedBy.Contains(searchTerm)) ||
                                (d.Code != null && d.Code.Contains(searchTerm)))
                     .OrderByDescending(d => d.CreatedAt)
                     .ToListAsync();
@@ -174,6 +173,31 @@ namespace ERPCore2.Services
                     EntityId = entityId
                 });
                 return new List<Document>();
+            }
+        }
+
+        public async Task<string?> GetRelatedEntityDisplayNameAsync(string? entityType, int? entityId)
+        {
+            if (string.IsNullOrEmpty(entityType) || !entityId.HasValue || entityId.Value <= 0)
+                return null;
+
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                return entityType switch
+                {
+                    "Customer" => (await context.Customers.FindAsync(entityId.Value))?.CompanyName,
+                    "Supplier" => (await context.Suppliers.FindAsync(entityId.Value))?.CompanyName,
+                    "Employee" => (await context.Employees.FindAsync(entityId.Value))?.Name,
+                    "Company" => (await context.Companies.FindAsync(entityId.Value))?.CompanyName,
+                    "GovernmentAgency" => (await context.GovernmentAgencies.FindAsync(entityId.Value))?.AgencyName,
+                    _ => null
+                };
+            }
+            catch (Exception ex)
+            {
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(GetRelatedEntityDisplayNameAsync), GetType(), _logger);
+                return null;
             }
         }
 

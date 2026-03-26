@@ -343,6 +343,9 @@
                                  FormattedDocument="@_formattedDocument"
                                  ReportId="@ReportId"
                                  DocumentName="@_reportDocumentName"
+                                 DebugReportServiceName="@(ReportService?.GetType().Name ?? "")"
+                                 AvailableSections="@_reportSections"
+                                 OnRegenerateReport="@HandleRegenerateReport"
                                  OnPrintSuccess="@HandleReportPrintSuccess"
                                  OnCancel="@(() => _showReportPreviewModal = false)" />
 }

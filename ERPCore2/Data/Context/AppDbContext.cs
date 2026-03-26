@@ -46,6 +46,7 @@ namespace ERPCore2.Data.Context
       public DbSet<SupplierPricing> SupplierPricings { get; set; }
       public DbSet<PriceHistory> PriceHistories { get; set; }      
       public DbSet<Supplier> Suppliers { get; set; }
+      public DbSet<GovernmentAgency> GovernmentAgencies { get; set; }
       public DbSet<SupplierVisit> SupplierVisits { get; set; }
       public DbSet<Warehouse> Warehouses { get; set; }
       public DbSet<WarehouseLocation> WarehouseLocations { get; set; }
@@ -102,6 +103,7 @@ namespace ERPCore2.Data.Context
       public DbSet<ErrorLog> ErrorLogs { get; set; }
       public DbSet<DeletedRecord> DeletedRecords { get; set; }
       public DbSet<SystemParameter> SystemParameters { get; set; }
+      public DbSet<CodeSetting> CodeSettings { get; set; }
       public DbSet<Company> Companies { get; set; }
       public DbSet<PaperSetting> PaperSettings { get; set; }
       public DbSet<ReportPrintConfiguration> ReportPrintConfigurations { get; set; }
@@ -207,6 +209,12 @@ namespace ERPCore2.Data.Context
                   modelBuilder.Entity<Supplier>(entity =>
                   {
                         // 欄位對應 - 主鍵在資料庫中就叫 Id，不需要欄位對應
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                  });
+
+                  // 公家機關相關
+                  modelBuilder.Entity<GovernmentAgency>(entity =>
+                  {
                         entity.Property(e => e.Id).ValueGeneratedOnAdd();
                   });
 
@@ -1087,6 +1095,14 @@ namespace ERPCore2.Data.Context
                         // 為 decimal 屬性設定精確度和小數位數
                         entity.Property(e => e.TaxRate)
                               .HasPrecision(5, 2); // 總共5位數，小數點後2位（可表示 0.00 到 999.99）
+                  });
+
+                  // 代碼自動產生設定
+                  modelBuilder.Entity<CodeSetting>(entity =>
+                  {
+                        entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                        entity.HasIndex(e => e.ModuleKey).IsUnique();
+                        entity.Property(e => e.RowVersion).IsRowVersion();
                   });
 
                   // 公司資料相關

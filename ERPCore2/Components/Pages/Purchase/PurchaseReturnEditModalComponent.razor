@@ -21,8 +21,9 @@
 @inject ERPCore2.Data.Context.AppDbContext DbContext
 @inject IStringLocalizer<SharedResource> L
 @inject IJournalEntryService JournalEntryService
+@inject ICodeSettingService CodeSettingService
 
-<GenericEditModalComponent TEntity="PurchaseReturn" 
+<GenericEditModalComponent TEntity="PurchaseReturn"
                           TService="IPurchaseReturnService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
@@ -273,7 +274,7 @@
                 
                 try
                 {
-                    var number = await EntityCodeGenerationHelper.GenerateForEntity<PurchaseReturn, IPurchaseReturnService>(PurchaseReturnService, DbContext);
+                    var number = await EntityCodeGenerationHelper.GenerateWithCodeSetting<PurchaseReturn, IPurchaseReturnService>(CodeSettingService, "PurchaseReturn", PurchaseReturnService, DbContext);
                     
                     var newReturn = new PurchaseReturn
                     {
@@ -656,8 +657,9 @@
                     "ApprovedAtText",
                     nameof(PurchaseReturn.RejectReason))
                 .AssignColumn(0, FormSectionNames.BasicInfo)
-                .AssignColumn(1, FormSectionNames.FilterConditions, FormSectionNames.ApprovalInfo)
-                .AssignColumn(2, FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo)
+                .AssignColumn(1, FormSectionNames.AmountInfo)
+                .AssignColumn(2, FormSectionNames.AdditionalInfo)
+                .AssignColumn(3, FormSectionNames.FilterConditions, FormSectionNames.ApprovalInfo)
                 .GroupIntoTab(L["Tab.ReturnData"].ToString(), "bi-arrow-return-left",
                     FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
                     FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo, FormSectionNames.ApprovalInfo)

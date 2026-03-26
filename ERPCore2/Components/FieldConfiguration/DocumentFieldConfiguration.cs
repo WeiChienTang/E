@@ -73,27 +73,13 @@ namespace ERPCore2.FieldConfiguration
                         }
                     },
                     {
-                        nameof(Document.IssuedBy),
-                        new FieldDefinition<Document>
-                        {
-                            PropertyName = nameof(Document.IssuedBy),
-                            DisplayName = Dn("Field.IssuedBy", "發文機關/來源"),
-                            FilterPlaceholder = Fp("Field.IssuedBy", "輸入發文機關搜尋"),
-                            TableOrder = 3,
-                            Width = "140px",
-                            NullDisplayText = "-",
-                            FilterFunction = (model, query) => FilterHelper.ApplyTextContainsFilter(
-                                model, query, nameof(Document.IssuedBy), d => d.IssuedBy)
-                        }
-                    },
-                    {
                         nameof(Document.IssuedDate),
                         new FieldDefinition<Document>
                         {
                             PropertyName = nameof(Document.IssuedDate),
                             DisplayName = Dn("Field.IssuedDate", "發文日期"),
                             ShowInFilter = false,
-                            TableOrder = 4,
+                            TableOrder = 3,
                             Width = "110px",
                             NullDisplayText = "-",
                             CustomTemplate = obj =>
@@ -113,7 +99,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = nameof(Document.ExpiryDate),
                             DisplayName = Dn("Field.ExpiryDate", "有效期限"),
                             ShowInFilter = false,
-                            TableOrder = 5,
+                            TableOrder = 4,
                             Width = "110px",
                             NullDisplayText = "-",
                             CustomTemplate = obj =>
@@ -133,7 +119,7 @@ namespace ERPCore2.FieldConfiguration
                             PropertyName = "AttachmentCount",
                             DisplayName = Dn("Field.AttachmentCount", "附件數量"),
                             ShowInFilter = false,
-                            TableOrder = 6,
+                            TableOrder = 5,
                             Width = "100px",
                             CustomTemplate = obj =>
                             {

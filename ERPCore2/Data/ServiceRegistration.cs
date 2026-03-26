@@ -120,6 +120,9 @@ namespace ERPCore2.Data
             services.AddScoped<ISupplierVisitService, SupplierVisitService>();
             services.AddScoped<ISupplierBankAccountService, SupplierBankAccountService>();
 
+            // 公家機關服務
+            services.AddScoped<ERPCore2.Services.GovernmentAgencies.IGovernmentAgencyService, ERPCore2.Services.GovernmentAgencies.GovernmentAgencyService>();
+
             // 品項相關服務
             services.AddScoped<IItemService, ItemService>();
             services.AddScoped<IItemCategoryService, ItemCategoryService>();
@@ -254,6 +257,9 @@ namespace ERPCore2.Data
 
             // 系統參數服務
             services.AddScoped<ISystemParameterService, SystemParameterService>();
+
+            // 代碼自動產生設定服務
+            services.AddScoped<ICodeSettingService, CodeSettingService>();
             
             // 紙張設定服務
             services.AddScoped<IPaperSettingService, PaperSettingService>();

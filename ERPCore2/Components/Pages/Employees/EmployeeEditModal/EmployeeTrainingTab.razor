@@ -7,13 +7,13 @@
 @* ===== 受訓紀錄區段 ===== *@
 <div class="training-section mb-4">
     <div class="d-flex justify-content-between align-items-center mb-2 px-1">
-        <h6 class="mb-0 fw-semibold text-secondary">
-            <i class="bi bi-journal-text me-1"></i>@L["Label.TrainingRecords"]
-        </h6>
-        <GenericButtonComponent Text="@L["Button.AddTrainingRecord"]"
-                               Variant="ButtonVariant.DarkBlue"
-                               OnClick="@HandleAddTrainingRecord"
-                               Title="@L["Button.AddTrainingRecord"]" />
+        <div class="d-flex gap-2">
+            <GenericButtonComponent IconClass=""
+                                   Variant="ButtonVariant.DarkBlue"
+                                   Text="@L["Button.AddTrainingRecord"]"
+                                   OnClick="@HandleAddTrainingRecord"
+                                   Title="@L["Button.AddTrainingRecord"]" />
+        </div>
     </div>
 
     <GenericInteractiveTableComponent TItem="EmployeeTrainingRecord"
@@ -36,13 +36,13 @@
 @* ===== 證照管理區段 ===== *@
 <div class="license-section">
     <div class="d-flex justify-content-between align-items-center mb-2 px-1">
-        <h6 class="mb-0 fw-semibold text-secondary">
-            <i class="bi bi-patch-check me-1"></i>@L["Label.LicenseManagement"]
-        </h6>
-        <GenericButtonComponent Text="@L["Button.AddLicense"]"
-                               Variant="ButtonVariant.DarkBlue"
-                               OnClick="@HandleAddLicense"
-                               Title="@L["Button.AddLicense"]" />
+        <div class="d-flex gap-2">
+            <GenericButtonComponent IconClass=""
+                                   Variant="ButtonVariant.DarkBlue"
+                                   Text="@L["Button.AddLicense"]"
+                                   OnClick="@HandleAddLicense"
+                                   Title="@L["Button.AddLicense"]" />
+        </div>
     </div>
 
     <GenericInteractiveTableComponent TItem="EmployeeLicense"

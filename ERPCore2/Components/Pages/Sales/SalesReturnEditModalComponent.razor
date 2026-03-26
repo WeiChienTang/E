@@ -21,6 +21,7 @@
 @inject IStringLocalizer<SharedResource> L
 @inject IJournalEntryService JournalEntryService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ICodeSettingService CodeSettingService
 @implements IDisposable
 
 @using ERPCore2.FieldConfiguration
@@ -783,8 +784,9 @@
                     "ApprovedAtText",
                     nameof(SalesReturn.RejectReason))
                 .AssignColumn(0, FormSectionNames.BasicInfo)
-                .AssignColumn(1, FormSectionNames.FilterConditions, FormSectionNames.ApprovalInfo)
-                .AssignColumn(2, FormSectionNames.AmountInfo, FormSectionNames.OtherInfo)
+                .AssignColumn(1, FormSectionNames.AmountInfo)
+                .AssignColumn(2, FormSectionNames.OtherInfo)
+                .AssignColumn(3, FormSectionNames.FilterConditions, FormSectionNames.ApprovalInfo)
                 .GroupIntoTab(L["Tab.ReturnData"].ToString(), "bi-arrow-return-left",
                     FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
                     FormSectionNames.AmountInfo, FormSectionNames.OtherInfo, FormSectionNames.ApprovalInfo)
@@ -870,7 +872,7 @@
     /// </summary>
     private async Task<string> GenerateReturnNumberAsync()
     {
-        return await EntityCodeGenerationHelper.GenerateForEntity<SalesReturn, ISalesReturnService>(SalesReturnService, DbContext);
+        return await EntityCodeGenerationHelper.GenerateWithCodeSetting<SalesReturn, ISalesReturnService>(CodeSettingService, "SalesReturn", SalesReturnService, DbContext);
     }
     /// <summary>
     /// 載入銷售退貨明細

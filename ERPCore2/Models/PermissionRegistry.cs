@@ -19,6 +19,7 @@ public static class PermissionRegistry
     public static class System
     {
         public const string Admin = "System.Admin";
+        public const string CodeSettings = "System.CodeSettings";
     }
 
     public static class EmployeeAccount
@@ -121,6 +122,11 @@ public static class PermissionRegistry
     {
         public const string Read = "Supplier.Read";
         public const string ChartRead = "SupplierChart.Read";
+    }
+
+    public static class GovernmentAgency
+    {
+        public const string Read = "GovernmentAgency.Read";
     }
 
     public static class Item
@@ -412,6 +418,7 @@ public static class PermissionRegistry
     [
         // ===== 敏感權限：系統 =====
         new(System.Admin,           "系統管理",        PermissionLevel.Sensitive, "系統最高管理權限，擁有所有功能存取權限",  "Nav.SystemGroup"),
+        new(System.CodeSettings,    "代碼自動產生設定", PermissionLevel.Sensitive, "管理各模組的自動編號格式與流水號設定",    "Nav.SystemGroup"),
         new(EmployeeAccount.Read,   "編輯員工帳號密碼", PermissionLevel.Sensitive, "編輯員工系統帳號、密碼與角色設定權限",    "Nav.HumanResources"),
         new(Permission.Read,        "檢視權限",        PermissionLevel.Sensitive, "檢視系統功能權限設定",                   "Nav.SystemGroup"),
         new(Role.Read,              "檢視角色",        PermissionLevel.Sensitive, "檢視系統角色與權限群組設定",              "Nav.SystemGroup"),
@@ -458,6 +465,9 @@ public static class PermissionRegistry
         // ===== 一般權限：廠商 =====
         new(Supplier.Read,      "檢視供應商",   PermissionLevel.Normal, "檢視供應商基本資料與相關資訊", "Nav.SupplierGroup"),
         new(Supplier.ChartRead, "檢視廠商圖表", PermissionLevel.Normal, "檢視廠商統計分析圖表（主管層級）", "Nav.SupplierGroup"),
+
+        // ===== 一般權限：公家機關 =====
+        new(GovernmentAgency.Read, "檢視公家機關", PermissionLevel.Normal, "檢視公家機關基本資料與相關資訊", "Nav.GovernmentAgencyGroup"),
 
         // ===== 一般權限：品項 =====
         new(Item.Read,               "檢視品項",         PermissionLevel.Normal, "檢視品項基本資料與規格",         "Nav.ItemGroup"),

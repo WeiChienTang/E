@@ -1823,6 +1823,7 @@
   <data name="Tab.BankAccounts" xml:space="preserve"><value>Mga Bank Account</value></data>
   <data name="Tab.BusinessCards" xml:space="preserve"><value>Mga Business Card</value></data>
   <data name="Tab.Documents" xml:space="preserve"><value>Mga Dokumento</value></data>
+  <data name="Tab.DocumentData" xml:space="preserve"><value>Data ng Dokumento</value></data>
   <data name="Tab.CompanyData" xml:space="preserve"><value>Data ng Kumpanya</value></data>
   <data name="Tab.CompanyLogo" xml:space="preserve"><value>Logo ng Kumpanya</value></data>
   <data name="CompanyLogo.SaveFirst" xml:space="preserve"><value>Mangyaring i-save muna ang data ng kumpanya bago mag-upload ng logo</value></data>
@@ -1912,6 +1913,7 @@
   <data name="Tab.ItemInfo" xml:space="preserve"><value>Impormasyon ng Produkto</value></data>
   <data name="Tab.InventoryData" xml:space="preserve"><value>Data ng Imbentaryo</value></data>
   <data name="Message.PleaseSelectCustomer" xml:space="preserve"><value>Mangyaring pumili muna ng customer</value></data>
+  <data name="Message.PleaseSelectGovernmentAgency" xml:space="preserve"><value>Mangyaring pumili muna ng ahensya ng gobyerno</value></data>
   <data name="Message.PleaseSelectItem" xml:space="preserve"><value>Mangyaring pumili muna ng produkto</value></data>
   <data name="Field.StandardCost" xml:space="preserve"><value>Karaniwang Gastos</value></data>
   <!-- ===== Supplier action keys ===== -->
@@ -2128,7 +2130,6 @@
   <data name="Field.DocumentSource" xml:space="preserve"><value>Uri ng Pinagmulan</value></data>
   <data name="Field.DefaultAccessLevel" xml:space="preserve"><value>Default na Antas ng Access</value></data>
   <data name="Field.AccessLevel" xml:space="preserve"><value>Antas ng Access</value></data>
-  <data name="Field.IssuedBy" xml:space="preserve"><value>Inilabas ng</value></data>
   <data name="Field.IssuedDate" xml:space="preserve"><value>Petsa ng Pagpapalabas</value></data>
   <data name="Field.FileSize" xml:space="preserve"><value>Laki ng File</value></data>
   <data name="Field.FileName" xml:space="preserve"><value>Orihinal na Pangalan ng File</value></data>
@@ -3254,6 +3255,8 @@
   <data name="Report.ShowAdvancedOptions" xml:space="preserve"><value>Ipakita ang Mga Advanced na Opsyon</value></data>
   <data name="Report.HideAdvancedOptions" xml:space="preserve"><value>Itago ang Mga Advanced na Opsyon</value></data>
   <data name="Report.SelectAll" xml:space="preserve"><value>Piliin Lahat</value></data>
+  <data name="Report.SectionSelector" xml:space="preserve"><value>Nilalaman ng Pag-print</value></data>
+  <data name="Report.Regenerating" xml:space="preserve"><value>Nagre-regenerate ng ulat...</value></data>
   <data name="Report.DeselectAll" xml:space="preserve"><value>I-deselect Lahat</value></data>
   <data name="Report.BatchPrintTitle" xml:space="preserve"><value>Batch Print</value></data>
   <data name="Report.NoItemsForPrint" xml:space="preserve"><value>Walang mga item na maaaring i-print</value></data>
@@ -4459,6 +4462,8 @@
   <data name="Document.PaperSizeApplied" xml:space="preserve"><value>Na-apply na ang setting ng sukat ng "{0}"</value></data>
   <data name="Document.AttachmentFiles" xml:space="preserve"><value>Mga Kalakip na File</value></data>
   <data name="Document.NoAttachments" xml:space="preserve"><value>Walang kalakip na file</value></data>
+  <data name="Document.SourceEntity" xml:space="preserve"><value>Pinagmulan</value></data>
+  <data name="Document.NoSourceEntityInfo" xml:space="preserve"><value>Walang kaugnay na pinagmulan para sa dokumentong ito</value></data>
   <data name="Field.AttachmentCount" xml:space="preserve"><value>Bilang ng Kalakip</value></data>
   <data name="Field.FileDisplayName" xml:space="preserve"><value>Pangalan ng Kalakip</value></data>
   <data name="Label.PendingUpload" xml:space="preserve"><value>Naghihintay ng Upload</value></data>
@@ -4680,4 +4685,50 @@
   <data name="Inventory.MergeSelectTarget" xml:space="preserve"><value>Pumili muna ng target na lokasyon</value></data>
   <data name="Inventory.MergeNoLocation" xml:space="preserve"><value>(Walang lokasyon)</value></data>
   <data name="Inventory.MergeNoOtherLocations" xml:space="preserve"><value>Walang ibang lokasyon na maaaring isama</value></data>
+  <!-- ===== CodeSettings ===== -->
+  <data name="Tab.CodeSettings" xml:space="preserve"><value>Auto Numbering</value></data>
+  <data name="CodeSettings.Description" xml:space="preserve"><value>I-configure ang format at patakaran ng auto-numbering para sa bawat module. Kapag naka-enable, awtomatikong gagawa ng code sa paglikha ng data.</value></data>
+  <data name="CodeSettings.ModuleName" xml:space="preserve"><value>Module</value></data>
+  <data name="CodeSettings.AutoEnabled" xml:space="preserve"><value>Auto</value></data>
+  <data name="CodeSettings.Prefix" xml:space="preserve"><value>Prefix</value></data>
+  <data name="CodeSettings.FormatTemplate" xml:space="preserve"><value>Format Template</value></data>
+  <data name="CodeSettings.Preview" xml:space="preserve"><value>Preview</value></data>
+  <data name="CodeSettings.ResetRule" xml:space="preserve"><value>Reset Rule</value></data>
+  <data name="CodeSettings.CurrentSeq" xml:space="preserve"><value>Kasalukuyang Seq</value></data>
+  <data name="CodeSettings.ResetSeq" xml:space="preserve"><value>I-reset</value></data>
+  <data name="CodeSettings.ResetSeqTitle" xml:space="preserve"><value>I-reset ang sequence ng module na ito sa 0</value></data>
+  <data name="CodeSettings.FormatHelpTitle" xml:space="preserve"><value>Mga suportadong format token:</value></data>
+  <data name="CodeSettings.HelpPrefix" xml:space="preserve"><value>Custom prefix</value></data>
+  <data name="CodeSettings.HelpYear2" xml:space="preserve"><value>2-digit na taon</value></data>
+  <data name="CodeSettings.HelpYear4" xml:space="preserve"><value>4-digit na taon</value></data>
+  <data name="CodeSettings.HelpMonth" xml:space="preserve"><value>Buwan</value></data>
+  <data name="CodeSettings.HelpDay" xml:space="preserve"><value>Araw</value></data>
+  <data name="CodeSettings.HelpSeq" xml:space="preserve"><value>Sequence (N=digits, hal. {Seq:4})</value></data>
+  <data name="CodeSettings.ResetConfirmTitle" xml:space="preserve"><value>Kumpirmahin ang Pag-reset ng Sequence</value></data>
+  <data name="CodeSettings.ResetConfirmMessage" xml:space="preserve"><value>Sigurado ka bang gusto mong i-reset ang sequence ng "{0}" mula {1} sa 0? Hindi na ito maibabalik.</value></data>
+  <data name="CodeSettings.ResetConfirmButton" xml:space="preserve"><value>Kumpirmahin ang Pag-reset</value></data>
+  <data name="CodeSettings.ResetSuccess" xml:space="preserve"><value>Matagumpay na na-reset ang sequence</value></data>
+  <data name="CodeSettings.ResetFailed" xml:space="preserve"><value>Nabigo ang pag-reset ng sequence</value></data>
+  <data name="CodeSettings.LoadFailed" xml:space="preserve"><value>Nabigo ang pag-load ng code settings</value></data>
+  <!-- ===== GovernmentAgency ===== -->
+  <data name="Entity.GovernmentAgency" xml:space="preserve"><value>Ahensyang Gobyerno</value></data>
+  <data name="Page.GovernmentAgencyTitle" xml:space="preserve"><value>Pamamahala ng Ahensyang Gobyerno</value></data>
+  <data name="Page.GovernmentAgencySubtitle" xml:space="preserve"><value>Pamahalaan ang lahat ng datos at contact ng ahensyang gobyerno</value></data>
+  <data name="Nav.GovernmentAgencyGroup" xml:space="preserve"><value>Ahensyang Gobyerno</value></data>
+  <data name="Nav.GovernmentAgencies" xml:space="preserve"><value>Ahensyang Gobyerno</value></data>
+  <data name="Field.GovernmentAgencyCode" xml:space="preserve"><value>No. ng Ahensya</value></data>
+  <data name="Field.AgencyName" xml:space="preserve"><value>Pangalan ng Ahensya</value></data>
+  <data name="Field.AgencyCode" xml:space="preserve"><value>Code ng Ahensya</value></data>
+  <data name="Field.AgencyType" xml:space="preserve"><value>Uri ng Ahensya</value></data>
+  <data name="Field.AgencyStatus" xml:space="preserve"><value>Katayuan ng Ahensya</value></data>
+  <data name="Field.Jurisdiction" xml:space="preserve"><value>Saklaw</value></data>
+  <data name="Field.SupervisorAgency" xml:space="preserve"><value>Namamahalang Ahensya</value></data>
+  <data name="Tab.GovernmentAgencyData" xml:space="preserve"><value>Datos ng Ahensya</value></data>
+  <data name="GovernmentAgencyType.Central" xml:space="preserve"><value>Sentral</value></data>
+  <data name="GovernmentAgencyType.Municipal" xml:space="preserve"><value>Munisipyo</value></data>
+  <data name="GovernmentAgencyType.County" xml:space="preserve"><value>Lalawigan/Lungsod</value></data>
+  <data name="GovernmentAgencyType.Township" xml:space="preserve"><value>Bayan/Distrito</value></data>
+  <data name="GovernmentAgencyType.Other" xml:space="preserve"><value>Iba pa</value></data>
+  <data name="GovernmentAgencyStatus.Active" xml:space="preserve"><value>Aktibo</value></data>
+  <data name="GovernmentAgencyStatus.Inactive" xml:space="preserve"><value>Hindi Aktibo</value></data>
 </root>

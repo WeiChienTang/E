@@ -161,12 +161,48 @@ namespace ERPCore2.Services.Reports
 
         private static string RenderKeyValueRow(KeyValueRowElement el)
         {
+            // 全部 pair 都為空時不渲染
+            if (!el.Pairs.Any(p => !string.IsNullOrEmpty(p.Key) || !string.IsNullOrEmpty(p.Value)))
+                return "";
+
+            var pairCount = el.Pairs.Count;
+            // 每個 pair 均分總寬度，pair 內 key 佔 30%、val 佔 70%
+            var pairPct = 100f / pairCount;
+            var keyPct = pairPct * 0.3f;
+            var valPct = pairPct * 0.7f;
+
             var sb = new StringBuilder();
-            sb.Append("<table class=\"kv-row\"><tr>");
+            sb.Append("<table class=\"kv-row\">");
+
+            // colgroup 確保跨行對齊
+            sb.Append("<colgroup>");
+            for (int i = 0; i < pairCount; i++)
+            {
+                sb.Append($"<col style=\"width:{keyPct:F1}%\">");
+                sb.Append($"<col style=\"width:{valPct:F1}%\">");
+            }
+            sb.Append("</colgroup>");
+
+            sb.Append("<tr>");
             foreach (var (key, value) in el.Pairs)
             {
-                sb.Append($"<td class=\"kv-key\">{Enc(key)}：</td>");
-                sb.Append($"<td class=\"kv-val\">{Enc(value)}</td>");
+                if (string.IsNullOrEmpty(key) && string.IsNullOrEmpty(value))
+                {
+                    // 空 pair：保留欄位結構（維持對齊），不顯示內容
+                    sb.Append("<td class=\"kv-key\"></td>");
+                    sb.Append("<td class=\"kv-val\"></td>");
+                }
+                else if (string.IsNullOrEmpty(key))
+                {
+                    // key 為空時不顯示冒號，直接顯示 value
+                    sb.Append("<td class=\"kv-key\"></td>");
+                    sb.Append($"<td class=\"kv-val\">{Enc(value)}</td>");
+                }
+                else
+                {
+                    sb.Append($"<td class=\"kv-key\">{Enc(key)}：</td>");
+                    sb.Append($"<td class=\"kv-val\">{Enc(value)}</td>");
+                }
             }
             sb.Append("</tr></table>");
             return sb.ToString();
@@ -338,10 +374,10 @@ tr.page-break-row { page-break-before: always; }
 .rpt-header-right  { display: table-cell; width: 20%; text-align: right; vertical-align: top; white-space: nowrap; }
 
 /* 鍵值對行 */
-.kv-row { width: 100%; border-collapse: collapse; }
-.kv-row td { font-size: 9pt; padding: 0 3px; }
+.kv-row { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.kv-row td { font-size: 9pt; padding: 0 3px; overflow: hidden; text-overflow: ellipsis; }
 .kv-key { font-weight: bold; white-space: nowrap; }
-.kv-val { border-bottom: 1px solid #000; min-width: 4em; }
+.kv-val { }
 
 /* 主表格 */
 .main-table { width: 100%; border-collapse: collapse; }

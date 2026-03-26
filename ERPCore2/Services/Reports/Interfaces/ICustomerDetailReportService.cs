@@ -8,8 +8,9 @@ namespace ERPCore2.Services.Reports.Interfaces
     /// 客戶詳細資料報表服務介面（AR006）
     /// 每位客戶各佔一區塊，顯示完整聯絡與付款資訊
     /// 繼承自 IEntityReportService&lt;Customer&gt;，提供統一的報表服務方法
+    /// 實作 ISectionAwareReportService 支援區段選擇
     /// </summary>
-    public interface ICustomerDetailReportService : IEntityReportService<Customer>
+    public interface ICustomerDetailReportService : IEntityReportService<Customer>, ISectionAwareReportService<Customer>
     {
         /// <summary>
         /// 以客戶名冊篩選條件批次渲染詳細格式報表為圖片

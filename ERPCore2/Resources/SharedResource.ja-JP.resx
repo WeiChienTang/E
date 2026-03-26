@@ -1823,6 +1823,7 @@
   <data name="Tab.BankAccounts" xml:space="preserve"><value>銀行口座</value></data>
   <data name="Tab.BusinessCards" xml:space="preserve"><value>名刺</value></data>
   <data name="Tab.Documents" xml:space="preserve"><value>文書</value></data>
+  <data name="Tab.DocumentData" xml:space="preserve"><value>文書データ</value></data>
   <data name="Tab.CompanyData" xml:space="preserve"><value>会社情報</value></data>
   <data name="Tab.CompanyLogo" xml:space="preserve"><value>会社ロゴ</value></data>
   <data name="CompanyLogo.SaveFirst" xml:space="preserve"><value>ロゴをアップロードする前に会社情報を保存してください</value></data>
@@ -1912,6 +1913,7 @@
   <data name="Tab.ItemInfo" xml:space="preserve"><value>品目情報</value></data>
   <data name="Tab.InventoryData" xml:space="preserve"><value>在庫データ</value></data>
   <data name="Message.PleaseSelectCustomer" xml:space="preserve"><value>先に顧客を選択してください</value></data>
+  <data name="Message.PleaseSelectGovernmentAgency" xml:space="preserve"><value>先に政府機関を選択してください</value></data>
   <data name="Message.PleaseSelectItem" xml:space="preserve"><value>先に品目を選択してください</value></data>
   <data name="Field.StandardCost" xml:space="preserve"><value>標準原価</value></data>
   <!-- ===== Supplier action keys ===== -->
@@ -2128,7 +2130,6 @@
   <data name="Field.DocumentSource" xml:space="preserve"><value>ソース種別</value></data>
   <data name="Field.DefaultAccessLevel" xml:space="preserve"><value>デフォルトアクセスレベル</value></data>
   <data name="Field.AccessLevel" xml:space="preserve"><value>アクセスレベル</value></data>
-  <data name="Field.IssuedBy" xml:space="preserve"><value>発行元</value></data>
   <data name="Field.IssuedDate" xml:space="preserve"><value>発行日</value></data>
   <data name="Field.FileSize" xml:space="preserve"><value>ファイルサイズ</value></data>
   <data name="Field.FileName" xml:space="preserve"><value>元のファイル名</value></data>
@@ -3254,6 +3255,8 @@
   <data name="Report.ShowAdvancedOptions" xml:space="preserve"><value>詳細オプションを表示</value></data>
   <data name="Report.HideAdvancedOptions" xml:space="preserve"><value>詳細オプションを非表示</value></data>
   <data name="Report.SelectAll" xml:space="preserve"><value>すべて選択</value></data>
+  <data name="Report.SectionSelector" xml:space="preserve"><value>印刷内容</value></data>
+  <data name="Report.Regenerating" xml:space="preserve"><value>レポートを再生成中...</value></data>
   <data name="Report.DeselectAll" xml:space="preserve"><value>すべて選択解除</value></data>
   <data name="Report.BatchPrintTitle" xml:space="preserve"><value>一括印刷</value></data>
   <data name="Report.NoItemsForPrint" xml:space="preserve"><value>印刷可能な項目がありません</value></data>
@@ -4459,6 +4462,8 @@
   <data name="Document.PaperSizeApplied" xml:space="preserve"><value>「{0}」のサイズ設定を適用しました</value></data>
   <data name="Document.AttachmentFiles" xml:space="preserve"><value>添付ファイル</value></data>
   <data name="Document.NoAttachments" xml:space="preserve"><value>添付ファイルなし</value></data>
+  <data name="Document.SourceEntity" xml:space="preserve"><value>関連元</value></data>
+  <data name="Document.NoSourceEntityInfo" xml:space="preserve"><value>この文書には関連元情報がありません</value></data>
   <data name="Field.AttachmentCount" xml:space="preserve"><value>添付数</value></data>
   <data name="Field.FileDisplayName" xml:space="preserve"><value>添付名称</value></data>
   <data name="Label.PendingUpload" xml:space="preserve"><value>アップロード待ち</value></data>
@@ -4680,4 +4685,50 @@
   <data name="Inventory.MergeSelectTarget" xml:space="preserve"><value>統合先ロケーションを選択してください</value></data>
   <data name="Inventory.MergeNoLocation" xml:space="preserve"><value>（ロケーション未指定）</value></data>
   <data name="Inventory.MergeNoOtherLocations" xml:space="preserve"><value>統合可能なロケーション明細がありません</value></data>
+  <!-- ===== CodeSettings ===== -->
+  <data name="Tab.CodeSettings" xml:space="preserve"><value>自動採番</value></data>
+  <data name="CodeSettings.Description" xml:space="preserve"><value>各モジュールの自動採番形式と連番ルールを設定します。有効にすると、データ作成時にコードが自動生成されます。</value></data>
+  <data name="CodeSettings.ModuleName" xml:space="preserve"><value>モジュール名</value></data>
+  <data name="CodeSettings.AutoEnabled" xml:space="preserve"><value>自動採番</value></data>
+  <data name="CodeSettings.Prefix" xml:space="preserve"><value>接頭辞</value></data>
+  <data name="CodeSettings.FormatTemplate" xml:space="preserve"><value>書式テンプレート</value></data>
+  <data name="CodeSettings.Preview" xml:space="preserve"><value>プレビュー</value></data>
+  <data name="CodeSettings.ResetRule" xml:space="preserve"><value>リセットルール</value></data>
+  <data name="CodeSettings.CurrentSeq" xml:space="preserve"><value>現在の連番</value></data>
+  <data name="CodeSettings.ResetSeq" xml:space="preserve"><value>リセット</value></data>
+  <data name="CodeSettings.ResetSeqTitle" xml:space="preserve"><value>このモジュールの連番を0にリセット</value></data>
+  <data name="CodeSettings.FormatHelpTitle" xml:space="preserve"><value>対応する書式パラメータ：</value></data>
+  <data name="CodeSettings.HelpPrefix" xml:space="preserve"><value>カスタム接頭辞</value></data>
+  <data name="CodeSettings.HelpYear2" xml:space="preserve"><value>2桁年</value></data>
+  <data name="CodeSettings.HelpYear4" xml:space="preserve"><value>4桁年</value></data>
+  <data name="CodeSettings.HelpMonth" xml:space="preserve"><value>月</value></data>
+  <data name="CodeSettings.HelpDay" xml:space="preserve"><value>日</value></data>
+  <data name="CodeSettings.HelpSeq" xml:space="preserve"><value>連番（N=桁数、例：{Seq:4}）</value></data>
+  <data name="CodeSettings.ResetConfirmTitle" xml:space="preserve"><value>連番リセットの確認</value></data>
+  <data name="CodeSettings.ResetConfirmMessage" xml:space="preserve"><value>「{0}」の連番を {1} から 0 にリセットしますか？この操作は元に戻せません。</value></data>
+  <data name="CodeSettings.ResetConfirmButton" xml:space="preserve"><value>リセット確認</value></data>
+  <data name="CodeSettings.ResetSuccess" xml:space="preserve"><value>連番がリセットされました</value></data>
+  <data name="CodeSettings.ResetFailed" xml:space="preserve"><value>連番のリセットに失敗しました</value></data>
+  <data name="CodeSettings.LoadFailed" xml:space="preserve"><value>コード設定の読み込みに失敗しました</value></data>
+  <!-- ===== GovernmentAgency ===== -->
+  <data name="Entity.GovernmentAgency" xml:space="preserve"><value>官公庁</value></data>
+  <data name="Page.GovernmentAgencyTitle" xml:space="preserve"><value>官公庁管理</value></data>
+  <data name="Page.GovernmentAgencySubtitle" xml:space="preserve"><value>すべての官公庁データと連絡先を管理</value></data>
+  <data name="Nav.GovernmentAgencyGroup" xml:space="preserve"><value>官公庁</value></data>
+  <data name="Nav.GovernmentAgencies" xml:space="preserve"><value>官公庁</value></data>
+  <data name="Field.GovernmentAgencyCode" xml:space="preserve"><value>機関番号</value></data>
+  <data name="Field.AgencyName" xml:space="preserve"><value>機関名</value></data>
+  <data name="Field.AgencyCode" xml:space="preserve"><value>機関コード</value></data>
+  <data name="Field.AgencyType" xml:space="preserve"><value>機関種別</value></data>
+  <data name="Field.AgencyStatus" xml:space="preserve"><value>機関状態</value></data>
+  <data name="Field.Jurisdiction" xml:space="preserve"><value>管轄区域</value></data>
+  <data name="Field.SupervisorAgency" xml:space="preserve"><value>上位機関</value></data>
+  <data name="Tab.GovernmentAgencyData" xml:space="preserve"><value>機関データ</value></data>
+  <data name="GovernmentAgencyType.Central" xml:space="preserve"><value>中央機関</value></data>
+  <data name="GovernmentAgencyType.Municipal" xml:space="preserve"><value>政令指定都市</value></data>
+  <data name="GovernmentAgencyType.County" xml:space="preserve"><value>都道府県</value></data>
+  <data name="GovernmentAgencyType.Township" xml:space="preserve"><value>市区町村</value></data>
+  <data name="GovernmentAgencyType.Other" xml:space="preserve"><value>その他</value></data>
+  <data name="GovernmentAgencyStatus.Active" xml:space="preserve"><value>取引中</value></data>
+  <data name="GovernmentAgencyStatus.Inactive" xml:space="preserve"><value>無効</value></data>
 </root>

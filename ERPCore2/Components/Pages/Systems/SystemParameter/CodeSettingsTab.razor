@@ -1,0 +1,228 @@
+@* 代碼自動產生設定 Tab *@
+
+@inject ICodeSettingService CodeSettingService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<div class="mt-2">
+    <p class="text-muted mb-3">@L["CodeSettings.Description"]</p>
+
+    @if (isLoadingSettings)
+    {
+        <div class="text-center py-3">
+            <div class="spinner-border spinner-border-sm" role="status"></div>
+            <span class="ms-2">@L["Label.Loading"]</span>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-3">
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">@L["CodeSettings.ModuleName"]</th>
+                        <th style="width: 90px;" class="text-center">@L["CodeSettings.AutoEnabled"]</th>
+                        <th style="width: 100px;">@L["CodeSettings.Prefix"]</th>
+                        <th>@L["CodeSettings.FormatTemplate"]</th>
+                        <th style="width: 140px;">@L["CodeSettings.Preview"]</th>
+                        <th style="width: 100px;">@L["CodeSettings.ResetRule"]</th>
+                        <th style="width: 80px;" class="text-center">@L["CodeSettings.CurrentSeq"]</th>
+                        @if (IsSuperAdmin)
+                        {
+                            <th style="width: 80px;" class="text-center">@L["CodeSettings.ResetSeq"]</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var setting in codeSettings)
+                    {
+                        var s = setting;
+                        <tr class="@(!s.IsAutoCode ? "table-secondary" : "")">
+                            <td>
+                                <strong class="small">@s.ModuleDisplayName</strong>
+                                <div class="text-muted" style="font-size: 0.75rem;">@s.ModuleKey</div>
+                            </td>
+                            <td class="text-center">
+                                <div class="form-check form-switch d-flex justify-content-center mb-0">
+                                    <input class="form-check-input" type="checkbox"
+                                           checked="@s.IsAutoCode"
+                                           disabled="@IsDisabled"
+                                           @onchange="@(e => { s.IsAutoCode = (bool)(e.Value ?? false); StateHasChanged(); })" />
+                                </div>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm"
+                                       value="@s.Prefix"
+                                       disabled="@(!s.IsAutoCode || IsDisabled)"
+                                       maxlength="10"
+                                       @onchange="@(e => { s.Prefix = e.Value?.ToString() ?? ""; StateHasChanged(); })" />
+                            </td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm"
+                                       value="@s.FormatTemplate"
+                                       disabled="@(!s.IsAutoCode || IsDisabled)"
+                                       maxlength="100"
+                                       @onchange="@(e => { s.FormatTemplate = e.Value?.ToString() ?? ""; StateHasChanged(); })" />
+                            </td>
+                            <td>
+                                <code class="small @(!s.IsAutoCode ? "text-muted" : "text-primary")">
+                                    @(s.IsAutoCode ? CodeSettingService.PreviewCode(s.Prefix, s.FormatTemplate) : "-")
+                                </code>
+                            </td>
+                            <td>
+                                <span class="badge @GetResetBadgeClass(s.FormatTemplate) small">
+                                    @(s.IsAutoCode ? CodeSettingService.InferResetMode(s.FormatTemplate) : "-")
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">@s.CurrentSeq</span>
+                            </td>
+                            @if (IsSuperAdmin)
+                            {
+                                <td class="text-center">
+                                    <button class="btn btn-outline-warning btn-sm"
+                                            disabled="@(!s.IsAutoCode || IsDisabled || isResetting)"
+                                            @onclick="@(() => HandleResetSeq(s))"
+                                            title="@L["CodeSettings.ResetSeqTitle"]">
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </button>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @* 格式參數說明區 *@
+        <div class="card bg-light border-0 mt-2">
+            <div class="card-body py-2 px-3">
+                <small class="text-muted">
+                    <strong>@L["CodeSettings.FormatHelpTitle"]</strong><br />
+                    <code>{Prefix}</code> @L["CodeSettings.HelpPrefix"] &nbsp;
+                    <code>{Year:yy}</code> @L["CodeSettings.HelpYear2"] &nbsp;
+                    <code>{Year:yyyy}</code> @L["CodeSettings.HelpYear4"] &nbsp;
+                    <code>{Month:MM}</code> @L["CodeSettings.HelpMonth"] &nbsp;
+                    <code>{Day:dd}</code> @L["CodeSettings.HelpDay"] &nbsp;
+                    <code>{Seq:N}</code> @L["CodeSettings.HelpSeq"]
+                </small>
+            </div>
+        </div>
+    }
+</div>
+
+@* 重置序號確認對話框 *@
+<GenericConfirmModalComponent IsVisible="@isResetConfirmVisible"
+                              IsVisibleChanged="@((value) => isResetConfirmVisible = value)"
+                              Title="@L["CodeSettings.ResetConfirmTitle"]"
+                              Icon="bi-arrow-counterclockwise"
+                              Message="@resetConfirmMessage"
+                              ConfirmButtonText="@L["CodeSettings.ResetConfirmButton"]"
+                              ConfirmButtonVariant="ButtonVariant.Yellow"
+                              OnConfirm="ConfirmResetSeq" />
+
+@code {
+    [Parameter]
+    public bool IsDisabled { get; set; }
+
+    [Parameter]
+    public bool IsSuperAdmin { get; set; }
+
+    private List<CodeSetting> codeSettings = new();
+    private bool isLoadingSettings = true;
+    private bool isResetting = false;
+    private bool isResetConfirmVisible = false;
+    private string resetConfirmMessage = string.Empty;
+    private string? resetModuleKey;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSettingsAsync();
+    }
+
+    private async Task LoadSettingsAsync()
+    {
+        try
+        {
+            isLoadingSettings = true;
+            codeSettings = await CodeSettingService.GetAllSettingsAsync();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"{L["CodeSettings.LoadFailed"]}：{ex.Message}");
+        }
+        finally
+        {
+            isLoadingSettings = false;
+        }
+    }
+
+    /// <summary>
+    /// 由父元件呼叫的儲存方法
+    /// </summary>
+    public async Task SaveAsync()
+    {
+        try
+        {
+            var result = await CodeSettingService.SaveAllAsync(codeSettings);
+            if (!result.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync($"{L["Message.SaveFailed"]}：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"{L["Message.SaveFailed"]}：{ex.Message}");
+        }
+    }
+
+    private void HandleResetSeq(CodeSetting setting)
+    {
+        resetModuleKey = setting.ModuleKey;
+        resetConfirmMessage = string.Format(L["CodeSettings.ResetConfirmMessage"], setting.ModuleDisplayName, setting.CurrentSeq);
+        isResetConfirmVisible = true;
+    }
+
+    private async Task ConfirmResetSeq()
+    {
+        if (string.IsNullOrEmpty(resetModuleKey)) return;
+
+        try
+        {
+            isResetting = true;
+            StateHasChanged();
+
+            var result = await CodeSettingService.ResetSeqAsync(resetModuleKey);
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync(L["CodeSettings.ResetSuccess"]);
+                await LoadSettingsAsync();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync($"{L["CodeSettings.ResetFailed"]}：{result.ErrorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"{L["CodeSettings.ResetFailed"]}：{ex.Message}");
+        }
+        finally
+        {
+            isResetting = false;
+            resetModuleKey = null;
+            StateHasChanged();
+        }
+    }
+
+    private string GetResetBadgeClass(string formatTemplate)
+    {
+        var mode = CodeSettingService.InferResetMode(formatTemplate);
+        return mode switch
+        {
+            "每月重置" => "bg-info",
+            "每年重置" => "bg-primary",
+            _ => "bg-secondary"
+        };
+    }
+}

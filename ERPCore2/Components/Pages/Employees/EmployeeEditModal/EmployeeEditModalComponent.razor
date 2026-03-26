@@ -15,6 +15,7 @@
 @inject ContactLinkHelper ContactLinkHelper
 @inject IEmployeeDetailReportService EmployeeDetailReportService
 @inject IStringLocalizer<SharedResource> L
+@inject ICodeSettingService CodeSettingService
 @using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Employee"
@@ -260,7 +261,7 @@
 
                 return new Employee
                 {
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Employee, IEmployeeService>(EmployeeService, "EMP"),
+                    Code = await EntityCodeGenerationHelper.GenerateWithCodeSetting<Employee, IEmployeeService>(CodeSettingService, "Employee", EmployeeService, "EMP"),
                     Name = string.Empty,
                     IsSystemUser = false,
                     Status = EntityStatus.Active,

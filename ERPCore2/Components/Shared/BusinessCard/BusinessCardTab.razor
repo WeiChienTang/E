@@ -3,6 +3,7 @@
 @inject INotificationService NotificationService
 @inject IWebHostEnvironment Environment
 @inject IStringLocalizer<SharedResource> L
+@inject IJSRuntime JS
 
 @if (!OwnerId.HasValue || OwnerId.Value <= 0)
 {
@@ -18,10 +19,12 @@ else
         @* 上傳區域 *@
         <div class="d-flex align-items-center justify-content-between mb-3 px-1">
             <div class="d-flex gap-2">
-                <label class="btn btn-sm btn-primary">
-                    <i class="bi bi-upload me-1"></i>@L["BusinessCard.UploadPhoto"]
-                    <InputFile OnChange="@HandleFileSelected" accept=".jpg,.jpeg,.png" multiple class="d-none" />
-                </label>
+                <GenericButtonComponent 
+                                        Variant="ButtonVariant.DarkBlue"
+                                        Text="@L["BusinessCard.UploadPhoto"]"
+                                        OnClick="@TriggerFileInput"
+                                        IsDisabled="@(!OwnerId.HasValue || isUploading)" />
+                <InputFile @ref="inputFileRef" OnChange="@HandleFileSelected" accept=".jpg,.jpeg,.png" multiple class="d-none" id="@inputFileId" />
             </div>
             <span class="fw-semibold">@L["BusinessCard.PhotoList"]</span>
         </div>
@@ -125,6 +128,8 @@ else
     private BusinessCard? deletingCard = null;
     private BusinessCard? previewCard = null;
     private int? _loadedOwnerId;
+    private InputFile? inputFileRef;
+    private string inputFileId = $"business-card-upload-{Guid.NewGuid():N}";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -151,6 +156,13 @@ else
         businessCards = new();
         uploadError = null;
         StateHasChanged();
+    }
+
+    // ===== 觸發檔案選擇 =====
+
+    private async Task TriggerFileInput()
+    {
+        await JS.InvokeVoidAsync("eval", $"document.getElementById('{inputFileId}').click()");
     }
 
     // ===== 上傳 =====

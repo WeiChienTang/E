@@ -21,6 +21,7 @@
 @inject ERPCore2.Data.Context.AppDbContext DbContext
 @inject IEmployeeService EmployeeService
 @inject IStringLocalizer<SharedResource> L
+@inject ICodeSettingService CodeSettingService
 
 <GenericEditModalComponent TEntity="PurchaseOrder"
                           TService="IPurchaseOrderService"
@@ -228,7 +229,8 @@
             if (!PurchaseOrderId.HasValue)
             {
                 // 新增模式 - 使用統一的 EntityCodeGenerationHelper 產生採購單號（支援 Attribute 配置）
-                var generatedCode = await EntityCodeGenerationHelper.GenerateForEntity<PurchaseOrder, IPurchaseOrderService>(
+                var generatedCode = await EntityCodeGenerationHelper.GenerateWithCodeSetting<PurchaseOrder, IPurchaseOrderService>(
+                    CodeSettingService, "PurchaseOrder",
                     PurchaseOrderService,
                     DbContext
                 );
@@ -542,8 +544,9 @@
                     "ApprovedAtText",
                     nameof(PurchaseOrder.RejectReason))
                 .AssignColumn(0, FormSectionNames.BasicInfo)
-                .AssignColumn(1, FormSectionNames.ApprovalInfo)
-                .AssignColumn(2, FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo)
+                .AssignColumn(1, FormSectionNames.AmountInfo)
+                .AssignColumn(2, FormSectionNames.AdditionalInfo)
+                .AssignColumn(3, FormSectionNames.ApprovalInfo)
                 .GroupIntoTab(L["Tab.PurchaseOrderData"].ToString(), "bi-cart",
                     FormSectionNames.BasicInfo, FormSectionNames.AmountInfo,
                     FormSectionNames.AdditionalInfo, FormSectionNames.ApprovalInfo)

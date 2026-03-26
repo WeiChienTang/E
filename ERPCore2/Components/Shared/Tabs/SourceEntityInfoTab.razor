@@ -1,0 +1,55 @@
+@* 來源實體資訊 Tab — 根據 RelatedEntityType 動態顯示對應的 InfoTab *@
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResource> L
+
+@switch (RelatedEntityType)
+{
+    case "Customer":
+        <CustomerInfoTab @ref="customerInfoTab" CustomerId="@RelatedEntityId" />
+        break;
+    case "Supplier":
+        <SupplierInfoTab @ref="supplierInfoTab" SupplierId="@RelatedEntityId" />
+        break;
+    case "GovernmentAgency":
+        <GovernmentAgencyInfoTab @ref="governmentAgencyInfoTab" GovernmentAgencyId="@RelatedEntityId" />
+        break;
+    default:
+        <div class="d-flex align-items-center justify-content-center text-muted py-5">
+            <i class="bi bi-info-circle fs-4 me-2 opacity-50"></i>
+            <span>@L["Document.NoSourceEntityInfo"]</span>
+        </div>
+        break;
+}
+
+@code {
+    [Parameter] public string? RelatedEntityType { get; set; }
+    [Parameter] public int? RelatedEntityId { get; set; }
+
+    private CustomerInfoTab? customerInfoTab;
+    private SupplierInfoTab? supplierInfoTab;
+    private GovernmentAgencyInfoTab? governmentAgencyInfoTab;
+
+    public async Task LoadAsync(int entityId)
+    {
+        switch (RelatedEntityType)
+        {
+            case "Customer":
+                if (customerInfoTab != null) await customerInfoTab.LoadAsync(entityId);
+                break;
+            case "Supplier":
+                if (supplierInfoTab != null) await supplierInfoTab.LoadAsync(entityId);
+                break;
+            case "GovernmentAgency":
+                if (governmentAgencyInfoTab != null) await governmentAgencyInfoTab.LoadAsync(entityId);
+                break;
+        }
+    }
+
+    public void Clear()
+    {
+        customerInfoTab?.Clear();
+        supplierInfoTab?.Clear();
+        governmentAgencyInfoTab?.Clear();
+        StateHasChanged();
+    }
+}

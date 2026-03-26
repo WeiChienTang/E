@@ -62,7 +62,6 @@
                           OnCancel="@OnCancel"
                           OnFieldChanged="@OnFieldValueChanged"
                           OnTaxMethodChanged="@(() => HandleDeliveryDetailsChanged(salesDeliveryDetails))"
-                          GetStatusMessage="@GetSalesDeliveryStatusMessage"
                           FormHeaderContent="@GetWarningMessage()"
                           CustomActionButtons="@GetCustomActionButtons()"
                           ShowPrintButton="true"
@@ -281,36 +280,6 @@
             isDataLoaded = false;
         }
     }
-    /// <summary>
-    /// 取得出貨單狀態訊息（顯示鎖定狀態）
-    /// </summary>
-    private async Task<(string Message, GenericEditModalComponent<SalesDelivery, ISalesDeliveryService>.BadgeVariant Variant, string IconClass)?> GetSalesDeliveryStatusMessage()
-    {
-        try
-        {
-            if (!isDetailDataReady)
-            {
-                return null;
-            }
-
-            if (hasUndeletableDetails)
-            {
-                return (
-                    "明細有退貨或沖款記錄，主檔欄位已鎖定",
-                    GenericEditModalComponent<SalesDelivery, ISalesDeliveryService>.BadgeVariant.Warning,
-                    "fas fa-lock"
-                );
-            }
-
-            return null;
-        }
-        catch (Exception ex)
-        {
-            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(GetSalesDeliveryStatusMessage), GetType());
-            return null;
-        }
-    }
-
     /// <summary>
     /// 取得警告訊息（顯示在表單最上方）
     /// </summary>
@@ -757,8 +726,9 @@
                     "ApprovedAtText",
                     nameof(SalesDelivery.RejectReason))
                 .AssignColumn(0, FormSectionNames.BasicInfo)
-                .AssignColumn(1, FormSectionNames.FilterConditions, FormSectionNames.ApprovalInfo)
-                .AssignColumn(2, FormSectionNames.AmountInfo, FormSectionNames.OtherInfo)
+                .AssignColumn(1, FormSectionNames.AmountInfo)
+                .AssignColumn(2, FormSectionNames.OtherInfo)
+                .AssignColumn(3, FormSectionNames.FilterConditions, FormSectionNames.ApprovalInfo)
                 .GroupIntoTab(L["Tab.DeliveryData"].ToString(), "bi-truck",
                     FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
                     FormSectionNames.AmountInfo, FormSectionNames.OtherInfo, FormSectionNames.ApprovalInfo)

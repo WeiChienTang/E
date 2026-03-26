@@ -236,6 +236,37 @@ public static class NavigationConfig
                 }
             },
 
+            // ==================== 公家機關管理 ====================
+            new NavigationItem
+            {
+                Name = "公家機關",
+                NameKey = "Nav.GovernmentAgencyGroup",
+                Description = "公家機關相關功能管理",
+                Route = "#",
+                IconClass = "bi bi-bank",
+                Category = "外部關係管理",
+                IsParent = true,
+                MenuKey = "government_agency_management",
+                ModuleKey = "GovernmentAgencies",
+                SearchKeywords = new List<string> { "公家機關", "政府", "公家", "機關", "government", "agency", "公务机关", "政府机关", "官公庁", "政府機関" },
+                Children = new List<NavigationItem>
+                {
+                    new NavigationItem
+                    {
+                        Name = "公家機關",
+                        NameKey = "Nav.GovernmentAgencies",
+                        Description = "管理公家機關資料",
+                        Route = "/government-agencies",
+                        IconClass = "bi bi-caret-right-fill",
+                        Category = "外部關係管理",
+                        RequiredPermission = PermissionRegistry.GovernmentAgency.Read,
+                        SearchKeywords = new List<string> { "公家機關管理", "政府機關資料", "government agency", "公务机关管理", "官公庁管理" },
+                        QuickActionId = "NewGovernmentAgency",
+                        QuickActionName = "新增公家機關"
+                    },
+                }
+            },
+
             // ==================== 客戶管理 ====================
             new NavigationItem
             {

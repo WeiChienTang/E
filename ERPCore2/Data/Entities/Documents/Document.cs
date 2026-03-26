@@ -17,10 +17,6 @@ namespace ERPCore2.Data.Entities
         public int? DocumentCategoryId { get; set; }
         public DocumentCategory? DocumentCategory { get; set; }
 
-        [MaxLength(200, ErrorMessage = "發文機關不可超過200個字元")]
-        [Display(Name = "發文機關/來源")]
-        public string? IssuedBy { get; set; }
-
         [Display(Name = "發文日期")]
         public DateTime? IssuedDate { get; set; }
 

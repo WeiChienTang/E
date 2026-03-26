@@ -88,12 +88,14 @@
     private SubAccountSettingsTab? subAccountTab;
     private ModuleManagementTab? moduleManagementTab;
     private ApprovalSettingsTab? approvalSettingsTab;
+    private CodeSettingsTab? codeSettingsTab;
 
     // Tab 與權限
     private bool isSuperAdmin = false;
     private bool hasSubAccountRead = false;
     private bool hasSubAccountBatchCreate = false;
     private bool hasPayrollRateTable = false;
+    private bool hasCodeSettings = false;
 
     // ===== 表單欄位與 Tab 定義（所有 Tab 使用 CustomContent，欄位定義為空） =====
 
@@ -160,6 +162,13 @@
                              Model="@systemParameter" />
     };
 
+    private RenderFragment CreateCodeSettingsTabContent() => __builder =>
+    {
+        <CodeSettingsTab @ref="codeSettingsTab"
+                         IsDisabled="@(isSaving || isLoading)"
+                         IsSuperAdmin="@isSuperAdmin" />
+    };
+
     // ===== 生命週期方法 =====
 
     protected override void OnInitialized()
@@ -213,6 +222,20 @@
                 SectionNames = new(),
                 CustomContent = CreatePayrollSettingsTabContent(),
                 DebugComponentName = nameof(PayrollSettingsTab)
+            });
+        }
+
+        // 有 System.CodeSettings 權限（或 SuperAdmin）才加入代碼自動產生 Tab
+        await CheckCodeSettingsPermissionsAsync();
+        if (hasCodeSettings || isSuperAdmin)
+        {
+            tabDefinitions.Add(new FormTabDefinition
+            {
+                Label = L["Tab.CodeSettings"],
+                Icon = "bi bi-hash",
+                SectionNames = new(),
+                CustomContent = CreateCodeSettingsTabContent(),
+                DebugComponentName = nameof(CodeSettingsTab)
             });
         }
 
@@ -298,6 +321,26 @@
         }
     }
 
+    private async Task CheckCodeSettingsPermissionsAsync()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState?.User;
+            if (user?.Identity?.IsAuthenticated != true) return;
+
+            var employeeIdClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(employeeIdClaim, out int employeeId)) return;
+
+            var result = await PermissionService.HasPermissionAsync(employeeId, PermissionRegistry.System.CodeSettings);
+            hasCodeSettings = result.IsSuccess && result.Data;
+        }
+        catch
+        {
+            hasCodeSettings = false;
+        }
+    }
+
     // ===== 資料載入 =====
 
     private async Task LoadSystemParameterAsync()
@@ -377,6 +420,11 @@
                 if (isSuperAdmin && moduleManagementTab != null)
                 {
                     await moduleManagementTab.SaveAsync();
+                }
+
+                if (codeSettingsTab != null)
+                {
+                    await codeSettingsTab.SaveAsync();
                 }
 
                 await NotificationService.ShowSuccessAsync(L["SystemParam.SaveSuccess"]);

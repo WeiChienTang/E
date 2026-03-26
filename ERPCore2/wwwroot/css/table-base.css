@@ -395,6 +395,17 @@
     -ms-user-select: none;
 }
 
+/* 拖曳參考線（position: fixed，覆蓋在表格上方） */
+.column-resize-guide {
+    display: none;
+    position: fixed;
+    width: 2px;
+    background-color: #007bff;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
 /* 排序圖標 */
 .table th i.fa-sort {
     opacity: 0.5;

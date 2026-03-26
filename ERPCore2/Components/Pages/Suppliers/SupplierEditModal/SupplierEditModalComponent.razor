@@ -11,6 +11,7 @@
 @inject ICompanyModuleService CompanyModuleService
 @inject INavigationPermissionService NavigationPermissionService
 @inject IStringLocalizer<SharedResource> L
+@inject ICodeSettingService CodeSettingService
 @using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Supplier"
@@ -279,7 +280,7 @@
 
                 var newSupplier = new Supplier
                 {
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Supplier, ISupplierService>(SupplierService, "S"),
+                    Code = await EntityCodeGenerationHelper.GenerateWithCodeSetting<Supplier, ISupplierService>(CodeSettingService, "Supplier", SupplierService, "S"),
                     Status = EntityStatus.Active
                 };
 

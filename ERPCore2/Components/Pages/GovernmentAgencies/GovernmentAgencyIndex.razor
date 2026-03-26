@@ -1,0 +1,97 @@
+@page "/government-agencies"
+@inject IGovernmentAgencyService GovernmentAgencyService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+@rendermode InteractiveServer
+
+<GenericIndexPageComponent TEntity="GovernmentAgency"
+                          TService="IGovernmentAgencyService"
+                          Service="@GovernmentAgencyService"
+                          EntityBasePath="/government-agencies"
+                          PageTitle="@L["Page.GovernmentAgencyTitle"]"
+                          PageSubtitle="@L["Page.GovernmentAgencySubtitle"]"
+                          EntityName="@L["Entity.GovernmentAgency"]"
+                          BreadcrumbItems="@breadcrumbItems"
+                          FilterDefinitions="@filterDefinitions"
+                          ColumnDefinitions="@columnDefinitions"
+                          ShowDraftTab="true"
+                          ServerDataLoader="@ServerLoadAgenciesAsync"
+                          GetEntityDisplayName="@(agency => agency.AgencyName)"
+                          RequiredPermission="@PermissionRegistry.GovernmentAgency.Read"
+                          RequiredModule="GovernmentAgencies"
+                          OnAddClick="@modalHandler.ShowAddModalAsync"
+                          OnRowClick="@modalHandler.ShowEditModalAsync"
+                          DebugPageName="GovernmentAgencyIndex"
+                          @ref="indexComponent" />
+
+@* 公家機關編輯 Modal *@
+<GovernmentAgencyEditModalComponent IsVisible="@showEditModal"
+                                    IsVisibleChanged="@((bool visible) => showEditModal = visible)"
+                                    GovernmentAgencyId="@editingAgencyId"
+                                    OnGovernmentAgencySaved="@modalHandler.OnEntitySavedAsync"
+                                    OnCancel="@modalHandler.OnModalCancelAsync" />
+
+@code {
+    // 組件參考
+    private GenericIndexPageComponent<GovernmentAgency, IGovernmentAgencyService> indexComponent = default!;
+
+    // Modal 相關狀態
+    private bool showEditModal = false;
+    private int? editingAgencyId = null;
+
+    // Modal 處理器
+    private ModalHandler<GovernmentAgency, GenericIndexPageComponent<GovernmentAgency, IGovernmentAgencyService>> modalHandler = default!;
+
+    // 欄位配置
+    private GovernmentAgencyFieldConfiguration fieldConfiguration = default!;
+
+    // 配置相關
+    private List<SearchFilterDefinition> filterDefinitions = new();
+    private List<TableColumnDefinition> columnDefinitions = new();
+    private List<BreadcrumbItem> breadcrumbItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 初始化 Modal 處理器
+            modalHandler = ModalHelper.CreateModalHandler<GovernmentAgency, GenericIndexPageComponent<GovernmentAgency, IGovernmentAgencyService>>(
+                id => editingAgencyId = id,
+                visible => showEditModal = visible,
+                () => indexComponent,
+                StateHasChanged,
+                GetType());
+
+            await InitializeBreadcrumbsAsync();
+
+            // 建立欄位配置（傳遞 NotificationService）
+            fieldConfiguration = new GovernmentAgencyFieldConfiguration(NotificationService);
+            fieldConfiguration.SetLocalizer(L);
+
+            // 使用欄位配置建立篩選器和表格欄位
+            filterDefinitions = fieldConfiguration.BuildFilters();
+            columnDefinitions = fieldConfiguration.BuildColumns();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(OnInitializedAsync), GetType(), additionalData: "初始化公家機關頁面失敗");
+            await NotificationService.ShowErrorAsync("初始化公家機關頁面失敗");
+        }
+    }
+
+    private async Task InitializeBreadcrumbsAsync() => breadcrumbItems = await BreadcrumbHelper.CreateSimpleAsync("公家機關管理", NotificationService, GetType());
+
+    private Task<(List<GovernmentAgency> Items, int TotalCount)> ServerLoadAgenciesAsync(
+        SearchFilterModel filter, int page, int pageSize)
+    {
+        return GovernmentAgencyService.GetPagedWithFiltersAsync(
+            q =>
+            {
+                q = q.Where(g => g.IsDraft == (filter.ShowDrafts ?? false));
+                if (fieldConfiguration != null)
+                    q = fieldConfiguration.ApplyFilters(filter, q, nameof(ServerLoadAgenciesAsync), GetType());
+                return q;
+            },
+            page, pageSize);
+    }
+}

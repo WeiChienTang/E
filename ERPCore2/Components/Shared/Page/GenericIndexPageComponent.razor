@@ -335,6 +335,7 @@ else
                                  FormattedDocument="@_rowPrintDocument"
                                  ReportId="@RowPrintReportId"
                                  DocumentName="@_rowPrintTitle"
+                                 DebugReportServiceName="@(RowPrintService?.GetType().Name ?? "")"
                                  OnCancel="@(() => _showRowPrintModal = false)" />
 }
 

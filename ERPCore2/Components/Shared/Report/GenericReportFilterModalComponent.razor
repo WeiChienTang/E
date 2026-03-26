@@ -122,6 +122,7 @@
                             Documents="@documentList"
                             ReportId="@savedReportId"
                             DocumentName="@documentName"
+                            DebugReportServiceName="@(currentReportService?.GetType().Name ?? "")"
                             OnPrintSuccess="@HandlePrintSuccess"
                             OnCancel="@HandlePreviewCancel" />
 

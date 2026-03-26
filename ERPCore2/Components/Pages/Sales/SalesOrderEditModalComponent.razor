@@ -22,8 +22,9 @@
 @inject IStringLocalizer<SharedResource> L
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject INavigationPermissionService NavigationPermissionService
+@inject ICodeSettingService CodeSettingService
 
-<GenericEditModalComponent TEntity="SalesOrder" 
+<GenericEditModalComponent TEntity="SalesOrder"
                           TService="ISalesOrderService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
@@ -327,7 +328,7 @@
                 // 新增模式
                 var newOrder = new SalesOrder
                 {
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<SalesOrder, ISalesOrderService>(SalesOrderService, DbContext),
+                    Code = await EntityCodeGenerationHelper.GenerateWithCodeSetting<SalesOrder, ISalesOrderService>(CodeSettingService, "SalesOrder", SalesOrderService, DbContext),
                     OrderDate = DateTime.Today,
                     ExpectedDeliveryDate = DateTime.Today.AddDays(7),
                     Status = EntityStatus.Active,
@@ -751,8 +752,9 @@
                     "ApprovedAtText",
                     nameof(SalesOrder.RejectReason))
                 .AssignColumn(0, FormSectionNames.BasicInfo)
-                .AssignColumn(1, FormSectionNames.FilterConditions, FormSectionNames.ApprovalInfo)
-                .AssignColumn(2, FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo)
+                .AssignColumn(1, FormSectionNames.AmountInfo)
+                .AssignColumn(2, FormSectionNames.AdditionalInfo)
+                .AssignColumn(3, FormSectionNames.FilterConditions, FormSectionNames.ApprovalInfo)
                 .GroupIntoTab(L["Tab.OrderData"].ToString(), "bi-cart-check",
                     FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
                     FormSectionNames.AmountInfo, FormSectionNames.AdditionalInfo, FormSectionNames.ApprovalInfo)

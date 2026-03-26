@@ -72,4 +72,32 @@ namespace ERPCore2.Models.Enums
         /// <summary>暫停往來</summary>
         Suspended = 3
     }
+
+    /// <summary>
+    /// 公家機關類型
+    /// </summary>
+    public enum GovernmentAgencyType
+    {
+        /// <summary>中央機關</summary>
+        Central = 1,
+        /// <summary>直轄市機關</summary>
+        Municipal = 2,
+        /// <summary>縣市機關</summary>
+        County = 3,
+        /// <summary>鄉鎮市區機關</summary>
+        Township = 4,
+        /// <summary>其他</summary>
+        Other = 5
+    }
+
+    /// <summary>
+    /// 公家機關狀態
+    /// </summary>
+    public enum GovernmentAgencyStatus
+    {
+        /// <summary>正常往來</summary>
+        Active = 1,
+        /// <summary>停用</summary>
+        Inactive = 2
+    }
 }

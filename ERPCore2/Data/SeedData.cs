@@ -160,6 +160,7 @@ namespace ERPCore2.Data
                     new DocumentCategorySeeder(),          // 檔案分類（政府公文、廠商合約等）
                     new PayrollItemSeeder(),               // 薪資項目（16個預設項目）
                     new InsuranceRateSeeder(),             // 保費費率（114年費率）
+                    new CodeSettingSeeder(),               // 代碼自動產生設定（12 個模組預設值）
                 };
 
                 if (enableTestData)

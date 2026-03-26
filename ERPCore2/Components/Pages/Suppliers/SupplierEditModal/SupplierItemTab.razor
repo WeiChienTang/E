@@ -119,6 +119,7 @@ else
                 Title = L["Column.ItemName"],
                 PropertyName = "",
                 ColumnType = InteractiveColumnType.Display,
+                Width = "200px",
                 DisplayFormatter = item => item is ItemSupplier ps1 ? ps1.Item?.Name ?? "-" : "-"
             },
             new()

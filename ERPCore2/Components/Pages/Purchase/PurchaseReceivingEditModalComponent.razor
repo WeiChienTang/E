@@ -26,6 +26,7 @@
 @inject ERPCore2.Data.Context.AppDbContext DbContext
 @inject IStringLocalizer<SharedResource> L
 @inject IJournalEntryService JournalEntryService
+@inject ICodeSettingService CodeSettingService
 @implements IDisposable
 
 <GenericEditModalComponent TEntity="PurchaseReceiving" 
@@ -509,7 +510,7 @@
                 // 新增模式
                 var newReceiving = new PurchaseReceiving
                 {
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<PurchaseReceiving, IPurchaseReceivingService>(PurchaseReceivingService, DbContext),
+                    Code = await EntityCodeGenerationHelper.GenerateWithCodeSetting<PurchaseReceiving, IPurchaseReceivingService>(CodeSettingService, "PurchaseReceiving", PurchaseReceivingService, DbContext),
                     ReceiptDate = DateTime.Now,
                     SupplierId = PrefilledSupplierId,
                 };
@@ -1003,8 +1004,9 @@
                     "ApprovedAtText",
                     nameof(PurchaseReceiving.RejectReason))
                 .AssignColumn(0, FormSectionNames.BasicInfo)
-                .AssignColumn(1, FormSectionNames.FilterConditions, FormSectionNames.ApprovalInfo)
-                .AssignColumn(2, FormSectionNames.AmountInfo, FormSectionNames.OtherInfo)
+                .AssignColumn(1, FormSectionNames.AmountInfo)
+                .AssignColumn(2, FormSectionNames.OtherInfo)
+                .AssignColumn(3, FormSectionNames.FilterConditions, FormSectionNames.ApprovalInfo)
                 .GroupIntoTab(L["Tab.ReceivingData"].ToString(), "bi-box-seam",
                     FormSectionNames.BasicInfo, FormSectionNames.FilterConditions,
                     FormSectionNames.AmountInfo, FormSectionNames.OtherInfo, FormSectionNames.ApprovalInfo)

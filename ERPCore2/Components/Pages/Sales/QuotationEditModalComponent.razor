@@ -21,8 +21,9 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ERPCore2.Data.Context.AppDbContext DbContext
 @inject IStringLocalizer<SharedResource> L
+@inject ICodeSettingService CodeSettingService
 
-<GenericEditModalComponent TEntity="Quotation" 
+<GenericEditModalComponent TEntity="Quotation"
                           TService="IQuotationService"
                           @ref="editModalComponent"
                           IsVisible="@IsVisible"
@@ -263,7 +264,7 @@
                 
                 var newQuotation = new Quotation
                 {
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Quotation, IQuotationService>(QuotationService, DbContext),
+                    Code = await EntityCodeGenerationHelper.GenerateWithCodeSetting<Quotation, IQuotationService>(CodeSettingService, "Quotation", QuotationService, DbContext),
                     QuotationDate = DateTime.Today,
                     Status = EntityStatus.Active,
                     CompanyId = primaryCompany?.Id // 設定預設公司
@@ -644,8 +645,9 @@
                     "ApprovedAtText",
                     nameof(Quotation.RejectReason))
                 .AssignColumn(0, FormSectionNames.BasicInfo)
-                .AssignColumn(1, FormSectionNames.TradingTerms, FormSectionNames.ApprovalInfo)
-                .AssignColumn(2, FormSectionNames.AmountInfo, FormSectionNames.OtherInfo)
+                .AssignColumn(1, FormSectionNames.AmountInfo)
+                .AssignColumn(2, FormSectionNames.OtherInfo)
+                .AssignColumn(3, FormSectionNames.TradingTerms, FormSectionNames.ApprovalInfo)
                 .GroupIntoTab(L["Tab.QuotationData"].ToString(), "bi-file-earmark-text",
                     FormSectionNames.BasicInfo, FormSectionNames.AmountInfo,
                     FormSectionNames.TradingTerms, FormSectionNames.OtherInfo, FormSectionNames.ApprovalInfo)

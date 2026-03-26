@@ -1,6 +1,7 @@
 using ERPCore2.Data;
 using ERPCore2.Data.Entities;
 using ERPCore2.Models.Reports;
+using ERPCore2.Services.Reports.Interfaces;
 using Microsoft.AspNetCore.Components.Forms;
 
 namespace ERPCore2.Components.Shared.Modal;
@@ -12,6 +13,9 @@ public partial class GenericEditModalComponent<TEntity, TService>
     where TEntity : BaseEntity, new()
 {
     // ===== 列印處理 =====
+
+    // 區段選擇相關
+    private List<ReportSectionDefinition>? _reportSections = null;
 
     private async Task HandlePrint()
     {
@@ -41,8 +45,22 @@ public partial class GenericEditModalComponent<TEntity, TService>
                 return;
             }
 
-            _formattedDocument = await ReportService!.GenerateReportAsync(Entity.Id);
-            _reportPreviewImages = await ReportService.RenderToImagesAsync(Entity.Id);
+            // 偵測是否支援區段選擇
+            if (ReportService is ISectionAwareReportService<TEntity> sectionAware)
+            {
+                _reportSections = await sectionAware.GetAvailableSectionsAsync(Entity.Id);
+                var defaultKeys = _reportSections
+                    .Where(s => s.IsChecked && s.IsEnabled)
+                    .Select(s => s.Key).ToList();
+                _formattedDocument = await sectionAware.GenerateReportAsync(Entity.Id, defaultKeys);
+            }
+            else
+            {
+                _reportSections = null;
+                _formattedDocument = await ReportService!.GenerateReportAsync(Entity.Id);
+            }
+
+            _reportPreviewImages = await ReportService!.RenderToImagesAsync(Entity.Id);
             _reportDocumentName = GetReportDocumentName?.Invoke(Entity) ?? $"{EntityName}-{Entity.Id}";
             _showReportPreviewModal = true;
             StateHasChanged();
@@ -51,6 +69,23 @@ public partial class GenericEditModalComponent<TEntity, TService>
         {
             await NotificationService.ShowErrorAsync("列印處理時發生錯誤");
             LogError("HandlePrintInternal", ex);
+        }
+    }
+
+    private async Task HandleRegenerateReport(List<string> selectedKeys)
+    {
+        if (ReportService is not ISectionAwareReportService<TEntity> sectionAware || Entity == null)
+            return;
+
+        try
+        {
+            _formattedDocument = await sectionAware.GenerateReportAsync(Entity.Id, selectedKeys);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync("重新產生報表失敗");
+            LogError("HandleRegenerateReport", ex);
         }
     }
 

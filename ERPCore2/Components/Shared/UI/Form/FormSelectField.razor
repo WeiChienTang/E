@@ -9,6 +9,10 @@
         @onchange="HandleChange">
     @if (Field.Options != null)
     {
+        @if (ShowPlaceholder)
+        {
+            <option value="" selected="@(CurrentValue == null)">@PlaceholderText</option>
+        }
         @foreach (var option in Field.Options)
         {
             <option value="@option.Value" selected="@(option.Value == CurrentValue)">@option.Text</option>
@@ -51,6 +55,17 @@
             return Value.ToString();
         }
     }
+
+    /// <summary>
+    /// 是否需要顯示預設的空白佔位選項：
+    /// 當 Options 沒有任何 Value 為空的選項時才加入，避免重複
+    /// </summary>
+    private bool ShowPlaceholder =>
+        Field.Options != null &&
+        !Field.Options.Any(o => string.IsNullOrEmpty(o.Value));
+
+    private string PlaceholderText =>
+        !string.IsNullOrEmpty(Field.Placeholder) ? Field.Placeholder : "— —";
 
     private async Task HandleChange(ChangeEventArgs e)
     {

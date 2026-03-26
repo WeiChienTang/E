@@ -12,6 +12,7 @@
 @inject INotificationService NotificationService
 @inject ActionButtonHelper ActionButtonHelper
 @inject IStringLocalizer<SharedResource> L
+@inject ICodeSettingService CodeSettingService
 @inject ISerialPortService SerialPortService
 @implements IDisposable
 @using ERPCore2.Models.FeatureGuides.GuideDefinitions
@@ -285,7 +286,7 @@
             {
                 var newRecord = new ScaleRecord
                 {
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<ScaleRecord, IScaleRecordService>(ScaleRecordService, "WR"),
+                    Code = await EntityCodeGenerationHelper.GenerateWithCodeSetting<ScaleRecord, IScaleRecordService>(CodeSettingService, "WasteRecord", ScaleRecordService, "WR"),
                     RecordDate = DateTime.Today,
                     EntryTime = DateTime.Now,
                     Status = EntityStatus.Active

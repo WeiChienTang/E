@@ -16,13 +16,17 @@ else
     <div class="business-card-tab">
 
         @* Header *@
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <span class="fw-semibold">@L["Tab.EmployeePhoto"]</span>
-            <label class="btn btn-sm btn-outline-primary" style="cursor:pointer; margin-bottom:0;">
-                <i class="bi bi-upload me-1"></i>
-                @(string.IsNullOrEmpty(currentPhotoPath) ? L["EmployeePhoto.Upload"] : L["EmployeePhoto.Change"])
-                <InputFile OnChange="@HandleFileSelected" accept=".jpg,.jpeg,.png" class="d-none" />
-            </label>
+        <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+            <div class="d-flex gap-2">
+                <div class="position-relative d-inline-block">
+                    <GenericButtonComponent 
+                                           Variant="ButtonVariant.DarkBlue"
+                                           Text="@(string.IsNullOrEmpty(currentPhotoPath) ? L["EmployeePhoto.Upload"] : L["EmployeePhoto.Change"])"
+                                           Title="@L["Tab.EmployeePhoto"]" />
+                    <InputFile OnChange="@HandleFileSelected" accept=".jpg,.jpeg,.png"
+                               class="position-absolute top-0 start-0 w-100 h-100 opacity-0" style="cursor:pointer; z-index:1;" />
+                </div>
+            </div>
         </div>
 
         @if (!string.IsNullOrEmpty(uploadError))

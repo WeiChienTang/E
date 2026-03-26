@@ -102,6 +102,71 @@ public class CodeGenerationStrategyAttribute : Attribute
 public static class EntityCodeGenerationHelper
 {
     /// <summary>
+    /// 使用 CodeSetting 設定產生代碼。
+    /// IsAutoCode=true → 回傳新格式代碼；IsAutoCode=false → 回傳空字串（使用者手動輸入）。
+    /// 僅在 CodeSetting 服務異常時 fallback 到舊邏輯。
+    /// 適用於 convention-based（service + prefix）模組。
+    /// </summary>
+    public static async Task<string> GenerateWithCodeSetting<TEntity, TService>(
+        ICodeSettingService codeSettingService,
+        string moduleKey,
+        TService service,
+        string fallbackPrefix,
+        int? excludeId = null)
+        where TService : class
+    {
+        try
+        {
+            var result = await codeSettingService.GenerateCodeAsync(moduleKey);
+            if (result.IsSuccess)
+            {
+                // Data != null → 自動產生的代碼
+                // Data == null → IsAutoCode=false，使用者要手動輸入，回傳空字串
+                return result.Data ?? string.Empty;
+            }
+            // 失敗（找不到模組設定等）→ fallback 到舊邏輯
+        }
+        catch
+        {
+            // CodeSetting 服務異常 → fallback
+        }
+
+        return await GenerateForEntity<TEntity, TService>(service, fallbackPrefix, excludeId);
+    }
+
+    /// <summary>
+    /// 使用 CodeSetting 設定產生代碼。
+    /// IsAutoCode=true → 回傳新格式代碼；IsAutoCode=false → 回傳空字串（使用者手動輸入）。
+    /// 僅在 CodeSetting 服務異常時 fallback 到舊邏輯。
+    /// 適用於 attribute-based（service + DbContext）模組。
+    /// </summary>
+    public static async Task<string> GenerateWithCodeSetting<TEntity, TService>(
+        ICodeSettingService codeSettingService,
+        string moduleKey,
+        TService service,
+        DbContext dbContext,
+        int? excludeId = null)
+        where TEntity : class
+        where TService : class
+    {
+        try
+        {
+            var result = await codeSettingService.GenerateCodeAsync(moduleKey);
+            if (result.IsSuccess)
+            {
+                return result.Data ?? string.Empty;
+            }
+            // 失敗 → fallback
+        }
+        catch
+        {
+            // CodeSetting 服務異常 → fallback
+        }
+
+        return await GenerateForEntity<TEntity, TService>(service, dbContext, excludeId);
+    }
+
+    /// <summary>
     /// 為指定實體生成編號（自動讀取特性配置，優先使用）
     /// </summary>
     /// <typeparam name="TEntity">實體類型</typeparam>

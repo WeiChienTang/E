@@ -50,7 +50,7 @@
                             </div>
                             @if (EnableColumnResize)
                             {
-                                <div class="column-resizer" @onmousedown="@((e) => StartColumnResize(e, column.PropertyName))"></div>
+                                <div class="column-resizer"></div>
                             }
                         </th>
                     }
@@ -368,12 +368,6 @@
         return string.Join("; ", styles);
     }
 
-    private void StartColumnResize(MouseEventArgs e, string columnName)
-    {
-        // 這個方法將配合 JavaScript 使用
-        // JavaScript 將處理實際的拖拽邏輯
-    }
-
     private string FormatCellValue(TItem item, TableColumnDefinition column)
     {
         var value = GetPropertyValue(item, column.PropertyName);
@@ -525,11 +519,18 @@
         _selectAllCheckboxId = $"select-all-{Guid.NewGuid():N}";
     }
 
+    private bool _resizerInitialized = false;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && EnableColumnResize)
+        // 欄位 resize 初始化：必須等 thead 實際渲染出 .column-resizer 後才能綁定
+        // 不能只在 firstRender 執行，因為首次渲染時 ColumnDefinitions 可能尚未載入
+        if (EnableColumnResize && !_resizerInitialized
+            && ColumnDefinitions != null && ColumnDefinitions.Any())
         {
-            await JSRuntime.InvokeVoidAsync("tableColumnResizer.init", TableId);
+            _resizerInitialized = true;
+            try { await JSRuntime.InvokeVoidAsync("tableColumnResizer.init", TableId); }
+            catch { /* 忽略 JS 初始化錯誤 */ }
         }
 
         // 選單顯示後呼叫 JS 做視窗邊界修正（避免選單超出視窗）
@@ -555,120 +556,3 @@
     }
 }
 
-<script>
-window.tableColumnResizer = {
-    currentTable: null,
-    currentColumn: null,
-    currentResizer: null,
-    nextColumn: null,
-    startX: 0,
-    startWidth: 0,
-    nextStartWidth: 0,
-    
-    init: function(tableId) {
-        const table = document.getElementById(tableId);
-        if (!table) return;
-        
-        // 為所有 resizer 添加事件監聽器
-        const resizers = table.querySelectorAll('.column-resizer');
-        resizers.forEach(resizer => {
-            resizer.addEventListener('mousedown', (e) => this.startResize(e, table));
-        });
-        
-        // 添加全域事件監聽器
-        document.addEventListener('mousemove', (e) => this.doResize(e));
-        document.addEventListener('mouseup', () => this.stopResize());
-    },
-    
-    startResize: function(e, table) {
-        e.preventDefault();
-        
-        this.currentResizer = e.target;
-        this.currentTable = table;
-        this.currentColumn = e.target.parentElement;
-        
-        this.startX = e.clientX;
-        this.startWidth = parseInt(document.defaultView.getComputedStyle(this.currentColumn).width, 10);
-        
-        // 找到下一個欄位，用於調整時的補償
-        const currentIndex = Array.from(this.currentColumn.parentElement.children).indexOf(this.currentColumn);
-        this.nextColumn = this.currentColumn.parentElement.children[currentIndex + 1] || null;
-        this.nextStartWidth = this.nextColumn ? 
-            parseInt(document.defaultView.getComputedStyle(this.nextColumn).width, 10) : 0;
-        
-        this.currentResizer.classList.add('resizing');
-        this.currentTable.classList.add('resizing');
-        
-        document.body.style.cursor = 'col-resize';
-    },
-    
-    doResize: function(e) {
-        if (!this.currentColumn) return;
-        
-        const deltaX = e.clientX - this.startX;
-        const newWidth = this.startWidth + deltaX;
-        
-        // 設定最小寬度限制
-        if (newWidth < 50) return;
-        
-        // 只調整當前欄位寬度
-        this.currentColumn.style.width = newWidth + 'px';
-        
-        // 如果有下一個欄位，調整其寬度以保持表格總寬度不變
-        if (this.nextColumn && this.nextStartWidth - deltaX > 50) {
-            this.nextColumn.style.width = (this.nextStartWidth - deltaX) + 'px';
-        }
-    },
-    
-    stopResize: function() {
-        if (this.currentResizer) {
-            this.currentResizer.classList.remove('resizing');
-        }
-        if (this.currentTable) {
-            this.currentTable.classList.remove('resizing');
-        }
-        
-        document.body.style.cursor = '';
-        
-        this.currentTable = null;
-        this.currentColumn = null;
-        this.currentResizer = null;
-        this.nextColumn = null;
-        this.nextStartWidth = 0;
-    }
-};
-
-// 右鍵選單：全域事件委派，在捕獲階段同步攔截，確保 preventDefault 在瀏覽器預設動作前執行
-// guard 防止重複註冊（兩個 Table 元件共用同一個 listener）
-if (!window._tableContextMenuListenerRegistered) {
-    window._tableContextMenuListenerRegistered = true;
-    document.addEventListener('contextmenu', function(e) {
-        if (e.target.closest('[data-ctx-menu="1"]')) {
-            e.preventDefault();
-        }
-    }, true); // true = 捕獲階段，比冒泡更早執行，確保瀏覽器預設選單被攔截
-}
-
-// 右鍵選單：顯示後修正超出視窗邊界的位置
-if (!window.tableContextMenu) {
-    window.tableContextMenu = {
-        adjustPosition: function(menuId) {
-            const menu = document.getElementById(menuId);
-            if (!menu) return;
-
-            const rect = menu.getBoundingClientRect();
-            const vw = window.innerWidth;
-            const vh = window.innerHeight;
-
-            let x = parseFloat(menu.style.left) || 0;
-            let y = parseFloat(menu.style.top)  || 0;
-
-            if (x + rect.width  > vw) x = Math.max(0, x - rect.width);
-            if (y + rect.height > vh) y = Math.max(0, y - rect.height);
-
-            menu.style.left = x + 'px';
-            menu.style.top  = y + 'px';
-        }
-    };
-}
-</script>

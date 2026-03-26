@@ -21,6 +21,7 @@
                           UseGenericForm="true"
                           FormFields="@formFields"
                           FormSections="@formSections"
+                          TabDefinitions="@tabDefinitions"
                           DataLoader="@LoadData"
                           SaveHandler="@HandleSaveAsync"
                           ShowDraftButton="true"
@@ -32,15 +33,6 @@
                           OnCancel="@OnCancel"
                           ComponentName="DocumentEditModalComponent"
                           FeatureGuide="@DocumentGuide.Create()">
-    <CustomFormContent>
-        @* 附件檔案區域 *@
-        <div class="col-12 mt-3">
-            <DocumentFileTable Items="@fileViewModels"
-                               FileError="@fileError"
-                               OnFilesSelected="@HandleFilesSelected"
-                               OnRemoveFile="@RemoveFile" />
-        </div>
-    </CustomFormContent>
 </GenericEditModalComponent>
 
 @code {
@@ -54,6 +46,12 @@
     private GenericEditModalComponent<Document, IDocumentService>? editModalComponent;
     private List<FormFieldDefinition> formFields = new();
     private Dictionary<string, string> formSections = new();
+    private List<FormTabDefinition>? tabDefinitions;
+
+    // 來源實體 Tab
+    private string? _relatedEntityType;
+    private int? _relatedEntityId;
+    private SourceEntityInfoTab? sourceEntityInfoTab;
 
     // 附件管理狀態
     private List<DocumentFileViewModel> fileViewModels = new();
@@ -121,6 +119,11 @@
         {
             fileViewModels = new();
         }
+
+        // 記錄來源實體資訊並重建 Tab
+        _relatedEntityType = doc?.RelatedEntityType;
+        _relatedEntityId = doc?.RelatedEntityId;
+        RebuildTabDefinitions();
 
         await InvokeAsync(StateHasChanged);
         return doc;
@@ -289,15 +292,6 @@
                 },
                 new()
                 {
-                    PropertyName = nameof(Document.IssuedBy),
-                    Label = L["Field.IssuedBy"],
-                    FieldType = FormFieldType.Text,
-                    Placeholder = L["Placeholder.PleaseInput", L["Field.IssuedBy"]],
-                    IsRequired = false,
-                    HelpText = "文件的發文機關或來源單位名稱"
-                },
-                new()
-                {
                     PropertyName = nameof(Document.IssuedDate),
                     Label = L["Field.IssuedDate"],
                     FieldType = FormFieldType.Date,
@@ -315,25 +309,79 @@
                 FormFieldConfigurationHelper.CreateRemarksField<Document>()
             };
 
-            formSections = FormSectionHelper<Document>.Create()
+            var builder = FormSectionHelper<Document>.Create()
                 .AddToSection(FormSectionNames.BasicInfo,
                     d => d.Code,
                     d => d.Title,
                     d => d.DocumentCategoryId,
                     d => d.AccessLevel)
                 .AddToSection(L["Section.DocumentInfo"],
-                    d => d.IssuedBy,
                     d => d.IssuedDate,
                     d => d.ExpiryDate)
                 .AddToSection(FormSectionNames.AdditionalData,
                     d => d.Remarks)
-                .Build();
+                .GroupIntoTab(L["Tab.DocumentData"].ToString(), "bi-file-earmark-text",
+                    FormSectionNames.BasicInfo, L["Section.DocumentInfo"],
+                    FormSectionNames.AdditionalData);
+
+            var layout = builder.BuildAll();
+            formSections = layout.FieldSections;
+            tabDefinitions = layout.TabDefinitions;
+
+            // 將附件檔案表格嵌入第一個 Tab（文件資料）的 ExtraContent
+            if (tabDefinitions != null && tabDefinitions.Count > 0)
+            {
+                tabDefinitions[0].ExtraContent = CreateDocumentFileTableContent();
+            }
         }
         catch (Exception)
         {
             _ = NotificationService.ShowErrorAsync("初始化表單欄位時發生錯誤");
         }
     }
+
+    // ===== Tab 動態重建 =====
+
+    private void RebuildTabDefinitions()
+    {
+        if (tabDefinitions == null)
+            return;
+
+        // 移除先前加入的來源資訊 Tab（避免重複）
+        tabDefinitions.RemoveAll(t => t.DebugComponentName == nameof(SourceEntityInfoTab));
+
+        // 有來源實體時，加入來源資訊 Tab
+        if (!string.IsNullOrEmpty(_relatedEntityType) && _relatedEntityId.HasValue)
+        {
+            tabDefinitions.Add(new FormTabDefinition
+            {
+                Label = L["Document.SourceEntity"].ToString(),
+                Icon = "bi-link-45deg",
+                SectionNames = new List<string>(),
+                CustomContent = CreateSourceEntityInfoTabContent(),
+                DebugComponentName = nameof(SourceEntityInfoTab)
+            });
+        }
+    }
+
+    // ===== Tab RenderFragments =====
+
+    private RenderFragment CreateDocumentFileTableContent() => __builder =>
+    {
+        <div class="col-12 mt-3">
+            <DocumentFileTable Items="@fileViewModels"
+                               FileError="@fileError"
+                               OnFilesSelected="@HandleFilesSelected"
+                               OnRemoveFile="@RemoveFile" />
+        </div>
+    };
+
+    private RenderFragment CreateSourceEntityInfoTabContent() => __builder =>
+    {
+        <SourceEntityInfoTab @ref="sourceEntityInfoTab"
+                             RelatedEntityType="@_relatedEntityType"
+                             RelatedEntityId="@_relatedEntityId" />
+    };
 
     public Task ShowAddModal() => editModalComponent!.ShowAddModal();
     public Task ShowEditModal(int id) => editModalComponent!.ShowEditModal(id);

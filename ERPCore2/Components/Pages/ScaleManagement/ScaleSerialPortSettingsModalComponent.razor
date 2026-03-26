@@ -6,12 +6,32 @@
                    IsVisibleChanged="@HandleVisibilityChanged"
                    Title="RS-232C 串列埠參數設定"
                    Icon="bi-usb-plug"
-                   Size="BaseModalComponent.ModalSize.Default"
+                   Size="BaseModalComponent.ModalSize.Desktop"
                    CloseOnEscape="true"
                    CloseOnBackdropClick="true"
                    ShowCloseButton="true"
                    ShowFooter="false"
                    DebugComponentName="ScaleSerialPortSettingsModalComponent">
+    <HeaderButtons>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            @* 常用預設組合快捷 *@
+            <GenericButtonComponent Text="E.7.1 / 2400 (LT-100 預設)"
+                                    Variant="ButtonVariant.OutlineDarkBlue"
+                                    OnClick="@(() => ApplyPreset(2400, "Even", 7, 1))" />
+            <GenericButtonComponent Text="N.8.1 / 9600"
+                                    Variant="ButtonVariant.OutlineGray"
+                                    OnClick="@(() => ApplyPreset(9600, "None", 8, 1))" />
+            <GenericButtonComponent Text="O.7.1 / 2400"
+                                    Variant="ButtonVariant.OutlineGray"
+                                    OnClick="@(() => ApplyPreset(2400, "Odd", 7, 1))" />
+            <div class="ms-auto">
+                <GenericButtonComponent Text="套用"
+                                        Variant="ButtonVariant.DarkBlue"
+                                        IconClass="bi-check-lg"
+                                        OnClick="@HandleApplySettings" />
+            </div>
+        </div>
+    </HeaderButtons>
     <BodyContent>
         <div class="p-3">
             @* 說明提示 *@
@@ -98,29 +118,6 @@
                 <div class="form-text">LT-100 預設值為 1 (E.7.1 中的 1)</div>
             </div>
 
-            @* 常用預設組合快捷 *@
-            <div class="mb-3">
-                <label class="form-label fw-semibold">常用預設組合</label>
-                <div class="d-flex gap-2 flex-wrap">
-                    <GenericButtonComponent Text="E.7.1 / 2400 (LT-100 預設)"
-                                            Variant="ButtonVariant.OutlineDarkBlue"
-                                            OnClick="@(() => ApplyPreset(2400, "Even", 7, 1))" />
-                    <GenericButtonComponent Text="N.8.1 / 9600"
-                                            Variant="ButtonVariant.OutlineGray"
-                                            OnClick="@(() => ApplyPreset(9600, "None", 8, 1))" />
-                    <GenericButtonComponent Text="O.7.1 / 2400"
-                                            Variant="ButtonVariant.OutlineGray"
-                                            OnClick="@(() => ApplyPreset(2400, "Odd", 7, 1))" />
-                </div>
-            </div>
-
-            @* 套用按鈕 *@
-            <div class="d-flex justify-content-end mt-3">
-                <GenericButtonComponent Text="套用"
-                                        Variant="ButtonVariant.DarkBlue"
-                                        IconClass="bi-check-lg"
-                                        OnClick="@HandleApplySettings" />
-            </div>
         </div>
     </BodyContent>
 </BaseModalComponent>

@@ -15,6 +15,7 @@
 @inject ICompanyModuleService CompanyModuleService
 @inject INavigationPermissionService NavigationPermissionService
 @inject IStringLocalizer<SharedResource> L
+@inject ICodeSettingService CodeSettingService
 @using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Customer"
@@ -306,7 +307,7 @@
 
                 return new Customer
                 {
-                    Code = await EntityCodeGenerationHelper.GenerateForEntity<Customer, ICustomerService>(CustomerService, "CUST"),
+                    Code = await EntityCodeGenerationHelper.GenerateWithCodeSetting<Customer, ICustomerService>(CodeSettingService, "Customer", CustomerService, "CUST"),
                     Status = EntityStatus.Active
                 };
             }

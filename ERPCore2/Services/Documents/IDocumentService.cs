@@ -9,6 +9,7 @@ namespace ERPCore2.Services
         Task<Document?> GetWithFilesAsync(int id);
 
         Task<List<Document>> GetByRelatedEntityAsync(string entityType, int entityId);
+        Task<string?> GetRelatedEntityDisplayNameAsync(string? entityType, int? entityId);
 
         #region 伺服器端分頁
 

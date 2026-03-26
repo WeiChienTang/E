@@ -28,7 +28,7 @@
                    LoadingMessage="@LoadingMessage"
                    ShowFooter="false"
                    OnClose="@HandleCancel"
-                   DebugComponentName="ReportPreviewModalComponent">
+                   DebugComponentName="@($"ReportPreviewModalComponent > {(string.IsNullOrEmpty(DebugReportServiceName) ? ReportId : DebugReportServiceName)}")">
 
     <HeaderButtons>
         <div class="d-flex gap-2 ms-auto">
@@ -84,6 +84,48 @@
                 </div>
             </div>
 
+            @* 區段選擇器（僅在有提供 AvailableSections 時顯示） *@
+            @if (AvailableSections != null && AvailableSections.Any())
+            {
+                <div class="section-selector">
+                    <div class="section-selector-header">
+                        <span class="section-selector-title">
+                            <i class="bi bi-check2-square me-1"></i>@L["Report.SectionSelector"]
+                        </span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary section-toggle-all"
+                                @onclick="HandleToggleAllSections"
+                                disabled="@(IsLoading || _isRegenerating)">
+                            @(_allSectionsChecked ? L["Report.DeselectAll"] : L["Report.SelectAll"])
+                        </button>
+                    </div>
+                    <div class="section-selector-grid">
+                        @foreach (var sectionDef in AvailableSections)
+                        {
+                            <label class="section-checkbox-item @(sectionDef.IsEnabled ? "" : "disabled")"
+                                   title="@(sectionDef.IsEnabled ? "" : sectionDef.DisabledReason)">
+                                <input type="checkbox"
+                                       checked="@(sectionDef.IsChecked && sectionDef.IsEnabled)"
+                                       disabled="@(!sectionDef.IsEnabled || IsLoading || _isRegenerating)"
+                                       @onchange="@(e => HandleSectionToggle(sectionDef, (bool)(e.Value ?? false)))" />
+                                <i class="bi @sectionDef.Icon section-icon"></i>
+                                <span class="section-label">@sectionDef.Label</span>
+                                @if (!sectionDef.IsEnabled && !string.IsNullOrEmpty(sectionDef.DisabledReason))
+                                {
+                                    <span class="section-disabled-badge">@sectionDef.DisabledReason</span>
+                                }
+                            </label>
+                        }
+                    </div>
+                    @if (_isRegenerating)
+                    {
+                        <div class="section-regenerating">
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                            @L["Report.Regenerating"]
+                        </div>
+                    }
+                </div>
+            }
+
             @* 匯出進度條 Overlay *@
             @if (_showExportProgress)
             {
@@ -128,6 +170,15 @@
     /// <summary>文件名稱（顯示於列印佇列及檔案下載名稱）</summary>
     [Parameter] public string DocumentName { get; set; } = "報表列印";
 
+    /// <summary>產生此報表的服務名稱（Debug 用，SuperAdmin 可見）</summary>
+    [Parameter] public string DebugReportServiceName { get; set; } = string.Empty;
+
+    /// <summary>可用的報表區段清單（有傳入時顯示勾選 UI）</summary>
+    [Parameter] public List<ReportSectionDefinition>? AvailableSections { get; set; }
+
+    /// <summary>區段勾選變更後，呼叫此 callback 重新產生文件（傳入選取的 Key 清單）</summary>
+    [Parameter] public EventCallback<List<string>> OnRegenerateReport { get; set; }
+
     [Parameter] public EventCallback OnPrintSuccess { get; set; }
     [Parameter] public EventCallback<string> OnPrintFailure { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
@@ -147,6 +198,9 @@
 
     // 紙張（從 ReportPrintConfiguration 靜默載入，僅用於取得實際尺寸）
     private PaperSetting? _selectedPaper = null;
+
+    // 區段選擇
+    private bool _isRegenerating = false;
 
     // 初始化標記
     private bool _isConfigurationLoaded = false;
@@ -381,6 +435,51 @@
     {
         if (IsVisibleChanged.HasDelegate)
             await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    // ===== 區段選擇 =====
+
+    private bool _allSectionsChecked =>
+        AvailableSections?.Where(s => s.IsEnabled).All(s => s.IsChecked) ?? true;
+
+    private void HandleSectionToggle(ReportSectionDefinition section, bool isChecked)
+    {
+        section.IsChecked = isChecked;
+        _ = RegenerateReportAsync();
+    }
+
+    private void HandleToggleAllSections()
+    {
+        if (AvailableSections == null) return;
+        var newState = !_allSectionsChecked;
+        foreach (var s in AvailableSections.Where(s => s.IsEnabled))
+            s.IsChecked = newState;
+        _ = RegenerateReportAsync();
+    }
+
+    private async Task RegenerateReportAsync()
+    {
+        if (!OnRegenerateReport.HasDelegate || AvailableSections == null) return;
+
+        _isRegenerating = true;
+        StateHasChanged();
+
+        try
+        {
+            var selectedKeys = AvailableSections
+                .Where(s => s.IsChecked && s.IsEnabled)
+                .Select(s => s.Key).ToList();
+            await OnRegenerateReport.InvokeAsync(selectedKeys);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"重新產生報表失敗：{ex.Message}");
+        }
+        finally
+        {
+            _isRegenerating = false;
+            StateHasChanged();
+        }
     }
 
     // ===== 輔助方法 =====

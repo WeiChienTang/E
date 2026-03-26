@@ -966,6 +966,10 @@ namespace ERPCore2.Services.Reports
         /// </summary>
         private float RenderKeyValueRow(System.Drawing.Graphics g, KeyValueRowElement kvRow, float x, float y, float width, DocumentPageSettings settings)
         {
+            // 全部 pair 都為空時不渲染
+            if (!kvRow.Pairs.Any(p => !string.IsNullOrEmpty(p.Key) || !string.IsNullOrEmpty(p.Value)))
+                return y;
+
             using var font = new System.Drawing.Font(settings.FontName, settings.DefaultFontSize);
             using var brush = new System.Drawing.SolidBrush(DrawingColor.Black);
 
@@ -974,9 +978,12 @@ namespace ERPCore2.Services.Reports
 
             foreach (var (key, value) in kvRow.Pairs)
             {
-                // 如果 key 為空，則只顯示 value（不加冒號）
-                string displayText = string.IsNullOrEmpty(key) ? value : $"{key}：{value}";
-                g.DrawString(displayText, font, brush, currentX, y);
+                // 空 pair 保留間距（維持對齊），不繪製文字
+                if (!string.IsNullOrEmpty(key) || !string.IsNullOrEmpty(value))
+                {
+                    string displayText = string.IsNullOrEmpty(key) ? value : $"{key}：{value}";
+                    g.DrawString(displayText, font, brush, currentX, y);
+                }
                 currentX += spacing;
             }
 

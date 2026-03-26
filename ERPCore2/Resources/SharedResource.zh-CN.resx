@@ -1823,6 +1823,7 @@
   <data name="Tab.BankAccounts" xml:space="preserve"><value>银行账号</value></data>
   <data name="Tab.BusinessCards" xml:space="preserve"><value>名片</value></data>
   <data name="Tab.Documents" xml:space="preserve"><value>文件</value></data>
+  <data name="Tab.DocumentData" xml:space="preserve"><value>文件资料</value></data>
   <data name="Tab.CompanyData" xml:space="preserve"><value>公司资料</value></data>
   <data name="Tab.CompanyLogo" xml:space="preserve"><value>公司 Logo</value></data>
   <data name="CompanyLogo.SaveFirst" xml:space="preserve"><value>请先保存公司资料后再上传 Logo</value></data>
@@ -1897,6 +1898,7 @@
   <data name="Tab.ItemInfo" xml:space="preserve"><value>品项信息</value></data>
   <data name="Tab.InventoryData" xml:space="preserve"><value>库存数据</value></data>
   <data name="Message.PleaseSelectCustomer" xml:space="preserve"><value>请先选择客户</value></data>
+  <data name="Message.PleaseSelectGovernmentAgency" xml:space="preserve"><value>请先选择政府机关</value></data>
   <data name="Message.PleaseSelectItem" xml:space="preserve"><value>请先选择品项</value></data>
   <data name="Field.StandardCost" xml:space="preserve"><value>标准成本</value></data>
   <data name="Tab.SetoffRecords" xml:space="preserve"><value>冲款记录</value></data>
@@ -2130,7 +2132,6 @@
   <data name="Field.DocumentSource" xml:space="preserve"><value>来源类型</value></data>
   <data name="Field.DefaultAccessLevel" xml:space="preserve"><value>默认访问级别</value></data>
   <data name="Field.AccessLevel" xml:space="preserve"><value>访问级别</value></data>
-  <data name="Field.IssuedBy" xml:space="preserve"><value>发文机关/来源</value></data>
   <data name="Field.IssuedDate" xml:space="preserve"><value>发文日期</value></data>
   <data name="Field.FileSize" xml:space="preserve"><value>文件大小</value></data>
   <data name="Field.FileName" xml:space="preserve"><value>原始文件名</value></data>
@@ -3256,6 +3257,8 @@
   <data name="Report.ShowAdvancedOptions" xml:space="preserve"><value>显示高级选项</value></data>
   <data name="Report.HideAdvancedOptions" xml:space="preserve"><value>隐藏高级选项</value></data>
   <data name="Report.SelectAll" xml:space="preserve"><value>全选</value></data>
+  <data name="Report.SectionSelector" xml:space="preserve"><value>打印内容</value></data>
+  <data name="Report.Regenerating" xml:space="preserve"><value>正在重新生成报表...</value></data>
   <data name="Report.DeselectAll" xml:space="preserve"><value>取消全选</value></data>
   <data name="Report.BatchPrintTitle" xml:space="preserve"><value>批量打印</value></data>
   <data name="Report.NoItemsForPrint" xml:space="preserve"><value>没有可打印的项目</value></data>
@@ -4470,6 +4473,8 @@
   <data name="Document.PaperSizeApplied" xml:space="preserve"><value>已应用「{0}」的尺寸设置</value></data>
   <data name="Document.AttachmentFiles" xml:space="preserve"><value>附件文件</value></data>
   <data name="Document.NoAttachments" xml:space="preserve"><value>尚未上传附件</value></data>
+  <data name="Document.SourceEntity" xml:space="preserve"><value>来源</value></data>
+  <data name="Document.NoSourceEntityInfo" xml:space="preserve"><value>此文件无关联来源信息</value></data>
   <data name="Field.AttachmentCount" xml:space="preserve"><value>附件数量</value></data>
   <data name="Field.FileDisplayName" xml:space="preserve"><value>附件名称</value></data>
   <data name="Label.PendingUpload" xml:space="preserve"><value>待上传</value></data>
@@ -4691,4 +4696,50 @@
   <data name="Inventory.MergeSelectTarget" xml:space="preserve"><value>请先选择目标库位</value></data>
   <data name="Inventory.MergeNoLocation" xml:space="preserve"><value>（无指定库位）</value></data>
   <data name="Inventory.MergeNoOtherLocations" xml:space="preserve"><value>目前没有其他库位明细可供合并</value></data>
+  <!-- ===== CodeSettings 代码自动生成设定 ===== -->
+  <data name="Tab.CodeSettings" xml:space="preserve"><value>自动编号</value></data>
+  <data name="CodeSettings.Description" xml:space="preserve"><value>设定各模块的自动编号格式与流水号规则，启用后新增数据时将自动生成代码。</value></data>
+  <data name="CodeSettings.ModuleName" xml:space="preserve"><value>模块名称</value></data>
+  <data name="CodeSettings.AutoEnabled" xml:space="preserve"><value>自动编号</value></data>
+  <data name="CodeSettings.Prefix" xml:space="preserve"><value>前缀</value></data>
+  <data name="CodeSettings.FormatTemplate" xml:space="preserve"><value>格式模板</value></data>
+  <data name="CodeSettings.Preview" xml:space="preserve"><value>预览</value></data>
+  <data name="CodeSettings.ResetRule" xml:space="preserve"><value>重置规则</value></data>
+  <data name="CodeSettings.CurrentSeq" xml:space="preserve"><value>当前序号</value></data>
+  <data name="CodeSettings.ResetSeq" xml:space="preserve"><value>重置</value></data>
+  <data name="CodeSettings.ResetSeqTitle" xml:space="preserve"><value>重置此模块的流水号为 0</value></data>
+  <data name="CodeSettings.FormatHelpTitle" xml:space="preserve"><value>支持的格式参数：</value></data>
+  <data name="CodeSettings.HelpPrefix" xml:space="preserve"><value>自定义前缀</value></data>
+  <data name="CodeSettings.HelpYear2" xml:space="preserve"><value>2位年份</value></data>
+  <data name="CodeSettings.HelpYear4" xml:space="preserve"><value>4位年份</value></data>
+  <data name="CodeSettings.HelpMonth" xml:space="preserve"><value>月份</value></data>
+  <data name="CodeSettings.HelpDay" xml:space="preserve"><value>日期</value></data>
+  <data name="CodeSettings.HelpSeq" xml:space="preserve"><value>流水号（N=位数，如 {Seq:4}）</value></data>
+  <data name="CodeSettings.ResetConfirmTitle" xml:space="preserve"><value>确认重置序号</value></data>
+  <data name="CodeSettings.ResetConfirmMessage" xml:space="preserve"><value>确定要将「{0}」的流水号从 {1} 重置为 0 吗？此操作无法恢复。</value></data>
+  <data name="CodeSettings.ResetConfirmButton" xml:space="preserve"><value>确认重置</value></data>
+  <data name="CodeSettings.ResetSuccess" xml:space="preserve"><value>序号已重置成功</value></data>
+  <data name="CodeSettings.ResetFailed" xml:space="preserve"><value>重置序号失败</value></data>
+  <data name="CodeSettings.LoadFailed" xml:space="preserve"><value>加载代码设定失败</value></data>
+  <!-- ===== GovernmentAgency ===== -->
+  <data name="Entity.GovernmentAgency" xml:space="preserve"><value>公家机关</value></data>
+  <data name="Page.GovernmentAgencyTitle" xml:space="preserve"><value>公家机关管理</value></data>
+  <data name="Page.GovernmentAgencySubtitle" xml:space="preserve"><value>管理所有公家机关数据与联系信息</value></data>
+  <data name="Nav.GovernmentAgencyGroup" xml:space="preserve"><value>公家机关</value></data>
+  <data name="Nav.GovernmentAgencies" xml:space="preserve"><value>公家机关</value></data>
+  <data name="Field.GovernmentAgencyCode" xml:space="preserve"><value>机关编号</value></data>
+  <data name="Field.AgencyName" xml:space="preserve"><value>机关名称</value></data>
+  <data name="Field.AgencyCode" xml:space="preserve"><value>机关代码</value></data>
+  <data name="Field.AgencyType" xml:space="preserve"><value>机关类型</value></data>
+  <data name="Field.AgencyStatus" xml:space="preserve"><value>机关状态</value></data>
+  <data name="Field.Jurisdiction" xml:space="preserve"><value>管辖区域</value></data>
+  <data name="Field.SupervisorAgency" xml:space="preserve"><value>上级机关</value></data>
+  <data name="Tab.GovernmentAgencyData" xml:space="preserve"><value>机关资料</value></data>
+  <data name="GovernmentAgencyType.Central" xml:space="preserve"><value>中央机关</value></data>
+  <data name="GovernmentAgencyType.Municipal" xml:space="preserve"><value>直辖市机关</value></data>
+  <data name="GovernmentAgencyType.County" xml:space="preserve"><value>县市机关</value></data>
+  <data name="GovernmentAgencyType.Township" xml:space="preserve"><value>乡镇市区机关</value></data>
+  <data name="GovernmentAgencyType.Other" xml:space="preserve"><value>其他</value></data>
+  <data name="GovernmentAgencyStatus.Active" xml:space="preserve"><value>正常往来</value></data>
+  <data name="GovernmentAgencyStatus.Inactive" xml:space="preserve"><value>停用</value></data>
 </root>

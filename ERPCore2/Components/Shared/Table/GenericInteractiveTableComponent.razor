@@ -14,7 +14,8 @@
     {
         <div class="table-debug-name">@DebugTableName</div>
     }
-    <table class="table @GetTableClass() interactive-table">
+    <table class="table @GetTableClass() interactive-table @(EnableColumnResize ? "resizable-table" : "")"
+           id="@_uniqueTableId">
         @if (ShowHeader && ColumnDefinitions != null && ColumnDefinitions.Any())
         {
             <thead class="table-header-primary">
@@ -45,23 +46,31 @@
                             headerStyle = string.IsNullOrEmpty(headerStyle) ? "cursor: help;" : headerStyle + " cursor: help;";
                         }
                         
-                        <th scope="col" 
-                            class="@column.HeaderCssClass @(column.HideOnMobile ? "d-none d-md-table-cell" : "")" 
+                        <th scope="col"
+                            class="@column.HeaderCssClass @(column.HideOnMobile ? "d-none d-md-table-cell" : "") @(EnableColumnResize ? "resizable-column" : "")"
                             style="@headerStyle"
                             title="@column.Tooltip">
-                            @if (!string.IsNullOrEmpty(column.IconClass))
+                            <div class="column-header-content">
+                                <span>
+                                    @if (!string.IsNullOrEmpty(column.IconClass))
+                                    {
+                                        <i class="@column.IconClass me-1"></i>
+                                    }
+                                    @column.Title
+                                    @if (column.IsRequired)
+                                    {
+                                        <span class="text-danger ms-1">*</span>
+                                    }
+                                </span>
+                                @if (!string.IsNullOrEmpty(column.PropertyName))
+                                {
+                                    <span class="col-debug-name">@column.PropertyName</span>
+                                    <span class="col-debug-i18n">Column.@column.PropertyName</span>
+                                }
+                            </div>
+                            @if (EnableColumnResize)
                             {
-                                <i class="@column.IconClass me-1"></i>
-                            }
-                            @column.Title
-                            @if (column.IsRequired)
-                            {
-                                <span class="text-danger ms-1">*</span>
-                            }
-                            @if (!string.IsNullOrEmpty(column.PropertyName))
-                            {
-                                <span class="col-debug-name">@column.PropertyName</span>
-                                <span class="col-debug-i18n">Column.@column.PropertyName</span>
+                                <div class="column-resizer"></div>
                             }
                         </th>
                     }
@@ -661,6 +670,9 @@
     [Parameter] public RenderFragment<(string Key, List<TItem> Items)>? GroupHeaderTemplate { get; set; }
     [Parameter] public bool DefaultGroupsExpanded { get; set; } = true;
 
+    // 欄位寬度拖曳調整
+    [Parameter] public bool EnableColumnResize { get; set; } = true;
+
     // 右鍵選單
     [Parameter] public List<ContextMenuItem<TItem>>? ContextMenuItems { get; set; }
     #endregion
@@ -772,7 +784,14 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await base.OnAfterRenderAsync(firstRender);
-        
+
+        // 初始化欄位寬度拖曳調整
+        if (firstRender && EnableColumnResize)
+        {
+            try { await JSRuntime.InvokeVoidAsync("tableColumnResizer.init", _uniqueTableId); }
+            catch { /* 忽略 JS 初始化錯誤 */ }
+        }
+
         // 初始化拖放功能（只在首次渲染或 Items 數量改變時呼叫，避免每次 render 觸發 JS interop）
         if (EnableDrag || EnableDrop)
         {
