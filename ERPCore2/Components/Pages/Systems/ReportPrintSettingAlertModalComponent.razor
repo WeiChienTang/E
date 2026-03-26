@@ -44,18 +44,15 @@
                     </select>
                 </div>
                 <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                      Size="ButtonSize.Small"
                                       Text="@L["Report.BatchFill"]"
                                       OnClick="ApplyBatchFill"
                                       Title="@L["Report.BatchFillTitle"]" />
                 <GenericButtonComponent Variant="ButtonVariant.Green"
-                                      Size="ButtonSize.Small"
                                       Text="@L["Button.Save"]"
                                       OnClick="HandleSave"
                                       IsDisabled="@(!reportConfigs.Any())"
                                       Title="@L["Button.Save"]" />
                 <GenericButtonComponent Variant="ButtonVariant.Red"
-                                      Size="ButtonSize.Small"
                                       Text="@L["Button.Clear"]"
                                       OnClick="HandleClearAll"
                                       Title="@L["Button.Clear"]" />

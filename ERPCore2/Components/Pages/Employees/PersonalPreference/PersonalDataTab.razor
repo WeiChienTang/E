@@ -28,15 +28,13 @@
             </div>
             <div class="d-flex flex-column gap-2">
                 <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                       Size="ButtonSize.Small"
                                        Text="@(string.IsNullOrEmpty(_currentPhotoPath) ? L["EmployeePhoto.Upload"].ToString() : L["EmployeePhoto.Change"].ToString())"
                                        OnClick="TriggerFileInput" />
                 <InputFile id="photo-file-input" OnChange="@HandleFileSelected" accept=".jpg,.jpeg,.png" class="d-none" />
                 @if (!string.IsNullOrEmpty(_currentPhotoPath))
                 {
                     <GenericButtonComponent Variant="ButtonVariant.Red"
-                                           Size="ButtonSize.Small"
-                                           Text="@L["Button.Delete"]"
+                                               Text="@L["Button.Delete"]"
                                            OnClick="RequestDelete" />
                 }
             </div>

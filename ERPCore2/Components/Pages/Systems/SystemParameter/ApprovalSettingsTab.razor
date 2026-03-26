@@ -5,8 +5,12 @@
 <div class="mt-2">
     <p class="text-muted mb-3">@L["ApprovalSettings.Description"]</p>
     <div class="d-flex gap-2 mb-3">
-        <button class="btn btn-sm btn-warning" @onclick="SetAllManual">@L["Button.SetAllManual"]</button>
-        <button class="btn btn-sm btn-success" @onclick="SetAllAuto">@L["Button.SetAllAuto"]</button>
+        <GenericButtonComponent Text="@L["Button.SetAllManual"]"
+                                Variant="ButtonVariant.Yellow"
+                                OnClick="@SetAllManual" />
+        <GenericButtonComponent Text="@L["Button.SetAllAuto"]"
+                                Variant="ButtonVariant.Green"
+                                OnClick="@SetAllAuto" />
     </div>
     @foreach (var group in approvalGroups)
     {

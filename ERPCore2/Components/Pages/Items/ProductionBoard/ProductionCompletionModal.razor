@@ -186,11 +186,9 @@
             <div class="d-flex gap-2 ms-auto">
                 <GenericButtonComponent Text="@L["Button.Cancel"]"
                                       Variant="ButtonVariant.Gray"
-                                      Size="ButtonSize.Small"
                                       OnClick="@HandleCancel" />
                 <GenericButtonComponent Text="@L["Production.CompletionEntry"]"
                                       Variant="ButtonVariant.Green"
-                                      Size="ButtonSize.Small"
                                       IsDisabled="@(!CanSubmit || isLoading)"
                                       OnClick="@HandleSubmit" />
             </div>

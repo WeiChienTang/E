@@ -45,17 +45,15 @@
             <GenericButtonComponent
                 Text="@group.Config.AddButtonText"
                 Variant="ButtonVariant.DarkBlue"
-                OnClick="@HandleAddNew"
-                Size="ButtonSize.Small" />
+                OnClick="@HandleAddNew" />
         }
         
         <GenericButtonComponent
             Text="@L["Button.Close"]"
             Variant="ButtonVariant.Gray"
-            OnClick="@Close"
-            Size="ButtonSize.Small" />
+            OnClick="@Close" />
     </FooterContent>
-    
+
 </BaseModalComponent>
 
 @code {

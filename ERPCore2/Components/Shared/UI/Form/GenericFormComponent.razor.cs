@@ -1148,8 +1148,8 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
         {
             FormConstants.ButtonSizes.Large => ERPCore2.Components.Shared.UI.Button.ButtonSize.Large,
             FormConstants.ButtonSizes.Normal => ERPCore2.Components.Shared.UI.Button.ButtonSize.Normal,
-            FormConstants.ButtonSizes.Small => ERPCore2.Components.Shared.UI.Button.ButtonSize.Small,
-            _ => ERPCore2.Components.Shared.UI.Button.ButtonSize.Small
+            FormConstants.ButtonSizes.Small => ERPCore2.Components.Shared.UI.Button.ButtonSize.Normal,
+            _ => ERPCore2.Components.Shared.UI.Button.ButtonSize.Normal
         };
     }
 

@@ -51,6 +51,29 @@ else
                        LoadingText="@L["Label.Loading"]"
                        ShowDivider="true">
     <ActionButtons>
+        @* 草稿/正式資料切換（內嵌於標題列） *@
+        @if (ShowDraftTab)
+        {
+            <div class="index-draft-tab-btn-group">
+                <button type="button"
+                        class="index-draft-tab-btn @(!_showingDrafts ? "active" : "")"
+                        @onclick="@(() => SwitchDraftTab(false))">
+                    <i class="bi bi-check-circle me-1"></i>
+                    @L["Label.Official"]
+                </button>
+                <button type="button"
+                        class="index-draft-tab-btn @(_showingDrafts ? "active" : "")"
+                        @onclick="@(() => SwitchDraftTab(true))">
+                    <i class="bi bi-pencil-square me-1"></i>
+                    @L["Label.Draft"]
+                    @if (_draftCount > 0)
+                    {
+                        <span class="badge bg-danger ms-1">@_draftCount</span>
+                    }
+                </button>
+            </div>
+        }
+
         @* 統計 Badge - 內嵌於按鈕列 *@
         @if (ShowStatisticsCards && StatisticsCardConfigs != null && StatisticsCardConfigs.Any())
         {
@@ -162,29 +185,6 @@ else
                                                  ShowSearchButton="@ShowSearchButton"
                                                  SearchDelayMs="@SearchDelayMs" />
                 </div>
-
-                @* 草稿/正式資料切換按鈕（僅在 ShowDraftTab 時顯示） *@
-                @if (ShowDraftTab)
-                {
-                    <div class="index-draft-tab-btn-group pt-3">
-                        <button type="button"
-                                class="index-draft-tab-btn @(!_showingDrafts ? "active" : "")"
-                                @onclick="@(() => SwitchDraftTab(false))">
-                            <i class="bi bi-check-circle me-1"></i>
-                            @L["Label.Official"]
-                        </button>
-                        <button type="button"
-                                class="index-draft-tab-btn @(_showingDrafts ? "active" : "")"
-                                @onclick="@(() => SwitchDraftTab(true))">
-                            <i class="bi bi-pencil-square me-1"></i>
-                            @L["Label.Draft"]
-                            @if (_draftCount > 0)
-                            {
-                                <span class="badge bg-danger ms-1">@_draftCount</span>
-                            }
-                        </button>
-                    </div>
-                }
 
                 @* 列表表格 *@
                 <div class="pt-2">

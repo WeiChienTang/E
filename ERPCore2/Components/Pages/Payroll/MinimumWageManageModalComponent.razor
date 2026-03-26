@@ -19,12 +19,10 @@
     <HeaderButtons>
         <GenericButtonComponent Text="@L["Payroll.AddMinimumWage"]"
                                Variant="ButtonVariant.OutlineGray"
-                               Size="ButtonSize.Small"
                                CssClass="me-1"
                                OnClick="@(() => { _isAdding = true; _newWage = new MinimumWage(); })" />
         <GenericButtonComponent Text="@L["Payroll.SyncFromGovernment"]"
                                Variant="ButtonVariant.DarkBlue"
-                               Size="ButtonSize.Small"
                                OnClick="SyncFromGovernmentAsync" />
     </HeaderButtons>
 
@@ -69,11 +67,9 @@
                             <GenericButtonComponent Text="@L["Button.Confirm"]"
                                                    IconClass="bi bi-check-lg"
                                                    Variant="ButtonVariant.Green"
-                                                   Size="ButtonSize.Small"
                                                    OnClick="ConfirmAddAsync" />
                             <GenericButtonComponent Text="@L["Button.Cancel"]"
                                                    Variant="ButtonVariant.OutlineGray"
-                                                   Size="ButtonSize.Small"
                                                    OnClick="@(() => _isAdding = false)" />
                         </div>
                     </div>
@@ -106,7 +102,6 @@
                             <td class="text-center">
                                 <GenericButtonComponent IconClass="bi bi-trash"
                                                        Variant="ButtonVariant.OutlineRed"
-                                                       Size="ButtonSize.Small"
                                                        Title="@L["Button.Delete"]"
                                                        OnClick="@(async () => await DeleteAsync(w))" />
                             </td>

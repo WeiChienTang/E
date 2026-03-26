@@ -42,11 +42,10 @@ else
                             }
                         </td>
                         <td class="text-center">
-                            <button type="button" class="btn btn-sm btn-outline-primary"
-                                    title="@L["Button.OpenSetoff"].ToString()"
-                                    @onclick="@(() => OnOpenSetoff.InvokeAsync(setoff.Id))">
-                                <i class="bi bi-box-arrow-up-right"></i>
-                            </button>
+                            <GenericButtonComponent Variant="ButtonVariant.OutlineDarkBlue"
+                                                    IconClass="bi bi-box-arrow-up-right"
+                                                    Title="@L["Button.OpenSetoff"].ToString()"
+                                                    OnClick="@(() => OnOpenSetoff.InvokeAsync(setoff.Id))" />
                         </td>
                     </tr>
                 }

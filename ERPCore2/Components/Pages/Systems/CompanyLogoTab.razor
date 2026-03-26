@@ -61,18 +61,16 @@ else
                         <span class="text-muted small d-block">@L["CompanyLogo.Hint"]</span>
                     </div>
                     <div class="business-card-actions px-2 pb-2 d-flex gap-1">
-                        <button class="btn btn-xs btn-outline-secondary flex-fill"
-                                title="@L["Button.Preview"]"
-                                type="button"
-                                @onclick="OpenPreview">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                        <button class="btn btn-xs btn-outline-danger flex-fill"
-                                title="@L["Button.Delete"]"
-                                type="button"
-                                @onclick="RequestDelete">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        <GenericButtonComponent Variant="ButtonVariant.OutlineGray"
+                                CssClass="btn-xs flex-fill"
+                                Title="@L["Button.Preview"]"
+                                IconClass="bi bi-eye"
+                                OnClick="OpenPreview" />
+                        <GenericButtonComponent Variant="ButtonVariant.OutlineRed"
+                                CssClass="btn-xs flex-fill"
+                                Title="@L["Button.Delete"]"
+                                IconClass="bi bi-trash"
+                                OnClick="RequestDelete" />
                     </div>
                 </div>
             </div>

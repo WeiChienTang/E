@@ -8,14 +8,12 @@
     <div class="d-flex gap-2 flex-wrap">
         <GenericButtonComponent IconClass="bi bi-people"
                                 Variant="ButtonVariant.DarkBlue"
-                                Size="ButtonSize.Small"
                                 Text="@L["Attendance.BatchInit"]"
                                 OnClick="@BatchInitializeAsync"
                                 IsDisabled="@(isInitializing || Year == 0)"
                                 IsLoading="@isInitializing" />
         <GenericButtonComponent IconClass="bi bi-save"
                                 Variant="ButtonVariant.DarkBlue"
-                                Size="ButtonSize.Small"
                                 Text="@L["Button.SaveAll"]"
                                 OnClick="@SaveAllDirtyAsync"
                                 IsDisabled="@(!rows.Any(r => r.IsDirty) || isSaving)"

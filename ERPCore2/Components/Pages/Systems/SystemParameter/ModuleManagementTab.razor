@@ -8,8 +8,14 @@
 <div class="mt-2">
     <p class="text-muted mb-3">@L["System.ModuleControlDesc"]</p>
     <div class="d-flex gap-2 mb-3">
-        <button class="btn btn-sm btn-success" disabled="@(isModuleSaving || IsDisabled)" @onclick="EnableAll">@L["Button.EnableAll"]</button>
-        <button class="btn btn-sm btn-secondary" disabled="@(isModuleSaving || IsDisabled)" @onclick="DisableAll">@L["Button.DisableAll"]</button>
+        <GenericButtonComponent Text="@L["Button.EnableAll"]"
+                                Variant="ButtonVariant.Green"
+                                IsDisabled="@(isModuleSaving || IsDisabled)"
+                                OnClick="@EnableAll" />
+        <GenericButtonComponent Text="@L["Button.DisableAll"]"
+                                Variant="ButtonVariant.Gray"
+                                IsDisabled="@(isModuleSaving || IsDisabled)"
+                                OnClick="@DisableAll" />
     </div>
     <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2 mb-3">
         @foreach (var module in companyModules)

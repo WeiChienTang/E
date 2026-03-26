@@ -16,9 +16,9 @@
 
     <HeaderButtons>
         <div class="d-flex align-items-center gap-2">
-            <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
+            <GenericButtonComponent Variant="ButtonVariant.OutlineGray"
                 Text="取消" OnClick="HandleCancel" IsDisabled="@isProcessing" />
-            <GenericButtonComponent Variant="ButtonVariant.Green" Size="ButtonSize.Small"
+            <GenericButtonComponent Variant="ButtonVariant.Green"
                 IconClass="bi bi-check2-all" Text="確認入庫"
                 OnClick="HandleSubmit"
                 IsDisabled="@(isProcessing || !HasValidRows)"
@@ -34,8 +34,10 @@
                     勾選項目並調整入庫數量與倉庫，確認後一次完工。數量為 0 或未選倉庫的項目將略過。
                 </span>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="SelectAll">全選</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="DeselectAll">取消全選</button>
+                    <GenericButtonComponent Variant="ButtonVariant.OutlineGray"
+                        Text="全選" OnClick="SelectAll" />
+                    <GenericButtonComponent Variant="ButtonVariant.OutlineGray"
+                        Text="取消全選" OnClick="DeselectAll" />
                 </div>
             </div>
 

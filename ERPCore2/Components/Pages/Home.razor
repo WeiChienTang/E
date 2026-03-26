@@ -40,7 +40,6 @@
         @* ==================== 恢復預設按鈕 ==================== *@
         <div class="d-flex justify-content-end mb-3">
             <GenericButtonComponent Variant="ButtonVariant.Yellow"
-                                    Size="ButtonSize.Small"
                                     IconClass="bi bi-arrow-counterclockwise"
                                     Text="@L["Home.RestoreDefault"]"
                                     Title="@L["Home.RestoreDefaultTooltip"]"
@@ -88,13 +87,11 @@
                         @if (isEditMode)
                         {
                             <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                                    Size="ButtonSize.Small"
                                                     Text="@L["Home.Done"]"
                                                     OnClick="@(() => FinishEditPanel())" />
                             @if (panels.Count > 1)
                             {
                                 <GenericButtonComponent Variant="ButtonVariant.Red"
-                                                        Size="ButtonSize.Small"
                                                         Text="@L["Button.Delete"]"
                                                         Title="@L["Home.DeleteThisPanelTooltip"]"
                                                         OnClick="@(() => HandleDeletePanel(panel))" />
@@ -103,7 +100,6 @@
                         else
                         {
                             <GenericButtonComponent Variant="ButtonVariant.Green"
-                                                    Size="ButtonSize.Small"
                                                     Text="@L["Button.Edit"]"
                                                     Title="@L["Home.EditThisPanelTooltip"]"
                                                     OnClick="@(() => StartEditPanel(panel.Id))" />
@@ -153,7 +149,6 @@
                         @if (isEditMode)
                         {
                             <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                                    Size="ButtonSize.Small"
                                                     IconClass="bi bi-plus-lg"
                                                     Text="@L["Home.AddItem"]"
                                                     OnClick="@(() => OpenWidgetPicker(panel.Id))" />
@@ -175,7 +170,6 @@
         @* 行動版恢復預設按鈕 *@
         <div class="d-md-none text-center mb-4">
             <GenericButtonComponent Variant="ButtonVariant.Yellow"
-                                    Size="ButtonSize.Small"
                                     IconClass="bi bi-arrow-counterclockwise"
                                     Text="@L["Home.RestoreDefault"]"
                                     Title="@L["Home.RestoreDefaultTooltip"]"

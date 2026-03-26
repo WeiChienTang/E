@@ -53,8 +53,7 @@
                             <div class="dropdown">
                                 <GenericButtonComponent Text="@L["Button.Copy"]"
                                                     Variant="ButtonVariant.Gray"
-                                                    Size="ButtonSize.Small"
-                                                    IsDisabled="@(isSaving || selectedRole == null || IsAdminRole(selectedRole))"
+                                                        IsDisabled="@(isSaving || selectedRole == null || IsAdminRole(selectedRole))"
                                                     AdditionalAttributes="@GetCopyButtonAttributes()" />
                                 @if (selectedRole != null)
                                 {
@@ -77,19 +76,16 @@
                             </div>
                             <GenericButtonComponent Text="@L["Button.SelectAll"]"
                                                 Variant="ButtonVariant.Green"
-                                                Size="ButtonSize.Small"
                                                 OnClick="SelectAllPermissions"
                                                 IsDisabled="@(isSaving || selectedRole == null || IsAdminRole(selectedRole))"
                                                 AdditionalAttributes="@GetSelectAllButtonAttributes()" />
                             <GenericButtonComponent Text="@L["Button.ClearAll"]"
                                                 Variant="ButtonVariant.Yellow"
-                                                Size="ButtonSize.Small"
                                                 OnClick="ClearAllPermissions"
                                                 IsDisabled="@(isSaving || selectedRole == null || IsAdminRole(selectedRole))"
                                                 AdditionalAttributes="@GetClearAllButtonAttributes()" />
                             <GenericButtonComponent Text="@L["Button.Save"]"
                                                 Variant="ButtonVariant.DarkBlue"
-                                                Size="ButtonSize.Small"
                                                 OnClick="SaveRolePermissions"
                                                 IsDisabled="@(isSaving || selectedRole == null || IsAdminRole(selectedRole))"
                                                 IsLoading="@isSaving"

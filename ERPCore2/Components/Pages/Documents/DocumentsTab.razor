@@ -7,70 +7,27 @@
     <div class="d-flex gap-2">
         <GenericButtonComponent IconClass="bi bi-plus-circle"
                                 Variant="ButtonVariant.DarkBlue"
-                                Size="ButtonSize.Small"
                                 Text="@L["Button.AddDocument"]"
                                 OnClick="@HandleAdd"
                                 IsDisabled="@(!EntityId.HasValue)" />
     </div>
 </div>
 
-@if (documents.Count == 0)
-{
-    <div class="text-center py-4 text-muted">
-        <i class="bi bi-file-earmark-text fs-3 d-block mb-2"></i>
-        <span>@L["Message.NoDocuments"]</span>
-    </div>
-}
-else
-{
-    <div class="table-responsive px-3 pt-2">
-        <table class="table table-sm table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>@L["Field.DocumentTitle"]</th>
-                    <th>@L["Field.DocumentCategory"]</th>
-                    <th>@L["Field.IssuedBy"]</th>
-                    <th>@L["Field.ExpiryDate"]</th>
-                    <th>@L["Field.AttachmentCount"]</th>
-                    <th class="text-center" style="width:80px">@L["Label.Actions"]</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var doc in documents)
-                {
-                    <tr>
-                        <td>@doc.Title</td>
-                        <td>@(doc.DocumentCategory?.Name ?? "-")</td>
-                        <td>@(doc.IssuedBy ?? "-")</td>
-                        <td>
-                            @if (doc.ExpiryDate.HasValue)
-                            {
-                                var isExpired = doc.ExpiryDate.Value < DateTime.Today;
-                                var isExpiringSoon = !isExpired && doc.ExpiryDate.Value <= DateTime.Today.AddDays(30);
-                                <span class="@(isExpired ? "text-danger" : isExpiringSoon ? "text-warning" : "")">
-                                    @doc.ExpiryDate.Value.ToString("yyyy/MM/dd")
-                                </span>
-                            }
-                            else
-                            {
-                                <span>-</span>
-                            }
-                        </td>
-                        <td>@doc.DocumentFiles.Count 個</td>
-                        <td class="text-center">
-                            <GenericButtonComponent IconClass="bi bi-pencil"
-                                                   Variant="ButtonVariant.OutlineDarkBlue"
-                                                   Size="ButtonSize.Small"
-                                                   Title="@L["Button.Edit"]"
-                                                   OnClick="@(() => HandleEdit(doc.Id))"
-                                                   CssClass="btn-square" />
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}
+<GenericInteractiveTableComponent TItem="Document"
+                                  Items="@documents"
+                                  ColumnDefinitions="@GetColumnDefinitions()"
+                                  ShowHeader="true"
+                                  ShowRowNumbers="true"
+                                  IsStriped="true"
+                                  IsHoverable="true"
+                                  IsBordered="true"
+                                  IsReadOnly="true"
+                                  ShowBuiltInActions="true"
+                                  ShowBuiltInDeleteButton="false"
+                                  EnableAutoEmptyRow="false"
+                                  EmptyMessage="@L["Message.NoDocuments"]"
+                                  CustomActionsTemplate="@GetActionsTemplate()"
+                                  ActionsColumnWidth="80px" />
 
 @* 文件編輯 Modal *@
 <DocumentEditModalComponent @ref="editModal"
@@ -90,6 +47,86 @@ else
     private bool isModalVisible = false;
     private int? editingId = null;
     private Dictionary<string, object?>? prefilledValues;
+
+    // ===== 欄位定義 =====
+
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = L["Field.DocumentTitle"],
+                PropertyName = nameof(Document.Title),
+                ColumnType = InteractiveColumnType.Display
+            },
+            new()
+            {
+                Title = L["Field.DocumentCategory"],
+                PropertyName = nameof(Document.DocumentCategoryId),
+                ColumnType = InteractiveColumnType.Display,
+                DisplayFormatter = item =>
+                {
+                    if (item is Document doc)
+                        return doc.DocumentCategory?.Name ?? "-";
+                    return "-";
+                }
+            },
+            new()
+            {
+                Title = L["Field.IssuedBy"],
+                PropertyName = nameof(Document.IssuedBy),
+                ColumnType = InteractiveColumnType.Display,
+                NullDisplayText = "-"
+            },
+            new()
+            {
+                Title = L["Field.ExpiryDate"],
+                PropertyName = nameof(Document.ExpiryDate),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "120px",
+                DisplayFormatter = item =>
+                {
+                    if (item is Document doc && doc.ExpiryDate.HasValue)
+                    {
+                        var date = doc.ExpiryDate.Value;
+                        var isExpired = date < DateTime.Today;
+                        var isExpiringSoon = !isExpired && date <= DateTime.Today.AddDays(30);
+                        var cssClass = isExpired ? "text-danger" : isExpiringSoon ? "text-warning" : "";
+                        return $"<span class=\"{cssClass}\">{date:yyyy/MM/dd}</span>";
+                    }
+                    return "-";
+                }
+            },
+            new()
+            {
+                Title = L["Field.AttachmentCount"],
+                PropertyName = "",
+                ColumnType = InteractiveColumnType.Display,
+                Width = "90px",
+                DisplayFormatter = item =>
+                {
+                    if (item is Document doc)
+                        return doc.DocumentFiles.Count.ToString();
+                    return "0";
+                }
+            }
+        };
+    }
+
+    private RenderFragment<Document> GetActionsTemplate()
+    {
+        return doc => __builder =>
+        {
+            <GenericButtonComponent IconClass="bi bi-pencil"
+                                   Variant="ButtonVariant.OutlineDarkBlue"
+                                   Title="@L["Button.Edit"]"
+                                   OnClick="@(() => HandleEdit(doc.Id))"
+                                   CssClass="btn-square" />
+        };
+    }
+
+    // ===== 資料載入 =====
 
     public async Task LoadAsync(int entityId)
     {

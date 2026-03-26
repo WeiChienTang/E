@@ -38,11 +38,9 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="Cancel">@L["Button.Cancel"]</button>
-                    <button class="btn btn-primary" @onclick="SaveAsync" disabled="@isSaving">
-                        @if (isSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                        @L["Button.Save"]
-                    </button>
+                    <GenericButtonComponent Variant="ButtonVariant.Gray" Text="@L["Button.Cancel"]" OnClick="Cancel" />
+                    <GenericButtonComponent Variant="ButtonVariant.DarkBlue" Text="@L["Button.Save"]" OnClick="SaveAsync"
+                                            IsLoading="@isSaving" IsDisabled="@isSaving" />
                 </div>
             </div>
         </div>

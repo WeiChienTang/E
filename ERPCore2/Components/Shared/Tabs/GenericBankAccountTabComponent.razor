@@ -11,87 +11,27 @@
     <div class="d-flex gap-2">
         <GenericButtonComponent IconClass="bi bi-plus-circle"
                                 Variant="ButtonVariant.DarkBlue"
-                                Size="ButtonSize.Small"
                                 Text="@L["Button.AddBankAccount"]"
                                 OnClick="@HandleAdd"
                                 IsDisabled="@(!EntityId.HasValue)" />
     </div>
 </div>
 
-@if (accounts.Count == 0)
-{
-    <div class="text-center py-4 text-muted">
-        <i class="bi bi-bank fs-3 d-block mb-2"></i>
-        <span>@L["Message.NoBankAccounts"]</span>
-    </div>
-}
-else
-{
-    <div class="table-responsive px-3 pt-2">
-        <table class="table table-sm table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>@L["Field.BankName"]</th>
-                    <th>@L["Field.BranchName"]</th>
-                    <th>@L["Field.AccountNumber"]</th>
-                    <th>@L["Field.AccountName"]</th>
-                    @if (EntityType == BankAccountEntityType.Company)
-                    {
-                        <th>@L["Field.Purpose"]</th>
-                    }
-                    <th class="text-center">@L["Field.IsPrimary"]</th>
-                    <th class="text-center" style="width:100px">@L["Label.Actions"]</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var acc in accounts)
-                {
-                    <tr>
-                        <td>@acc.BankName</td>
-                        <td>@acc.BranchName</td>
-                        <td>@acc.AccountNumber</td>
-                        <td>@acc.AccountName</td>
-                        @if (EntityType == BankAccountEntityType.Company)
-                        {
-                            <td>@acc.Purpose</td>
-                        }
-                        <td class="text-center">
-                            @if (acc.IsPrimary)
-                            {
-                                <span class="badge bg-primary">@L["Label.Primary"]</span>
-                            }
-                        </td>
-                        <td class="text-center">
-                            <div class="d-flex gap-1 justify-content-center">
-                                <GenericButtonComponent IconClass="bi bi-pencil"
-                                                       Variant="ButtonVariant.OutlineDarkBlue"
-                                                       Size="ButtonSize.Small"
-                                                       Title="@L["Button.Edit"]"
-                                                       OnClick="@(() => HandleEdit(acc.Id))"
-                                                       CssClass="btn-square" />
-                                @if (!acc.IsPrimary)
-                                {
-                                    <GenericButtonComponent IconClass="bi bi-star"
-                                                           Variant="ButtonVariant.OutlineGray"
-                                                           Size="ButtonSize.Small"
-                                                           Title="@L["Button.SetPrimary"]"
-                                                           OnClick="@(() => HandleSetPrimary(acc.Id))"
-                                                           CssClass="btn-square" />
-                                }
-                                <GenericButtonComponent IconClass="bi bi-trash"
-                                                       Variant="ButtonVariant.OutlineRed"
-                                                       Size="ButtonSize.Small"
-                                                       Title="@L["Button.Delete"]"
-                                                       OnClick="@(() => HandleDelete(acc.Id))"
-                                                       CssClass="btn-square" />
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}
+<GenericInteractiveTableComponent TItem="BankAccountRow"
+                                  Items="@accounts"
+                                  ColumnDefinitions="@GetColumnDefinitions()"
+                                  ShowHeader="true"
+                                  ShowRowNumbers="true"
+                                  IsStriped="true"
+                                  IsHoverable="true"
+                                  IsBordered="true"
+                                  IsReadOnly="true"
+                                  ShowBuiltInActions="true"
+                                  ShowBuiltInDeleteButton="false"
+                                  EnableAutoEmptyRow="false"
+                                  EmptyMessage="@L["Message.NoBankAccounts"]"
+                                  CustomActionsTemplate="@GetActionsTemplate()"
+                                  ActionsColumnWidth="100px" />
 
 @* 銀行帳號編輯 Modal *@
 <GenericBankAccountEditModalComponent EntityType="@EntityType"
@@ -112,6 +52,98 @@ else
     private bool isModalVisible = false;
     private int? editingId = null;
     private int _lastLoadedId;
+
+    // ===== 欄位定義 =====
+
+    private List<InteractiveColumnDefinition> GetColumnDefinitions()
+    {
+        var columns = new List<InteractiveColumnDefinition>
+        {
+            new()
+            {
+                Title = L["Field.BankName"],
+                PropertyName = nameof(BankAccountRow.BankName),
+                ColumnType = InteractiveColumnType.Display,
+                NullDisplayText = "-"
+            },
+            new()
+            {
+                Title = L["Field.BranchName"],
+                PropertyName = nameof(BankAccountRow.BranchName),
+                ColumnType = InteractiveColumnType.Display,
+                NullDisplayText = "-"
+            },
+            new()
+            {
+                Title = L["Field.AccountNumber"],
+                PropertyName = nameof(BankAccountRow.AccountNumber),
+                ColumnType = InteractiveColumnType.Display,
+                Width = "140px"
+            },
+            new()
+            {
+                Title = L["Field.AccountName"],
+                PropertyName = nameof(BankAccountRow.AccountName),
+                ColumnType = InteractiveColumnType.Display
+            }
+        };
+
+        if (EntityType == BankAccountEntityType.Company)
+        {
+            columns.Add(new()
+            {
+                Title = L["Field.Purpose"],
+                PropertyName = nameof(BankAccountRow.Purpose),
+                ColumnType = InteractiveColumnType.Display,
+                NullDisplayText = "-"
+            });
+        }
+
+        columns.Add(new()
+        {
+            Title = L["Field.IsPrimary"],
+            PropertyName = nameof(BankAccountRow.IsPrimary),
+            ColumnType = InteractiveColumnType.Display,
+            Width = "80px",
+            CellCssClass = "text-center",
+            HeaderCssClass = "text-center",
+            DisplayFormatter = item =>
+            {
+                if (item is BankAccountRow row && row.IsPrimary)
+                    return $"<span class=\"badge bg-primary\">{L["Label.Primary"]}</span>";
+                return "";
+            }
+        });
+
+        return columns;
+    }
+
+    private RenderFragment<BankAccountRow> GetActionsTemplate()
+    {
+        return acc => __builder =>
+        {
+            <div class="d-flex gap-1">
+                <GenericButtonComponent IconClass="bi bi-pencil"
+                                       Variant="ButtonVariant.OutlineDarkBlue"
+                                       Title="@L["Button.Edit"]"
+                                       OnClick="@(() => HandleEdit(acc.Id))"
+                                       CssClass="btn-square" />
+                @if (!acc.IsPrimary)
+                {
+                    <GenericButtonComponent IconClass="bi bi-star"
+                                           Variant="ButtonVariant.OutlineGray"
+                                           Title="@L["Button.SetPrimary"]"
+                                           OnClick="@(() => HandleSetPrimary(acc.Id))"
+                                           CssClass="btn-square" />
+                }
+                <GenericButtonComponent IconClass="bi bi-trash"
+                                       Variant="ButtonVariant.OutlineRed"
+                                       Title="@L["Button.Delete"]"
+                                       OnClick="@(() => HandleDelete(acc.Id))"
+                                       CssClass="btn-square" />
+            </div>
+        };
+    }
 
     protected override async Task OnParametersSetAsync()
     {

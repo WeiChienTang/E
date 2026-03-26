@@ -21,18 +21,15 @@
 
         @* Row 1：導航 + 右側工具 *@
         <div class="toolbar-row-1">
-            <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-                IconClass="bi bi-chevron-left" OnClick="Previous" Title="上一個" />
+            <GenericButtonComponent Variant="ButtonVariant.OutlineGray"                IconClass="bi bi-chevron-left" OnClick="Previous" Title="上一個" />
 
             <span class="week-label">
                 @DateRangeLabel
             </span>
 
-            <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-                IconClass="bi bi-chevron-right" OnClick="Next" Title="下一個" />
+            <GenericButtonComponent Variant="ButtonVariant.OutlineGray"                IconClass="bi bi-chevron-right" OnClick="Next" Title="下一個" />
 
-            <GenericButtonComponent Variant="ButtonVariant.DarkBlue" Size="ButtonSize.Small"
-                Text="今天" OnClick="GoToToday" />
+            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"                Text="今天" OnClick="GoToToday" />
 
             @* 視圖模式切換 *@
             <div class="btn-group btn-group-sm" role="group" aria-label="視圖模式">
@@ -99,27 +96,23 @@
             <div class="toolbar-action-break"></div>
 
             @* 9.2 批次完工 *@
-            <GenericButtonComponent Variant="ButtonVariant.Green" Size="ButtonSize.Small"
-                IconClass="bi bi-check2-all" Text="批次完工"
+            <GenericButtonComponent Variant="ButtonVariant.Green"                IconClass="bi bi-check2-all" Text="批次完工"
                 OnClick="@(() => showBatchCompleteModal = true)"
                 IsDisabled="@(!boardItems.Any(i => i.ProductionItemStatus == ProductionItemStatus.InProgress))"
                 Title="批次確認目前視圖生產中項目完工" />
 
             @* 列印本週排程 *@
-            <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-                IconClass="bi bi-printer" Text="列印排程"
+            <GenericButtonComponent Variant="ButtonVariant.OutlineGray"                IconClass="bi bi-printer" Text="列印排程"
                 OnClick="@HandlePrintScheduleAsync"
                 Title="列印本週生產排程表" />
 
             @* 用料需求報表 *@
-            <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-                IconClass="bi bi-printer" Text="列印用料"
+            <GenericButtonComponent Variant="ButtonVariant.OutlineGray"                IconClass="bi bi-printer" Text="列印用料"
                 OnClick="@HandleMaterialRequirementsAsync"
                 Title="列印本週用料需求報表" />
 
             @* 重新整理 *@
-            <GenericButtonComponent Variant="ButtonVariant.Green" Size="ButtonSize.Small"
-                IconClass="bi bi-arrow-clockwise" Text="重整" OnClick="LoadDataAsync"
+            <GenericButtonComponent Variant="ButtonVariant.Green"                IconClass="bi bi-arrow-clockwise" Text="重整" OnClick="LoadDataAsync"
                 IsDisabled="@IsLoading"
                 Title="重新整理看板資料" />
         </div>

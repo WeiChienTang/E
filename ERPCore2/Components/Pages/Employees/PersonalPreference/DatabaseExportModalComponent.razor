@@ -26,7 +26,6 @@
             @if (currentStep > 1 && currentStep < 3)
             {
                 <GenericButtonComponent Variant="ButtonVariant.Gray"
-                                        Size="ButtonSize.Small"
                                         Text="上一步"
                                         OnClick="HandlePrevStep"
                                         IsDisabled="@isLoading" />
@@ -34,7 +33,6 @@
             @if (currentStep == 1 && CanGoNext())
             {
                 <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                        Size="ButtonSize.Small"
                                         Text="下一步"
                                         OnClick="HandleNextStep"
                                         IsDisabled="@isLoading" />
@@ -42,7 +40,6 @@
             @if (currentStep == 2)
             {
                 <GenericButtonComponent Variant="ButtonVariant.Green"
-                                        Size="ButtonSize.Small"
                                         Text="執行匯出"
                                         OnClick="HandleExecuteExport"
                                         IsDisabled="@isLoading" />
@@ -52,13 +49,11 @@
                 @if (exportResult != null && exportResult.IsSuccess)
                 {
                     <GenericButtonComponent Variant="ButtonVariant.Green"
-                                            Size="ButtonSize.Small"
-                                            Text="下載 Excel"
+                                                Text="下載 Excel"
                                             OnClick="HandleDownload"
                                             IsDisabled="@isLoading" />
                 }
                 <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                        Size="ButtonSize.Small"
                                         Text="完成"
                                         OnClick="HandleClose" />
             }
@@ -107,12 +102,10 @@
                     @* 操作按鈕列 *@
                     <div class="d-flex gap-2 mb-3 align-items-center">
                         <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                                Size="ButtonSize.Small"
-                                                Text="全選"
+                                                        Text="全選"
                                                 OnClick="SelectAll" />
                         <GenericButtonComponent Variant="ButtonVariant.Gray"
-                                                Size="ButtonSize.Small"
-                                                Text="取消全選"
+                                                        Text="取消全選"
                                                 OnClick="DeselectAll" />
                         <span class="text-muted small ms-2">
                             已選擇 <strong>@selectedDbSetNames.Count</strong> / @allTables.Count 個資料表

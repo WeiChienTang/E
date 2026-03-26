@@ -48,17 +48,14 @@
                            placeholder="0" />
                 </div>
                 <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                      Size="ButtonSize.Small"
                                       Text="@L["Report.BatchFill"]"
                                       OnClick="ApplyBatchFill"
                                       Title="@L["Report.BatchFillTitle"]" />
                 <GenericButtonComponent Variant="ButtonVariant.Gray"
-                                      Size="ButtonSize.Small"
                                       Text="@L["Button.Clear"]"
                                       OnClick="HandleClearAll"
                                       Title="@L["Button.Clear"]" />
                 <GenericButtonComponent Variant="ButtonVariant.Green"
-                                      Size="ButtonSize.Small"
                                       Text="@L["Button.Save"]"
                                       OnClick="HandleSave"
                                       IsDisabled="@(!stockDetails.Any())"

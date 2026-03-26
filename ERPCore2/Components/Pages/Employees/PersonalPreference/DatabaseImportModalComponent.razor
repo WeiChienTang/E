@@ -24,7 +24,6 @@
             @if (currentStep > 1 && currentStep < 5)
             {
                 <GenericButtonComponent Variant="ButtonVariant.Gray"
-                                        Size="ButtonSize.Small"
                                         Text="上一步"
                                         IconClass="bi bi-arrow-left"
                                         OnClick="HandlePrevStep"
@@ -33,7 +32,6 @@
             @if (currentStep < 4 && CanGoNext())
             {
                 <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                        Size="ButtonSize.Small"
                                         Text="下一步"
                                         IconClass="bi bi-arrow-right"
                                         OnClick="HandleNextStep"
@@ -42,7 +40,6 @@
             @if (currentStep == 4 && validationErrors.Count == 0)
             {
                 <GenericButtonComponent Variant="ButtonVariant.Green"
-                                        Size="ButtonSize.Small"
                                         Text="執行匯入"
                                         IconClass="bi bi-play-fill"
                                         OnClick="HandleExecuteImport"
@@ -51,7 +48,6 @@
             @if (currentStep == 5)
             {
                 <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                        Size="ButtonSize.Small"
                                         Text="完成"
                                         IconClass="bi bi-check-lg"
                                         OnClick="HandleClose" />
@@ -203,8 +199,7 @@
                     {
                         <div class="mb-3">
                             <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                                    Size="ButtonSize.Small"
-                                                    Text="@($"套用智慧預設（{GetUnresolvedRequiredCount()} 個必填欄位）")"
+                                                                Text="@($"套用智慧預設（{GetUnresolvedRequiredCount()} 個必填欄位）")"
                                                     IconClass="bi bi-magic"
                                                     OnClick="ApplySmartDefaults" />
                             <span class="text-muted small ms-2">自動為未解決的必填欄位填入型別預設值（string→空字串、int→0、DateTime→現在時間…）</span>

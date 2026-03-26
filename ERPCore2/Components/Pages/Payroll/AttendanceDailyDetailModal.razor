@@ -46,16 +46,15 @@
                                 </li>
                             </ul>
                         </div>
-                        <button class="btn btn-sm btn-outline-danger" @onclick="ClearAllAsync" disabled="@isSaving"
-                                title="@L["Attendance.ClearAllHint"]">
-                            <i class="bi bi-trash me-1"></i>@L["Attendance.ClearAll"]
-                        </button>
+                        <GenericButtonComponent Variant="ButtonVariant.OutlineRed"
+                                            Text="@L["Attendance.ClearAll"]" OnClick="ClearAllAsync"
+                                            IsDisabled="@isSaving" Title="@L["Attendance.ClearAllHint"]"
+                                            IconClass="bi bi-trash" />
                         <div class="ms-auto d-flex gap-2">
-                            <button class="btn btn-sm btn-success" @onclick="SaveAndRebuildAsync"
-                                    disabled="@(!HasDirty || isSaving)">
-                                @if (isSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                                <i class="bi bi-arrow-repeat me-1"></i>@L["Attendance.SaveAndRebuild"]
-                            </button>
+                            <GenericButtonComponent Variant="ButtonVariant.Green"
+                                                Text="@L["Attendance.SaveAndRebuild"]" OnClick="SaveAndRebuildAsync"
+                                                IsLoading="@isSaving" IsDisabled="@(!HasDirty || isSaving)"
+                                                IconClass="bi bi-arrow-repeat" />
                         </div>
                     </div>
                 </div>
@@ -182,12 +181,11 @@
                 </div>
 
                 <div class="modal-footer py-2">
-                    <button class="btn btn-secondary btn-sm" @onclick="Close">@L["Button.Cancel"]</button>
-                    <button class="btn btn-success btn-sm" @onclick="SaveAndRebuildAsync"
-                            disabled="@(!HasDirty || isSaving)">
-                        @if (isSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                        @L["Attendance.SaveAndRebuild"]
-                    </button>
+                    <GenericButtonComponent Variant="ButtonVariant.Gray"
+                                        Text="@L["Button.Cancel"]" OnClick="Close" />
+                    <GenericButtonComponent Variant="ButtonVariant.Green"
+                                        Text="@L["Attendance.SaveAndRebuild"]" OnClick="SaveAndRebuildAsync"
+                                        IsLoading="@isSaving" IsDisabled="@(!HasDirty || isSaving)" />
                 </div>
             </div>
         </div>

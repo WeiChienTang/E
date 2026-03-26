@@ -32,9 +32,11 @@
                             <strong>@L["CsvImport.FormatTitle"]</strong><br />
                             @L["CsvImport.FormatDesc"]
                             <br />
-                            <button class="btn btn-sm btn-outline-secondary mt-2" @onclick="DownloadTemplate">
-                                <i class="bi bi-download me-1"></i>@L["CsvImport.DownloadTemplate"]
-                            </button>
+                            <GenericButtonComponent Variant="ButtonVariant.OutlineGray"
+                                CssClass="mt-2"
+                                IconClass="bi bi-download"
+                                Text="@L["CsvImport.DownloadTemplate"]"
+                                OnClick="DownloadTemplate" />
                         </div>
 
                         @* 衝突提示 *@
@@ -168,31 +170,21 @@
                 <div class="modal-footer">
                     @if (importResult?.Success == true && importResult.ValidRowCount > 0)
                     {
-                        <button class="btn btn-success"
-                                @onclick="HandleConfirmImport"
-                                disabled="@isImporting">
-                            @if (isImporting)
-                            {
-                                <span class="spinner-border spinner-border-sm me-1"></span>
-                                @L["CsvImport.Importing"]
-                            }
-                            else
-                            {
-                                <i class="bi bi-cloud-upload me-1"></i>
-                                @L["CsvImport.ConfirmImport", importResult.ValidRowCount]
-                            }
-                        </button>
-                        <button class="btn btn-outline-secondary"
-                                @onclick="ResetToFileSelection"
-                                disabled="@isImporting">
-                            @L["CsvImport.ReSelect"]
-                        </button>
+                        <GenericButtonComponent Variant="ButtonVariant.Green"
+                                IconClass="bi bi-cloud-upload"
+                                Text="@(isImporting ? L["CsvImport.Importing"] : L["CsvImport.ConfirmImport", importResult.ValidRowCount])"
+                                OnClick="HandleConfirmImport"
+                                IsDisabled="@isImporting"
+                                IsLoading="@isImporting" />
+                        <GenericButtonComponent Variant="ButtonVariant.OutlineGray"
+                                Text="@L["CsvImport.ReSelect"]"
+                                OnClick="ResetToFileSelection"
+                                IsDisabled="@isImporting" />
                     }
-                    <button class="btn btn-secondary"
-                            @onclick="HandleClose"
-                            disabled="@isImporting">
-                        @L["Button.Cancel"]
-                    </button>
+                    <GenericButtonComponent Variant="ButtonVariant.Gray"
+                            Text="@L["Button.Cancel"]"
+                            OnClick="HandleClose"
+                            IsDisabled="@isImporting" />
                 </div>
 
             </div>

@@ -25,7 +25,6 @@ else
             @if (_rows.Any(r => r.Item == null))
             {
                 <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                       Size="ButtonSize.Small"
                                        Text="@L["Accounting.CreateSubAccount"].ToString()"
                                        OnClick="HandleCreateAsync"
                                        IsLoading="@_isCreating"

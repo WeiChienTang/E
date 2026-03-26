@@ -289,24 +289,29 @@
 /* ===== 草稿/正式切換按鈕群組（視覺與 form-tab-btn 一致）===== */
 
 .index-draft-tab-btn-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    padding: 0.5rem 0 0 0;
+    display: inline-flex;
+    gap: 0.25rem;
+    padding: 0.15rem;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 0.5rem;
+    margin-right: 0.5rem;
 }
 
 .index-draft-tab-btn {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    padding: 0.25rem 0.75rem;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.8rem;
     font-weight: 500;
     color: var(--text-secondary);
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-light);
+    background-color: transparent;
+    border: 1px solid transparent;
     border-radius: 0.375rem;
     cursor: pointer;
     transition: all 0.15s ease-in-out;
+    white-space: nowrap;
 }
 
 .index-draft-tab-btn:hover {
@@ -333,11 +338,12 @@
 
 @media (max-width: 576px) {
     .index-draft-tab-btn-group {
-        gap: 0.25rem;
+        margin-right: 0.25rem;
     }
 
     .index-draft-tab-btn {
-        padding: 0.3rem 0.6rem;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.75rem;
     }
 }
 

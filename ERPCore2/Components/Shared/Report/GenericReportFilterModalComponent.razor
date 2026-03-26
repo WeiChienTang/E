@@ -29,13 +29,11 @@
     <HeaderButtons>
         <div class="d-flex gap-2">
             <GenericButtonComponent Variant="ButtonVariant.Green"
-                                  Size="ButtonSize.Small"
                                   Text="@L["Report.PreviewPrint"]"
                                   OnClick="HandleConfirmAsync"
                                   IsDisabled="@isLoading"
                                   Title="@L["Report.PreviewPrint"]" />
             <GenericButtonComponent Variant="ButtonVariant.Red"
-                                  Size="ButtonSize.Small"
                                   Text="@L["Button.Cancel"]"
                                   OnClick="HandleCancel"
                                   IsDisabled="@isLoading"
@@ -100,11 +98,9 @@
                         </div>
                         <div class="d-flex gap-2 justify-content-center">
                             <GenericButtonComponent Variant="ButtonVariant.Red"
-                                                   Size="ButtonSize.Small"
                                                    Text="@L["Button.Confirm"]"
                                                    OnClick="HandleNoFilterConfirmedAsync" />
                             <GenericButtonComponent Variant="ButtonVariant.Gray"
-                                                   Size="ButtonSize.Small"
                                                    Text="@L["Button.Cancel"]"
                                                    OnClick="HandleNoFilterCancel" />
                         </div>

@@ -31,11 +31,10 @@ else
                         <td>@(ret.Supplier?.CompanyName ?? "—")</td>
                         <td class="text-end">@ret.TotalReturnAmountWithTax.ToString("N0")</td>
                         <td class="text-center">
-                            <button type="button" class="btn btn-sm btn-outline-primary"
-                                    title="@L["Button.OpenReturn"].ToString()"
-                                    @onclick="@(() => OnOpenReturn.InvokeAsync(ret.Id))">
-                                <i class="bi bi-box-arrow-up-right"></i>
-                            </button>
+                            <GenericButtonComponent Variant="ButtonVariant.OutlineDarkBlue"
+                                                    IconClass="bi bi-box-arrow-up-right"
+                                                    Title="@L["Button.OpenReturn"].ToString()"
+                                                    OnClick="@(() => OnOpenReturn.InvokeAsync(ret.Id))" />
                         </td>
                     </tr>
                 }

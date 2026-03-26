@@ -33,11 +33,10 @@ else
                         <td>@(string.IsNullOrEmpty(receiving.BatchNumber) ? "—" : receiving.BatchNumber)</td>
                         <td class="text-end">@receiving.PurchaseReceivingTotalAmountIncludingTax.ToString("N0")</td>
                         <td class="text-center">
-                            <button type="button" class="btn btn-sm btn-outline-primary"
-                                    title="@L["Button.OpenReceiving"].ToString()"
-                                    @onclick="@(() => OnOpenReceiving.InvokeAsync(receiving.Id))">
-                                <i class="bi bi-box-arrow-up-right"></i>
-                            </button>
+                            <GenericButtonComponent Variant="ButtonVariant.OutlineDarkBlue"
+                                                    IconClass="bi bi-box-arrow-up-right"
+                                                    Title="@L["Button.OpenReceiving"].ToString()"
+                                                    OnClick="@(() => OnOpenReceiving.InvokeAsync(receiving.Id))" />
                         </td>
                     </tr>
                 }

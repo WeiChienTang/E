@@ -36,7 +36,6 @@
                                                 <GenericButtonComponent
                                                     Text="@L["Button.Copy"]"
                                                     Variant="ButtonVariant.DarkBlue"
-                                                    Size="ButtonSize.Small"
                                                     CssClass="ms-2"
                                                     Title="@(L["Button.Copy"] + " " + L["Label.ErrorId"])"
                                                     OnClick="() => CopyToClipboard(errorLog.ErrorId)" />
@@ -155,7 +154,6 @@
                                         <GenericButtonComponent
                                             Text="@L["Button.Copy"]"
                                             Variant="ButtonVariant.DarkBlue"
-                                            Size="ButtonSize.Small"
                                             Title="@(L["Button.Copy"] + " " + L["ErrorLog.ErrorMessage"])"
                                             OnClick="() => CopyToClipboard(errorLog.Message)" />
                                     </div>
@@ -180,7 +178,6 @@
                                             <GenericButtonComponent
                                                 Text="@L["Button.Copy"]"
                                                 Variant="ButtonVariant.DarkBlue"
-                                                Size="ButtonSize.Small"
                                                 Title="@(L["Button.Copy"] + " " + L["ErrorLog.StackTrace"])"
                                                 OnClick="() => CopyToClipboard(errorLog.StackTrace)" />
                                         </div>
@@ -206,7 +203,6 @@
                                             <GenericButtonComponent
                                                 Text="@L["Button.Copy"]"
                                                 Variant="ButtonVariant.DarkBlue"
-                                                Size="ButtonSize.Small"
                                                 Title="@(L["Button.Copy"] + " " + L["ErrorLog.InnerException"])"
                                                 OnClick="() => CopyToClipboard(errorLog.InnerException)" />
                                         </div>
@@ -232,7 +228,6 @@
                                             <GenericButtonComponent
                                                 Text="@L["Button.Copy"]"
                                                 Variant="ButtonVariant.DarkBlue"
-                                                Size="ButtonSize.Small"
                                                 Title="@(L["Button.Copy"] + " " + L["ErrorLog.AdditionalData"])"
                                                 OnClick="() => CopyToClipboard(errorLog.AdditionalData)" />
                                         </div>

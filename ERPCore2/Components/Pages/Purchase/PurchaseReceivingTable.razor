@@ -54,15 +54,13 @@ else
                                           OnClick="@SmartLoadReceivingDetails"
                                           IsDisabled="@(!CanUseSmartLoad || IsReadOnly || _hasUndeletableDetails)"
                                           Title="@GetSmartLoadTooltip()"
-                                          Variant="ButtonVariant.DarkBlue"
-                                          Size="ButtonSize.Small" />
+                                          Variant="ButtonVariant.DarkBlue" />
                     <GenericButtonComponent
                                           Text="載入"
                                           OnClick="@ShowLoadConfirmModal"
                                           IsDisabled="@(IsReadOnly || _hasUndeletableDetails)"
                                           Title="@GetLoadPurchaseOrderTooltip()"
-                                          Variant="ButtonVariant.DarkBlue"
-                                          Size="ButtonSize.Small" />
+                                          Variant="ButtonVariant.DarkBlue" />
                 </div>
                 
                 @* 右側按鈕組 *@
@@ -72,7 +70,6 @@ else
                         <GenericButtonComponent
                                               Text="倉庫統一"
                                               Variant="ButtonVariant.Green"
-                                              Size="ButtonSize.Small"
                                               IsDisabled="@(!HasItems || IsReadOnly || _hasUndeletableDetails)"
                                               Title="@GetUnifyWarehouseTooltip()"
                                               AdditionalAttributes="@(new Dictionary<string, object> 
@@ -107,8 +104,7 @@ else
                                           OnClick="@ClearAllDetails"
                                           IsDisabled="@(!HasItems || IsReadOnly || _hasUndeletableDetails)"
                                           Title="@GetClearDetailsTooltip()"
-                                          Variant="ButtonVariant.Red"
-                                          Size="ButtonSize.Small" />
+                                          Variant="ButtonVariant.Red" />
                 </div>
             </div>
         </div>

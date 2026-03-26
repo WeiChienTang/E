@@ -34,14 +34,12 @@
             @* 載入按鈕 *@
             <GenericButtonComponent Text="@L["Button.Load"]"
                                     Variant="ButtonVariant.DarkBlue"
-                                    Size="ButtonSize.Small"
                                     IconClass="bi bi-arrow-clockwise"
                                     OnClick="@LoadMatrixAsync" />
 
             @* 複製上一年 *@
             <GenericButtonComponent Text="@L["SalesTarget.CopyLastYear"]"
                                     Variant="ButtonVariant.OutlineGray"
-                                    Size="ButtonSize.Small"
                                     IconClass="bi bi-copy"
                                     OnClick="@CopyFromLastYearAsync" />
 
@@ -49,13 +47,11 @@
             <div class="ms-auto d-flex gap-2">
                 <GenericButtonComponent Text="@L["Button.Save"]"
                                         Variant="ButtonVariant.Green"
-                                        Size="ButtonSize.Small"
                                         IconClass="bi bi-floppy"
                                         IsDisabled="@(!matrixRows.Any())"
                                         OnClick="@HandleSaveAsync" />
                 <GenericButtonComponent Text="@L["Button.Cancel"]"
                                         Variant="ButtonVariant.Red"
-                                        Size="ButtonSize.Small"
                                         OnClick="@HandleCancelAsync" />
             </div>
         </div>

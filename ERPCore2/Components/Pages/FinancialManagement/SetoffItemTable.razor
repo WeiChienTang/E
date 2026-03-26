@@ -46,7 +46,6 @@ else
                 <div class="btn-group-left">
                     <GenericButtonComponent Text="載入"
                                           Variant="ButtonVariant.DarkBlue"
-                                          Size="ButtonSize.Small"
                                           OnClick="ShowLoadConfirmModal"
                                           IsDisabled="@(IsReadOnly || IsEditMode())"
                                           Title="根據條件載入未結清明細" />
@@ -56,12 +55,10 @@ else
                 <div class="btn-group-right">
                     <GenericButtonComponent Text="全部沖款"
                                           Variant="ButtonVariant.Green"
-                                          Size="ButtonSize.Small"
                                           OnClick="FillAllSetoffAmounts"
                                           IsDisabled="@(SetoffItems.Count == 0 || IsReadOnly || !SetoffItems.Any())" />
                     <GenericButtonComponent Text="沖款清空"
                                           Variant="ButtonVariant.Red"
-                                          Size="ButtonSize.Small"
                                           OnClick="ClearAllSetoffAmounts"
                                           IsDisabled="@(SetoffItems.Count == 0 || IsReadOnly || !SetoffItems.Any())" />
                 </div>

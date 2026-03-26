@@ -45,9 +45,10 @@
                             <option value="@port">@port</option>
                         }
                     </select>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="RefreshPorts" title="重新偵測串列埠">
-                        <i class="bi-arrow-clockwise"></i>
-                    </button>
+                    <GenericButtonComponent Variant="ButtonVariant.OutlineGray"
+                                            IconClass="bi-arrow-clockwise"
+                                            Title="重新偵測串列埠"
+                                            OnClick="@RefreshPorts" />
                 </div>
             </div>
 
@@ -101,23 +102,24 @@
             <div class="mb-3">
                 <label class="form-label fw-semibold">常用預設組合</label>
                 <div class="d-flex gap-2 flex-wrap">
-                    <button class="btn btn-outline-primary btn-sm" @onclick="@(() => ApplyPreset(2400, "Even", 7, 1))">
-                        E.7.1 / 2400 (LT-100 預設)
-                    </button>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="@(() => ApplyPreset(9600, "None", 8, 1))">
-                        N.8.1 / 9600
-                    </button>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="@(() => ApplyPreset(2400, "Odd", 7, 1))">
-                        O.7.1 / 2400
-                    </button>
+                    <GenericButtonComponent Text="E.7.1 / 2400 (LT-100 預設)"
+                                            Variant="ButtonVariant.OutlineDarkBlue"
+                                            OnClick="@(() => ApplyPreset(2400, "Even", 7, 1))" />
+                    <GenericButtonComponent Text="N.8.1 / 9600"
+                                            Variant="ButtonVariant.OutlineGray"
+                                            OnClick="@(() => ApplyPreset(9600, "None", 8, 1))" />
+                    <GenericButtonComponent Text="O.7.1 / 2400"
+                                            Variant="ButtonVariant.OutlineGray"
+                                            OnClick="@(() => ApplyPreset(2400, "Odd", 7, 1))" />
                 </div>
             </div>
 
             @* 套用按鈕 *@
             <div class="d-flex justify-content-end mt-3">
-                <button class="btn btn-primary" @onclick="HandleApplySettings">
-                    <i class="bi-check-lg me-1"></i> 套用
-                </button>
+                <GenericButtonComponent Text="套用"
+                                        Variant="ButtonVariant.DarkBlue"
+                                        IconClass="bi-check-lg"
+                                        OnClick="@HandleApplySettings" />
             </div>
         </div>
     </BodyContent>

@@ -41,14 +41,16 @@
                                value="@_newYear"
                                min="2000" max="2100"
                                @onchange="OnNewYearChanged" />
-                        <button type="button" class="btn btn-success p-1 lh-1"
-                                @onclick="ConfirmAddYearAsync" title="確認">
-                            <i class="bi bi-check2"></i>
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary p-1 lh-1"
-                                @onclick="CancelAddYear" title="取消">
-                            <i class="bi bi-x"></i>
-                        </button>
+                        <GenericButtonComponent Variant="ButtonVariant.Green"
+                                                IconClass="bi bi-check2"
+                                                CssClass="p-1 lh-1"
+                                                Title="確認"
+                                                OnClick="@ConfirmAddYearAsync" />
+                        <GenericButtonComponent Variant="ButtonVariant.OutlineGray"
+                                                IconClass="bi bi-x"
+                                                CssClass="p-1 lh-1"
+                                                Title="取消"
+                                                OnClick="@CancelAddYear" />
                     </span>
                 }
                 else
@@ -65,16 +67,13 @@
             <div class="d-flex gap-2 flex-shrink-0">
                 <GenericButtonComponent Text="@L["SalesTarget.CopyLastYear"]"
                                         Variant="ButtonVariant.DarkBlue"
-                                        Size="ButtonSize.Small"
                                         OnClick="@CopyFromLastYearAsync" />
                 <GenericButtonComponent Text="@L["Button.Save"]"
                                         Variant="ButtonVariant.Green"
-                                        Size="ButtonSize.Small"
                                         IsDisabled="@(!_isDirty)"
                                         OnClick="@HandleSaveAsync" />
                 <GenericButtonComponent Text="@L["Button.Close"]"
                                         Variant="ButtonVariant.Red"
-                                        Size="ButtonSize.Small"
                                         OnClick="@HandleCloseAsync" />
             </div>
         </div>

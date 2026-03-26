@@ -22,40 +22,32 @@
         {
             <div class="d-flex align-items-center gap-2">
                 <span class="text-warning fw-semibold">確定退回至待排清單？</span>
-                <GenericButtonComponent Variant="ButtonVariant.Yellow" Size="ButtonSize.Small"
-                    Text="確定退回" OnClick="HandleReturnConfirmed" />
-                <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-                    Text="取消" OnClick="@(() => showReturnConfirm = false)" />
+                <GenericButtonComponent Variant="ButtonVariant.Yellow"                    Text="確定退回" OnClick="HandleReturnConfirmed" />
+                <GenericButtonComponent Variant="ButtonVariant.OutlineGray"                    Text="取消" OnClick="@(() => showReturnConfirm = false)" />
             </div>
         }
         else if (showForceStartConfirm)
         {
             <div class="d-flex align-items-center gap-2">
                 <span class="text-warning fw-semibold">材料未齊，確定強制開始生產？</span>
-                <GenericButtonComponent Variant="ButtonVariant.Yellow" Size="ButtonSize.Small"
-                    Text="確定開始" OnClick="HandleStartProduction" IsLoading="@isProcessing" />
-                <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-                    Text="取消" OnClick="@(() => showForceStartConfirm = false)" />
+                <GenericButtonComponent Variant="ButtonVariant.Yellow"                    Text="確定開始" OnClick="HandleStartProduction" IsLoading="@isProcessing" />
+                <GenericButtonComponent Variant="ButtonVariant.OutlineGray"                    Text="取消" OnClick="@(() => showForceStartConfirm = false)" />
             </div>
         }
         else if (showPauseConfirm)
         {
             <div class="d-flex align-items-center gap-2">
                 <span class="text-warning fw-semibold">確定暫停生產？</span>
-                <GenericButtonComponent Variant="ButtonVariant.Yellow" Size="ButtonSize.Small"
-                    Text="確定暫停" OnClick="HandlePauseProduction" IsLoading="@isProcessing" />
-                <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-                    Text="取消" OnClick="@(() => showPauseConfirm = false)" />
+                <GenericButtonComponent Variant="ButtonVariant.Yellow"                    Text="確定暫停" OnClick="HandlePauseProduction" IsLoading="@isProcessing" />
+                <GenericButtonComponent Variant="ButtonVariant.OutlineGray"                    Text="取消" OnClick="@(() => showPauseConfirm = false)" />
             </div>
         }
         else if (showAbortConfirm)
         {
             <div class="d-flex align-items-center gap-2">
                 <span class="text-danger fw-semibold">確定終止並結案？此操作不可復原</span>
-                <GenericButtonComponent Variant="ButtonVariant.Red" Size="ButtonSize.Small"
-                    Text="確定終止" OnClick="HandleAbortProduction" IsLoading="@isProcessing" />
-                <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-                    Text="取消" OnClick="@(() => { showAbortConfirm = false; showAbortSettlement = false; })" />
+                <GenericButtonComponent Variant="ButtonVariant.Red"                    Text="確定終止" OnClick="HandleAbortProduction" IsLoading="@isProcessing" />
+                <GenericButtonComponent Variant="ButtonVariant.OutlineGray"                    Text="取消" OnClick="@(() => { showAbortConfirm = false; showAbortSettlement = false; })" />
             </div>
         }
         else
@@ -64,8 +56,7 @@
                 @* 領料：有 BOM 且未完成領料，且狀態不是暫停/完成 *@
                 @if (hasBom && Item?.ProductionItemStatus is not (ProductionItemStatus.Paused or ProductionItemStatus.Completed))
                 {
-                    <GenericButtonComponent Variant="ButtonVariant.Green" Size="ButtonSize.Small"
-                        Text="領料" OnClick="HandleIssueMaterial"
+                    <GenericButtonComponent Variant="ButtonVariant.Green"                        Text="領料" OnClick="HandleIssueMaterial"
                         IsDisabled="@(isProcessing || materialComplete)"
                         IsLoading="@isProcessing" />
                 }
@@ -74,15 +65,13 @@
                 {
                     @if (!hasBom || materialComplete)
                     {
-                        <GenericButtonComponent Variant="ButtonVariant.Green" Size="ButtonSize.Small"
-                            Text="開始生產" OnClick="HandleStartProduction"
+                        <GenericButtonComponent Variant="ButtonVariant.Green"                            Text="開始生產" OnClick="HandleStartProduction"
                             IsDisabled="@isProcessing" IsLoading="@isProcessing"
                             Title="材料已備齊，開始生產" />
                     }
                     else
                     {
-                        <GenericButtonComponent Variant="ButtonVariant.Yellow" Size="ButtonSize.Small"
-                            Text="強制開始" OnClick="@(() => showForceStartConfirm = true)"
+                        <GenericButtonComponent Variant="ButtonVariant.Yellow"                            Text="強制開始" OnClick="@(() => showForceStartConfirm = true)"
                             IsDisabled="@isProcessing"
                             Title="材料尚未領齊，點擊確認強制開始生產" />
                     }
@@ -90,8 +79,7 @@
                 @* 暫停：僅限生產中 *@
                 @if (Item?.ProductionItemStatus == ProductionItemStatus.InProgress)
                 {
-                    <GenericButtonComponent Variant="ButtonVariant.Yellow" Size="ButtonSize.Small"
-                        Text="暫停"
+                    <GenericButtonComponent Variant="ButtonVariant.Yellow"                        Text="暫停"
                         OnClick="@(() => showPauseConfirm = true)"
                         IsDisabled="@isProcessing"
                         Title="暫停生產，之後可繼續或終止" />
@@ -99,8 +87,7 @@
                 @* 繼續：僅限已暫停 *@
                 @if (Item?.ProductionItemStatus == ProductionItemStatus.Paused)
                 {
-                    <GenericButtonComponent Variant="ButtonVariant.Green" Size="ButtonSize.Small"
-                        Text="繼續"
+                    <GenericButtonComponent Variant="ButtonVariant.Green"                        Text="繼續"
                         OnClick="HandleResumeProduction"
                         IsDisabled="@isProcessing" IsLoading="@isProcessing"
                         Title="繼續生產" />
@@ -110,15 +97,13 @@
                      || (Item?.ProductionItemStatus is ProductionItemStatus.WaitingMaterial or ProductionItemStatus.Pending
                          && settlementRows.Any()))
                 {
-                    <GenericButtonComponent Variant="ButtonVariant.Red" Size="ButtonSize.Small"
-                        Text="終止"
+                    <GenericButtonComponent Variant="ButtonVariant.Red"                        Text="終止"
                         OnClick="HandleAbortRequest"
                         IsDisabled="@isProcessing"
                         Title="永久終止並結案，不再繼續製作" />
                 }
                 @* 退回：無完成數量且無領料記錄時可用 *@
-                <GenericButtonComponent Variant="ButtonVariant.OutlineGray" Size="ButtonSize.Small"
-                    Text="退回"
+                <GenericButtonComponent Variant="ButtonVariant.OutlineGray"                    Text="退回"
                     OnClick="@(() => showReturnConfirm = true)"
                     IsDisabled="@(Item?.CompletedQuantity > 0 || settlementRows.Any())"
                     Title="@(Item?.CompletedQuantity > 0 ? "已有完成數量，無法退回" : settlementRows.Any() ? "已有領料記錄，請先使用終止功能處理物料後再退回" : "退回至待排清單，還原訂單排程數量")" />
@@ -388,8 +373,7 @@
 
                     @* D. 確認入庫按鈕 *@
                     <div class="mt-2 text-end confirm-btn-row">
-                        <GenericButtonComponent Variant="ButtonVariant.Green" Size="ButtonSize.Small"
-                            Text="確認入庫" OnClick="HandleCompleteProduction"
+                        <GenericButtonComponent Variant="ButtonVariant.Green"                            Text="確認入庫" OnClick="HandleCompleteProduction"
                             IsDisabled="@(isProcessing || completeQty is null or <= 0 || !selectedWarehouseId.HasValue)"
                             IsLoading="@isProcessing" />
                     </div>

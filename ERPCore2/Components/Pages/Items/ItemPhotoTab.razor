@@ -64,11 +64,11 @@ else
                                    @onchange="@(e => SaveCaptionAsync(photo, e.Value?.ToString()))" />
                         </div>
                         <div class="business-card-actions px-2 pb-2 d-flex gap-1">
-                            <button class="btn btn-xs btn-outline-danger flex-fill"
-                                    title="@L["Button.Delete"]"
-                                    @onclick="@(() => RequestDelete(photo))">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <GenericButtonComponent Variant="ButtonVariant.OutlineRed"
+                                    CssClass="btn-xs flex-fill"
+                                    Title="@L["Button.Delete"]"
+                                    IconClass="bi bi-trash"
+                                    OnClick="@(() => RequestDelete(photo))" />
                         </div>
                     </div>
                 }

@@ -33,9 +33,9 @@
                                @bind:event="oninput" />
                         @if (!string.IsNullOrEmpty(searchKeyword))
                         {
-                            <button class="btn btn-outline-secondary" type="button" @onclick="ClearSearch">
-                                <i class="bi bi-x"></i>
-                            </button>
+                            <GenericButtonComponent Variant="ButtonVariant.OutlineGray"
+                                                    IconClass="bi bi-x"
+                                                    OnClick="@ClearSearch" />
                         }
                     </div>
                 </div>
@@ -59,7 +59,6 @@
                             var isEnabled = report.IsEnabled;
                         }
                         <GenericButtonComponent Variant="@(isEnabled ? ButtonVariant.DarkBlue : ButtonVariant.Gray)"
-                                              Size="ButtonSize.Small"
                                               IconClass="bi bi-arrow-right-circle-fill"
                                               IsDisabled="@(!isEnabled)"
                                               Title="@(isEnabled ? $"{L["Report.GoTo"]} {GetLocalizedName(report)}" : L["Report.NotAvailable"].ToString())"

@@ -59,12 +59,12 @@
                                        class="fw-semibold text-decoration-none text-dark">@ContactEmail</a>
                                 </div>
                             </div>
-                            <button class="btn btn-sm @(emailCopied ? "btn-success" : "btn-outline-secondary") flex-shrink-0"
-                                    @onclick="CopyEmailAsync"
-                                    title="@L["About.CopyEmail"]">
-                                <i class="bi @(emailCopied ? "bi-check2" : "bi-copy") me-1"></i>
-                                @(emailCopied ? L["About.Copied"].ToString() : L["About.Copy"].ToString())
-                            </button>
+                            <GenericButtonComponent Variant="@(emailCopied ? ButtonVariant.Green : ButtonVariant.OutlineGray)"
+                                    CssClass="flex-shrink-0"
+                                    Title="@L["About.CopyEmail"]"
+                                    IconClass="@($"bi {(emailCopied ? "bi-check2" : "bi-copy")}")"
+                                    Text="@(emailCopied ? L["About.Copied"].ToString() : L["About.Copy"].ToString())"
+                                    OnClick="CopyEmailAsync" />
                         </div>
                     </div>
                 </div>

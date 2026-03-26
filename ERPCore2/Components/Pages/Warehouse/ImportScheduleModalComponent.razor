@@ -28,17 +28,14 @@
         @* 按鈕組 *@
         <div class="d-flex gap-2">
             <GenericButtonComponent Variant="ButtonVariant.Green"
-                                  Size="ButtonSize.Small"
                                   Text="@L["Warehouse.ImportButton"]"
                                   OnClick="HandleImportConfirm"
                                   IsDisabled="@(selectedCount == 0)"
                                   Title="@L["Warehouse.ImportButton"]" />
             <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                  Size="ButtonSize.Small"
                                   Text="@L["Warehouse.SelectAll"]"
                                   OnClick="SelectAll" />
             <GenericButtonComponent Variant="ButtonVariant.Red"
-                                  Size="ButtonSize.Small"
                                   Text="@L["Warehouse.DeselectAll"]"
                                   OnClick="DeselectAll" />
         </div>

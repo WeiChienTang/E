@@ -7,12 +7,10 @@
     <div class="d-flex gap-2">
         <GenericButtonComponent IconClass="bi bi-plus-lg"
                                 Variant="ButtonVariant.DarkBlue"
-                                Size="ButtonSize.Small"
                                 Text="@L["Button.Add"]"
                                 OnClick="@ShowAdd" />
         <GenericButtonComponent IconClass="bi bi-copy"
                                 Variant="ButtonVariant.DarkBlue"
-                                Size="ButtonSize.Small"
                                 Text="@L["Payroll.CopyYear"]"
                                 OnClick="@ShowCopyYear" />
     </div>
@@ -95,11 +93,14 @@ else
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="() => showCopyDialog = false">@L["Button.Cancel"]</button>
-                    <button class="btn btn-primary" @onclick="DoCopyYearAsync" disabled="@isCopying">
-                        @if (isCopying) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                        @L["Button.Confirm"]
-                    </button>
+                    <GenericButtonComponent Variant="ButtonVariant.Gray"
+                                            Text="@L["Button.Cancel"]"
+                                            OnClick="@(() => showCopyDialog = false)" />
+                    <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                            Text="@L["Button.Confirm"]"
+                                            IsLoading="@isCopying"
+                                            IsDisabled="@isCopying"
+                                            OnClick="@DoCopyYearAsync" />
                 </div>
             </div>
         </div>

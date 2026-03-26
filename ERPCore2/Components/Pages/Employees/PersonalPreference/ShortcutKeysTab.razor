@@ -55,24 +55,22 @@
                 <div class="shortcut-actions">
                     @if (!capturedItem.IsCapturing)
                     {
-                        <button type="button" class="btn btn-sm btn-outline-primary"
-                                @onclick="() => StartCapture(capturedItem)">
-                            @L["Shortcut.ChangeButton"]
-                        </button>
+                        <GenericButtonComponent Text="@L["Shortcut.ChangeButton"]"
+                                                Variant="ButtonVariant.OutlineDarkBlue"
+                                                OnClick="@(() => StartCapture(capturedItem))" />
                         @if (capturedItem.CurrentShortcut != capturedItem.DefaultShortcut)
                         {
-                            <button type="button" class="btn btn-sm btn-outline-secondary ms-1"
-                                    @onclick="() => ResetToDefault(capturedItem)">
-                                @L["Shortcut.ResetButton"]
-                            </button>
+                            <GenericButtonComponent Text="@L["Shortcut.ResetButton"]"
+                                                    Variant="ButtonVariant.OutlineGray"
+                                                        CssClass="ms-1"
+                                                    OnClick="@(() => ResetToDefault(capturedItem))" />
                         }
                     }
                     else
                     {
-                        <button type="button" class="btn btn-sm btn-outline-danger"
-                                @onclick="() => CancelCapture(capturedItem)">
-                            @L["Button.Cancel"]
-                        </button>
+                        <GenericButtonComponent Text="@L["Button.Cancel"]"
+                                                Variant="ButtonVariant.OutlineRed"
+                                                OnClick="@(() => CancelCapture(capturedItem))" />
                     }
                 </div>
 
@@ -95,10 +93,10 @@
     </div>
 
     <div class="mt-3 pt-3 border-top d-flex justify-content-end">
-        <button type="button" class="btn btn-sm btn-outline-secondary"
-                @onclick="ResetAll">
-            <i class="bi bi-arrow-counterclockwise me-1"></i>@L["Shortcut.ResetAllButton"]
-        </button>
+        <GenericButtonComponent Text="@L["Shortcut.ResetAllButton"]"
+                                Variant="ButtonVariant.OutlineGray"
+                                IconClass="bi bi-arrow-counterclockwise"
+                                OnClick="@ResetAll" />
     </div>
 
 </div>

@@ -63,9 +63,11 @@
                         <input type="date" class="form-control" @bind="entryDate" />
                     </div>
                     <div class="col-auto">
-                        <button class="btn btn-primary" @onclick="LoadDataAsync" disabled="@(selectedCompanyId == 0)">
-                            <i class="bi bi-download me-1"></i>@L["Button.LoadData"]
-                        </button>
+                        <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                                IconClass="bi bi-download"
+                                                Text="@L["Button.LoadData"]"
+                                                IsDisabled="@(selectedCompanyId == 0)"
+                                                OnClick="@LoadDataAsync" />
                     </div>
                 </div>
             </div>
@@ -184,22 +186,19 @@
                                 }
                             </div>
                             <div class="col-auto">
-                                <button class="btn btn-success me-2" @onclick="SaveAsync"
-                                        disabled="@(!IsBalanced || isSaving)">
-                                    @if (isSaving)
-                                    {
-                                        <span class="spinner-border spinner-border-sm me-1"></span>
-                                    }
-                                    <i class="bi bi-save me-1"></i>@L["Button.SaveDraft"]
-                                </button>
-                                <button class="btn btn-primary" @onclick="SaveAndPostAsync"
-                                        disabled="@(!IsBalanced || isSaving || TotalDebit == 0)">
-                                    @if (isSaving)
-                                    {
-                                        <span class="spinner-border spinner-border-sm me-1"></span>
-                                    }
-                                    <i class="bi bi-check2-circle me-1"></i>@L["Button.SaveAndPost"]
-                                </button>
+                                <GenericButtonComponent Variant="ButtonVariant.Green"
+                                                        IconClass="bi bi-save"
+                                                        Text="@L["Button.SaveDraft"]"
+                                                        IsLoading="@isSaving"
+                                                        IsDisabled="@(!IsBalanced || isSaving)"
+                                                        CssClass="me-2"
+                                                        OnClick="@SaveAsync" />
+                                <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                                        IconClass="bi bi-check2-circle"
+                                                        Text="@L["Button.SaveAndPost"]"
+                                                        IsLoading="@isSaving"
+                                                        IsDisabled="@(!IsBalanced || isSaving || TotalDebit == 0)"
+                                                        OnClick="@SaveAndPostAsync" />
                             </div>
                             @if (existingEntryId.HasValue)
                             {

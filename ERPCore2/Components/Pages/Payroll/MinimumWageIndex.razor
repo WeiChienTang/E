@@ -13,9 +13,10 @@
             <h4 class="mb-0">@L["Page.MinimumWageTitle"]</h4>
             <small class="text-muted">@L["Page.MinimumWageSubtitle"]</small>
         </div>
-        <button class="btn btn-primary" @onclick="ShowAdd">
-            <i class="bi bi-plus-lg me-1"></i>@L["Button.Add"]
-        </button>
+        <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                IconClass="bi bi-plus-lg"
+                                Text="@L["Button.Add"]"
+                                OnClick="@ShowAdd" />
     </div>
 
     @if (isLoading)
@@ -45,12 +46,15 @@
                                 <td class="text-end">@w.HourlyAmount.ToString("N2")</td>
                                 <td>@w.Remarks</td>
                                 <td class="text-center">
-                                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => ShowEdit(w)" title="@L["Button.Edit"]">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDeleteAsync(w)" title="@L["Button.Delete"]">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    <GenericButtonComponent Variant="ButtonVariant.OutlineDarkBlue"
+                                                            IconClass="bi bi-pencil"
+                                                            Title="@L["Button.Edit"]"
+                                                            CssClass="me-1"
+                                                            OnClick="@(() => ShowEdit(w))" />
+                                    <GenericButtonComponent Variant="ButtonVariant.OutlineRed"
+                                                            IconClass="bi bi-trash"
+                                                            Title="@L["Button.Delete"]"
+                                                            OnClick="@(() => ConfirmDeleteAsync(w))" />
                                 </td>
                             </tr>
                         }

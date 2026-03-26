@@ -42,22 +42,25 @@
 
                     @if (currentPeriodStatus == FiscalPeriodStatus.Open)
                     {
-                        <button class="btn btn-warning btn-sm" @onclick="HandleClosePeriodAsync" disabled="@isTransitioning">
-                            @if (isTransitioning) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                            @L["Button.ClosePeriod"]
-                        </button>
+                        <GenericButtonComponent Variant="ButtonVariant.Yellow"
+                                                Text="@L["Button.ClosePeriod"]"
+                                                IsLoading="@isTransitioning"
+                                                IsDisabled="@isTransitioning"
+                                                OnClick="@HandleClosePeriodAsync" />
                     }
                     else if (currentPeriodStatus == FiscalPeriodStatus.Closed)
                     {
                         <div class="d-flex flex-column gap-2">
                             <div class="d-flex gap-2">
-                                <button class="btn btn-success btn-sm" @onclick="ShowReopenInputAsync" disabled="@isTransitioning">
-                                    @L["Button.ReopenPeriod"]
-                                </button>
-                                <button class="btn btn-danger btn-sm" @onclick="HandleLockPeriodAsync" disabled="@isTransitioning">
-                                    @if (isTransitioning) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                                    @L["Button.LockPeriod"]
-                                </button>
+                                <GenericButtonComponent Variant="ButtonVariant.Green"
+                                                        Text="@L["Button.ReopenPeriod"]"
+                                                        IsDisabled="@isTransitioning"
+                                                        OnClick="@ShowReopenInputAsync" />
+                                <GenericButtonComponent Variant="ButtonVariant.Red"
+                                                        Text="@L["Button.LockPeriod"]"
+                                                        IsLoading="@isTransitioning"
+                                                        IsDisabled="@isTransitioning"
+                                                        OnClick="@HandleLockPeriodAsync" />
                             </div>
 
                             @if (showReopenInput)
@@ -67,13 +70,15 @@
                                            placeholder="@L["Placeholder.ReopenReason"]"
                                            @bind="reopenReason" />
                                     <div class="d-flex gap-2">
-                                        <button class="btn btn-success btn-sm" @onclick="HandleReopenPeriodAsync" disabled="@isTransitioning">
-                                            @if (isTransitioning) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                                            @L["Button.Confirm"]
-                                        </button>
-                                        <button class="btn btn-secondary btn-sm" @onclick="CancelReopen" disabled="@isTransitioning">
-                                            @L["Button.Cancel"]
-                                        </button>
+                                        <GenericButtonComponent Variant="ButtonVariant.Green"
+                                                                Text="@L["Button.Confirm"]"
+                                                                IsLoading="@isTransitioning"
+                                                                IsDisabled="@isTransitioning"
+                                                                OnClick="@HandleReopenPeriodAsync" />
+                                        <GenericButtonComponent Variant="ButtonVariant.Gray"
+                                                                Text="@L["Button.Cancel"]"
+                                                                IsDisabled="@isTransitioning"
+                                                                OnClick="@CancelReopen" />
                                     </div>
                                 </div>
                             }

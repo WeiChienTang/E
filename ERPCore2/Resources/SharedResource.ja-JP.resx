@@ -3951,7 +3951,7 @@
   <data name="Button.Import" xml:space="preserve"><value>インポート</value></data>
   <data name="Column.ScheduledQuantity" xml:space="preserve"><value>予定数量</value></data>
   <data name="Column.ProducedQuantity" xml:space="preserve"><value>完成数量</value></data>
-  <data name="Column.ProductionStatus" xml:space="preserve"><value>生産状況</value></data>
+  <data name="Column.ProductionStatus" xml:space="preserve"><value>ステータス</value></data>
   <data name="Column.ImportQuantity" xml:space="preserve"><value>今回完了</value></data>
   <data name="Column.WarehouseLocation" xml:space="preserve"><value>倉庫/場所</value></data>
   <!-- ===== Inventory Transaction Table ===== -->

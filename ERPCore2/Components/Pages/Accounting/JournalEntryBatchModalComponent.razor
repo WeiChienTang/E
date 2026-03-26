@@ -34,30 +34,23 @@
                 <label class="form-label mb-0 text-nowrap small">@L["Label.DateTo"]</label>
                 <input type="date" class="form-control form-control-sm" style="width: 150px;" @bind="_filterTo" />
             </div>
-            <button class="btn btn-sm btn-primary" @onclick="LoadAllAsync" disabled="@_isLoading">
-                @if (_isLoading)
-                {
-                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                }
-                <i class="bi bi-search me-1"></i>@L["Button.Query"]
-            </button>
-            <button class="btn btn-sm btn-outline-secondary" @onclick="ClearFilterAsync">
-                <i class="bi bi-x-circle me-1"></i>@L["Button.ClearFilter"]
-            </button>
+            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                    IconClass="bi bi-search"
+                                    Text="@L["Button.Query"]"
+                                    IsLoading="@_isLoading"
+                                    IsDisabled="@_isLoading"
+                                    OnClick="@LoadAllAsync" />
+            <GenericButtonComponent Variant="ButtonVariant.OutlineGray"
+                                    IconClass="bi bi-x-circle"
+                                    Text="@L["Button.ClearFilter"]"
+                                    OnClick="@ClearFilterAsync" />
             <div class="vr mx-1"></div>
-            <button class="btn btn-sm btn-success" @onclick="JournalizeAllAsync"
-                    disabled="@(_isProcessing || TotalPendingCount == 0)">
-                @if (_isProcessing)
-                {
-                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                    <span>@L["Label.Processing"]</span>
-                }
-                else
-                {
-                    <i class="bi bi-lightning-charge me-1"></i>
-                    <span>@string.Format(L["Journal.TransferAll"], TotalPendingCount)</span>
-                }
-            </button>
+            <GenericButtonComponent Variant="ButtonVariant.Green"
+                                    IconClass="bi bi-lightning-charge"
+                                    Text="@(_isProcessing ? L["Label.Processing"].ToString() : string.Format(L["Journal.TransferAll"], TotalPendingCount))"
+                                    IsLoading="@_isProcessing"
+                                    IsDisabled="@(_isProcessing || TotalPendingCount == 0)"
+                                    OnClick="@JournalizeAllAsync" />
         </div>
     </HeaderButtons>
     <BodyContent>
@@ -101,11 +94,10 @@
                                             <td class="text-end">@doc.PurchaseReceivingTaxAmount.ToString("N2")</td>
                                             <td class="text-end">@doc.PurchaseReceivingTotalAmountIncludingTax.ToString("N2")</td>
                                             <td class="text-center">
-                                                <button class="btn btn-sm btn-outline-primary"
-                                                        @onclick="@(() => JournalizeSingleAsync("PurchaseReceiving", doc.Id, doc.Code ?? ""))"
-                                                        disabled="@_isProcessing">
-                                                    @L["Journal.Transfer"]
-                                                </button>
+                                                <GenericButtonComponent Variant="ButtonVariant.OutlineDarkBlue"
+                                                                        Text="@L["Journal.Transfer"]"
+                                                                        IsDisabled="@_isProcessing"
+                                                                        OnClick="@(() => JournalizeSingleAsync("PurchaseReceiving", doc.Id, doc.Code ?? ""))" />
                                             </td>
                                         </tr>
                                     }
@@ -157,11 +149,10 @@
                                             <td class="text-end">@doc.ReturnTaxAmount.ToString("N2")</td>
                                             <td class="text-end">@doc.TotalReturnAmountWithTax.ToString("N2")</td>
                                             <td class="text-center">
-                                                <button class="btn btn-sm btn-outline-primary"
-                                                        @onclick="@(() => JournalizeSingleAsync("PurchaseReturn", doc.Id, doc.Code ?? ""))"
-                                                        disabled="@_isProcessing">
-                                                    @L["Journal.Transfer"]
-                                                </button>
+                                                <GenericButtonComponent Variant="ButtonVariant.OutlineDarkBlue"
+                                                                        Text="@L["Journal.Transfer"]"
+                                                                        IsDisabled="@_isProcessing"
+                                                                        OnClick="@(() => JournalizeSingleAsync("PurchaseReturn", doc.Id, doc.Code ?? ""))" />
                                             </td>
                                         </tr>
                                     }
@@ -213,11 +204,10 @@
                                             <td class="text-end">@doc.TaxAmount.ToString("N2")</td>
                                             <td class="text-end">@doc.TotalAmountWithTax.ToString("N2")</td>
                                             <td class="text-center">
-                                                <button class="btn btn-sm btn-outline-primary"
-                                                        @onclick="@(() => JournalizeSingleAsync("SalesDelivery", doc.Id, doc.Code ?? ""))"
-                                                        disabled="@_isProcessing">
-                                                    @L["Journal.Transfer"]
-                                                </button>
+                                                <GenericButtonComponent Variant="ButtonVariant.OutlineDarkBlue"
+                                                                        Text="@L["Journal.Transfer"]"
+                                                                        IsDisabled="@_isProcessing"
+                                                                        OnClick="@(() => JournalizeSingleAsync("SalesDelivery", doc.Id, doc.Code ?? ""))" />
                                             </td>
                                         </tr>
                                     }
@@ -278,11 +268,10 @@
                                             <td class="text-end">@doc.TotalCollectionAmount.ToString("N2")</td>
                                             <td class="text-end">@doc.TotalAllowanceAmount.ToString("N2")</td>
                                             <td class="text-center">
-                                                <button class="btn btn-sm btn-outline-primary"
-                                                        @onclick="@(() => JournalizeSingleAsync("SetoffDocument", doc.Id, doc.Code ?? ""))"
-                                                        disabled="@_isProcessing">
-                                                    @L["Journal.Transfer"]
-                                                </button>
+                                                <GenericButtonComponent Variant="ButtonVariant.OutlineDarkBlue"
+                                                                        Text="@L["Journal.Transfer"]"
+                                                                        IsDisabled="@_isProcessing"
+                                                                        OnClick="@(() => JournalizeSingleAsync("SetoffDocument", doc.Id, doc.Code ?? ""))" />
                                             </td>
                                         </tr>
                                     }
@@ -334,11 +323,10 @@
                                             <td class="text-end">@doc.ReturnTaxAmount.ToString("N2")</td>
                                             <td class="text-end">@doc.TotalReturnAmountWithTax.ToString("N2")</td>
                                             <td class="text-center">
-                                                <button class="btn btn-sm btn-outline-primary"
-                                                        @onclick="@(() => JournalizeSingleAsync("SalesReturn", doc.Id, doc.Code ?? ""))"
-                                                        disabled="@_isProcessing">
-                                                    @L["Journal.Transfer"]
-                                                </button>
+                                                <GenericButtonComponent Variant="ButtonVariant.OutlineDarkBlue"
+                                                                        Text="@L["Journal.Transfer"]"
+                                                                        IsDisabled="@_isProcessing"
+                                                                        OnClick="@(() => JournalizeSingleAsync("SalesReturn", doc.Id, doc.Code ?? ""))" />
                                             </td>
                                         </tr>
                                     }
@@ -398,11 +386,10 @@
                                                 }
                                             </td>
                                             <td class="text-center">
-                                                <button class="btn btn-sm btn-outline-primary"
-                                                        @onclick="@(() => JournalizeSingleAsync("MaterialIssue", doc.Id, doc.Code ?? ""))"
-                                                        disabled="@(_isProcessing || totalCost == 0)">
-                                                    @L["Journal.Transfer"]
-                                                </button>
+                                                <GenericButtonComponent Variant="ButtonVariant.OutlineDarkBlue"
+                                                                        Text="@L["Journal.Transfer"]"
+                                                                        IsDisabled="@(_isProcessing || totalCost == 0)"
+                                                                        OnClick="@(() => JournalizeSingleAsync("MaterialIssue", doc.Id, doc.Code ?? ""))" />
                                             </td>
                                         </tr>
                                     }
@@ -461,11 +448,10 @@
                                                 }
                                             </td>
                                             <td class="text-center">
-                                                <button class="btn btn-sm btn-outline-primary"
-                                                        @onclick="@(() => JournalizeSingleAsync("ProductionCompletion", c.Id, c.Code ?? $"Comp#{c.Id}"))"
-                                                        disabled="@(_isProcessing || amount == 0)">
-                                                    @L["Journal.Transfer"]
-                                                </button>
+                                                <GenericButtonComponent Variant="ButtonVariant.OutlineDarkBlue"
+                                                                        Text="@L["Journal.Transfer"]"
+                                                                        IsDisabled="@(_isProcessing || amount == 0)"
+                                                                        OnClick="@(() => JournalizeSingleAsync("ProductionCompletion", c.Id, c.Code ?? $"Comp#{c.Id}"))" />
                                             </td>
                                         </tr>
                                     }
