@@ -1,6 +1,7 @@
 using ERPCore2.Data;
 using ERPCore2.Components.Shared.UI.Form;
 using ERPCore2.Components.Shared.Table;
+using ERPCore2.Models;
 using ERPCore2.Models.Documents;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
@@ -62,7 +63,7 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     [Parameter] public RenderFragment? CustomIndexButtons { get; set; }
 
     // 匯出
-    [Parameter] public bool ShowExportExcelButton { get; set; } = false;
+    [Parameter] public bool ShowExportExcelButton { get; set; } = true;
     [Parameter] public bool ShowExportPdfButton { get; set; } = false;
     [Parameter] public EventCallback OnExportExcelClick { get; set; }
     [Parameter] public EventCallback OnExportPdfClick { get; set; }
@@ -267,6 +268,9 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     private bool _showingDrafts = false;
     private int _draftCount = 0;
 
+    // 匯出權限（僅 System.Admin 可匯出 Excel）
+    private bool _hasExportPermission = false;
+
     // 手機版篩選 sidebar 狀態
     private bool _mobileFilterOpen = false;
 
@@ -347,6 +351,9 @@ public partial class GenericIndexPageComponent<TEntity, TService>
             ? await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync()
             : false;
         _isSuperAdmin = isSuperAdmin;
+
+        // 匯出 Excel 權限檢查：僅 System.Admin 可使用
+        _hasExportPermission = await NavigationPermissionService.CanAccessAsync(PermissionRegistry.System.Admin);
 
         // 公司層級模組檢查（阻擋直接輸入網址存取）
         // 只有 IsSuperAdmin=true 的帳號可繞過，System.Admin 權限持有者亦受模組限制

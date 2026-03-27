@@ -33,18 +33,24 @@
             {
                 <div class="row align-items-center g-2">
                     <div class="col-md-4">
-                        <select id="roleSelect"
-                                class="form-select"
-                                @onchange="HandleRoleSelectionChanged"
-                                disabled="@isSaving">
-                            <option value="">@L["Placeholder.SelectRole"]</option>
-                            @foreach (var role in roles)
-                            {
-                                <option value="@role.Id" selected="@(role.Id == selectedRole?.Id)">
-                                    @role.Name
-                                </option>
-                            }
-                        </select>
+                        <div class="d-flex gap-2">
+                            <select id="roleSelect"
+                                    class="form-select"
+                                    @onchange="HandleRoleSelectionChanged"
+                                    disabled="@isSaving">
+                                <option value="">@L["Placeholder.SelectRole"]</option>
+                                @foreach (var role in roles)
+                                {
+                                    <option value="@role.Id" selected="@(role.Id == selectedRole?.Id)">
+                                        @role.Name
+                                    </option>
+                                }
+                            </select>
+                            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                                    IconClass="bi bi-plus-lg"
+                                                    OnClick="ToggleAddRoleForm"
+                                                    IsDisabled="@isSaving" />
+                        </div>
                     </div>
 
                     @* 操作按鈕組 — 始終顯示，未選擇權限組前禁用 *@
@@ -93,6 +99,30 @@
                         </div>
                     </div>
                 </div>
+
+                @* 快速新增權限組 inline 表單 *@
+                @if (_showAddRoleForm)
+                {
+                    <div class="px-3 py-2 mt-2 border rounded small" style="background-color: var(--bg-secondary);">
+                        <div class="d-flex gap-2 align-items-end flex-wrap">
+                            <div>
+                                <label class="form-label form-label-sm mb-1">@L["Field.RoleName"] <span class="text-danger">*</span></label>
+                                <input class="form-control form-control-sm" style="min-width:160px"
+                                       placeholder="@L["Field.RoleName"]"
+                                       @bind="_newRoleName" @bind:event="oninput" />
+                            </div>
+                            <GenericButtonComponent Text="@L["Button.Save"]"
+                                                    Variant="ButtonVariant.DarkBlue"
+                                                    IconClass="bi bi-check2"
+                                                    IsLoading="_isSavingRole"
+                                                    IsDisabled="@(_isSavingRole || string.IsNullOrWhiteSpace(_newRoleName))"
+                                                    OnClick="SaveNewRoleAsync" />
+                            <GenericButtonComponent Variant="ButtonVariant.Gray"
+                                                    IconClass="bi bi-x"
+                                                    OnClick="CancelAddRole" />
+                        </div>
+                    </div>
+                }
             }
             else
             {
@@ -334,6 +364,11 @@
     private bool isLoadingRoles = true;
     private bool isLoadingPermissions = false;
     private bool isSaving = false;
+
+    // 快速新增權限組表單狀態
+    private bool _showAddRoleForm = false;
+    private string _newRoleName = "";
+    private bool _isSavingRole = false;
 
     // ===== 生命週期 =====
 
@@ -642,6 +677,66 @@
         finally
         {
             isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 快速新增權限組 =====
+
+    private void ToggleAddRoleForm()
+    {
+        _showAddRoleForm = !_showAddRoleForm;
+        if (!_showAddRoleForm)
+        {
+            CancelAddRole();
+        }
+    }
+
+    private void CancelAddRole()
+    {
+        _showAddRoleForm = false;
+        _newRoleName = "";
+    }
+
+    private async Task SaveNewRoleAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newRoleName)) return;
+
+        _isSavingRole = true;
+        StateHasChanged();
+        try
+        {
+            var role = new Role
+            {
+                Name = _newRoleName.Trim(),
+                Status = EntityStatus.Active
+            };
+
+            var result = await RoleService.CreateAsync(role);
+            if (result.IsSuccess && result.Data != null)
+            {
+                roles.Add(result.Data);
+                roles = roles.OrderBy(r => r.Name).ToList();
+                CancelAddRole();
+                await NotificationService.ShowSuccessAsync($"權限組「{result.Data.Name}」已建立");
+
+                // 自動選取新建立的權限組
+                selectedRole = result.Data;
+                await LoadPermissionsAsync();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(!string.IsNullOrEmpty(result.ErrorMessage) ? result.ErrorMessage : "建立權限組失敗");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(SaveNewRoleAsync), GetType());
+            await NotificationService.ShowErrorAsync($"建立權限組時發生錯誤");
+        }
+        finally
+        {
+            _isSavingRole = false;
             StateHasChanged();
         }
     }

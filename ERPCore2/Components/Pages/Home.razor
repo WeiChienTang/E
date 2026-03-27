@@ -276,14 +276,15 @@
                              Message="@L["Home.CompanySetupMessage"]"
                              ConfirmButtonText="@L["Home.CompanySetupNow"]"
                              CancelButtonText="@L["Home.CompanySetupLater"]"
-                             OnConfirm="@OpenCompanySetupModal" />
+                             OnConfirm="@OpenCompanySetupModal"
+                             OnCancel="@HandleCompanySetupSkipped" />
 
 @* ==================== 公司編輯 Modal ==================== *@
 <CompanyEditModalComponent IsVisible="@showCompanyEditModal"
                           IsVisibleChanged="@((bool v) => showCompanyEditModal = v)"
                           CompanyId="@null"
                           OnCompanySaved="@HandleCompanySetupComplete"
-                          OnCancel="@(() => showCompanyEditModal = false)" />
+                          OnCancel="@HandleCompanyEditCancelled" />
 
 @* ==================== 倉庫設定確認 Modal ==================== *@
 <GenericConfirmModalComponent IsVisible="@showWarehouseSetupConfirm"
@@ -365,8 +366,11 @@
         // 載入預設公司資料
         await LoadPrimaryCompanyAsync();
 
-        // 檢查是否有倉庫資料
-        await CheckWarehouseExistsAsync();
+        // 如果公司已存在，接續檢查倉庫
+        if (primaryCompany != null)
+        {
+            await CheckWarehouseExistsAsync();
+        }
 
         var employeeId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
 
@@ -823,6 +827,10 @@
             primaryCompany.IsDefault = true;
 
             showCompanyEditModal = false;
+
+            // 公司設定完成後，接續檢查倉庫
+            await CheckWarehouseExistsAsync();
+
             StateHasChanged();
         }
         catch (Exception ex)
@@ -830,6 +838,24 @@
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCompanySetupComplete), GetType());
             await NotificationService.ShowErrorAsync(L["Message.CompanySetupFailed"]);
         }
+    }
+
+    /// <summary>
+    /// 使用者選擇稍後設定公司，接續檢查倉庫
+    /// </summary>
+    private async Task HandleCompanySetupSkipped()
+    {
+        showCompanySetupConfirm = false;
+        await CheckWarehouseExistsAsync();
+    }
+
+    /// <summary>
+    /// 使用者取消公司編輯 Modal，接續檢查倉庫
+    /// </summary>
+    private async Task HandleCompanyEditCancelled()
+    {
+        showCompanyEditModal = false;
+        await CheckWarehouseExistsAsync();
     }
 
     // ===== 倉庫設定處理 =====

@@ -89,7 +89,7 @@ else
                 ShowAddButton="@ShowAddButton"
                 OnAddClick="@HandleAddClick"
                 OnRefreshClick="@Refresh"
-                ShowExportExcelButton="@ShowExportExcelButton"
+                ShowExportExcelButton="@(ShowExportExcelButton && _hasExportPermission)"
                 OnExportExcelClick="@HandleExportExcelClick"
                 ShowExportPdfButton="@ShowExportPdfButton"
                 OnExportPdfClick="@HandleExportPdfClick"

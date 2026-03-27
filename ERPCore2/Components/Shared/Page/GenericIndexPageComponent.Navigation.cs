@@ -64,7 +64,13 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     private static Task InvokeIfBound(EventCallback cb)
         => cb.HasDelegate ? cb.InvokeAsync() : Task.CompletedTask;
 
-    private Task HandleExportExcelClick()    => InvokeIfBound(OnExportExcelClick);
+    private Task HandleExportExcelClick()
+    {
+        // 若外部有綁定自訂處理則委派，否則使用內建匯出
+        if (OnExportExcelClick.HasDelegate)
+            return OnExportExcelClick.InvokeAsync();
+        return ExecuteBuiltInExportExcelAsync();
+    }
     private Task HandleExportPdfClick()      => InvokeIfBound(OnExportPdfClick);
     private Task HandleBatchPrintClick()     => InvokeIfBound(OnBatchPrintClick);
     private Task HandleBarcodePrintClick()   => InvokeIfBound(OnBarcodePrintClick);
