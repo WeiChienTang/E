@@ -10,6 +10,7 @@
 @inject IJournalEntryAttachmentService AttachmentService
 @inject IWebHostEnvironment Environment
 @inject IStringLocalizer<SharedResource> L
+@inject ISystemParameterService SystemParameterService
 @using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="JournalEntry"
@@ -83,6 +84,7 @@
     private List<JournalEntryAttachment> attachments = new();
     private bool isUploadingAttachment = false;
     private string? attachmentErrorMessage;
+    private int? _maxDocumentFileSizeMB;
 
     private bool IsReadOnly => editModalComponent?.Entity?.JournalEntryStatus is
         JournalEntryStatus.Posted or JournalEntryStatus.Cancelled or JournalEntryStatus.Reversed;
@@ -109,6 +111,9 @@
     /// </summary>
     private async Task<JournalEntry?> LoadJournalEntryData()
     {
+        var sysParam = await SystemParameterService.GetSystemParameterAsync();
+        _maxDocumentFileSizeMB = sysParam?.MaxDocumentFileSizeMB;
+
         JournalEntry? entry;
 
         if (JournalEntryId.HasValue)
@@ -321,7 +326,7 @@
                         @L["Attachment.Upload"]
                     }
                 </label>
-                <small class="text-muted ms-2">@L["Attachment.AllowedFormats"]</small>
+                <small class="text-muted ms-2">@string.Format(L["Attachment.AllowedFormats"], _maxDocumentFileSizeMB ?? 20)</small>
             </div>
 
             @* 附件清單 *@

@@ -17,11 +17,11 @@ namespace ERPCore2.Helpers
         // Logo 檔案大小限制 (500KB)
         private const long MaxLogoFileSize = 500 * 1024;
 
-        // 一般圖片檔案大小限制 (2MB)
-        private const long MaxImageFileSize = 2 * 1024 * 1024;
+        // 一般圖片檔案大小限制 (2MB) - 預設值，可透過系統參數覆寫
+        private const long DefaultMaxImageFileSize = 2 * 1024 * 1024;
 
-        // 文件檔案大小限制 (20MB)
-        private const long MaxDocumentFileSize = 20 * 1024 * 1024;
+        // 文件檔案大小限制 (20MB) - 預設值，可透過系統參數覆寫
+        private const long DefaultMaxDocumentFileSize = 20 * 1024 * 1024;
 
         /// <summary>
         /// 上傳公司 Logo
@@ -65,15 +65,18 @@ namespace ERPCore2.Helpers
         /// <summary>
         /// 上傳一般圖片檔案
         /// </summary>
+        /// <param name="maxSizeMB">最大檔案大小(MB)，null 時使用預設值 2MB</param>
         public static async Task<(bool Success, string Message, string? FilePath)> UploadImageAsync(
             IBrowserFile file,
             string subFolder,
             IWebHostEnvironment environment,
-            string? oldFilePath = null)
+            string? oldFilePath = null,
+            int? maxSizeMB = null)
         {
             try
             {
-                var validationResult = ValidateImageFile(file, MaxImageFileSize);
+                long maxFileSize = maxSizeMB.HasValue ? (long)maxSizeMB.Value * 1024 * 1024 : DefaultMaxImageFileSize;
+                var validationResult = ValidateImageFile(file, maxFileSize);
                 if (!validationResult.IsValid)
                     return (false, validationResult.Message, null);
 
@@ -88,7 +91,7 @@ namespace ERPCore2.Helpers
 
                 var filePath = Path.Combine(uploadPath, fileName);
                 await using var fileStream = new FileStream(filePath, FileMode.Create);
-                await file.OpenReadStream(MaxImageFileSize).CopyToAsync(fileStream);
+                await file.OpenReadStream(maxFileSize).CopyToAsync(fileStream);
 
                 if (!string.IsNullOrEmpty(oldFilePath))
                     DeleteFile(oldFilePath, environment);
@@ -103,19 +106,22 @@ namespace ERPCore2.Helpers
         }
 
         /// <summary>
-        /// 上傳文件檔案至指定子目錄（支援 PDF、Word、Excel、圖片，最大 20MB）
+        /// 上傳文件檔案至指定子目錄（支援 PDF、Word、Excel、圖片）
         /// </summary>
         /// <param name="file">上傳的瀏覽器檔案</param>
         /// <param name="environment">Web 環境（取得 WebRootPath）</param>
         /// <param name="subFolder">儲存子目錄（相對於 wwwroot/uploads/，如 "journal-attachments/2026/03"）</param>
+        /// <param name="maxSizeMB">最大檔案大小(MB)，null 時使用預設值 20MB</param>
         public static async Task<(bool Success, string Message, string? FilePath, string? MimeType)> UploadDocumentToFolderAsync(
             IBrowserFile file,
             IWebHostEnvironment environment,
-            string subFolder)
+            string subFolder,
+            int? maxSizeMB = null)
         {
             try
             {
-                var validationResult = ValidateDocumentFile(file);
+                long maxFileSize = maxSizeMB.HasValue ? (long)maxSizeMB.Value * 1024 * 1024 : DefaultMaxDocumentFileSize;
+                var validationResult = ValidateDocumentFile(file, maxFileSize);
                 if (!validationResult.IsValid)
                     return (false, validationResult.Message, null, null);
 
@@ -130,7 +136,7 @@ namespace ERPCore2.Helpers
 
                 var filePath = Path.Combine(uploadPath, fileName);
                 await using var fileStream = new FileStream(filePath, FileMode.Create);
-                await file.OpenReadStream(MaxDocumentFileSize).CopyToAsync(fileStream);
+                await file.OpenReadStream(maxFileSize).CopyToAsync(fileStream);
 
                 var mimeType = GetDocumentMimeType(extension);
                 var relativePath = $"/uploads/{subFolder}/{fileName}";
@@ -143,16 +149,19 @@ namespace ERPCore2.Helpers
         }
 
         /// <summary>
-        /// 上傳文件檔案（支援 PDF、Word、Excel、圖片，最大 20MB）
+        /// 上傳文件檔案（支援 PDF、Word、Excel、圖片）
         /// </summary>
+        /// <param name="maxSizeMB">最大檔案大小(MB)，null 時使用預設值 20MB</param>
         public static async Task<(bool Success, string Message, string? FilePath, string? MimeType)> UploadDocumentAsync(
             IBrowserFile file,
             IWebHostEnvironment environment,
-            string? oldFilePath = null)
+            string? oldFilePath = null,
+            int? maxSizeMB = null)
         {
             try
             {
-                var validationResult = ValidateDocumentFile(file);
+                long maxFileSize = maxSizeMB.HasValue ? (long)maxSizeMB.Value * 1024 * 1024 : DefaultMaxDocumentFileSize;
+                var validationResult = ValidateDocumentFile(file, maxFileSize);
                 if (!validationResult.IsValid)
                     return (false, validationResult.Message, null, null);
 
@@ -167,7 +176,7 @@ namespace ERPCore2.Helpers
 
                 var filePath = Path.Combine(uploadPath, fileName);
                 await using var fileStream = new FileStream(filePath, FileMode.Create);
-                await file.OpenReadStream(MaxDocumentFileSize).CopyToAsync(fileStream);
+                await file.OpenReadStream(maxFileSize).CopyToAsync(fileStream);
 
                 if (!string.IsNullOrEmpty(oldFilePath))
                     DeleteFile(oldFilePath, environment);
@@ -209,13 +218,16 @@ namespace ERPCore2.Helpers
         /// <summary>
         /// 驗證文件檔案
         /// </summary>
-        private static (bool IsValid, string Message) ValidateDocumentFile(IBrowserFile file)
+        private static (bool IsValid, string Message) ValidateDocumentFile(IBrowserFile file, long maxFileSize = DefaultMaxDocumentFileSize)
         {
             if (file == null)
                 return (false, "請選擇檔案");
 
-            if (file.Size > MaxDocumentFileSize)
-                return (false, "檔案大小不可超過 20 MB");
+            if (file.Size > maxFileSize)
+            {
+                var maxSizeMB = maxFileSize / (1024.0 * 1024.0);
+                return (false, $"檔案大小不可超過 {maxSizeMB:F0} MB");
+            }
 
             var extension = Path.GetExtension(file.Name).ToLowerInvariant();
             if (!AllowedDocumentExtensions.Contains(extension))
@@ -248,7 +260,7 @@ namespace ERPCore2.Helpers
         /// <summary>
         /// 轉換檔案為 Base64 字串
         /// </summary>
-        public static async Task<string?> ConvertToBase64Async(IBrowserFile file, long maxFileSize = MaxImageFileSize)
+        public static async Task<string?> ConvertToBase64Async(IBrowserFile file, long maxFileSize = DefaultMaxImageFileSize)
         {
             try
             {

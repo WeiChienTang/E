@@ -5,10 +5,12 @@
 @using ERPCore2.Models.Navigation
 @using ERPCore2.Components.Shared.Dashboard
 @using ERPCore2.Components.Pages.Systems
+@using ERPCore2.Components.Pages.Warehouse
 @inject IDashboardService DashboardService
 @inject INotificationService NotificationService
 @inject IPermissionService PermissionService
 @inject ICompanyService CompanyService
+@inject IWarehouseService WarehouseService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
@@ -283,6 +285,23 @@
                           OnCompanySaved="@HandleCompanySetupComplete"
                           OnCancel="@(() => showCompanyEditModal = false)" />
 
+@* ==================== 倉庫設定確認 Modal ==================== *@
+<GenericConfirmModalComponent IsVisible="@showWarehouseSetupConfirm"
+                             IsVisibleChanged="@((bool v) => showWarehouseSetupConfirm = v)"
+                             Title="@L["Home.WarehouseSetupTitle"]"
+                             Icon="bi-house-door"
+                             Message="@L["Home.WarehouseSetupMessage"]"
+                             ConfirmButtonText="@L["Home.WarehouseSetupNow"]"
+                             CancelButtonText="@L["Home.WarehouseSetupLater"]"
+                             OnConfirm="@OpenWarehouseSetupModal" />
+
+@* ==================== 倉庫編輯 Modal ==================== *@
+<WarehouseEditModalComponent IsVisible="@showWarehouseEditModal"
+                             IsVisibleChanged="@((bool v) => showWarehouseEditModal = v)"
+                             WarehouseId="@null"
+                             OnWarehouseSaved="@HandleWarehouseSetupComplete"
+                             OnCancel="@(() => showWarehouseEditModal = false)" />
+
 @* ==================== 快速功能 Modal Host ==================== *@
 <QuickActionModalHost @ref="quickActionHost" 
                       ConfiguredActionIds="@GetConfiguredQuickActionIds()" />
@@ -296,6 +315,10 @@
     private Company? primaryCompany;
     private bool showCompanySetupConfirm = false;
     private bool showCompanyEditModal = false;
+
+    // 倉庫資料
+    private bool showWarehouseSetupConfirm = false;
+    private bool showWarehouseEditModal = false;
 
     // 區塊資料
     private List<DashboardPanelWithItems> panels = new();
@@ -341,6 +364,9 @@
     {
         // 載入預設公司資料
         await LoadPrimaryCompanyAsync();
+
+        // 檢查是否有倉庫資料
+        await CheckWarehouseExistsAsync();
 
         var employeeId = await CurrentUserHelper.GetCurrentEmployeeIdAsync(AuthenticationStateProvider);
 
@@ -803,6 +829,55 @@
         {
             await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleCompanySetupComplete), GetType());
             await NotificationService.ShowErrorAsync(L["Message.CompanySetupFailed"]);
+        }
+    }
+
+    // ===== 倉庫設定處理 =====
+
+    /// <summary>
+    /// 檢查是否有倉庫資料
+    /// </summary>
+    private async Task CheckWarehouseExistsAsync()
+    {
+        try
+        {
+            var warehouses = await WarehouseService.GetActiveAsync();
+
+            // 如果沒有任何倉庫資料，顯示設定提示
+            if (warehouses == null || !warehouses.Any())
+            {
+                showWarehouseSetupConfirm = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(CheckWarehouseExistsAsync), GetType());
+        }
+    }
+
+    /// <summary>
+    /// 開啟倉庫設定 Modal
+    /// </summary>
+    private void OpenWarehouseSetupModal()
+    {
+        showWarehouseSetupConfirm = false;
+        showWarehouseEditModal = true;
+    }
+
+    /// <summary>
+    /// 處理倉庫設定完成事件
+    /// </summary>
+    private async Task HandleWarehouseSetupComplete(ERPCore2.Data.Entities.Warehouse savedWarehouse)
+    {
+        try
+        {
+            showWarehouseEditModal = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandlingHelper.HandlePageErrorAsync(ex, nameof(HandleWarehouseSetupComplete), GetType());
+            await NotificationService.ShowErrorAsync(L["Message.WarehouseSetupFailed"]);
         }
     }
 

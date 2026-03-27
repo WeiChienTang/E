@@ -175,6 +175,22 @@ namespace ERPCore2.Data.Entities
 
         // ===== 薪資系統設定 =====
 
+        // ===== 檔案上傳設定 =====
+
+        /// <summary>
+        /// 文件上傳最大檔案大小 (MB)，預設 20MB
+        /// </summary>
+        [Display(Name = "文件上傳最大檔案大小(MB)")]
+        [Range(1, 500, ErrorMessage = "檔案大小限制必須在 1 MB 到 500 MB 之間")]
+        public int MaxDocumentFileSizeMB { get; set; } = 20;
+
+        /// <summary>
+        /// 圖片上傳最大檔案大小 (MB)，預設 2MB
+        /// </summary>
+        [Display(Name = "圖片上傳最大檔案大小(MB)")]
+        [Range(1, 50, ErrorMessage = "檔案大小限制必須在 1 MB 到 50 MB 之間")]
+        public int MaxImageFileSizeMB { get; set; } = 2;
+
         /// <summary>每月發薪日（1-31），例：5 = 每月5日發薪</summary>
         [Display(Name = "發薪日")]
         [Range(1, 31, ErrorMessage = "發薪日必須在 1 到 31 之間")]

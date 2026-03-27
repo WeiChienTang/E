@@ -1,6 +1,5 @@
-﻿{
+{
   "permissions": {
-    "defaultMode": "bypassPermissions",
     "allow": [
       "Edit",
       "Bash(dotnet build:*)",
@@ -146,8 +145,10 @@
       "Bash(sed -i 's/\"\"商品報表\"\"/\"\"品項報表\"\"/g; s/\"\"商品报表\"\"/\"\"品项报表\"\"/g' Data/Navigation/NavigationConfig.cs)",
       "Bash(dotnet-ildasm c:/Users/cses3/source/repos/ERPCore2/ERPCore2/bin/Debug/net9.0/ERPCore2.dll)",
       "Bash(dotnet msbuild:*)",
-      "Bash(\"C:/Program Files/dotnet/sdk/9.0.300/MSBuild.dll\" ERPCore2.csproj /t:CoreCompile /p:Configuration=Debug)"
+      "Bash(\"C:/Program Files/dotnet/sdk/9.0.300/MSBuild.dll\" ERPCore2.csproj /t:CoreCompile /p:Configuration=Debug)",
+      "Bash(dotnet tool:*)"
     ],
+    "defaultMode": "bypassPermissions",
     "additionalDirectories": [
       "c:\\Users\\cses3\\source\\repos\\ERPCore2\\ERPCore2\\Components\\Shared\\UI",
       "c:\\Users\\cses3\\source\\repos\\ERPCore2\\ERPCore2\\Data\\Entities",

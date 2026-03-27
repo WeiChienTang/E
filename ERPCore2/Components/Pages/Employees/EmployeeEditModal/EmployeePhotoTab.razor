@@ -3,6 +3,7 @@
 @inject INotificationService NotificationService
 @inject IWebHostEnvironment Environment
 @inject IStringLocalizer<SharedResource> L
+@inject ISystemParameterService SystemParameterService
 
 @if (!EmployeeId.HasValue || EmployeeId.Value <= 0)
 {
@@ -61,7 +62,7 @@ else
                     </div>
                     <div class="business-card-info px-2 py-1">
                         <span class="fw-semibold small">@L["Entity.Employee"]</span>
-                        <span class="text-muted small d-block">@L["EmployeePhoto.Hint"]</span>
+                        <span class="text-muted small d-block">@string.Format(L["EmployeePhoto.Hint"], _maxImageFileSizeMB ?? 2)</span>
                     </div>
                     <div class="business-card-actions px-2 pb-2 d-flex gap-1">
                         <GenericButtonComponent Variant="ButtonVariant.OutlineGray"
@@ -121,6 +122,13 @@ else
     private bool showDeleteModal = false;
     private bool showPreview = false;
     private int? _loadedEmployeeId;
+    private int? _maxImageFileSizeMB;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var sysParam = await SystemParameterService.GetSystemParameterAsync();
+        _maxImageFileSizeMB = sysParam?.MaxImageFileSizeMB;
+    }
 
     protected override void OnParametersSet()
     {
@@ -162,7 +170,7 @@ else
         {
             var file = e.File;
             var (success, message, filePath) = await FileUploadHelper.UploadImageAsync(
-                file, "employee-photos", Environment, currentPhotoPath);
+                file, "employee-photos", Environment, currentPhotoPath, maxSizeMB: _maxImageFileSizeMB);
 
             if (!success)
             {

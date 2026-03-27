@@ -1,0 +1,56 @@
+@* 檔案管理設定 Tab *@
+@inject IStringLocalizer<SharedResource> L
+
+<GenericFormComponent TModel="SystemParameter"
+                      Model="@Model"
+                      FieldDefinitions="@allFields"
+                      FieldSections="@fieldSections" />
+
+@code {
+    [Parameter]
+    public SystemParameter Model { get; set; } = new();
+
+    private List<FormFieldDefinition> allFields = new();
+    private Dictionary<string, string> fieldSections = new();
+
+    protected override void OnInitialized()
+    {
+        var section = L["Section.FileUploadSettings"].ToString();
+
+        allFields = new List<FormFieldDefinition>
+        {
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(SystemParameter.MaxDocumentFileSizeMB),
+                Label = L["Field.MaxDocumentFileSizeMB"],
+                FieldType = FormFieldType.Number,
+                IsRequired = true,
+                Min = 1,
+                Max = 500,
+                Step = 1,
+                DecimalPlaces = 0,
+                Placeholder = L["Placeholder.PleaseInput", L["Field.MaxDocumentFileSizeMB"]],
+                HelpText = L["HelpText.MaxDocumentFileSizeMB"]
+            },
+            new FormFieldDefinition
+            {
+                PropertyName = nameof(SystemParameter.MaxImageFileSizeMB),
+                Label = L["Field.MaxImageFileSizeMB"],
+                FieldType = FormFieldType.Number,
+                IsRequired = true,
+                Min = 1,
+                Max = 50,
+                Step = 1,
+                DecimalPlaces = 0,
+                Placeholder = L["Placeholder.PleaseInput", L["Field.MaxImageFileSizeMB"]],
+                HelpText = L["HelpText.MaxImageFileSizeMB"]
+            }
+        };
+
+        fieldSections = new Dictionary<string, string>
+        {
+            { nameof(SystemParameter.MaxDocumentFileSizeMB), section },
+            { nameof(SystemParameter.MaxImageFileSizeMB), section }
+        };
+    }
+}

@@ -371,7 +371,6 @@ window.cleanupButtonTabNavigation = function () {
 
 // 使用堆疊管理多個 Modal 的 ESC 鍵監聽器
 var escKeyDotNetHelpers = [];
-var escKeyCleanupInProgress = false;
 var escKeyEventListenerAdded = false;
 
 // 設置 ESC 鍵監聽器
@@ -386,20 +385,28 @@ window.setupEscKeyListener = function (dotNetHelper) {
     }
 };
 
-// 清理 ESC 鍵監聽器
+// 清理 ESC 鍵監聽器（使用佇列機制，確保連續快速關閉多個 Modal 時每次都能正確 pop）
+var _escCleanupQueue = [];
+var _escCleanupRunning = false;
+
 window.cleanupEscKeyListener = function () {
-    // 防止重複清理
-    if (escKeyCleanupInProgress) {
+    _escCleanupQueue.push(true);
+    _processEscCleanupQueue();
+};
+
+function _processEscCleanupQueue() {
+    if (_escCleanupRunning || _escCleanupQueue.length === 0) {
         return;
     }
-    
-    escKeyCleanupInProgress = true;
-    
+
+    _escCleanupRunning = true;
+    _escCleanupQueue.shift();
+
     try {
         // 從堆疊中移除最後一個（最上層的）DotNet 對象引用
         if (escKeyDotNetHelpers.length > 0) {
             var removedHelper = escKeyDotNetHelpers.pop();
-            
+
             // 延遲清理 DotNet 對象引用，避免消息通道問題
             setTimeout(function() {
                 try {
@@ -407,27 +414,30 @@ window.cleanupEscKeyListener = function () {
                         removedHelper.dispose();
                     }
                 } catch (error) {
-                    // 安靜地忽略 dispose 錯誤，因為可能是 Blazor 連接已關閉
                     console.debug('ESC key listener cleanup warning (safe to ignore):', error.message);
                 } finally {
-                    escKeyCleanupInProgress = false;
+                    _escCleanupRunning = false;
+                    // 處理佇列中的下一個清理請求
+                    _processEscCleanupQueue();
                 }
             }, 150);
         } else {
-            escKeyCleanupInProgress = false;
+            _escCleanupRunning = false;
+            _processEscCleanupQueue();
         }
-        
+
         // 當沒有任何 Modal 時，移除事件監聽器
         if (escKeyDotNetHelpers.length === 0 && escKeyEventListenerAdded) {
             document.removeEventListener('keydown', handleEscapeKey);
             escKeyEventListenerAdded = false;
         }
-        
+
     } catch (error) {
         console.debug('ESC key listener cleanup error (safe to ignore):', error.message);
-        escKeyCleanupInProgress = false;
+        _escCleanupRunning = false;
+        _processEscCleanupQueue();
     }
-};
+}
 
 // 處理 ESC 鍵按下事件
 function handleEscapeKey(event) {

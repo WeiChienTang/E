@@ -1855,7 +1855,7 @@
   <data name="EmployeePhoto.DeleteSuccess" xml:space="preserve"><value>Nabura ang larawan</value></data>
   <data name="EmployeePhoto.UploadSuccess" xml:space="preserve"><value>Matagumpay na na-upload ang larawan</value></data>
   <data name="EmployeePhoto.DeleteMessage" xml:space="preserve"><value>Sigurado ka bang gusto mong burahin ang larawang ito? Hindi na ito mababawi.</value></data>
-  <data name="EmployeePhoto.Hint" xml:space="preserve"><value>Sinusuportahan ang JPG, PNG na format, maximum 2MB</value></data>
+  <data name="EmployeePhoto.Hint" xml:space="preserve"><value>Sinusuportahan ang JPG, PNG na format, maximum {0}MB</value></data>
   <data name="EmployeePhoto.UploadFailed" xml:space="preserve"><value>Nabigo ang pag-upload</value></data>
   <data name="EmployeePhoto.DeleteFailed" xml:space="preserve"><value>Nabigo ang pagbura</value></data>
   <data name="Tab.ItemPhotos" xml:space="preserve"><value>Mga Larawan ng Produkto</value></data>
@@ -2337,6 +2337,10 @@
   <data name="Home.CompanySetupMessage" xml:space="preserve"><value>Ang impormasyon ng kumpanya ay hindi pa na-setup. Gusto mo bang i-setup ito ngayon?</value></data>
   <data name="Home.CompanySetupNow" xml:space="preserve"><value>I-setup Ngayon</value></data>
   <data name="Home.CompanySetupLater" xml:space="preserve"><value>I-setup Mamaya</value></data>
+  <data name="Home.WarehouseSetupTitle" xml:space="preserve"><value>I-setup ang Bodega</value></data>
+  <data name="Home.WarehouseSetupMessage" xml:space="preserve"><value>Ang impormasyon ng bodega ay hindi pa na-setup. Gusto mo bang i-setup ito ngayon?</value></data>
+  <data name="Home.WarehouseSetupNow" xml:space="preserve"><value>I-setup Ngayon</value></data>
+  <data name="Home.WarehouseSetupLater" xml:space="preserve"><value>I-setup Mamaya</value></data>
   <data name="Home.DeleteThisPanelTooltip" xml:space="preserve"><value>Tanggalin ang Panel na Ito</value></data>
   <data name="Home.EditThisPanelTooltip" xml:space="preserve"><value>I-edit ang Panel na Ito</value></data>
   <data name="Home.Create" xml:space="preserve"><value>Lumikha</value></data>
@@ -2368,6 +2372,7 @@
   <data name="Message.SortUpdateFailed" xml:space="preserve"><value>Nabigong i-update ang order</value></data>
   <data name="Message.CompanySetupComplete" xml:space="preserve"><value>Natapos na ang setup ng kumpanya</value></data>
   <data name="Message.CompanySetupFailed" xml:space="preserve"><value>Nagkaroon ng error habang sine-setup ang kumpanya</value></data>
+  <data name="Message.WarehouseSetupFailed" xml:space="preserve"><value>Nagkaroon ng error habang sine-setup ang bodega</value></data>
   <data name="Warning.EnterPanelTitle" xml:space="preserve"><value>Pakipasok ang titulo ng panel</value></data>
 
   <!-- ===== Modal (BaseModalComponent) ===== -->
@@ -4457,7 +4462,8 @@
   <data name="Section.DocumentInfo" xml:space="preserve"><value>Impormasyon ng Dokumento</value></data>
   <data name="Document.FileSelected" xml:space="preserve"><value>Napili: {0} ({1})</value></data>
   <data name="Document.CurrentFile" xml:space="preserve"><value>Kasalukuyang File: {0}</value></data>
-  <data name="Document.SupportedFormats" xml:space="preserve"><value>Mga Sinusuportahang Format: PDF, Word, Excel, Imahe (Max 20MB)</value></data>
+  <data name="Document.SupportedFormats" xml:space="preserve"><value>Mga Sinusuportahang Format: PDF, Word, Excel, Imahe</value></data>
+  <data name="Document.MaxFileSize" xml:space="preserve"><value>Max {0} MB bawat file</value></data>
   <data name="Document.UseDefaultAccessLevel" xml:space="preserve"><value>Gamitin ang Default ng Kategorya</value></data>
   <data name="Document.PaperSizeApplied" xml:space="preserve"><value>Na-apply na ang setting ng sukat ng "{0}"</value></data>
   <data name="Document.AttachmentFiles" xml:space="preserve"><value>Mga Kalakip na File</value></data>
@@ -4637,7 +4643,7 @@
   <data name="Attachment.Title" xml:space="preserve"><value>Mga Attachment</value></data>
   <data name="Attachment.Upload" xml:space="preserve"><value>Mag-upload ng Attachment</value></data>
   <data name="Attachment.Uploading" xml:space="preserve"><value>Ina-upload...</value></data>
-  <data name="Attachment.AllowedFormats" xml:space="preserve"><value>Sinusuportahan: PDF, Word, Excel, Larawan (max 20MB)</value></data>
+  <data name="Attachment.AllowedFormats" xml:space="preserve"><value>Sinusuportahan: PDF, Word, Excel, Larawan (max {0}MB)</value></data>
   <data name="Attachment.FileName" xml:space="preserve"><value>Pangalan ng File</value></data>
   <data name="Attachment.FileSize" xml:space="preserve"><value>Laki</value></data>
   <data name="Attachment.UploadedBy" xml:space="preserve"><value>Na-upload ni</value></data>
@@ -4731,4 +4737,10 @@
   <data name="GovernmentAgencyType.Other" xml:space="preserve"><value>Iba pa</value></data>
   <data name="GovernmentAgencyStatus.Active" xml:space="preserve"><value>Aktibo</value></data>
   <data name="GovernmentAgencyStatus.Inactive" xml:space="preserve"><value>Hindi Aktibo</value></data>
+  <data name="Tab.FileManagement" xml:space="preserve"><value>File Management</value></data>
+  <data name="Section.FileUploadSettings" xml:space="preserve"><value>File Upload Settings</value></data>
+  <data name="Field.MaxDocumentFileSizeMB" xml:space="preserve"><value>Max Document File Size (MB)</value></data>
+  <data name="Field.MaxImageFileSizeMB" xml:space="preserve"><value>Max Image File Size (MB)</value></data>
+  <data name="HelpText.MaxDocumentFileSizeMB" xml:space="preserve"><value>Itakda ang limitasyon ng laki ng upload para sa PDF, Word, Excel na dokumento. Default: 20 MB</value></data>
+  <data name="HelpText.MaxImageFileSizeMB" xml:space="preserve"><value>Itakda ang limitasyon ng laki ng upload para sa JPG, PNG na mga larawan. Default: 2 MB</value></data>
 </root>

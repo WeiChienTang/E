@@ -3,6 +3,7 @@
 @inject INotificationService NotificationService
 @inject IWebHostEnvironment Environment
 @inject IStringLocalizer<SharedResource> L
+@inject ISystemParameterService SystemParameterService
 
 @if (!SalesOrderId.HasValue || SalesOrderId.Value <= 0)
 {
@@ -137,9 +138,16 @@ else
     private SalesOrderPhoto? deletingPhoto = null;
     private SalesOrderPhoto? previewPhoto = null;
     private int? _loadedSalesOrderId;
+    private int? _maxImageFileSizeMB;
 
     protected override async Task OnParametersSetAsync()
     {
+        if (_maxImageFileSizeMB == null)
+        {
+            var sysParam = await SystemParameterService.GetSystemParameterAsync();
+            _maxImageFileSizeMB = sysParam?.MaxImageFileSizeMB;
+        }
+
         if (SalesOrderId != _loadedSalesOrderId)
         {
             _loadedSalesOrderId = SalesOrderId;
@@ -182,7 +190,7 @@ else
             foreach (var file in e.GetMultipleFiles(10))
             {
                 var (success, message, filePath) = await FileUploadHelper.UploadImageAsync(
-                    file, "sales-order-photos", Environment);
+                    file, "sales-order-photos", Environment, maxSizeMB: _maxImageFileSizeMB);
 
                 if (!success)
                 {

@@ -5,6 +5,7 @@
 @inject INotificationService NotificationService
 @inject IWebHostEnvironment Environment
 @inject IJSRuntime JS
+@inject ISystemParameterService SystemParameterService
 
 @* ===== 頭像 ===== *@
 @if (Model != null && Model.Id > 0)
@@ -166,12 +167,19 @@
 
     private List<FormFieldDefinition> allFields = new();
     private Dictionary<string, string> fieldSections = new();
+    private int? _maxImageFileSizeMB;
 
     protected override void OnParametersSet()
     {
         // 每次 Model 換人時同步照片路徑（避免殘留上一個員工的狀態）
         _currentPhotoPath = Model?.PhotoPath;
         uploadError = null;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var sysParam = await SystemParameterService.GetSystemParameterAsync();
+        _maxImageFileSizeMB = sysParam?.MaxImageFileSizeMB;
     }
 
     protected override void OnInitialized()
@@ -239,7 +247,7 @@
         try
         {
             var (success, message, filePath) = await FileUploadHelper.UploadImageAsync(
-                e.File, "employee-photos", Environment, _currentPhotoPath);
+                e.File, "employee-photos", Environment, _currentPhotoPath, maxSizeMB: _maxImageFileSizeMB);
 
             if (!success)
             {

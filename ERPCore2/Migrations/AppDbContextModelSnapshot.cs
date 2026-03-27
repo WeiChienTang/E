@@ -17,7 +17,7 @@ namespace ERPCore2.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.5")
+                .HasAnnotation("ProductVersion", "10.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -9008,6 +9008,12 @@ namespace ERPCore2.Migrations
                         .HasColumnType("nvarchar(20)");
 
                     b.Property<int>("LateTolerance")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxDocumentFileSizeMB")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxImageFileSizeMB")
                         .HasColumnType("int");
 
                     b.Property<string>("OvertimeExpenseAccountCode")

@@ -1855,7 +1855,7 @@
   <data name="EmployeePhoto.DeleteSuccess" xml:space="preserve"><value>写真を削除しました</value></data>
   <data name="EmployeePhoto.UploadSuccess" xml:space="preserve"><value>写真のアップロードが完了しました</value></data>
   <data name="EmployeePhoto.DeleteMessage" xml:space="preserve"><value>この写真を削除してもよろしいですか？この操作は元に戻せません。</value></data>
-  <data name="EmployeePhoto.Hint" xml:space="preserve"><value>JPG、PNG形式、最大2MBまで対応</value></data>
+  <data name="EmployeePhoto.Hint" xml:space="preserve"><value>JPG、PNG形式、最大{0}MBまで対応</value></data>
   <data name="EmployeePhoto.UploadFailed" xml:space="preserve"><value>アップロード失敗</value></data>
   <data name="EmployeePhoto.DeleteFailed" xml:space="preserve"><value>削除失敗</value></data>
   <data name="Tab.ItemPhotos" xml:space="preserve"><value>品目写真</value></data>
@@ -2337,6 +2337,10 @@
   <data name="Home.CompanySetupMessage" xml:space="preserve"><value>会社情報がまだ設定されていません。今すぐ設定しますか？</value></data>
   <data name="Home.CompanySetupNow" xml:space="preserve"><value>今すぐ設定</value></data>
   <data name="Home.CompanySetupLater" xml:space="preserve"><value>後で設定</value></data>
+  <data name="Home.WarehouseSetupTitle" xml:space="preserve"><value>倉庫情報の設定</value></data>
+  <data name="Home.WarehouseSetupMessage" xml:space="preserve"><value>倉庫情報がまだ設定されていません。今すぐ設定しますか？</value></data>
+  <data name="Home.WarehouseSetupNow" xml:space="preserve"><value>今すぐ設定</value></data>
+  <data name="Home.WarehouseSetupLater" xml:space="preserve"><value>後で設定</value></data>
   <data name="Home.DeleteThisPanelTooltip" xml:space="preserve"><value>このパネルを削除</value></data>
   <data name="Home.EditThisPanelTooltip" xml:space="preserve"><value>このパネルを編集</value></data>
   <data name="Home.Create" xml:space="preserve"><value>作成</value></data>
@@ -2368,6 +2372,7 @@
   <data name="Message.SortUpdateFailed" xml:space="preserve"><value>並び替えの更新に失敗しました</value></data>
   <data name="Message.CompanySetupComplete" xml:space="preserve"><value>会社の設定が完了しました</value></data>
   <data name="Message.CompanySetupFailed" xml:space="preserve"><value>会社の設定中にエラーが発生しました</value></data>
+  <data name="Message.WarehouseSetupFailed" xml:space="preserve"><value>倉庫の設定中にエラーが発生しました</value></data>
   <data name="Warning.EnterPanelTitle" xml:space="preserve"><value>パネルタイトルを入力してください</value></data>
 
   <!-- ===== Modal (BaseModalComponent) ===== -->
@@ -4457,7 +4462,8 @@
   <data name="Section.DocumentInfo" xml:space="preserve"><value>文書情報</value></data>
   <data name="Document.FileSelected" xml:space="preserve"><value>選択済み：{0} ({1})</value></data>
   <data name="Document.CurrentFile" xml:space="preserve"><value>現在のファイル：{0}</value></data>
-  <data name="Document.SupportedFormats" xml:space="preserve"><value>対応形式：PDF、Word、Excel、画像（最大 20MB）</value></data>
+  <data name="Document.SupportedFormats" xml:space="preserve"><value>対応形式：PDF、Word、Excel、画像</value></data>
+  <data name="Document.MaxFileSize" xml:space="preserve"><value>1ファイル最大 {0} MB</value></data>
   <data name="Document.UseDefaultAccessLevel" xml:space="preserve"><value>分類デフォルトを使用</value></data>
   <data name="Document.PaperSizeApplied" xml:space="preserve"><value>「{0}」のサイズ設定を適用しました</value></data>
   <data name="Document.AttachmentFiles" xml:space="preserve"><value>添付ファイル</value></data>
@@ -4637,7 +4643,7 @@
   <data name="Attachment.Title" xml:space="preserve"><value>添付ファイル</value></data>
   <data name="Attachment.Upload" xml:space="preserve"><value>添付ファイルをアップロード</value></data>
   <data name="Attachment.Uploading" xml:space="preserve"><value>アップロード中...</value></data>
-  <data name="Attachment.AllowedFormats" xml:space="preserve"><value>対応形式：PDF・Word・Excel・画像（最大20MB）</value></data>
+  <data name="Attachment.AllowedFormats" xml:space="preserve"><value>対応形式：PDF・Word・Excel・画像（最大{0}MB）</value></data>
   <data name="Attachment.FileName" xml:space="preserve"><value>ファイル名</value></data>
   <data name="Attachment.FileSize" xml:space="preserve"><value>サイズ</value></data>
   <data name="Attachment.UploadedBy" xml:space="preserve"><value>アップロード者</value></data>
@@ -4731,4 +4737,10 @@
   <data name="GovernmentAgencyType.Other" xml:space="preserve"><value>その他</value></data>
   <data name="GovernmentAgencyStatus.Active" xml:space="preserve"><value>取引中</value></data>
   <data name="GovernmentAgencyStatus.Inactive" xml:space="preserve"><value>無効</value></data>
+  <data name="Tab.FileManagement" xml:space="preserve"><value>ファイル管理</value></data>
+  <data name="Section.FileUploadSettings" xml:space="preserve"><value>ファイルアップロード設定</value></data>
+  <data name="Field.MaxDocumentFileSizeMB" xml:space="preserve"><value>ドキュメントアップロード最大サイズ(MB)</value></data>
+  <data name="Field.MaxImageFileSizeMB" xml:space="preserve"><value>画像アップロード最大サイズ(MB)</value></data>
+  <data name="HelpText.MaxDocumentFileSizeMB" xml:space="preserve"><value>PDF、Word、Excel ドキュメントのアップロードサイズ制限を設定します。デフォルト: 20 MB</value></data>
+  <data name="HelpText.MaxImageFileSizeMB" xml:space="preserve"><value>JPG、PNG 画像のアップロードサイズ制限を設定します。デフォルト: 2 MB</value></data>
 </root>

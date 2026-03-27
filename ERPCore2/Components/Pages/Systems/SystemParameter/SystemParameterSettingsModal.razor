@@ -132,6 +132,11 @@
         <TaxSettingsTab Model="@systemParameter" />
     };
 
+    private RenderFragment CreateFileManagementTabContent() => __builder =>
+    {
+        <FileManagementSettingsTab Model="@systemParameter" />
+    };
+
     private RenderFragment CreateSubAccountTabContent() => __builder =>
     {
         <SubAccountSettingsTab @ref="subAccountTab"
@@ -177,6 +182,7 @@
         tabDefinitions = new List<FormTabDefinition>
         {
             new() { Label = L["Section.TaxSettings"],    Icon = "bi bi-cash-stack", SectionNames = new(), CustomContent = CreateTaxTabContent(),         DebugComponentName = nameof(TaxSettingsTab) },
+            new() { Label = L["Tab.FileManagement"],     Icon = "bi bi-folder2-open", SectionNames = new(), CustomContent = CreateFileManagementTabContent(), DebugComponentName = nameof(FileManagementSettingsTab) },
             // 子科目 Tab 由 OnInitializedAsync 權限檢查後動態加入
             // 安全憑證 Tab 暫時停用（HTTPS 自簽憑證方案未完成，詳見 README_HTTPS憑證設計(失敗).md）
             // new() { Label = "安全憑證", Icon = "bi bi-shield-lock", SectionNames = new(), CustomContent = CreateCertificateTabContent(), DebugComponentName = "CertificateTab" },

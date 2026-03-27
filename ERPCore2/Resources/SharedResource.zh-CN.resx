@@ -1855,7 +1855,7 @@
   <data name="EmployeePhoto.DeleteSuccess" xml:space="preserve"><value>照片已删除</value></data>
   <data name="EmployeePhoto.UploadSuccess" xml:space="preserve"><value>照片上传成功</value></data>
   <data name="EmployeePhoto.DeleteMessage" xml:space="preserve"><value>确定要删除此照片吗？此操作无法复原。</value></data>
-  <data name="EmployeePhoto.Hint" xml:space="preserve"><value>支持 JPG、PNG 格式，上限 2MB</value></data>
+  <data name="EmployeePhoto.Hint" xml:space="preserve"><value>支持 JPG、PNG 格式，上限 {0}MB</value></data>
   <data name="EmployeePhoto.UploadFailed" xml:space="preserve"><value>上传失败</value></data>
   <data name="EmployeePhoto.DeleteFailed" xml:space="preserve"><value>删除失败</value></data>
   <data name="Tab.ItemPhotos" xml:space="preserve"><value>品项照片</value></data>
@@ -2339,6 +2339,10 @@
   <data name="Home.CompanySetupMessage" xml:space="preserve"><value>系统尚未设置公司信息，是否立即设置？</value></data>
   <data name="Home.CompanySetupNow" xml:space="preserve"><value>立即设置</value></data>
   <data name="Home.CompanySetupLater" xml:space="preserve"><value>稍后设置</value></data>
+  <data name="Home.WarehouseSetupTitle" xml:space="preserve"><value>设置仓库信息</value></data>
+  <data name="Home.WarehouseSetupMessage" xml:space="preserve"><value>系统尚未设置仓库信息，是否立即设置？</value></data>
+  <data name="Home.WarehouseSetupNow" xml:space="preserve"><value>立即设置</value></data>
+  <data name="Home.WarehouseSetupLater" xml:space="preserve"><value>稍后设置</value></data>
   <data name="Home.DeleteThisPanelTooltip" xml:space="preserve"><value>删除此区块</value></data>
   <data name="Home.EditThisPanelTooltip" xml:space="preserve"><value>编辑此区块</value></data>
   <data name="Home.Create" xml:space="preserve"><value>创建</value></data>
@@ -2370,6 +2374,7 @@
   <data name="Message.SortUpdateFailed" xml:space="preserve"><value>排序更新失败</value></data>
   <data name="Message.CompanySetupComplete" xml:space="preserve"><value>公司设置完成</value></data>
   <data name="Message.CompanySetupFailed" xml:space="preserve"><value>设置公司时发生错误</value></data>
+  <data name="Message.WarehouseSetupFailed" xml:space="preserve"><value>设置仓库时发生错误</value></data>
   <data name="Warning.EnterPanelTitle" xml:space="preserve"><value>请输入区块标题</value></data>
 
   <!-- ===== Modal (BaseModalComponent) ===== -->
@@ -4468,7 +4473,8 @@
   <data name="Section.DocumentInfo" xml:space="preserve"><value>文件信息</value></data>
   <data name="Document.FileSelected" xml:space="preserve"><value>已选择：{0} ({1})</value></data>
   <data name="Document.CurrentFile" xml:space="preserve"><value>当前文件：{0}</value></data>
-  <data name="Document.SupportedFormats" xml:space="preserve"><value>支持格式：PDF、Word、Excel、图片（最大 20MB）</value></data>
+  <data name="Document.SupportedFormats" xml:space="preserve"><value>支持格式：PDF、Word、Excel、图片</value></data>
+  <data name="Document.MaxFileSize" xml:space="preserve"><value>单文件上限 {0} MB</value></data>
   <data name="Document.UseDefaultAccessLevel" xml:space="preserve"><value>使用分类默认</value></data>
   <data name="Document.PaperSizeApplied" xml:space="preserve"><value>已应用「{0}」的尺寸设置</value></data>
   <data name="Document.AttachmentFiles" xml:space="preserve"><value>附件文件</value></data>
@@ -4648,7 +4654,7 @@
   <data name="Attachment.Title" xml:space="preserve"><value>附件</value></data>
   <data name="Attachment.Upload" xml:space="preserve"><value>上传附件</value></data>
   <data name="Attachment.Uploading" xml:space="preserve"><value>上传中...</value></data>
-  <data name="Attachment.AllowedFormats" xml:space="preserve"><value>支持 PDF、Word、Excel、图片（最大 20MB）</value></data>
+  <data name="Attachment.AllowedFormats" xml:space="preserve"><value>支持 PDF、Word、Excel、图片（最大 {0}MB）</value></data>
   <data name="Attachment.FileName" xml:space="preserve"><value>文件名称</value></data>
   <data name="Attachment.FileSize" xml:space="preserve"><value>大小</value></data>
   <data name="Attachment.UploadedBy" xml:space="preserve"><value>上传人员</value></data>
@@ -4742,4 +4748,10 @@
   <data name="GovernmentAgencyType.Other" xml:space="preserve"><value>其他</value></data>
   <data name="GovernmentAgencyStatus.Active" xml:space="preserve"><value>正常往来</value></data>
   <data name="GovernmentAgencyStatus.Inactive" xml:space="preserve"><value>停用</value></data>
+  <data name="Tab.FileManagement" xml:space="preserve"><value>文件管理</value></data>
+  <data name="Section.FileUploadSettings" xml:space="preserve"><value>文件上传设置</value></data>
+  <data name="Field.MaxDocumentFileSizeMB" xml:space="preserve"><value>文档上传最大文件大小(MB)</value></data>
+  <data name="Field.MaxImageFileSizeMB" xml:space="preserve"><value>图片上传最大文件大小(MB)</value></data>
+  <data name="HelpText.MaxDocumentFileSizeMB" xml:space="preserve"><value>设置 PDF、Word、Excel 等文档的上传大小限制，默认 20 MB</value></data>
+  <data name="HelpText.MaxImageFileSizeMB" xml:space="preserve"><value>设置 JPG、PNG 等图片的上传大小限制，默认 2 MB</value></data>
 </root>

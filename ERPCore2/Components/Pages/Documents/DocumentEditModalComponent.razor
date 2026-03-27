@@ -5,6 +5,7 @@
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 @inject IWebHostEnvironment Environment
+@inject ISystemParameterService SystemParameterService
 @using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
 <GenericEditModalComponent TEntity="Document"
@@ -60,6 +61,9 @@
     // 下拉選項
     private List<SelectOption> categoryOptions = new();
 
+    // 檔案大小限制（從系統參數載入）
+    private int? _maxDocumentFileSizeMB;
+
     protected override void OnParametersSet()
     {
         if (IsVisible)
@@ -72,6 +76,9 @@
         {
             fileViewModels = new();
             fileError = null;
+
+            var sysParam = await SystemParameterService.GetSystemParameterAsync();
+            _maxDocumentFileSizeMB = sysParam?.MaxDocumentFileSizeMB;
 
             var categories = await DocumentCategoryService.GetAllAsync();
             categoryOptions = categories
@@ -206,7 +213,7 @@
             foreach (var vm in fileViewModels.Where(f => !f.IsDeleted && f.IsPending))
             {
                 var (success, message, filePath, mimeType) = await FileUploadHelper.UploadDocumentAsync(
-                    vm.PendingFile!, Environment);
+                    vm.PendingFile!, Environment, maxSizeMB: _maxDocumentFileSizeMB);
 
                 if (!success)
                 {
@@ -272,7 +279,7 @@
                     PropertyName = nameof(Document.DocumentCategoryId),
                     Label = L["Field.DocumentCategory"],
                     FieldType = FormFieldType.Select,
-                    IsRequired = true,
+                    IsRequired = false,
                     Options = categoryOptions,
                     HelpText = "選擇文件所屬的分類"
                 },
@@ -371,6 +378,7 @@
         <div class="col-12 mt-3">
             <DocumentFileTable Items="@fileViewModels"
                                FileError="@fileError"
+                               MaxFileSizeMB="@_maxDocumentFileSizeMB"
                                OnFilesSelected="@HandleFilesSelected"
                                OnRemoveFile="@RemoveFile" />
         </div>

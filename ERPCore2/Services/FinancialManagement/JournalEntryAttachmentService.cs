@@ -17,15 +17,18 @@ namespace ERPCore2.Services
     {
         private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly ILogger<JournalEntryAttachmentService>? _logger;
+        private readonly ISystemParameterService? _systemParameterService;
 
         private const string SubFolder = "journal-attachments";
 
         public JournalEntryAttachmentService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<JournalEntryAttachmentService>? logger = null)
+            ILogger<JournalEntryAttachmentService>? logger = null,
+            ISystemParameterService? systemParameterService = null)
         {
             _contextFactory = contextFactory;
             _logger = logger;
+            _systemParameterService = systemParameterService;
         }
 
         public async Task<List<JournalEntryAttachment>> GetByJournalEntryAsync(int journalEntryId)
@@ -50,8 +53,15 @@ namespace ERPCore2.Services
                 var now = DateTime.Now;
                 var yearMonthFolder = $"{SubFolder}/{now.Year:D4}/{now.Month:D2}";
 
+                int? maxSizeMB = null;
+                if (_systemParameterService != null)
+                {
+                    var sysParam = await _systemParameterService.GetSystemParameterAsync();
+                    maxSizeMB = sysParam?.MaxDocumentFileSizeMB;
+                }
+
                 var (success, message, filePath, mimeType) = await FileUploadHelper.UploadDocumentToFolderAsync(
-                    file, environment, yearMonthFolder);
+                    file, environment, yearMonthFolder, maxSizeMB);
 
                 if (!success || filePath == null)
                     return (false, message, null);

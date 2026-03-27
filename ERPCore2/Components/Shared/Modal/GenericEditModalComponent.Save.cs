@@ -101,8 +101,10 @@ public partial class GenericEditModalComponent<TEntity, TService>
                     success = await SaveHandler(Entity);
                 }
 
-                // 新增模式 或 編輯草稿模式，才提供草稿選項；編輯正式記錄時直接顯示錯誤
-                if (!success && ShowDraftButton && (!Id.HasValue || wasOriginallyDraft))
+                // 新增模式 或 編輯草稿模式，且有可透過草稿繞過的驗證錯誤時，才提供草稿選項
+                // SaveHandler 內部的硬錯誤（如檔案過大）不設 PendingSaveError，不應進入草稿流程
+                if (!success && ShowDraftButton && (!Id.HasValue || wasOriginallyDraft)
+                    && (PendingSaveError != null || formValidationErrors.Count > 0))
                 {
                     _draftValidationErrors = PendingSaveError; // 讀取表單驗證或 SaveHandler 回傳的錯誤
                     PendingSaveError = null;
