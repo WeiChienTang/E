@@ -1,0 +1,34 @@
+<button type="button"
+        class="btn @(IsSelected ? "btn-primary" : "btn-outline-secondary") option-selector-btn @SizeClass"
+        title="@(Title ?? Label)"
+        @onclick="OnClick">
+    @if (!string.IsNullOrEmpty(IconClass))
+    {
+        <i class="bi @IconClass option-selector-icon"></i>
+    }
+    @if (PreviewContent is not null)
+    {
+        @PreviewContent
+    }
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <span class="option-selector-label">@Label</span>
+    }
+</button>
+
+@code {
+    [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? IconClass { get; set; }
+    [Parameter] public RenderFragment? PreviewContent { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public ButtonSize Size { get; set; } = ButtonSize.Normal;
+
+    private string SizeClass => Size switch
+    {
+        ButtonSize.Small => "btn-sm",
+        ButtonSize.Large => "btn-lg",
+        _ => ""
+    };
+}

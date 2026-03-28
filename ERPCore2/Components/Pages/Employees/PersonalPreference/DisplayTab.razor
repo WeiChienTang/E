@@ -1,109 +1,86 @@
 @* 顯示設定 Tab — 主題顏色 + 字型縮放 *@
 @inject IStringLocalizer<SharedResource> L
+@inject IJSRuntime JSRuntime
 
 <div class="p-2">
     <div class="display-sections-container">
 
         @* 主題顏色 *@
         <div class="display-section-column">
-            <div class="section-header mb-3">
-                <span class="section-title">@L["Preference.Theme"]</span>
-            </div>
-            <div class="d-flex gap-2 flex-wrap">
+            <OptionSelectorGroup Title="@L["Preference.Theme"]">
                 @foreach (var option in _themeOptions)
                 {
                     var isSelected = (Model ?? _fallback).Theme == option.Value;
-                    <button type="button"
-                            class="btn @(isSelected ? "btn-primary" : "btn-outline-secondary") theme-option-btn"
-                            title="@option.Label"
-                            @onclick="() => SelectTheme(option.Value)">
-                        <i class="bi @option.Icon theme-icon"></i>
-                        <span class="theme-label">@option.Label</span>
-                    </button>
+                    <OptionSelectorButton IsSelected="isSelected"
+                                          Label="@option.Label"
+                                          IconClass="@option.Icon"
+                                          OnClick="() => SelectTheme(option.Value)" />
                 }
-            </div>
+            </OptionSelectorGroup>
         </div>
 
         @* 字型縮放 *@
         <div class="display-section-column">
-            <div class="section-header mb-3">
-                <span class="section-title">@L["Preference.FontSize"]</span>
-            </div>
-            <div class="d-flex gap-2 flex-wrap">
+            <OptionSelectorGroup Title="@L["Preference.FontSize"]">
                 @foreach (var option in _zoomOptions)
                 {
                     var isSelected = (Model ?? _fallback).Zoom == option.Value;
-                    <button type="button"
-                            class="btn @(isSelected ? "btn-primary" : "btn-outline-secondary") zoom-option-btn"
-                            title="@option.Label"
-                            @onclick="() => SelectZoom(option.Value)">
-                        <span class="zoom-preview" style="font-size: @option.PreviewSize;">Aa</span>
-                        <span class="zoom-label">@option.Label</span>
-                    </button>
+                    <OptionSelectorButton IsSelected="isSelected"
+                                          Label="@option.Label"
+                                          OnClick="() => SelectZoom(option.Value)">
+                        <PreviewContent>
+                            <span class="option-preview-text" style="font-size: @option.PreviewSize;">Aa</span>
+                        </PreviewContent>
+                    </OptionSelectorButton>
                 }
-            </div>
+            </OptionSelectorGroup>
         </div>
 
         @* 導覽列顯示設定 *@
         <div class="display-section-column">
-            <div class="section-header mb-3">
-                <span class="section-title">@L["Preference.NavDisplay"]</span>
-            </div>
-            <div class="d-flex gap-2 flex-wrap">
+            <OptionSelectorGroup Title="@L["Preference.NavDisplay"]">
                 @foreach (var option in _navDisplayOptions)
                 {
                     var isSelected = (Model ?? _fallback).ShowDisabledModules == option.Value;
-                    <button type="button"
-                            class="btn @(isSelected ? "btn-primary" : "btn-outline-secondary") theme-option-btn"
-                            title="@option.Label"
-                            @onclick="() => SelectNavDisplay(option.Value)">
-                        <i class="bi @option.Icon theme-icon"></i>
-                        <span class="theme-label">@option.Label</span>
-                    </button>
+                    <OptionSelectorButton IsSelected="isSelected"
+                                          Label="@option.Label"
+                                          IconClass="@option.Icon"
+                                          OnClick="() => SelectNavDisplay(option.Value)" />
                 }
-            </div>
+            </OptionSelectorGroup>
         </div>
 
         @* 每頁顯示筆數 *@
         <div class="display-section-column">
-            <div class="section-header mb-3">
-                <span class="section-title">@L["Preference.PageSize"]</span>
-            </div>
-            <div class="d-flex gap-2 flex-wrap">
+            <OptionSelectorGroup Title="@L["Preference.PageSize"]">
                 @foreach (var size in _pageSizeOptions)
                 {
                     var isSelected = (Model ?? _fallback).DefaultPageSize == size;
-                    <button type="button"
-                            class="btn @(isSelected ? "btn-primary" : "btn-outline-secondary") zoom-option-btn"
-                            title="@size"
-                            @onclick="() => SelectPageSize(size)">
-                        <span class="zoom-preview" style="font-size: 1rem;">@size</span>
-                        <span class="zoom-label">@L["Preference.PageSizeUnit"]</span>
-                    </button>
+                    <OptionSelectorButton IsSelected="isSelected"
+                                          Label="@L["Preference.PageSizeUnit"]"
+                                          OnClick="() => SelectPageSize(size)">
+                        <PreviewContent>
+                            <span class="option-preview-text" style="font-size: 1rem;">@size</span>
+                        </PreviewContent>
+                    </OptionSelectorButton>
                 }
-            </div>
+            </OptionSelectorGroup>
         </div>
 
         @* 操作偏好 *@
         <div class="display-section-column">
-            <div class="section-header mb-3">
-                <span class="section-title">@L["Preference.OperationBehavior"]</span>
-            </div>
             <div class="mb-2">
-                <div class="small text-muted mb-2">@L["Preference.UnsavedChangesWarning"]</div>
-                <div class="d-flex gap-2 flex-wrap">
+                <OptionSelectorGroup Title="@L["Preference.OperationBehavior"]"
+                                     Description="@L["Preference.UnsavedChangesWarning"]">
                     @foreach (var option in _unsavedWarningOptions)
                     {
                         var isSelected = (Model ?? _fallback).ShowUnsavedChangesWarning == option.Value;
-                        <button type="button"
-                                class="btn @(isSelected ? "btn-primary" : "btn-outline-secondary") theme-option-btn"
-                                title="@option.Label"
-                                @onclick="() => SelectUnsavedChangesWarning(option.Value)">
-                            <i class="bi @option.Icon theme-icon"></i>
-                            <span class="theme-label">@option.Label</span>
-                        </button>
+                        <OptionSelectorButton IsSelected="isSelected"
+                                              Label="@option.Label"
+                                              IconClass="@option.Icon"
+                                              OnClick="() => SelectUnsavedChangesWarning(option.Value)" />
                     }
-                </div>
+                </OptionSelectorGroup>
             </div>
             @if (!(Model ?? _fallback).ShowUnsavedChangesWarning)
             {
@@ -114,6 +91,27 @@
             }
         </div>
 
+        @* 桌面捷徑 *@
+        <div class="display-section-column">
+            <OptionSelectorGroup Title="@L["Preference.DesktopShortcut"]"
+                                 Description="@L["Preference.DesktopShortcutDesc"]">
+                @if (_isMobile)
+                {
+                    <div class="alert alert-info d-flex align-items-start gap-2 py-2 px-3 mb-0" style="font-size: 1rem;">
+                        <i class="bi bi-phone flex-shrink-0 mt-1"></i>
+                        <span>@L["Preference.MobileAddToHomeScreen"]</span>
+                    </div>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-outline-primary" @onclick="HandleDownloadShortcut">
+                        <i class="bi bi-download me-1"></i>
+                        @L["Preference.DesktopShortcutDownload"]
+                    </button>
+                }
+            </OptionSelectorGroup>
+        </div>
+
     </div>
 </div>
 
@@ -122,6 +120,7 @@
     public EmployeePreference? Model { get; set; }
 
     private readonly EmployeePreference _fallback = new();
+    private bool _isMobile;
 
     private record ThemeOption(AppTheme Value, string Label, string Icon);
     private record ZoomOption(ContentZoom Value, string Label, string PreviewSize);
@@ -193,5 +192,19 @@
     {
         (Model ?? _fallback).ShowUnsavedChangesWarning = value;
         StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isMobile = await JSRuntime.InvokeAsync<bool>("desktopShortcutHelper.isMobile");
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleDownloadShortcut()
+    {
+        await JSRuntime.InvokeAsync<string>("desktopShortcutHelper.download");
     }
 }

@@ -58,6 +58,10 @@
                             <i class="bi bi-person"></i>
                             <span>@L["Nav.PersonalData"]</span>
                         </div>
+                        <div class="nav-user-dropdown-item" @onclick="HandleDownloadShortcut">
+                            <i class="bi bi-download"></i>
+                            <span>@L["Nav.DesktopShortcut"]</span>
+                        </div>
                         <a class="nav-user-dropdown-item" href="/auth/signout" @onclick="CloseUserMenu">
                             <i class="bi bi-box-arrow-right"></i>
                             <span>@L["Nav.SignOut"]</span>
@@ -155,6 +159,16 @@
         await TriggerActionAsync("OpenPersonalPreference");
         // 手機模式下收合導航選單
         await JSRuntime.InvokeVoidAsync("navMenuMobile.hideNavMenu");
+    }
+
+    private async Task HandleDownloadShortcut()
+    {
+        isUserMenuOpen = false;
+        var result = await JSRuntime.InvokeAsync<string>("desktopShortcutHelper.download");
+        if (result == "mobile")
+        {
+            await JSRuntime.InvokeVoidAsync("alert", L["Preference.MobileAddToHomeScreen"].Value);
+        }
     }
 
     private async Task HandleBackdropClick()

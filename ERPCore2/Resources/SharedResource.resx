@@ -350,6 +350,18 @@
   <data name="Preference.UnsavedChangesWarningDesc" xml:space="preserve">
     <value>關閉此設定後，離開未儲存的表單時不會再詢問確認，請確認你已習慣在離開前手動儲存。</value>
   </data>
+  <data name="Preference.DesktopShortcut" xml:space="preserve">
+    <value>桌面捷徑</value>
+  </data>
+  <data name="Preference.DesktopShortcutDesc" xml:space="preserve">
+    <value>下載捷徑檔到桌面，雙擊即可快速開啟系統</value>
+  </data>
+  <data name="Preference.DesktopShortcutDownload" xml:space="preserve">
+    <value>下載捷徑</value>
+  </data>
+  <data name="Preference.MobileAddToHomeScreen" xml:space="preserve">
+    <value>手機請使用瀏覽器的「加到主畫面」功能</value>
+  </data>
   <!-- ===== 員工帳號 ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>帳號由管理員設定，無法自行修改</value>
@@ -800,6 +812,9 @@
   </data>
   <data name="Nav.SignOut" xml:space="preserve">
     <value>登出</value>
+  </data>
+  <data name="Nav.DesktopShortcut" xml:space="preserve">
+    <value>下載桌面捷徑</value>
   </data>
   <data name="Nav.SignIn" xml:space="preserve">
     <value>登入</value>

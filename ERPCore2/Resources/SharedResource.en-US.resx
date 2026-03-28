@@ -329,6 +329,18 @@
   <data name="Preference.UnsavedChangesWarningDesc" xml:space="preserve">
     <value>When disabled, closing a form with unsaved changes will not prompt for confirmation. Make sure you are in the habit of saving manually before leaving.</value>
   </data>
+  <data name="Preference.DesktopShortcut" xml:space="preserve">
+    <value>Desktop Shortcut</value>
+  </data>
+  <data name="Preference.DesktopShortcutDesc" xml:space="preserve">
+    <value>Download a shortcut to your desktop for quick access</value>
+  </data>
+  <data name="Preference.DesktopShortcutDownload" xml:space="preserve">
+    <value>Download Shortcut</value>
+  </data>
+  <data name="Preference.MobileAddToHomeScreen" xml:space="preserve">
+    <value>On mobile, use your browser's "Add to Home Screen" feature</value>
+  </data>
   <!-- ===== Employee Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>Account is set by administrator and cannot be changed</value>
@@ -779,6 +791,9 @@
   </data>
   <data name="Nav.SignOut" xml:space="preserve">
     <value>Sign Out</value>
+  </data>
+  <data name="Nav.DesktopShortcut" xml:space="preserve">
+    <value>Desktop Shortcut</value>
   </data>
   <data name="Nav.SignIn" xml:space="preserve">
     <value>Sign In</value>

@@ -329,6 +329,18 @@
   <data name="Preference.UnsavedChangesWarningDesc" xml:space="preserve">
     <value>Kapag na-disable, hindi na magtatanong ng kumpirmasyon kapag isinara ang form na may hindi naka-save na pagbabago. Siguraduhing sanay kang mag-save bago umalis.</value>
   </data>
+  <data name="Preference.DesktopShortcut" xml:space="preserve">
+    <value>Desktop Shortcut</value>
+  </data>
+  <data name="Preference.DesktopShortcutDesc" xml:space="preserve">
+    <value>Download shortcut to desktop for quick access</value>
+  </data>
+  <data name="Preference.DesktopShortcutDownload" xml:space="preserve">
+    <value>Download Shortcut</value>
+  </data>
+  <data name="Preference.MobileAddToHomeScreen" xml:space="preserve">
+    <value>Sa mobile, gamitin ang "Add to Home Screen" sa browser</value>
+  </data>
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>Itinakda ng administrator ang account at hindi maaaring baguhin</value>
@@ -799,6 +811,9 @@
   </data>
   <data name="Nav.SignOut" xml:space="preserve">
     <value>Mag-sign Out</value>
+  </data>
+  <data name="Nav.DesktopShortcut" xml:space="preserve">
+    <value>Desktop Shortcut</value>
   </data>
   <data name="Nav.SignIn" xml:space="preserve">
     <value>Mag-sign In</value>

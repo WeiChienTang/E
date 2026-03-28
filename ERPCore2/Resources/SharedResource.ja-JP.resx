@@ -329,6 +329,18 @@
   <data name="Preference.UnsavedChangesWarningDesc" xml:space="preserve">
     <value>この設定を無効にすると、未保存の変更があるフォームを閉じる際に確認メッセージが表示されません。離れる前に手動で保存する習慣を身につけてください。</value>
   </data>
+  <data name="Preference.DesktopShortcut" xml:space="preserve">
+    <value>デスクトップショートカット</value>
+  </data>
+  <data name="Preference.DesktopShortcutDesc" xml:space="preserve">
+    <value>ショートカットをデスクトップにダウンロードして素早くアクセス</value>
+  </data>
+  <data name="Preference.DesktopShortcutDownload" xml:space="preserve">
+    <value>ショートカットをダウンロード</value>
+  </data>
+  <data name="Preference.MobileAddToHomeScreen" xml:space="preserve">
+    <value>モバイルではブラウザの「ホーム画面に追加」を使用してください</value>
+  </data>
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>アカウントは管理者が設定するため、変更できません</value>
@@ -799,6 +811,9 @@
   </data>
   <data name="Nav.SignOut" xml:space="preserve">
     <value>ログアウト</value>
+  </data>
+  <data name="Nav.DesktopShortcut" xml:space="preserve">
+    <value>デスクトップショートカット</value>
   </data>
   <data name="Nav.SignIn" xml:space="preserve">
     <value>ログイン</value>

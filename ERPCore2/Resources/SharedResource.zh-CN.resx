@@ -329,6 +329,18 @@
   <data name="Preference.UnsavedChangesWarningDesc" xml:space="preserve">
     <value>关闭此设置后，离开未保存的表单时不会再询问确认，请确认你已习惯在离开前手动保存。</value>
   </data>
+  <data name="Preference.DesktopShortcut" xml:space="preserve">
+    <value>桌面快捷方式</value>
+  </data>
+  <data name="Preference.DesktopShortcutDesc" xml:space="preserve">
+    <value>下载快捷方式到桌面，双击即可快速打开系统</value>
+  </data>
+  <data name="Preference.DesktopShortcutDownload" xml:space="preserve">
+    <value>下载快捷方式</value>
+  </data>
+  <data name="Preference.MobileAddToHomeScreen" xml:space="preserve">
+    <value>手机请使用浏览器的"添加到主屏幕"功能</value>
+  </data>
   <!-- ===== Account ===== -->
   <data name="Employee.AccountHelpText" xml:space="preserve">
     <value>账号由管理员设置，无法自行修改</value>
@@ -799,6 +811,9 @@
   </data>
   <data name="Nav.SignOut" xml:space="preserve">
     <value>退出登录</value>
+  </data>
+  <data name="Nav.DesktopShortcut" xml:space="preserve">
+    <value>下载桌面快捷方式</value>
   </data>
   <data name="Nav.SignIn" xml:space="preserve">
     <value>登录</value>

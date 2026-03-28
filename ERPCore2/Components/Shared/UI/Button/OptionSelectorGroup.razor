@@ -1,0 +1,19 @@
+@if (!string.IsNullOrEmpty(Title))
+{
+    <div class="option-selector-header mb-3">
+        <span class="option-selector-title">@Title</span>
+    </div>
+}
+@if (!string.IsNullOrEmpty(Description))
+{
+    <div class="small text-muted mb-2">@Description</div>
+}
+<div class="d-flex gap-2 flex-wrap">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

@@ -1,0 +1,31 @@
+.option-selector-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 72px;
+    padding: 8px 14px;
+    line-height: 1;
+}
+
+.option-selector-btn.btn-sm {
+    min-width: 0;
+    padding: 4px 10px;
+    flex-direction: row;
+    gap: 0;
+}
+
+.option-selector-icon {
+    font-size: var(--fs-lg);
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.option-selector-label {
+    line-height: 1;
+    display: block;
+}

@@ -1,0 +1,9 @@
+.option-selector-header {
+    padding: 0.25rem 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.option-selector-title {
+    font-weight: 600;
+    color: var(--primary-blue);
+}

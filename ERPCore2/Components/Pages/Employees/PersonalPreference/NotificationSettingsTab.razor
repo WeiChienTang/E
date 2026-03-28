@@ -6,9 +6,7 @@
 
         @* ==================== 左欄：功能開關 ==================== *@
         <div class="col-12 col-md-6">
-            <div class="notification-section-header">
-                <span class="notification-section-title">@L["Preference.NotificationFeatures"]</span>
-            </div>
+            <OptionSelectorGroup Title="@L["Preference.NotificationFeatures"]" />
 
             @* 行事曆 *@
             <div class="form-check form-switch mb-2">
@@ -37,11 +35,10 @@
                         @foreach (var option in _reminderOptions)
                         {
                             var isSelected = (Model ?? _fallback).DefaultReminderMinutes == option.Value;
-                            <button type="button"
-                                    class="btn btn-sm @(isSelected ? "btn-primary" : "btn-outline-secondary")"
-                                    @onclick="() => SelectReminder(option.Value)">
-                                @option.Label
-                            </button>
+                            <OptionSelectorButton IsSelected="isSelected"
+                                                  Label="@option.Label"
+                                                  Size="ButtonSize.Small"
+                                                  OnClick="() => SelectReminder(option.Value)" />
                         }
                     </div>
                 </div>
@@ -74,10 +71,8 @@
 
         @* ==================== 右欄：系統訊息顯示時長 ==================== *@
         <div class="col-12 col-md-6">
-            <div class="notification-section-header">
-                <span class="notification-section-title">@L["Preference.ToastDuration"]</span>
-            </div>
-            <p class="text-muted small mb-3">@L["Preference.ToastDurationHelpText"]</p>
+            <OptionSelectorGroup Title="@L["Preference.ToastDuration"]"
+                                 Description="@L["Preference.ToastDurationHelpText"]" />
 
             @foreach (var toastType in _toastTypes)
             {
@@ -92,11 +87,10 @@
                             var isSelected = currentValue == option.Value;
                             var capturedType = toastType.Type;
                             var capturedValue = option.Value;
-                            <button type="button"
-                                    class="btn btn-sm @(isSelected ? "btn-primary" : "btn-outline-secondary")"
-                                    @onclick="() => SelectToastDuration(capturedType, capturedValue)">
-                                @option.Label
-                            </button>
+                            <OptionSelectorButton IsSelected="isSelected"
+                                                  Label="@option.Label"
+                                                  Size="ButtonSize.Small"
+                                                  OnClick="() => SelectToastDuration(capturedType, capturedValue)" />
                         }
                     </div>
                 </div>

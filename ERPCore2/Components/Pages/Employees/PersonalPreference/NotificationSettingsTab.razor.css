@@ -1,11 +1,1 @@
-/* ===== 區段標題 — 與 GenericFormComponent 的 form-section-header 統一風格 ===== */
-.notification-section-header {
-    padding: 0.25rem 0;
-    margin-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border-light);
-}
-
-.notification-section-title {
-    font-weight: 600;
-    color: var(--primary-blue);
-}
+/* NotificationSettingsTab — 無額外自訂樣式，按鈕樣式由 OptionSelectorButton 元件管理 */

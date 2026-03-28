@@ -14,58 +14,9 @@
     flex-direction: column;
 }
 
-.section-header {
-    padding: 0.25rem 0;
-    border-bottom: 1px solid var(--border-light);
-}
-
-.section-title {
+/* ===== Zoom / PageSize 預覽文字 ===== */
+.option-preview-text {
     font-weight: 600;
-    color: var(--primary-blue);
-}
-
-.theme-option-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    min-width: 80px;
-    padding: 10px 16px;
-    line-height: 1;
-}
-
-.theme-icon {
-    font-size: var(--fs-lg);
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
-}
-
-.theme-label {
-    line-height: 1;
-    display: block;
-}
-
-.zoom-option-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    min-width: 60px;
-    padding: 8px 12px;
-    line-height: 1;
-}
-
-.zoom-preview {
-    font-weight: 600;
-    line-height: 1;
-    display: block;
-}
-
-.zoom-label {
     line-height: 1;
     display: block;
 }
