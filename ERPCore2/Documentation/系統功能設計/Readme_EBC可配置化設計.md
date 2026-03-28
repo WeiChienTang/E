@@ -28,7 +28,7 @@
 
 | 章節 | 層次 | 核心問題 | 對應 EBC 概念 |
 |------|------|----------|--------------|
-| §三 | Level 1：自訂欄位 | 不同廠商需要記錄不同資料 | PBC 的資料可組合性 |
+| §三 | Level 1：自訂資料表 ✅ | 不同廠商需要記錄不同資料 | PBC 的資料可組合性 |
 | §四 | Level 2：業務規則 | 不同廠商的審核/通知/驗證規則不同 | PBC 的邏輯可組合性 |
 | §五 | Level 3：流程配置 | 不同廠商的單據流轉順序不同 | PBC 的流程可組合性 |
 | §六 | Level 4：畫面配置 ✅ | 不同廠商想隱藏/必填不同欄位 | PBC 的介面可組合性 |
@@ -70,7 +70,7 @@
 從簡單到複雜，建議按順序逐步實作：
 
 ```
-Level 1：欄位可配置    ← 最基本，投資報酬率最高
+Level 1：自訂資料表    ← ✅ 已完成，使用者可建立自訂資料表與欄位（EAV 模式）
 Level 2：規則可配置    ← 解決「不同廠商規則不同」的核心問題
 Level 3：流程可配置    ← 真正的 EBC 差異化能力
 Level 4：畫面可配置    ← ✅ 已完成，使用者可自訂欄位顯示/隱藏/必填/名稱
@@ -78,134 +78,190 @@ Level 4：畫面可配置    ← ✅ 已完成，使用者可自訂欄位顯示/
 
 ---
 
-## 三、Level 1：欄位可配置（建議優先做）
+## 三、Level 1：自訂資料表 ✅ 已實作
+
+> **實作狀態**：已完成並整合至系統（2026-03-28）。使用者可透過「系統管理 → 自訂資料表」建立自訂資料表及欄位定義。
 
 ### 問題
-A 廠商需要在品項上記錄「耐熱溫度」，B 廠商需要記錄「保存期限」。
-你不可能為每個廠商加欄位，也不該在 Entity 上塞一堆用不到的欄位。
+不同廠商需要記錄不同的自訂資料。傳統做法是為每個需求修改 Entity、建立 Migration、修改 UI，成本高且無法快速回應。
 
-### 設計方案：自訂欄位系統（Custom Fields）
+### 實作成果：自訂資料表系統（Custom Tables）
 
-#### 1a. 欄位定義表
+採用 **EAV（Entity-Attribute-Value）** 模式，使用者可自行建立資料表並定義欄位，所有資料值統一以字串儲存，依欄位類型在顯示時轉換。
+
+#### 1a. 資料庫架構（4 張表）
+
+```
+CustomTableDefinitions        CustomFieldDefinitions
+┌──────────────────┐         ┌──────────────────────┐
+│ Id (PK)          │────┐    │ Id (PK)              │
+│ TableName        │    │    │ CustomTableDefinitionId│◄─┐
+│ Description      │    ├───▶│ FieldName             │   │
+│ IconClass        │    │    │ DisplayName           │   │
+│ CodePrefix       │    │    │ FieldType (enum)      │   │
+│ (BaseEntity)     │    │    │ IsRequired            │   │
+└──────────────────┘    │    │ SortOrder             │   │
+                        │    │ ShowInList / ShowInForm│   │
+                        │    │ Options (JSON)        │   │
+                        │    │ DefaultValue          │   │
+                        │    │ Placeholder           │   │
+                        │    │ (BaseEntity)          │   │
+                        │    └──────────────────────┘   │
+                        │                               │
+CustomTableRows          │    CustomFieldValues          │
+┌──────────────────┐    │    ┌──────────────────────┐   │
+│ Id (PK)          │────┘    │ Id (PK)              │   │
+│ CustomTableDefId │         │ CustomTableRowId (FK) │───┘
+│ (BaseEntity)     │────────▶│ CustomFieldDefId (FK) │
+└──────────────────┘         │ Value (string)        │
+                             └──────────────────────┘
+```
+
+**Cascade 策略**：
+- `CustomTableDefinition` → `FieldDefinitions`：Cascade Delete
+- `CustomTableDefinition` → `Rows`：Cascade Delete
+- `CustomTableRow` → `FieldValues`：Cascade Delete
+- `CustomFieldValue` → `CustomFieldDefinition`：**NoAction**（避免 SQL Server 多重 cascade 路徑，由 Service 層手動處理）
+
+**唯一索引**：
+- `CustomFieldDefinition`：`(CustomTableDefinitionId, FieldName)` — 同表內欄位名稱不重複
+- `CustomFieldValue`：`(CustomTableRowId, CustomFieldDefinitionId)` — 同列內每欄位只有一個值
+
+#### 1b. Entity 定義（已實作）
+
+**檔案**：`Data/Entities/CustomTables/` 目錄下 4 個檔案
+
+| Entity | 繼承 | 說明 |
+|--------|------|------|
+| `CustomTableDefinition` | `BaseEntity` | 表定義（TableName, Description, IconClass, CodePrefix） |
+| `CustomFieldDefinition` | `BaseEntity` | 欄位定義（FieldName, DisplayName, FieldType, IsRequired, Options...） |
+| `CustomTableRow` | `BaseEntity` | 資料列（繼承 BaseEntity 獲得 Id, Code, Status, 審計欄位, 草稿支援） |
+| `CustomFieldValue` | —（僅有 Id） | 欄位值（不繼承 BaseEntity，純粹的值儲存容器） |
+
+**欄位類型**（`Models/Enums/CustomFieldType.cs`）：
 
 ```csharp
-/// <summary>
-/// 自訂欄位定義 - 使用者可以為任何模組新增自訂欄位
-/// </summary>
-public class CustomFieldDefinition : BaseEntity
-{
-    /// <summary>目標模組（如 "Item", "Customer", "PurchaseOrder"）</summary>
-    [Required, MaxLength(50)]
-    public string TargetModule { get; set; } = string.Empty;
-
-    /// <summary>欄位名稱（顯示用）</summary>
-    [Required, MaxLength(100)]
-    public string FieldName { get; set; } = string.Empty;
-
-    /// <summary>欄位識別鍵（程式用，如 "heat_resistance"）</summary>
-    [Required, MaxLength(50)]
-    public string FieldKey { get; set; } = string.Empty;
-
-    /// <summary>欄位類型</summary>
-    public CustomFieldType FieldType { get; set; } = CustomFieldType.Text;
-
-    /// <summary>是否必填</summary>
-    public bool IsRequired { get; set; } = false;
-
-    /// <summary>預設值</summary>
-    [MaxLength(500)]
-    public string? DefaultValue { get; set; }
-
-    /// <summary>下拉選項（FieldType 為 Dropdown 時使用，JSON 格式）</summary>
-    public string? OptionsJson { get; set; }
-
-    /// <summary>排序順序</summary>
-    public int SortOrder { get; set; }
-
-    /// <summary>是否在列表頁顯示此欄位</summary>
-    public bool ShowInList { get; set; } = false;
-
-    /// <summary>是否啟用</summary>
-    public bool IsEnabled { get; set; } = true;
-
-    /// <summary>欄位提示說明</summary>
-    [MaxLength(200)]
-    public string? HelpText { get; set; }
-}
-
 public enum CustomFieldType
 {
-    Text,           // 單行文字
-    TextArea,       // 多行文字
-    Number,         // 數字
-    Decimal,        // 小數
-    Date,           // 日期
-    DateTime,       // 日期時間
-    Boolean,        // 是/否
-    Dropdown,       // 下拉選單（選項從 OptionsJson 讀取）
-    MultiSelect     // 多選（選項從 OptionsJson 讀取）
+    Text,       // 單行文字
+    TextArea,   // 多行文字
+    Number,     // 數字（decimal 驗證）
+    Date,       // 日期
+    DateTime,   // 日期時間
+    Boolean,    // 是/否
+    Select      // 下拉選單（選項從 Options JSON 讀取）
 }
 ```
 
-#### 1b. 欄位值儲存表
+#### 1c. Service 層（已實作）
 
-```csharp
-/// <summary>
-/// 自訂欄位值 - EAV（Entity-Attribute-Value）模式儲存
-/// </summary>
-public class CustomFieldValue : BaseEntity
-{
-    /// <summary>對應的欄位定義</summary>
-    public int CustomFieldDefinitionId { get; set; }
-    public CustomFieldDefinition CustomFieldDefinition { get; set; } = null!;
+**兩個 Service 分工**：
 
-    /// <summary>目標實體的 Id</summary>
-    public int EntityId { get; set; }
+| Service | 檔案 | 職責 |
+|---------|------|------|
+| `ICustomTableDefinitionService` | `Services/CustomTables/` | 管理表定義 + 欄位定義（父子關係） |
+| `ICustomTableRowService` | `Services/CustomTables/` | 管理資料列 + 欄位值（EAV 模式） |
 
-    /// <summary>欄位值（統一用字串儲存，依 FieldType 轉型）</summary>
-    [MaxLength(2000)]
-    public string? Value { get; set; }
-}
-```
+**CustomTableDefinitionService 關鍵方法**：
 
-#### 1c. 使用情境
+| 方法 | 用途 |
+|------|------|
+| `GetByIdWithFieldsAsync(id)` | 取得表定義 + 欄位定義（按 SortOrder 排序） |
+| `IsTableNameExistsAsync(name, excludeId?)` | TableName 唯一性檢查 |
+| `AddFieldDefinitionAsync(field)` | 新增欄位定義 |
+| `UpdateFieldDefinitionAsync(field)` | 更新欄位定義 |
+| `DeleteFieldDefinitionAsync(fieldId)` | 刪除欄位定義（**transaction 內先刪 CustomFieldValues 再刪定義**，因 NoAction FK） |
+| `ReorderFieldsAsync(tableId, orderedIds)` | 重新排序欄位 |
 
-```
-系統管理 → 自訂欄位設定
-  ┌────────────────────────────────────────────┐
-  │ 模組：[品項 ▾]                              │
-  │                                             │
-  │  欄位名稱        類型      必填  列表顯示    │
-  │  ─────────────────────────────────────      │
-  │  耐熱溫度(°C)    數字       ☐     ☑         │
-  │  材質認證        下拉選單    ☑     ☑         │
-  │  保存期限(天)    數字       ☐     ☐         │
-  │  特殊備註        多行文字    ☐     ☐         │
-  │                                    [新增]   │
-  └────────────────────────────────────────────┘
-```
+**CustomTableRowService 關鍵方法**：
 
-#### 1d. 與現有架構的整合方式
+| 方法 | 用途 |
+|------|------|
+| `GetRowsByTableIdAsync(tableId)` | 取得某表所有資料列 |
+| `CreateRowWithValuesAsync(row, values)` | Transaction 內建列 + 存值 |
+| `UpdateRowWithValuesAsync(row, values)` | Diff update（比對 CustomFieldDefinitionId） |
+| `ValidateFieldValuesAsync(tableId, values)` | 型別驗證 + 必填檢查 |
+| `GetPagedByTableIdAsync(tableId, page, size, search?)` | 分頁查詢 |
+
+#### 1d. UI 元件（已實作）
+
+**檔案**：`Components/Pages/Systems/CustomTables/CustomTableManagementModal.razor`
+
+使用 `BaseModalComponent` 呈現，透過 Action+Modal 模式開啟（非路由）。
 
 ```
-GenericEditModalComponent
-  └─ 原有固定欄位區塊
-  └─ 【新增】CustomFieldSection 元件
-       → 讀取該模組的 CustomFieldDefinition
-       → 動態渲染對應的輸入元件
-       → 儲存時寫入 CustomFieldValue
+系統管理 → 自訂資料表
+  ┌──────────────────────────────────────────────────┐
+  │ 列表模式                                          │
+  │                                                   │
+  │   表名稱          說明              操作           │
+  │   ──────────────────────────────────────          │
+  │   設備維護紀錄    廠區設備維護記錄     [編輯] [刪除] │
+  │   客戶分類標籤    客戶自訂分類         [編輯] [刪除] │
+  │                                                   │
+  │                                        [新增資料表] │
+  └──────────────────────────────────────────────────┘
 
-GenericIndexPageComponent
-  └─ 原有固定欄位
-  └─ 【新增】ShowInList = true 的自訂欄位動態加入表格
+  ┌──────────────────────────────────────────────────┐
+  │ 編輯模式                                          │
+  │                                                   │
+  │  資料表名稱：[設備維護紀錄    ]                     │
+  │  說明：      [廠區設備維護記錄]                     │
+  │  圖示：      [bi bi-wrench    ]                   │
+  │  編號前綴：  [EQ              ]                   │
+  │                                                   │
+  │  欄位定義：                                        │
+  │   顯示名稱    欄位名稱    類型    必填  操作        │
+  │   ──────────────────────────────────────          │
+  │   設備名稱    DeviceName  文字     ☑   [↑][↓][✕]  │
+  │   維護日期    MaintDate   日期     ☑   [↑][↓][✕]  │
+  │   維護人員    Maintainer  文字     ☐   [↑][↓][✕]  │
+  │   費用        Cost        數字     ☐   [↑][↓][✕]  │
+  │                                        [新增欄位]  │
+  │                                                   │
+  │                           [取消] [儲存]            │
+  └──────────────────────────────────────────────────┘
 ```
+
+#### 1e. 導覽與權限（已實作）
+
+- **導覽**：`Data/Navigation/NavigationConfig.cs` 使用 `NavigationActionHelper.CreateActionItem`，actionId = `OpenCustomTableManagement`
+- **權限**：`System.CustomTable`（PermissionLevel.Sensitive），定義於 `Models/PermissionRegistry.cs`
+- **MainLayout**：註冊 action handler，開啟 `CustomTableManagementModal`
+
+#### 1f. 實作檔案清單
+
+| 檔案 | 類型 | 說明 |
+|------|------|------|
+| `Data/Entities/CustomTables/CustomTableDefinition.cs` | Entity | 自訂資料表定義 |
+| `Data/Entities/CustomTables/CustomFieldDefinition.cs` | Entity | 自訂欄位定義 |
+| `Data/Entities/CustomTables/CustomTableRow.cs` | Entity | 資料列（繼承 BaseEntity） |
+| `Data/Entities/CustomTables/CustomFieldValue.cs` | Entity | 欄位值（EAV，不繼承 BaseEntity） |
+| `Models/Enums/CustomFieldType.cs` | Enum | 欄位類型定義 |
+| `Services/CustomTables/ICustomTableDefinitionService.cs` | Interface | 表定義服務介面 |
+| `Services/CustomTables/CustomTableDefinitionService.cs` | Service | 表定義服務實作 |
+| `Services/CustomTables/ICustomTableRowService.cs` | Interface | 資料列服務介面 |
+| `Services/CustomTables/CustomTableRowService.cs` | Service | 資料列服務實作 |
+| `Components/Pages/Systems/CustomTables/CustomTableManagementModal.razor` | UI | 管理介面 |
+| `Data/Context/AppDbContext.cs` | DB（修改） | 新增 4 個 DbSet + 索引 + FK 設定 |
+| `Data/ServiceRegistration.cs` | DI（修改） | 註冊 2 個 Service |
+| `Data/Navigation/NavigationConfig.cs` | Nav（修改） | 新增導覽項目 |
+| `Components/Layout/MainLayout.razor` | Layout（修改） | 新增 action handler + modal |
+| `Models/PermissionRegistry.cs` | Auth（修改） | 新增 System.CustomTable 權限 |
+| `Migrations/AddCustomTables` | Migration | EF Core 資料庫遷移 |
+
+#### 1g. 後續擴展方向
+
+Level 1 目前為獨立的自訂資料表系統。未來可擴展：
+- **從屬表支援**：自訂資料表可掛在主表下，形成主從關係
+- **與既有模組整合**：將自訂欄位掛到現有 Entity（如品項、客戶），類似 TargetModule 模式
+- **資料列管理 UI**：在 CustomTableManagementModal 內嵌資料列的 CRUD 介面
 
 ### 這能解決什麼
 
-- A 工廠：品項加「耐熱溫度」「模具編號」
-- B 貿易商：客戶加「信用評等備註」「年度採購預算」
-- C 食品廠：品項加「保存期限」「過敏原標示」
-- **不需要改程式碼，使用者自己在後台設定**
+- 使用者可自行建立任意結構的資料表，**不需要改程式碼、不需要跑 Migration**
+- 每個廠商可以有自己獨特的資料表（設備紀錄、自訂分類、特殊流水帳...）
+- 資料列繼承 BaseEntity，享有完整的審計追蹤、狀態管理、草稿支援
 
 ---
 
@@ -659,7 +715,7 @@ if (await IsDepartmentCodeExistsAsync(entity.Code, ...))
 
 ```
 Phase 1（近期）
-  ├─ Level 1：自訂欄位        ← 📋 待實作
+  ├─ Level 1：自訂資料表      ← ✅ 已完成（2026-03-28）
   └─ Level 4：欄位顯示設定    ← ✅ 已完成（2026-03-27）
 
 Phase 2（中期）
@@ -675,8 +731,8 @@ Phase 3（長期）
 |---------|---------|---------|
 | `SystemParameter` | 保持不變，作為「全域基礎設定」 | 無 |
 | `ApprovalConfigHelper` | 加入規則引擎判斷，作為第二層邏輯 | 小改 |
-| `GenericEditModalComponent` | 加入 CustomFieldSection 渲染區 | 新增區塊 |
-| `GenericIndexPageComponent` | 支援動態欄位顯示 | 小改 |
+| `GenericEditModalComponent` | 已整合欄位設定面板（Level 4） | 已完成 |
+| `MainLayout` | 已整合 CustomTableManagementModal（Level 1） | 已完成 |
 | `CodeSetting` | 保持不變 | 無 |
 | `CompanyModule` | 保持不變 | 無 |
 | 各模組 Service | 加入 RuleEngine 呼叫點 | 小改 |
@@ -685,8 +741,10 @@ Phase 3（長期）
 
 | Entity | 用途 | Phase | 狀態 |
 |--------|------|-------|------|
-| `CustomFieldDefinition` | 自訂欄位定義 | Phase 1 | 📋 待實作 |
-| `CustomFieldValue` | 自訂欄位值儲存 | Phase 1 | 📋 待實作 |
+| `CustomTableDefinition` | 自訂資料表定義 | Phase 1 | ✅ 已完成 |
+| `CustomFieldDefinition` | 自訂欄位定義 | Phase 1 | ✅ 已完成 |
+| `CustomTableRow` | 自訂資料列 | Phase 1 | ✅ 已完成 |
+| `CustomFieldValue` | 自訂欄位值儲存（EAV） | Phase 1 | ✅ 已完成 |
 | `FieldDisplaySetting` | 既有欄位顯示控制 | Phase 1 | ✅ 已完成 |
 | `BusinessRule` | 業務規則定義 | Phase 2 | 📋 待實作 |
 | `DocumentFlowStep` | 單據流程定義 | Phase 3 | 📋 待實作 |
@@ -695,7 +753,8 @@ Phase 3（長期）
 
 | Service | 用途 | Phase | 狀態 |
 |---------|------|-------|------|
-| `ICustomFieldService` | 自訂欄位 CRUD + 動態渲染資料 | Phase 1 | 📋 待實作 |
+| `ICustomTableDefinitionService` | 表定義 + 欄位定義管理 | Phase 1 | ✅ 已完成 |
+| `ICustomTableRowService` | 資料列 + 欄位值管理（EAV） | Phase 1 | ✅ 已完成 |
 | `IFieldDisplaySettingService` | 欄位顯示設定管理 | Phase 1 | ✅ 已完成 |
 | `IRuleEngineService` | 規則評估引擎 | Phase 2 | 📋 待實作 |
 | `IDocumentFlowService` | 流程設定管理 | Phase 3 | 📋 待實作 |
@@ -704,8 +763,7 @@ Phase 3（長期）
 
 | 元件 | 用途 | Phase | 狀態 |
 |------|------|-------|------|
-| `CustomFieldSection.razor` | EditModal 內動態渲染自訂欄位 | Phase 1 | 📋 待實作 |
-| `CustomFieldSettingPage` | 系統管理 → 自訂欄位設定 | Phase 1 | 📋 待實作 |
+| `CustomTableManagementModal.razor` | 自訂資料表管理（表定義 + 欄位定義） | Phase 1 | ✅ 已完成 |
 | `FieldSettingsPanel.razor` | EditModal 內嵌欄位設定面板 | Phase 1 | ✅ 已完成 |
 | `BusinessRuleSettingPage` | 系統管理 → 業務規則設定 | Phase 2 | 📋 待實作 |
 | `DocumentFlowSettingPage` | 系統管理 → 單據流程設定 | Phase 3 | 📋 待實作 |
@@ -721,8 +779,8 @@ Phase 3（長期）
 │                    使用者可配置層                         │
 │                                                         │
 │  ┌───────────────┐  ┌───────────────┐  ┌─────────────┐ │
-│  │ 模組開關       │  │ 欄位設定       │  │ 業務規則    │ │
-│  │ CompanyModule  │  │ CustomField   │  │ BusinessRule│ │
+│  │ 模組開關       │  │ 欄位設定 ✅    │  │ 業務規則    │ │
+│  │ CompanyModule  │  │ CustomTable   │  │ BusinessRule│ │
 │  │ 「要不要」     │  │ FieldDisplay  │  │ 「什麼條件  │ │
 │  │               │  │ 「長什麼樣」   │  │  做什麼事」 │ │
 │  └───────────────┘  └───────────────┘  └─────────────┘ │
