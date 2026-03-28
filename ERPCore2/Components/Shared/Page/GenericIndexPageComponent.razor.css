@@ -281,6 +281,61 @@
     }
 }
 
+/* ===== Excel 匯出進度條 Overlay ===== */
+
+.index-export-progress-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1060;
+}
+
+.index-export-progress-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2rem 3rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    min-width: 360px;
+    text-align: center;
+}
+
+.index-export-progress-message {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 1rem;
+}
+
+.index-export-progress-bar {
+    height: 28px;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.index-export-progress-bar .progress-bar {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: width 0.4s ease;
+}
+
+[data-bs-theme=dark] .index-export-progress-overlay {
+    background: rgba(0, 0, 0, 0.75);
+}
+
+[data-bs-theme=dark] .index-export-progress-card {
+    background: var(--bg-primary);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+[data-bs-theme=dark] .index-export-progress-message {
+    color: var(--text-primary);
+}
+
 /* 深色模式：底部抽屜面板（加強陰影，其餘顏色由 CSS 變數自動切換） */
 [data-bs-theme=dark] .filter-mobile-panel {
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);

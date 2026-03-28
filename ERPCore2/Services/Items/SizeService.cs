@@ -104,7 +104,7 @@ namespace ERPCore2.Services
                 else
                 {
                     // 檢查尺寸名稱唯一性
-                    var isNameDuplicate = await IsSizeNameExistsAsync(entity.Name, entity.Id);
+                    var isNameDuplicate = await IsSizeNameExistsAsync(entity.Name!, entity.Id);
                     if (isNameDuplicate)
                     {
                         errors.Add("尺寸名稱已存在");

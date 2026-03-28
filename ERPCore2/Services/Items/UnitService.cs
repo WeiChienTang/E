@@ -255,7 +255,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("單位編號已存在");
 
                 // 檢查單位名稱是否重複
-                if (await IsNameExistsAsync(entity.Name, entity.Id))
+                if (await IsNameExistsAsync(entity.Name!, entity.Id))
                     return ServiceResult.Failure("單位名稱已存在");
 
                 return ServiceResult.Success();

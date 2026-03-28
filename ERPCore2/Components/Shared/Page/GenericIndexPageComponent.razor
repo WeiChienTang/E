@@ -266,6 +266,23 @@ else
     </div>
 }
 
+@* Excel 匯出進度條 Overlay *@
+@if (_showExportProgress)
+{
+    <div class="index-export-progress-overlay">
+        <div class="index-export-progress-card">
+            <div class="index-export-progress-message">@_exportProgressMessage</div>
+            <div class="progress index-export-progress-bar" role="progressbar"
+                 aria-valuenow="@_exportProgressValue" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar progress-bar-striped progress-bar-animated @_exportProgressColorClass"
+                     style="width: @(_exportProgressValue)%">
+                    @_exportProgressValue%
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @* 多選批次刪除確認 Modal *@
 @if (_showMultiDeleteModal && _selectedItems.Count > 0)
 {

@@ -91,7 +91,7 @@ namespace ERPCore2.Services
                 else
                 {
                     // 檢查名稱是否重複
-                    var isDuplicate = await IsCategoryNameExistsAsync(entity.Name, entity.Id);
+                    var isDuplicate = await IsCategoryNameExistsAsync(entity.Name!, entity.Id);
                     if (isDuplicate)
                     {
                         errors.Add("分類名稱已存在");

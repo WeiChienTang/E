@@ -23,6 +23,20 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     /// <summary>快取 TEntity 的可匯出屬性清單（反射結果，整個元件生命週期只算一次）</summary>
     private static List<PropertyInfo>? _exportPropertiesCache;
 
+    // 匯出進度條狀態
+    private bool _showExportProgress = false;
+    private int _exportProgressValue = 0;
+    private string _exportProgressMessage = "";
+    private string _exportProgressColorClass = "bg-success";
+
+    private async Task SetExportProgress(int value, string message)
+    {
+        _exportProgressValue = value;
+        _exportProgressMessage = message;
+        StateHasChanged();
+        await Task.Delay(10);
+    }
+
     /// <summary>
     /// 內建 Excel 匯出處理：取得資料 → 產生 Excel → 瀏覽器下載。
     /// 當外部未綁定 OnExportExcelClick 時，由元件自行處理匯出。
@@ -31,8 +45,9 @@ public partial class GenericIndexPageComponent<TEntity, TService>
     {
         try
         {
-            isLoading = true;
-            StateHasChanged();
+            _showExportProgress = true;
+            _exportProgressColorClass = "bg-success";
+            await SetExportProgress(10, "正在準備資料...");
 
             // 1. 取得 Entity 所有可匯出的屬性
             var exportProperties = GetExportableProperties();
@@ -42,6 +57,8 @@ public partial class GenericIndexPageComponent<TEntity, TService>
                 return;
             }
 
+            await SetExportProgress(25, "正在讀取資料...");
+
             // 2. 取得匯出資料（依目前篩選條件，匯出全部）
             var exportData = await GetExportDataAsync();
             if (exportData.Count == 0)
@@ -50,16 +67,26 @@ public partial class GenericIndexPageComponent<TEntity, TService>
                 return;
             }
 
+            await SetExportProgress(60, "正在產生 Excel...");
+
             // 3. 產生 Excel
             var fileBytes = GenerateExcelBytes(exportProperties, exportData);
+
+            await SetExportProgress(85, "正在下載...");
 
             // 4. 透過 JS Interop 觸發瀏覽器下載
             var fileName = $"{PageTitle}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
             var base64 = Convert.ToBase64String(fileBytes);
-            await JSRuntime.InvokeVoidAsync("downloadFileFromBase64", fileName, base64,
+            var success = await JSRuntime.InvokeAsync<bool>("downloadFileFromBase64", fileName, base64,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
-            await NotificationService.ShowSuccessAsync($"已匯出 {exportData.Count} 筆資料");
+            await SetExportProgress(100, success ? "下載完成！" : "下載失敗");
+            await Task.Delay(500);
+
+            if (success)
+                await NotificationService.ShowSuccessAsync($"已匯出 {exportData.Count} 筆資料");
+            else
+                await NotificationService.ShowErrorAsync("下載 Excel 檔案失敗");
         }
         catch (Exception ex)
         {
@@ -68,7 +95,7 @@ public partial class GenericIndexPageComponent<TEntity, TService>
         }
         finally
         {
-            isLoading = false;
+            _showExportProgress = false;
             StateHasChanged();
         }
     }

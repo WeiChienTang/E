@@ -38,6 +38,15 @@ namespace ERPCore2.Data.Entities.CustomTables
         public string? CodePrefix { get; set; }
 
         /// <summary>
+        /// 導航群組鍵（對應 NavigationConfig 中父級選單的 MenuKey，如 "system_management"）
+        /// 設定後，此資料表會作為子項目出現在對應的導航群組下
+        /// null 表示不顯示在導航選單
+        /// </summary>
+        [MaxLength(100)]
+        [Display(Name = "導航群組")]
+        public string? NavigationGroupKey { get; set; }
+
+        /// <summary>
         /// 欄位定義（導覽屬性）
         /// </summary>
         public List<CustomFieldDefinition> FieldDefinitions { get; set; } = new();

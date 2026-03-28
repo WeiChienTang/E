@@ -99,9 +99,9 @@ CustomTableDefinitions        CustomFieldDefinitions
 │ Description      │    ├───▶│ FieldName             │   │
 │ IconClass        │    │    │ DisplayName           │   │
 │ CodePrefix       │    │    │ FieldType (enum)      │   │
-│ (BaseEntity)     │    │    │ IsRequired            │   │
-└──────────────────┘    │    │ SortOrder             │   │
-                        │    │ ShowInList / ShowInForm│   │
+│ NavigationGroupKey│   │    │ IsRequired            │   │
+│ (BaseEntity)     │    │    │ SortOrder             │   │
+└──────────────────┘    │    │ ShowInList / ShowInForm│   │
                         │    │ Options (JSON)        │   │
                         │    │ DefaultValue          │   │
                         │    │ Placeholder           │   │
@@ -133,7 +133,7 @@ CustomTableRows          │    CustomFieldValues          │
 
 | Entity | 繼承 | 說明 |
 |--------|------|------|
-| `CustomTableDefinition` | `BaseEntity` | 表定義（TableName, Description, IconClass, CodePrefix） |
+| `CustomTableDefinition` | `BaseEntity` | 表定義（TableName, Description, IconClass, CodePrefix, NavigationGroupKey） |
 | `CustomFieldDefinition` | `BaseEntity` | 欄位定義（FieldName, DisplayName, FieldType, IsRequired, Options...） |
 | `CustomTableRow` | `BaseEntity` | 資料列（繼承 BaseEntity 獲得 Id, Code, Status, 審計欄位, 草稿支援） |
 | `CustomFieldValue` | —（僅有 Id） | 欄位值（不繼承 BaseEntity，純粹的值儲存容器） |
@@ -185,22 +185,27 @@ public enum CustomFieldType
 
 #### 1d. UI 元件（已實作）
 
-**檔案**：`Components/Pages/Systems/CustomTables/CustomTableManagementModal.razor`
+**兩個 UI 元件分工**：
 
-使用 `BaseModalComponent` 呈現，透過 Action+Modal 模式開啟（非路由）。
+| 元件 | 檔案 | 功能 |
+|------|------|------|
+| `CustomTableManagementModal` | `Components/Pages/Systems/CustomTables/` | 定義表結構（欄位、前綴、圖示、導航群組） |
+| `CustomTableDataPage` | `Components/Pages/CustomTables/` | 資料 CRUD（列表 + 新增/編輯/刪除） |
+
+**管理 Modal**：使用 `BaseModalComponent` 呈現，透過 Action+Modal 模式開啟（非路由）。
 
 ```
 系統管理 → 自訂資料表
-  ┌──────────────────────────────────────────────────┐
-  │ 列表模式                                          │
-  │                                                   │
-  │   表名稱          說明              操作           │
-  │   ──────────────────────────────────────          │
-  │   設備維護紀錄    廠區設備維護記錄     [編輯] [刪除] │
-  │   客戶分類標籤    客戶自訂分類         [編輯] [刪除] │
-  │                                                   │
-  │                                        [新增資料表] │
-  └──────────────────────────────────────────────────┘
+  ┌──────────────────────────────────────────────────────────┐
+  │ 列表模式                                                  │
+  │                                                           │
+  │   表名稱          說明             導航群組   操作         │
+  │   ──────────────────────────────────────────────          │
+  │   設備維護紀錄    廠區設備維護記錄   [設備]    [編輯] [刪除] │
+  │   客戶分類標籤    客戶自訂分類       —         [編輯] [刪除] │
+  │                                                           │
+  │                                             [新增資料表]   │
+  └──────────────────────────────────────────────────────────┘
 
   ┌──────────────────────────────────────────────────┐
   │ 編輯模式                                          │
@@ -209,6 +214,7 @@ public enum CustomFieldType
   │  說明：      [廠區設備維護記錄]                     │
   │  圖示：      [bi bi-wrench    ]                   │
   │  編號前綴：  [EQ              ]                   │
+  │  顯示在導航選單：[設備 ▼      ]  ← 選擇所屬群組     │
   │                                                   │
   │  欄位定義：                                        │
   │   顯示名稱    欄位名稱    類型    必填  操作        │
@@ -225,15 +231,22 @@ public enum CustomFieldType
 
 #### 1e. 導覽與權限（已實作）
 
-- **導覽**：`Data/Navigation/NavigationConfig.cs` 使用 `NavigationActionHelper.CreateActionItem`，actionId = `OpenCustomTableManagement`
-- **權限**：`System.CustomTable`（PermissionLevel.Sensitive），定義於 `Models/PermissionRegistry.cs`
-- **MainLayout**：註冊 action handler，開啟 `CustomTableManagementModal`
+**管理入口（靜態，Action 模式）：**
+- `Data/Navigation/NavigationConfig.cs`：`NavigationActionHelper.CreateActionItem`，actionId = `OpenCustomTableManagement`
+- `Components/Layout/MainLayout.razor`：註冊 action handler，開啟 `CustomTableManagementModal`
+- 權限：`System.CustomTable`（PermissionLevel.Sensitive）
+
+**自訂資料表資料入口（動態，Route 模式）：**
+- Route：`/custom-tables/{id}`，對應 `CustomTableDataPage.razor`
+- 每個自訂資料表在建立時可選擇「顯示在導航選單」的群組（存入 `NavigationGroupKey` 欄位）
+- `Components/Layout/NavMenu.razor`：`FilterMenuGroupsAsync` 結尾動態查詢所有 `Active` 且有 `NavigationGroupKey` 的資料表，注入到對應父群組的 `Children` 清單
+- 動態項目同樣受 `System.CustomTable` 權限保護
 
 #### 1f. 實作檔案清單
 
 | 檔案 | 類型 | 說明 |
 |------|------|------|
-| `Data/Entities/CustomTables/CustomTableDefinition.cs` | Entity | 自訂資料表定義 |
+| `Data/Entities/CustomTables/CustomTableDefinition.cs` | Entity | 自訂資料表定義（含 NavigationGroupKey） |
 | `Data/Entities/CustomTables/CustomFieldDefinition.cs` | Entity | 自訂欄位定義 |
 | `Data/Entities/CustomTables/CustomTableRow.cs` | Entity | 資料列（繼承 BaseEntity） |
 | `Data/Entities/CustomTables/CustomFieldValue.cs` | Entity | 欄位值（EAV，不繼承 BaseEntity） |
@@ -242,20 +255,25 @@ public enum CustomFieldType
 | `Services/CustomTables/CustomTableDefinitionService.cs` | Service | 表定義服務實作 |
 | `Services/CustomTables/ICustomTableRowService.cs` | Interface | 資料列服務介面 |
 | `Services/CustomTables/CustomTableRowService.cs` | Service | 資料列服務實作 |
-| `Components/Pages/Systems/CustomTables/CustomTableManagementModal.razor` | UI | 管理介面 |
+| `Components/Pages/Systems/CustomTables/CustomTableManagementModal.razor` | UI | 表定義管理介面（含導航群組選擇） |
+| `Components/Pages/CustomTables/CustomTableDataPage.razor` | UI | 資料列 CRUD 頁面（`/custom-tables/{id}`） |
 | `Data/Context/AppDbContext.cs` | DB（修改） | 新增 4 個 DbSet + 索引 + FK 設定 |
 | `Data/ServiceRegistration.cs` | DI（修改） | 註冊 2 個 Service |
-| `Data/Navigation/NavigationConfig.cs` | Nav（修改） | 新增導覽項目 |
+| `Data/Navigation/NavigationConfig.cs` | Nav（修改） | 新增管理入口導覽項目 |
+| `Components/Layout/NavMenu.razor` | Layout（修改） | 動態注入自訂資料表到導航群組 |
 | `Components/Layout/MainLayout.razor` | Layout（修改） | 新增 action handler + modal |
 | `Models/PermissionRegistry.cs` | Auth（修改） | 新增 System.CustomTable 權限 |
-| `Migrations/AddCustomTables` | Migration | EF Core 資料庫遷移 |
+| `Migrations/AddCustomTables` | Migration | EF Core 資料庫遷移（初始建表） |
+| `Migrations/AddNavigationGroupKeyToCustomTable` | Migration | EF Core 資料庫遷移（新增 NavigationGroupKey 欄位） |
 
 #### 1g. 後續擴展方向
 
 Level 1 目前為獨立的自訂資料表系統。未來可擴展：
 - **從屬表支援**：自訂資料表可掛在主表下，形成主從關係
 - **與既有模組整合**：將自訂欄位掛到現有 Entity（如品項、客戶），類似 TargetModule 模式
-- **資料列管理 UI**：在 CustomTableManagementModal 內嵌資料列的 CRUD 介面
+- ~~**資料列管理 UI**~~：✅ 已完成（`CustomTableDataPage`，`/custom-tables/{id}`，支援分頁列表 + CRUD + 導航整合）
+- **搜尋功能**：資料頁面加入跨欄位搜尋
+- **匯出功能**：將資料列匯出為 Excel/CSV
 
 ### 這能解決什麼
 

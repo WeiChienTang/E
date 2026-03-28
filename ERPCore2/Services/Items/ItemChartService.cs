@@ -223,7 +223,8 @@ public class ItemChartService : IItemChartService
             .CountAsync();
 
         var withStock = await context.InventoryStocks
-            .Where(s => s.Status != EntityStatus.Deleted && s.TotalCurrentStock > 0)
+            .Where(s => s.Status != EntityStatus.Deleted &&
+                        s.InventoryStockDetails.Any(d => d.CurrentStock > 0))
             .CountAsync();
 
         return new ItemChartSummary

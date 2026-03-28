@@ -582,7 +582,7 @@ namespace ERPCore2.Services
                     return ServiceResult.Failure("角色名稱長度不能超過100個字元");
 
                 // 檢查角色名稱是否已存在
-                var nameCheck = await IsRoleNameExistsAsync(entity.Name, entity.Id);
+                var nameCheck = await IsRoleNameExistsAsync(entity.Name!, entity.Id);
                 if (!nameCheck.IsSuccess)
                     return ServiceResult.Failure(nameCheck.ErrorMessage);
 

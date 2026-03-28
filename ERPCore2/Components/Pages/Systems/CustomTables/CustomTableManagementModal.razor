@@ -2,6 +2,7 @@
 @using ERPCore2.Data.Entities.CustomTables
 @using ERPCore2.Models.Enums
 @using ERPCore2.Services.CustomTables
+@using ERPCore2.Data.Navigation
 
 @inject ICustomTableDefinitionService CustomTableService
 @inject INotificationService NotificationService
@@ -58,11 +59,12 @@
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 5%"></th>
-                                <th style="width: 25%">名稱</th>
-                                <th style="width: 10%">前綴</th>
-                                <th style="width: 30%">說明</th>
-                                <th style="width: 10%" class="text-center">欄位數</th>
-                                <th style="width: 10%" class="text-center">狀態</th>
+                                <th style="width: 22%">名稱</th>
+                                <th style="width: 8%">前綴</th>
+                                <th style="width: 22%">說明</th>
+                                <th style="width: 13%">導航群組</th>
+                                <th style="width: 8%" class="text-center">欄位數</th>
+                                <th style="width: 8%" class="text-center">狀態</th>
                                 <th style="width: 10%" class="text-center">操作</th>
                             </tr>
                         </thead>
@@ -80,6 +82,16 @@
                                         <span class="badge bg-secondary">@(table.CodePrefix ?? "—")</span>
                                     </td>
                                     <td class="text-muted">@(table.Description ?? "—")</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(table.NavigationGroupKey))
+                                        {
+                                            <span class="badge bg-primary">@GetNavGroupDisplayName(table.NavigationGroupKey)</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
                                     <td class="text-center">
                                         <span class="badge bg-info">@table.FieldDefinitions.Count</span>
                                     </td>
@@ -150,6 +162,17 @@
                     <input type="text" class="form-control"
                            placeholder="簡述此資料表的用途"
                            @bind="_editingTable.Description" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">顯示在導航選單</label>
+                    <select class="form-select" @bind="_editingTable.NavigationGroupKey">
+                        <option value="">（不顯示）</option>
+                        @foreach (var group in _availableNavGroups)
+                        {
+                            <option value="@group.MenuKey">@group.Name</option>
+                        }
+                    </select>
+                    <div class="form-text">選擇後，此資料表將出現在側邊選單的對應群組下</div>
                 </div>
             </div>
 
@@ -294,6 +317,7 @@
 
     // ===== 列表 =====
     private List<CustomTableDefinition> _tables = new();
+    private List<NavigationItem> _availableNavGroups = new();
 
     // ===== 編輯中 =====
     private CustomTableDefinition _editingTable = new();
@@ -319,6 +343,7 @@
         try
         {
             _tables = await CustomTableService.GetAllAsync();
+            LoadAvailableNavGroups();
         }
         finally
         {
@@ -326,6 +351,19 @@
             StateHasChanged();
         }
     }
+
+    private void LoadAvailableNavGroups()
+    {
+        _availableNavGroups = NavigationConfig.GetMenuGroups()
+            .Where(g => g.IsParent && !string.IsNullOrEmpty(g.MenuKey))
+            .OrderBy(g => g.Name)
+            .ToList();
+    }
+
+    private string GetNavGroupDisplayName(string? menuKey) =>
+        string.IsNullOrEmpty(menuKey)
+            ? "—"
+            : _availableNavGroups.FirstOrDefault(g => g.MenuKey == menuKey)?.Name ?? menuKey;
 
     // ===== 列表操作 =====
 
@@ -346,7 +384,8 @@
             Description = table.Description,
             CodePrefix = table.CodePrefix,
             IconClass = table.IconClass ?? "bi bi-table",
-            Status = table.Status
+            Status = table.Status,
+            NavigationGroupKey = table.NavigationGroupKey
         };
         _editingFields = table.FieldDefinitions
             .OrderBy(f => f.SortOrder)

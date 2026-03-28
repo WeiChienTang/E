@@ -197,6 +197,7 @@ EBC 的組合式架構讓中小企業可以：
 - 支援 7 種欄位類型：文字、多行文字、數值、日期、日期時間、布林、下拉選單
 - 所有資料列繼承 BaseEntity（自動擁有 Id、Code、Status、審計欄位、草稿支援）
 - 權限控制：`System.CustomTable`（Sensitive 等級）
+- **導航整合**（2026-03-28）：自訂資料表可選擇顯示在哪個導覽群組，NavMenu 動態注入，點擊後進入專屬資料頁面（`/custom-tables/{id}`）支援 CRUD
 
 **Level 4 已實作內容：**
 - `FieldDisplaySetting` 欄位顯示覆蓋（顯示/隱藏、必填覆蓋、名稱覆蓋）

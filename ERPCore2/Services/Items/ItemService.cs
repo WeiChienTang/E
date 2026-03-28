@@ -146,7 +146,7 @@ namespace ERPCore2.Services
                 else
                 {
                     // 檢查條碼編號唯一性
-                    var isBarcodeExists = await IsBarcodeExistsAsync(entity.Barcode, entity.Id);
+                    var isBarcodeExists = await IsBarcodeExistsAsync(entity.Barcode!, entity.Id);
                     if (isBarcodeExists)
                     {
                         errors.Add("條碼編號已存在");

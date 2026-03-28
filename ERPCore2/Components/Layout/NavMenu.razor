@@ -9,6 +9,7 @@
 @inject ICompanyModuleService CompanyModuleService
 @inject IEmployeePreferenceService EmployeePreferenceService
 @inject IEmployeeService EmployeeService
+@inject ERPCore2.Services.CustomTables.ICustomTableDefinitionService CustomTableDefinitionService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> L
@@ -317,6 +318,41 @@
                 {
                     filteredMenuGroups.Add(menuGroup);
                 }
+            }
+        }
+
+        // ── 動態注入自訂資料表到導航群組 ──────────────────────
+        bool canSeeCustomTables = isAdmin ||
+            await PermissionService.CanAccessAsync(PermissionRegistry.System.CustomTable);
+
+        if (canSeeCustomTables)
+        {
+            var allCustomTables = await CustomTableDefinitionService.GetAllAsync();
+            var navTables = allCustomTables
+                .Where(t => t.Status == ERPCore2.Models.Enums.EntityStatus.Active
+                         && !string.IsNullOrEmpty(t.NavigationGroupKey))
+                .ToList();
+
+            foreach (var table in navTables)
+            {
+                var parentGroup = filteredMenuGroups
+                    .FirstOrDefault(g => g.MenuKey == table.NavigationGroupKey && g.IsParent);
+
+                if (parentGroup?.Children == null) continue;
+
+                // 加分隔線（若最後一個項目不是分隔線）
+                if (parentGroup.Children.Any() && !parentGroup.Children.Last().IsDivider)
+                    parentGroup.Children.Add(new NavigationItem { IsDivider = true });
+
+                parentGroup.Children.Add(new NavigationItem
+                {
+                    Name = table.TableName,
+                    Route = $"/custom-tables/{table.Id}",
+                    IconClass = table.IconClass ?? "bi bi-table",
+                    ItemType = NavigationItemType.Route,
+                    RequiredPermission = PermissionRegistry.System.CustomTable,
+                    Category = parentGroup.Category ?? string.Empty
+                });
             }
         }
     }

@@ -53,7 +53,7 @@
 
     @if (ShowExportExcelButton)
     {
-        <GenericButtonComponent Variant="ButtonVariant.Gray" Text="@L["Button.ExportExcel"]"
+        <GenericButtonComponent Variant="ButtonVariant.Green" Text="@L["Button.ExportExcel"]"
                                OnClick="HandleExportExcelClick" IsDisabled="@(IsLoading || IsExportExcelDisabled)"
                                IsLoading="@(IsLoading && LoadingOnExportExcel)" Title="@L["Button.ExportExcel"]"/>
     }
