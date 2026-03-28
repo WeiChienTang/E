@@ -19,11 +19,13 @@ namespace ERPCore2.Services
         /// 完整建構子 - 使用 ILogger 和 ISystemParameterService
         /// </summary>
         public QuotationDetailService(
-            IDbContextFactory<AppDbContext> contextFactory, 
+            IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<QuotationDetail>> logger,
-            ISystemParameterService systemParameterService) : base(contextFactory, logger)
+            ISystemParameterService systemParameterService,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _systemParameterService = systemParameterService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>

@@ -27,9 +27,11 @@ namespace ERPCore2.Services
         public ScaleRecordService(
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<ScaleRecord>> logger,
-            IInventoryStockService inventoryStockService) : base(contextFactory, logger)
+            IInventoryStockService inventoryStockService,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         #region 覆寫基底方法

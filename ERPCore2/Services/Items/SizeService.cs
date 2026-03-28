@@ -14,9 +14,11 @@ namespace ERPCore2.Services
     {
         // 完整建構子
         public SizeService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<Size>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<Size>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         // 簡易建構子
@@ -94,7 +96,8 @@ namespace ERPCore2.Services
                     }
                 }
 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                 {
                     errors.Add("尺寸名稱為必填欄位");
                 }

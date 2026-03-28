@@ -13,8 +13,10 @@ namespace ERPCore2.Services
     {
         public EmployeeToolService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<EmployeeTool>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<EmployeeTool>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public EmployeeToolService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
@@ -78,7 +80,8 @@ namespace ERPCore2.Services
                 if (entity.EmployeeId <= 0)
                     errors.Add("請選擇員工");
 
-                if (string.IsNullOrWhiteSpace(entity.ToolName))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.ToolName))
+                    && string.IsNullOrWhiteSpace(entity.ToolName))
                     errors.Add("請輸入工具名稱");
 
                 if (entity.AssignedDate == default)

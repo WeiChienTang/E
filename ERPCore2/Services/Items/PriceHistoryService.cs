@@ -16,9 +16,11 @@ namespace ERPCore2.Services
         /// 完整建構子 - 使用 ILogger
         /// </summary>
         public PriceHistoryService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<PriceHistory>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<PriceHistory>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>
@@ -86,7 +88,8 @@ namespace ERPCore2.Services
                 if (entity.NewPrice < 0)
                     errors.Add("新價格不能為負數");
 
-                if (string.IsNullOrWhiteSpace(entity.ChangeReason))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.ChangeReason))
+                    && string.IsNullOrWhiteSpace(entity.ChangeReason))
                     errors.Add("變更原因為必填欄位");
 
                 if (entity.ChangedByUserId <= 0)

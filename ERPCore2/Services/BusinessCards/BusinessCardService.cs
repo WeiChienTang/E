@@ -13,8 +13,10 @@ namespace ERPCore2.Services
     {
         public BusinessCardService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<BusinessCard>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<BusinessCard>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public BusinessCardService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)

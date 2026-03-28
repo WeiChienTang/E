@@ -20,9 +20,11 @@ namespace ERPCore2.Services
         public ItemService(
             IDbContextFactory<AppDbContext> contextFactory,
             ISubAccountService subAccountService,
-            ILogger<GenericManagementService<Item>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<Item>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _subAccountService = subAccountService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>
@@ -130,12 +132,14 @@ namespace ERPCore2.Services
                     }
                 }
 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                 {
                     errors.Add("品項名稱為必填欄位");
                 }
 
-                if (string.IsNullOrWhiteSpace(entity.Barcode))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Barcode))
+                    && string.IsNullOrWhiteSpace(entity.Barcode))
                 {
                     errors.Add("條碼編號為必填欄位");
                 }

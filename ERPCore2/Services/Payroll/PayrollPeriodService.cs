@@ -13,7 +13,11 @@ namespace ERPCore2.Services.Payroll
 
         public PayrollPeriodService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<PayrollPeriod>> logger) : base(contextFactory, logger) { }
+            ILogger<GenericManagementService<PayrollPeriod>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
+        {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
+        }
 
         protected override IQueryable<PayrollPeriod> BuildGetAllQuery(AppDbContext context)
         {

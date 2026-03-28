@@ -12,8 +12,12 @@ namespace ERPCore2.Services
     /// </summary>
     public class MaterialService : GenericManagementService<Material>, IMaterialService
     {
-        public MaterialService(IDbContextFactory<AppDbContext> contextFactory, ILogger<GenericManagementService<Material>> logger) : base(contextFactory, logger)
+        public MaterialService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<Material>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public MaterialService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
@@ -88,7 +92,8 @@ namespace ERPCore2.Services
             try
             {
                 // 基本驗證
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     return ServiceResult.Failure("材質名稱為必填");
 
                 if (string.IsNullOrWhiteSpace(entity.Code))

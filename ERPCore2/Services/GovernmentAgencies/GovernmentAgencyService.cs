@@ -17,8 +17,10 @@ namespace ERPCore2.Services.GovernmentAgencies
         /// </summary>
         public GovernmentAgencyService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<GovernmentAgency>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<GovernmentAgency>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>
@@ -89,7 +91,8 @@ namespace ERPCore2.Services.GovernmentAgencies
                     errors.Add("機關編號為必填");
 
                 // 檢查機關名稱必填
-                if (string.IsNullOrWhiteSpace(entity.AgencyName))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.AgencyName))
+                    && string.IsNullOrWhiteSpace(entity.AgencyName))
                     errors.Add("機關名稱為必填");
 
                 // 檢查長度限制

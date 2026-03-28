@@ -2,9 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ERPCore2.Data;
 using ERPCore2.Data.Context;
+using ERPCore2.Data.Entities;
 using ERPCore2.Models.Enums;
 using ERPCore2.Services;
 using ERPCore2.Helpers;
+using System.Reflection;
 
 namespace ERPCore2.Services
 {
@@ -17,6 +19,12 @@ namespace ERPCore2.Services
     {
     protected readonly IDbContextFactory<AppDbContext> _contextFactory;
     protected readonly ILogger<GenericManagementService<T>>? _logger;
+
+    /// <summary>
+    /// EBC 欄位顯示設定服務（選擇性注入）
+    /// 設定後，ValidateAsync 前會自動執行 EBC 必填欄位驗證
+    /// </summary>
+    protected IFieldDisplaySettingService? _fieldDisplaySettingService;
 
         protected GenericManagementService(
             IDbContextFactory<AppDbContext> contextFactory,
@@ -147,10 +155,19 @@ namespace ERPCore2.Services
                 // 草稿模式跳過驗證，允許必填欄位為空
                 if (!entity.IsDraft)
                 {
+                    // EBC 通用必填驗證（FieldDisplaySetting 新增的必填欄位）
+                    var ebcErrors = await ValidateEbcRequiredFieldsAsync(entity);
+
+                    // 子類別的具體驗證邏輯
                     var validationResult = await ValidateAsync(entity);
-                    if (!validationResult.IsSuccess)
+
+                    // 合併兩層驗證結果
+                    if (ebcErrors.Any() || !validationResult.IsSuccess)
                     {
-                        return ServiceResult<T>.Failure(validationResult.ErrorMessage);
+                        var allErrors = new List<string>(ebcErrors);
+                        if (!validationResult.IsSuccess && !string.IsNullOrEmpty(validationResult.ErrorMessage))
+                            allErrors.Add(validationResult.ErrorMessage);
+                        return ServiceResult<T>.Failure(string.Join("; ", allErrors));
                     }
                 }
 
@@ -211,10 +228,19 @@ namespace ERPCore2.Services
                 // 草稿模式跳過驗證，允許必填欄位為空
                 if (!entity.IsDraft)
                 {
+                    // EBC 通用必填驗證（FieldDisplaySetting 新增的必填欄位）
+                    var ebcErrors = await ValidateEbcRequiredFieldsAsync(entity);
+
+                    // 子類別的具體驗證邏輯
                     var validationResult = await ValidateAsync(entity);
-                    if (!validationResult.IsSuccess)
+
+                    // 合併兩層驗證結果
+                    if (ebcErrors.Any() || !validationResult.IsSuccess)
                     {
-                        return ServiceResult<T>.Failure(validationResult.ErrorMessage);
+                        var allErrors = new List<string>(ebcErrors);
+                        if (!validationResult.IsSuccess && !string.IsNullOrEmpty(validationResult.ErrorMessage))
+                            allErrors.Add(validationResult.ErrorMessage);
+                        return ServiceResult<T>.Failure(string.Join("; ", allErrors));
                     }
                 }
 
@@ -619,6 +645,90 @@ namespace ERPCore2.Services
         /// 驗證實體資料（需要子類別實作具體邏輯）
         /// </summary>
         public abstract Task<ServiceResult> ValidateAsync(T entity);
+
+        /// <summary>
+        /// EBC 通用必填欄位驗證 — 根據 FieldDisplaySetting 檢查實體的必填欄位
+        /// <para>此方法可在子類別的 ValidateAsync 中呼叫，取代手動的 string.IsNullOrWhiteSpace 檢查。</para>
+        /// <para>使用方式：在 ValidateAsync 開頭呼叫 <c>errors.AddRange(await ValidateEbcRequiredFieldsAsync(entity))</c></para>
+        /// <para>判斷邏輯：</para>
+        /// <list type="number">
+        /// <item>讀取 FieldDisplaySetting 中 IsRequiredOverride == true 的欄位 → 新增為必填</item>
+        /// <item>讀取 FieldDisplaySetting 中 IsRequiredOverride == false 的欄位 → 記錄為可跳過</item>
+        /// <item>檢查實體屬性值，為空值的必填欄位產生錯誤訊息</item>
+        /// </list>
+        /// </summary>
+        /// <param name="entity">要驗證的實體</param>
+        /// <param name="skipFields">子類別自行驗證的欄位名稱（避免重複報錯）</param>
+        /// <returns>錯誤訊息清單（空 = 全部通過）</returns>
+        protected async Task<List<string>> ValidateEbcRequiredFieldsAsync(T entity, params string[] skipFields)
+        {
+            var errors = new List<string>();
+            if (_fieldDisplaySettingService == null)
+                return errors;
+
+            var moduleName = typeof(T).Name;
+            var settings = await _fieldDisplaySettingService.GetByModuleAsync(moduleName);
+            if (settings == null || !settings.Any())
+                return errors;
+
+            var entityType = typeof(T);
+            var skipSet = new HashSet<string>(skipFields, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var setting in settings)
+            {
+                if (skipSet.Contains(setting.FieldName))
+                    continue;
+
+                // 只處理 IsRequiredOverride 有值的設定
+                if (!setting.IsRequiredOverride.HasValue)
+                    continue;
+
+                var prop = entityType.GetProperty(setting.FieldName, BindingFlags.Public | BindingFlags.Instance);
+                if (prop == null)
+                    continue;
+
+                if (setting.IsRequiredOverride.Value)
+                {
+                    // EBC 設定為必填 → 檢查是否有值
+                    var value = prop.GetValue(entity);
+                    bool isEmpty = value == null
+                        || (value is string s && string.IsNullOrWhiteSpace(s));
+
+                    if (isEmpty)
+                    {
+                        var displayName = !string.IsNullOrEmpty(setting.DisplayNameOverride)
+                            ? setting.DisplayNameOverride
+                            : setting.FieldName;
+                        errors.Add($"「{displayName}」為必填");
+                    }
+                }
+            }
+
+            return errors;
+        }
+
+        /// <summary>
+        /// 檢查指定欄位是否被 EBC 設定覆蓋為「選填」
+        /// <para>子類別在 ValidateAsync 中原本寫死的必填檢查，可用此方法判斷是否應該跳過：</para>
+        /// <code>
+        /// if (!IsFieldRelaxedByEbc("Name") &amp;&amp; string.IsNullOrWhiteSpace(entity.Name))
+        ///     errors.Add("名稱為必填");
+        /// </code>
+        /// </summary>
+        /// <param name="fieldName">欄位名稱（PropertyName）</param>
+        /// <returns>true = EBC 明確設為選填，應跳過此必填檢查</returns>
+        protected async Task<bool> IsFieldRelaxedByEbcAsync(string fieldName)
+        {
+            if (_fieldDisplaySettingService == null)
+                return false;
+
+            var moduleName = typeof(T).Name;
+            var settings = await _fieldDisplaySettingService.GetByModuleAsync(moduleName);
+            var setting = settings?.FirstOrDefault(s => s.FieldName == fieldName);
+
+            // IsRequiredOverride == false 代表使用者明確設為「選填」
+            return setting?.IsRequiredOverride == false;
+        }
 
         /// <summary>
         /// 檢查名稱是否存在（適用於有名稱欄位的實體）

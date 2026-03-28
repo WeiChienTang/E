@@ -31,7 +31,7 @@
 | §三 | Level 1：自訂欄位 | 不同廠商需要記錄不同資料 | PBC 的資料可組合性 |
 | §四 | Level 2：業務規則 | 不同廠商的審核/通知/驗證規則不同 | PBC 的邏輯可組合性 |
 | §五 | Level 3：流程配置 | 不同廠商的單據流轉順序不同 | PBC 的流程可組合性 |
-| §六 | Level 4：畫面配置 | 不同廠商想隱藏/必填不同欄位 | PBC 的介面可組合性 |
+| §六 | Level 4：畫面配置 ✅ | 不同廠商想隱藏/必填不同欄位 | PBC 的介面可組合性 |
 
 ---
 
@@ -73,7 +73,7 @@
 Level 1：欄位可配置    ← 最基本，投資報酬率最高
 Level 2：規則可配置    ← 解決「不同廠商規則不同」的核心問題
 Level 3：流程可配置    ← 真正的 EBC 差異化能力
-Level 4：畫面可配置    ← 進階，讓使用者自訂介面
+Level 4：畫面可配置    ← ✅ 已完成，使用者可自訂欄位顯示/隱藏/必填/名稱
 ```
 
 ---
@@ -454,84 +454,219 @@ public class DocumentFlowStep : BaseEntity
 
 ---
 
-## 六、Level 4：畫面可配置
+## 六、Level 4：畫面可配置 ✅ 已實作
+
+> **實作狀態**：已完成並整合至系統，所有使用 `GenericEditModalComponent` 的模組自動具備此功能。
 
 ### 問題
 A 廠商：客戶表單上「傳真」欄位根本沒人用，想隱藏
 B 廠商：採購單上想把「備註」欄位設為必填
 
-### 設計方案：欄位顯示設定（Field Display Configuration）
+### 實作成果：欄位顯示設定（Field Display Configuration）
 
-#### 4a. 欄位設定表
+#### 4a. 欄位設定表（已實作）
+
+**檔案**：`Data/Entities/Systems/FieldDisplaySetting.cs`
 
 ```csharp
-/// <summary>
-/// 欄位顯示設定 - 控制既有欄位在表單和列表中的顯示行為
-/// </summary>
 public class FieldDisplaySetting : BaseEntity
 {
-    /// <summary>目標模組</summary>
     [Required, MaxLength(50)]
     public string TargetModule { get; set; } = string.Empty;
 
-    /// <summary>欄位名稱（對應 Entity Property Name）</summary>
     [Required, MaxLength(100)]
     public string FieldName { get; set; } = string.Empty;
 
-    /// <summary>欄位顯示名稱（覆蓋預設 Display Name）</summary>
     [MaxLength(100)]
     public string? DisplayNameOverride { get; set; }
 
-    /// <summary>是否在表單中顯示（預設 true）</summary>
-    public bool ShowInForm { get; set; } = true;
-
-    /// <summary>是否在列表中顯示（預設跟隨系統設定）</summary>
+    public bool? ShowInForm { get; set; }       // null = 使用程式碼預設值
     public bool? ShowInList { get; set; }
+    public bool? IsRequiredOverride { get; set; } // null = 使用預設, true = 必填, false = 選填
 
-    /// <summary>是否為必填（覆蓋預設驗證）</summary>
-    public bool? IsRequiredOverride { get; set; }
-
-    /// <summary>表單中的排序順序</summary>
     public int? SortOrder { get; set; }
+
+    [MaxLength(500)]
+    public string? HelpTextOverride { get; set; }
 }
 ```
 
-#### 4b. 使用情境
+**設計特色**：所有覆蓋欄位皆為 `nullable`，`null` 代表「使用程式碼預設值」。當使用者將所有設定恢復為預設時，資料庫列會自動刪除（`IsDefaultSetting()` 檢查），避免累積無用資料。
+
+**資料庫索引**：`(TargetModule, FieldName)` 複合唯一索引。
+
+#### 4b. 服務層（已實作）
+
+**檔案**：`Services/Systems/FieldDisplaySettingService.cs`（實作 `IFieldDisplaySettingService`）
+
+| 方法 | 用途 |
+|------|------|
+| `GetByModuleAsync(module)` | 讀取模組設定（30 分鐘 IMemoryCache） |
+| `SaveModuleSettingsAsync(module, settings, updatedBy)` | 批次儲存（新增/更新/刪除一次完成） |
+| `ResetModuleSettingsAsync(module)` | 恢復預設（刪除全部覆蓋設定） |
+| `ClearCache(module?)` | 手動清除快取 |
+
+**快取策略**：`IDbContextFactory` + `IMemoryCache`，每模組獨立快取 30 分鐘，儲存/重設時自動清除。
+
+#### 4c. UI 元件（已實作）
+
+**檔案**：`Components/Shared/Modal/FieldSettingsPanel.razor` + `.razor.css`
+
+入口位置：`GenericEditModalComponent` 標題列的齒輪按鈕（⚙），受 `System.FieldSettings` 權限控制。
+
+面板以右側滑入方式開啟，包含：
+- 欄位列表表格（欄位名稱 / 顯示開關 / 必填設定 / 自訂名稱）
+- 恢復預設、取消、儲存按鈕（使用 `GenericButtonComponent`）
+- 字型遵循 `typography.css` 變數（標題 `--fs-md`，內文 `1rem`）
 
 ```
-系統管理 → 欄位顯示設定
-  ┌──────────────────────────────────────────────────┐
-  │ 模組：[客戶 ▾]                                    │
-  │                                                   │
-  │  欄位名稱      顯示名稱(自訂)  表單顯示  必填覆蓋  │
-  │  ──────────────────────────────────────────       │
-  │  CompanyName    公司名稱        ☑        ☑ 必填   │
-  │  ContactPerson  聯絡窗口        ☑        — 預設   │
-  │  Fax            傳真            ☐ 隱藏   — 預設   │  ← 不需要的欄位
-  │  Email          電子郵件        ☑        ☑ 必填   │  ← 改為必填
-  │  CreditLimit    信用額度        ☑        — 預設   │
-  │  Website        官方網站        ☐ 隱藏   — 預設   │
-  │                                                   │
-  │                                [恢復預設] [儲存]   │
-  └──────────────────────────────────────────────────┘
+  GenericEditModalComponent 標題列
+  ┌──────────────────────────────────────────┐
+  │  [模組名稱]              [⚙] [✕]        │ ← 齒輪按鈕開啟欄位設定
+  └──────────────────────────────────────────┘
+
+  FieldSettingsPanel（右側滑入面板）
+  ┌──────────────────────────────────────────┐
+  │ ⚙ 欄位設定 — 客戶                        │
+  │ ℹ 此設定將套用到所有使用者                 │
+  │                                          │
+  │  欄位        顯示    必填    自訂名稱      │
+  │  ──────────────────────────────────      │
+  │  CompanyName  ☑      預設    [        ]  │
+  │  Fax          ☐      —      [        ]  │ ← 隱藏
+  │  Email        ☑      必填    [        ]  │ ← 改為必填
+  │                                          │
+  │  [恢復預設]              [取消] [儲存設定] │
+  └──────────────────────────────────────────┘
 ```
+
+#### 4d. 覆蓋機制（已實作）
+
+**檔案**：`Components/Shared/Modal/GenericEditModalComponent.AutoComplete.cs` → `ApplyFieldDisplaySettings()`
+
+在 `GetProcessedFormFields()` 的最後階段套用覆蓋：
+
+| 資料庫欄位 | 覆蓋目標 | 規則 |
+|-----------|---------|------|
+| `ShowInForm` | `field.IsVisible` | `null` = 不覆蓋, `false` = 隱藏 |
+| `IsRequiredOverride` | `field.IsRequired` | `null` = 不覆蓋, `true`/`false` = 覆蓋 |
+| `DisplayNameOverride` | `field.Label` | 空字串 = 不覆蓋 |
+| `HelpTextOverride` | `field.HelpText` | 空字串 = 不覆蓋 |
+
+#### 4e. 權限控制（已實作）
+
+**檔案**：`Models/PermissionRegistry.cs`
+
+```
+System.FieldSettings — 欄位顯示設定（PermissionLevel.Sensitive）
+  → 管理各模組欄位的顯示、隱藏、必填與名稱覆蓋（全公司適用）
+```
+
+齒輪按鈕以 `PermissionCheck` 包裹，無權限者不可見。
+
+#### 4f. 欄位保護等級（已實作）
+
+**檔案**：`Components/Shared/UI/Form/FormFieldDefinition.cs` → `FieldProtectionLevel` enum
+
+為避免使用者在設定面板中將系統必要欄位設為選填或隱藏（導致 Service 層 ValidateAsync 報錯的困惑體驗），
+每個欄位都有一個保護等級，控制設定面板中的可操作範圍：
+
+| 等級 | 說明 | 可隱藏？ | 可改必填？ | 可改名稱？ | 範例 |
+|------|------|---------|----------|----------|------|
+| `SystemRequired` | 系統必要，沒有它系統會壞 | 不可 | 不可 | 不可 | Code、外鍵（SupplierId） |
+| `BusinessRequired` | 業務必要，不同公司可能不同 | 不可 | 可覆蓋 | 可改 | Name、CompanyName、OrderDate |
+| `Normal` | 一般欄位 | 可隱藏 | 可覆蓋 | 可改 | 備註、傳真、統編 |
+
+**自動推斷**：`FormFieldConfigurationHelper.ApplyProtectionLevels()` 在 `BuildProcessedFormFields()` 中自動呼叫，根據慣例推斷：
+
+```
+PropertyName == "Code"              → SystemRequired
+PropertyName 以 "Id" 結尾 + 必填    → SystemRequired
+其餘必填欄位                         → BusinessRequired
+其餘                                → Normal
+```
+
+個別模組仍可手動設定 `ProtectionLevel` 屬性覆蓋自動推斷結果。
+
+**覆蓋套用防護**：`ApplyFieldDisplaySettings()` 在套用資料庫覆蓋值前檢查保護等級：
+- `SystemRequired` → 完全跳過，不套用任何覆蓋
+- `BusinessRequired` → 跳過顯示/隱藏覆蓋，允許必填與名稱覆蓋
+- `Normal` → 全部允許
+
+#### 4g. Service 層 EBC 驗證（已實作）
+
+**檔案**：`Services/GenericManagementService/GenericManagementService.cs`
+
+為確保 Form 層和 Service 層的驗證一致，GenericManagementService 提供兩個 EBC 驗證機制：
+
+**1. 自動驗證**：`CreateAsync` / `UpdateAsync` 在呼叫 `ValidateAsync` 前，自動執行 `ValidateEbcRequiredFieldsAsync()`。
+如果 FieldDisplaySetting 將某欄位設為 `IsRequiredOverride = true`，Service 層也會檢查該欄位不為空。
+
+**2. 覆蓋放寬**：`IsFieldRelaxedByEbcAsync(fieldName)` 供子類別在 ValidateAsync 中使用。
+BusinessRequired 欄位被 EBC 設為選填時，子類別可跳過原本寫死的必填檢查。
+
+```
+驗證流程（CreateAsync / UpdateAsync）：
+    ├─ ValidateEbcRequiredFieldsAsync(entity)  ← EBC 新增的必填欄位
+    ├─ ValidateAsync(entity)                   ← 子類別的結構/業務驗證
+    └─ 合併兩層錯誤 → 回傳
+```
+
+**子類別遷移範例**（DepartmentService）：
+
+```csharp
+// 結構驗證 — SystemRequired，永遠執行
+if (string.IsNullOrWhiteSpace(entity.Code))
+    errors.Add("部門編號不能為空");
+
+// 業務必填 — BusinessRequired，可被 EBC 覆蓋為選填
+if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+    && string.IsNullOrWhiteSpace(entity.Name))
+    errors.Add("部門名稱不能為空");
+
+// 唯一性 — 結構驗證，永遠執行
+if (await IsDepartmentCodeExistsAsync(entity.Code, ...))
+    errors.Add("部門編號已存在");
+```
+
+**遷移策略**：各 Service 可逐步遷移，未遷移的 Service 行為不受影響（`_fieldDisplaySettingService` 為 null 時所有 EBC 方法直接回傳空/false）。
+
+#### 4h. 實作檔案清單
+
+| 檔案 | 類型 | 說明 |
+|------|------|------|
+| `Data/Entities/Systems/FieldDisplaySetting.cs` | Entity | 欄位顯示設定資料模型 |
+| `Services/Systems/IFieldDisplaySettingService.cs` | Interface | 服務介面 |
+| `Services/Systems/FieldDisplaySettingService.cs` | Service | 服務實作（含快取） |
+| `Components/Shared/Modal/FieldSettingsPanel.razor` | UI | 設定面板元件（含保護等級 UI 鎖定） |
+| `Components/Shared/Modal/FieldSettingsPanel.razor.css` | CSS | 面板樣式（含系統必要欄位灰色行） |
+| `Components/Shared/Modal/GenericEditModalComponent.razor` | UI（修改） | 新增齒輪按鈕 + 面板嵌入 |
+| `Components/Shared/Modal/GenericEditModalComponent.AutoComplete.cs` | Logic（修改） | 覆蓋套用邏輯 + 保護等級檢查 + 自動推斷 |
+| `Components/Shared/Modal/GenericEditModalComponent.Save.cs` | Logic（修改） | ValidateRequiredFormFields 改用 processed fields |
+| `Components/Shared/Modal/GenericEditModalComponent.Lifecycle.cs` | Logic（修改） | 載入時讀取設定 |
+| `Components/Shared/UI/Form/FormFieldDefinition.cs` | Model（修改） | 新增 ProtectionLevel 屬性 + enum |
+| `Components/FieldConfiguration/FormFieldConfigurationHelper.cs` | Helper（修改） | 新增 ApplyProtectionLevels 自動推斷 |
+| `Services/GenericManagementService/GenericManagementService.cs` | Base（修改） | 新增 EBC 驗證方法 + 自動驗證 |
+| `Data/Context/AppDbContext.cs` | DB（修改） | 新增 DbSet + 唯一索引 |
+| `Data/ServiceRegistration.cs` | DI（修改） | 註冊服務 |
+| `Models/PermissionRegistry.cs` | Auth（修改） | 新增權限定義 |
 
 ---
 
 ## 七、實作優先順序與現有架構的對應
 
-### 建議實作順序
+### 實作進度
 
 ```
 Phase 1（近期）
-  ├─ Level 1：自訂欄位        ← 立即解決「每家都不一樣」的問題
-  └─ Level 4：欄位顯示設定    ← 搭配一起做，讓表單更靈活
+  ├─ Level 1：自訂欄位        ← 📋 待實作
+  └─ Level 4：欄位顯示設定    ← ✅ 已完成（2026-03-27）
 
 Phase 2（中期）
-  └─ Level 2：業務規則引擎    ← 讓審核/通知/驗證可配置
+  └─ Level 2：業務規則引擎    ← 📋 待實作
 
 Phase 3（長期）
-  └─ Level 3：流程可配置      ← 真正的 EBC 能力
+  └─ Level 3：流程可配置      ← 📋 待實作
 ```
 
 ### 與現有架構的對應
@@ -548,32 +683,32 @@ Phase 3（長期）
 
 ### 新增的資料表
 
-| Entity | 用途 | Phase |
-|--------|------|-------|
-| `CustomFieldDefinition` | 自訂欄位定義 | Phase 1 |
-| `CustomFieldValue` | 自訂欄位值儲存 | Phase 1 |
-| `FieldDisplaySetting` | 既有欄位顯示控制 | Phase 1 |
-| `BusinessRule` | 業務規則定義 | Phase 2 |
-| `DocumentFlowStep` | 單據流程定義 | Phase 3 |
+| Entity | 用途 | Phase | 狀態 |
+|--------|------|-------|------|
+| `CustomFieldDefinition` | 自訂欄位定義 | Phase 1 | 📋 待實作 |
+| `CustomFieldValue` | 自訂欄位值儲存 | Phase 1 | 📋 待實作 |
+| `FieldDisplaySetting` | 既有欄位顯示控制 | Phase 1 | ✅ 已完成 |
+| `BusinessRule` | 業務規則定義 | Phase 2 | 📋 待實作 |
+| `DocumentFlowStep` | 單據流程定義 | Phase 3 | 📋 待實作 |
 
 ### 新增的 Service
 
-| Service | 用途 | Phase |
-|---------|------|-------|
-| `ICustomFieldService` | 自訂欄位 CRUD + 動態渲染資料 | Phase 1 |
-| `IFieldDisplayService` | 欄位顯示設定管理 | Phase 1 |
-| `IRuleEngineService` | 規則評估引擎 | Phase 2 |
-| `IDocumentFlowService` | 流程設定管理 | Phase 3 |
+| Service | 用途 | Phase | 狀態 |
+|---------|------|-------|------|
+| `ICustomFieldService` | 自訂欄位 CRUD + 動態渲染資料 | Phase 1 | 📋 待實作 |
+| `IFieldDisplaySettingService` | 欄位顯示設定管理 | Phase 1 | ✅ 已完成 |
+| `IRuleEngineService` | 規則評估引擎 | Phase 2 | 📋 待實作 |
+| `IDocumentFlowService` | 流程設定管理 | Phase 3 | 📋 待實作 |
 
 ### 新增的 UI 元件
 
-| 元件 | 用途 | Phase |
-|------|------|-------|
-| `CustomFieldSection.razor` | EditModal 內動態渲染自訂欄位 | Phase 1 |
-| `CustomFieldSettingPage` | 系統管理 → 自訂欄位設定 | Phase 1 |
-| `FieldDisplaySettingPage` | 系統管理 → 欄位顯示設定 | Phase 1 |
-| `BusinessRuleSettingPage` | 系統管理 → 業務規則設定 | Phase 2 |
-| `DocumentFlowSettingPage` | 系統管理 → 單據流程設定 | Phase 3 |
+| 元件 | 用途 | Phase | 狀態 |
+|------|------|-------|------|
+| `CustomFieldSection.razor` | EditModal 內動態渲染自訂欄位 | Phase 1 | 📋 待實作 |
+| `CustomFieldSettingPage` | 系統管理 → 自訂欄位設定 | Phase 1 | 📋 待實作 |
+| `FieldSettingsPanel.razor` | EditModal 內嵌欄位設定面板 | Phase 1 | ✅ 已完成 |
+| `BusinessRuleSettingPage` | 系統管理 → 業務規則設定 | Phase 2 | 📋 待實作 |
+| `DocumentFlowSettingPage` | 系統管理 → 單據流程設定 | Phase 3 | 📋 待實作 |
 
 ---
 

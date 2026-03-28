@@ -768,6 +768,9 @@
   <data name="Nav.ReportPrintConfigurations" xml:space="preserve">
     <value>Reports</value>
   </data>
+  <data name="Nav.CustomTables" xml:space="preserve">
+    <value>Custom Tables</value>
+  </data>
   <data name="Nav.DefaultUser" xml:space="preserve">
     <value>User</value>
   </data>

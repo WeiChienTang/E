@@ -30,11 +30,13 @@ namespace ERPCore2.Services
             ILogger<GenericManagementService<MaterialIssue>> logger,
             IInventoryStockService inventoryStockService,
             IInventoryTransactionService inventoryTransactionService,
-            IMaterialIssueDetailService materialIssueDetailService) : base(contextFactory, logger)
+            IMaterialIssueDetailService materialIssueDetailService,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
             _inventoryTransactionService = inventoryTransactionService;
             _materialIssueDetailService = materialIssueDetailService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         #region 覆寫基底方法 - 包含庫存處理

@@ -14,8 +14,10 @@ namespace ERPCore2.Services
     {
         public VehicleMaintenanceService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<VehicleMaintenance>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<VehicleMaintenance>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public VehicleMaintenanceService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)

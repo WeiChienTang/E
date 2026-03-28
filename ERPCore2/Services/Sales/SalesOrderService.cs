@@ -28,12 +28,14 @@ namespace ERPCore2.Services
             IInventoryStockService inventoryStockService,
             ISystemParameterService systemParameterService,
             ISalesOrderDetailService? detailService = null,
-            ISalesReturnDetailService? salesReturnDetailService = null) : base(contextFactory, logger)
+            ISalesReturnDetailService? salesReturnDetailService = null,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
             _systemParameterService = systemParameterService;
             _detailService = detailService;
             _salesReturnDetailService = salesReturnDetailService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>

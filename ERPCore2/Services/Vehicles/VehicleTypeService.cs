@@ -14,8 +14,10 @@ namespace ERPCore2.Services
     {
         public VehicleTypeService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<VehicleType>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<VehicleType>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public VehicleTypeService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
@@ -91,11 +93,12 @@ namespace ERPCore2.Services
                     }
                 }
 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                 {
                     errors.Add("車型名稱為必填欄位");
                 }
-                else
+                else if (!string.IsNullOrWhiteSpace(entity.Name))
                 {
                     var isNameDuplicate = await IsVehicleTypeNameExistsAsync(entity.Name, entity.Id);
                     if (isNameDuplicate)

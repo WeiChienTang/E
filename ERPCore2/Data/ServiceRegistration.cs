@@ -7,6 +7,7 @@ using ERPCore2.Services.Reports;
 using ERPCore2.Services.Reports.Configuration;
 using ERPCore2.Services.Reports.Interfaces;
 using ERPCore2.Services.Suppliers;
+using ERPCore2.Services.CustomTables;
 using ERPCore2.Services.Systems;
 using ERPCore2.Helpers;
 using ERPCore2.Helpers.Common;
@@ -257,6 +258,13 @@ namespace ERPCore2.Data
 
             // 系統參數服務
             services.AddScoped<ISystemParameterService, SystemParameterService>();
+
+            // 欄位顯示設定服務（EBC 可配置化）
+            services.AddScoped<IFieldDisplaySettingService, FieldDisplaySettingService>();
+
+            // 自訂資料表服務（EBC Level 1）
+            services.AddScoped<ICustomTableDefinitionService, CustomTableDefinitionService>();
+            services.AddScoped<ICustomTableRowService, CustomTableRowService>();
 
             // 代碼自動產生設定服務
             services.AddScoped<ICodeSettingService, CodeSettingService>();

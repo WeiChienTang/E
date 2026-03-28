@@ -20,8 +20,10 @@ namespace ERPCore2.Services
 
         public ProductionScheduleAllocationService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<ProductionScheduleAllocation>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<ProductionScheduleAllocation>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         // 覆寫 GetAllAsync 以包含相關資料

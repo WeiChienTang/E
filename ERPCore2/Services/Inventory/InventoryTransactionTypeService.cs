@@ -16,9 +16,11 @@ namespace ERPCore2.Services
         /// 完整建構子
         /// </summary>
         public InventoryTransactionTypeService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<InventoryTransactionType>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<InventoryTransactionType>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>
@@ -181,7 +183,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     return ServiceResult.Failure("類型編號為必填");
                 
-                if (string.IsNullOrWhiteSpace(entity.TypeName))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.TypeName))
+                    && string.IsNullOrWhiteSpace(entity.TypeName))
                     return ServiceResult.Failure("類型名稱為必填");
 
                 // 檢查類型編號是否重複

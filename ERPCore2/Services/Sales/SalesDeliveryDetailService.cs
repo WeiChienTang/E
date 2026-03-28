@@ -14,12 +14,14 @@ namespace ERPCore2.Services
         private readonly ISalesOrderDetailService _salesOrderDetailService;
 
         public SalesDeliveryDetailService(
-            IDbContextFactory<AppDbContext> contextFactory, 
+            IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<SalesDeliveryDetail>> logger,
-            ISalesOrderDetailService salesOrderDetailService) 
+            ISalesOrderDetailService salesOrderDetailService,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null)
             : base(contextFactory, logger)
         {
             _salesOrderDetailService = salesOrderDetailService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         #region 覆寫基底方法

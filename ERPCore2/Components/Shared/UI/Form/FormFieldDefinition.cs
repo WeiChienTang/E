@@ -188,6 +188,16 @@ public class FormFieldDefinition
     /// 適合需要即時反映輸入狀態的動態標籤，例如顯示換算結果
     /// </summary>
     public Func<string>? LabelFactory { get; set; }
+
+    /// <summary>
+    /// 欄位保護等級 — 控制 EBC 欄位設定面板中此欄位的可配置範圍
+    /// <list type="bullet">
+    /// <item><term>SystemRequired</term><description>系統必要欄位（如 Code、外鍵），不可隱藏、不可改必填</description></item>
+    /// <item><term>BusinessRequired</term><description>業務必要欄位（如聯絡人、電話），不可隱藏，但可覆蓋必填</description></item>
+    /// <item><term>Normal</term><description>一般欄位，完全自由配置</description></item>
+    /// </list>
+    /// </summary>
+    public FieldProtectionLevel ProtectionLevel { get; set; } = FieldProtectionLevel.Normal;
 }
 
 /// <summary>
@@ -443,9 +453,34 @@ public class LabelHelpItem
     /// 項目標題（如：全盤、循環盤點）
     /// </summary>
     public string Title { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 項目說明（如：對倉庫內所有品項進行完整盤點）
     /// </summary>
     public string Description { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// 欄位保護等級 — EBC 可配置化的安全分級
+/// 控制 FieldSettingsPanel 中使用者可以修改的範圍，防止使用者設定與 Service 層驗證衝突
+/// </summary>
+public enum FieldProtectionLevel
+{
+    /// <summary>
+    /// 系統必要 — 沒有它系統會壞（Code、Id、外鍵）
+    /// 設定面板中：不可隱藏、必填鎖定顯示「系統必要」、覆蓋不套用
+    /// </summary>
+    SystemRequired,
+
+    /// <summary>
+    /// 業務必要 — 業務邏輯需要但不同公司可能不同（聯絡人、電話、交貨日期）
+    /// 設定面板中：不可隱藏、必填可覆蓋為選填
+    /// </summary>
+    BusinessRequired,
+
+    /// <summary>
+    /// 一般欄位 — 參考資訊（備註、傳真、統編）
+    /// 設定面板中：完全自由配置
+    /// </summary>
+    Normal
 }

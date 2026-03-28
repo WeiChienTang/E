@@ -14,8 +14,10 @@ namespace ERPCore2.Services
     {
         public PaperSettingService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<PaperSetting>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<PaperSetting>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public override async Task<List<PaperSetting>> SearchAsync(string searchTerm)
@@ -51,7 +53,8 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("紙張名稱不能為空");
 
                 if (string.IsNullOrWhiteSpace(entity.Code))

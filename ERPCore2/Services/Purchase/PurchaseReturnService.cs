@@ -15,9 +15,11 @@ namespace ERPCore2.Services
         public PurchaseReturnService(
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<PurchaseReturn>> logger,
-            IInventoryStockService inventoryStockService) : base(contextFactory, logger)
+            IInventoryStockService inventoryStockService,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         protected override IQueryable<PurchaseReturn> BuildGetAllQuery(AppDbContext context)

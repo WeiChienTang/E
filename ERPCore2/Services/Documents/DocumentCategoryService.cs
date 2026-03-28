@@ -8,9 +8,13 @@ namespace ERPCore2.Services
 {
     public class DocumentCategoryService : GenericManagementService<DocumentCategory>, IDocumentCategoryService
     {
-        public DocumentCategoryService(IDbContextFactory<AppDbContext> contextFactory, ILogger<GenericManagementService<DocumentCategory>> logger)
+        public DocumentCategoryService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<DocumentCategory>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null)
             : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public override async Task<List<DocumentCategory>> SearchAsync(string searchTerm)
@@ -133,7 +137,8 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("分類名稱為必填欄位");
 
                 if (!string.IsNullOrWhiteSpace(entity.Name) &&

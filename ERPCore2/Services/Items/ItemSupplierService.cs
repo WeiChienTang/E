@@ -17,8 +17,10 @@ namespace ERPCore2.Services
         /// </summary>
         public ItemSupplierService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<ItemSupplier>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<ItemSupplier>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>

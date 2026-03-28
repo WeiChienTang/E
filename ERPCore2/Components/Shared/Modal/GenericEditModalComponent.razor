@@ -5,6 +5,7 @@
 @inject IStringLocalizer<SharedResource> L
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IUserPreferenceContext UserPreferenceContext
+@inject IFieldDisplaySettingService FieldDisplaySettingService
 @using System.Reflection
 @using ERPCore2.Helpers
 @using ERPCore2.Helpers.EditModal
@@ -180,7 +181,19 @@
                                           OnClick="DeleteEntityAsync"
                                           IsDisabled="@(IsSubmitting || IsLoading)" />
                 }
-                
+
+                @* EBC 欄位設定按鈕（僅有權限者可見） *@
+                @if (UseGenericForm && FormFields.Any())
+                {
+                    <PermissionCheck Permission="@PermissionRegistry.System.FieldSettings">
+                        <GenericButtonComponent Text=""
+                                              IconClass="bi bi-gear"
+                                              Variant="ButtonVariant.Gray"
+                                              OnClick="OpenFieldSettingsPanel"
+                                              IsDisabled="@(IsSubmitting || IsLoading)"
+                                              Title="欄位設定（全公司適用）" />
+                    </PermissionCheck>
+                }
 
             </div>
         </div>
@@ -283,6 +296,15 @@
                                      OnSaveDraft="HandleUnsavedChangesSaveDraft"
                                      OnContinueEditing="HandleUnsavedChangesCancel"
                                      OnLeave="HandleUnsavedChangesLeave" />
+
+@* EBC 欄位設定面板 *@
+<FieldSettingsPanel IsVisible="@_isFieldSettingsPanelVisible"
+                    IsVisibleChanged="@((bool v) => _isFieldSettingsPanelVisible = v)"
+                    TargetModule="@_moduleName"
+                    ModuleDisplayName="@EntityName"
+                    UpdatedBy="@_currentUserName"
+                    FormFields="@FormFields?.ToList()"
+                    OnSettingsSaved="HandleFieldSettingsSaved" />
 
 @* 儲存為草稿確認 Modal（儲存時驗證失敗 → 詢問是否改存草稿） *@
 @if (_showSaveAsDraftModal)
@@ -712,5 +734,26 @@
     
     // 新增模式控制
     private bool _stayInAddMode = false;  // 標記是否在儲存後保持新增模式（用於「新增」按鈕）
-    
+
+    // ===== EBC 欄位設定 =====
+    private bool _isFieldSettingsPanelVisible = false;
+    private List<FieldDisplaySetting> _fieldDisplaySettings = new();
+    private string _moduleName => typeof(TEntity).Name;
+
+    private void OpenFieldSettingsPanel()
+    {
+        _isFieldSettingsPanelVisible = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleFieldSettingsSaved()
+    {
+        // 清除快取並重新載入設定
+        FieldDisplaySettingService.ClearCache(_moduleName);
+        _fieldDisplaySettings = await FieldDisplaySettingService.GetByModuleAsync(_moduleName);
+
+        // 清除已處理欄位的快取，強制重建
+        _processedFormFieldsCache = null;
+        StateHasChanged();
+    }
 }

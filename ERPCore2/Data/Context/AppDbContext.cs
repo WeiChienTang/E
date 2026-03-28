@@ -1,4 +1,5 @@
 ﻿using ERPCore2.Data.Entities;
+using ERPCore2.Data.Entities.CustomTables;
 using ERPCore2.Data.Entities.Customers;
 using ERPCore2.Data.Entities.Payroll;
 using ERPCore2.Data.Entities.Suppliers;
@@ -155,6 +156,15 @@ namespace ERPCore2.Data.Context
       public DbSet<BankStatement> BankStatements { get; set; }
       public DbSet<BankStatementLine> BankStatementLines { get; set; }
       public DbSet<JournalEntryAttachment> JournalEntryAttachments { get; set; }
+
+      // ── EBC 可配置化 ─────────────────────────────────────────────────────
+      public DbSet<FieldDisplaySetting> FieldDisplaySettings { get; set; }
+
+      // ── 自訂資料表（EBC Level 1）────────────────────────────────────────
+      public DbSet<CustomTableDefinition> CustomTableDefinitions { get; set; }
+      public DbSet<CustomFieldDefinition> CustomFieldDefinitions { get; set; }
+      public DbSet<CustomTableRow> CustomTableRows { get; set; }
+      public DbSet<CustomFieldValue> CustomFieldValues { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
@@ -1804,6 +1814,51 @@ namespace ERPCore2.Data.Context
                               .WithMany()
                               .HasForeignKey(e => e.UploadedByEmployeeId)
                               .OnDelete(DeleteBehavior.SetNull);
+                  });
+
+                  // EBC 欄位顯示設定 — 每個模組的每個欄位只能有一筆設定
+                  modelBuilder.Entity<FieldDisplaySetting>(entity =>
+                  {
+                        entity.HasIndex(e => new { e.TargetModule, e.FieldName })
+                              .IsUnique();
+                  });
+
+                  // ── 自訂資料表（EBC Level 1）──────────────────────────────
+                  modelBuilder.Entity<CustomFieldDefinition>(entity =>
+                  {
+                        // 同一張表內欄位名稱不可重複
+                        entity.HasIndex(e => new { e.CustomTableDefinitionId, e.FieldName })
+                              .IsUnique();
+
+                        entity.HasOne(e => e.CustomTableDefinition)
+                              .WithMany(t => t.FieldDefinitions)
+                              .HasForeignKey(e => e.CustomTableDefinitionId)
+                              .OnDelete(DeleteBehavior.Cascade);
+                  });
+
+                  modelBuilder.Entity<CustomTableRow>(entity =>
+                  {
+                        entity.HasOne(e => e.CustomTableDefinition)
+                              .WithMany(t => t.Rows)
+                              .HasForeignKey(e => e.CustomTableDefinitionId)
+                              .OnDelete(DeleteBehavior.Cascade);
+                  });
+
+                  modelBuilder.Entity<CustomFieldValue>(entity =>
+                  {
+                        // 每筆資料列的每個欄位只能有一個值
+                        entity.HasIndex(e => new { e.CustomTableRowId, e.CustomFieldDefinitionId })
+                              .IsUnique();
+
+                        entity.HasOne(e => e.CustomTableRow)
+                              .WithMany(r => r.FieldValues)
+                              .HasForeignKey(e => e.CustomTableRowId)
+                              .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(e => e.CustomFieldDefinition)
+                              .WithMany()
+                              .HasForeignKey(e => e.CustomFieldDefinitionId)
+                              .OnDelete(DeleteBehavior.NoAction);
                   });
 
             }

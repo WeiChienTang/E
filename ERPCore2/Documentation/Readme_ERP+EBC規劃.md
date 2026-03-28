@@ -184,12 +184,24 @@ EBC 的組合式架構讓中小企業可以：
 
 **目標**：讓不同廠商可以自行定義欄位、規則、流程，不需改程式碼
 
-| 可配置化層次 | 解決的問題 | 詳細設計 |
-|---|---|---|
-| Level 1：自訂欄位 | 不同廠商需要記錄不同資料 | [可配置化設計 §三](系統功能設計/Readme_EBC可配置化設計.md) |
-| Level 2：業務規則 | 不同廠商的審核/通知/驗證規則不同 | [可配置化設計 §四](系統功能設計/Readme_EBC可配置化設計.md) |
-| Level 3：流程配置 | 不同廠商的單據流轉順序不同 | [可配置化設計 §五](系統功能設計/Readme_EBC可配置化設計.md) |
-| Level 4：畫面配置 | 不同廠商想隱藏/必填不同欄位 | [可配置化設計 §六](系統功能設計/Readme_EBC可配置化設計.md) |
+| 可配置化層次 | 解決的問題 | 詳細設計 | 狀態 |
+|---|---|---|---|
+| Level 1：自訂資料表 | 不同廠商需要記錄不同資料 | [可配置化設計 §三](系統功能設計/Readme_EBC可配置化設計.md) | ✅ 已實作（主表） |
+| Level 2：業務規則 | 不同廠商的審核/通知/驗證規則不同 | [可配置化設計 §四](系統功能設計/Readme_EBC可配置化設計.md) | 規劃中 |
+| Level 3：流程配置 | 不同廠商的單據流轉順序不同 | [可配置化設計 §五](系統功能設計/Readme_EBC可配置化設計.md) | 規劃中 |
+| Level 4：畫面配置 | 不同廠商想隱藏/必填不同欄位 | [可配置化設計 §六](系統功能設計/Readme_EBC可配置化設計.md) | ✅ 已實作 |
+
+**Level 1 已實作內容（2026-03-28）：**
+- 自訂資料表系統（EAV 模式）：`CustomTableDefinition` + `CustomFieldDefinition` + `CustomTableRow` + `CustomFieldValue`
+- 管理員可透過「系統 → 自訂資料表」建立表定義與欄位設定
+- 支援 7 種欄位類型：文字、多行文字、數值、日期、日期時間、布林、下拉選單
+- 所有資料列繼承 BaseEntity（自動擁有 Id、Code、Status、審計欄位、草稿支援）
+- 權限控制：`System.CustomTable`（Sensitive 等級）
+
+**Level 4 已實作內容：**
+- `FieldDisplaySetting` 欄位顯示覆蓋（顯示/隱藏、必填覆蓋、名稱覆蓋）
+- `FieldProtectionLevel` 欄位保護等級（SystemRequired / BusinessRequired / Normal）
+- `FieldSettingsPanel` 管理介面（嵌入 GenericEditModalComponent）
 
 > 這是 EBC 與傳統 ERP 最關鍵的差異：使用者自己組合能力，而非工程師客製開發。
 

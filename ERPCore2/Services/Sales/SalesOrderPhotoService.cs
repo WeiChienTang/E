@@ -13,8 +13,10 @@ namespace ERPCore2.Services
     {
         public SalesOrderPhotoService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<SalesOrderPhoto>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<SalesOrderPhoto>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public SalesOrderPhotoService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)

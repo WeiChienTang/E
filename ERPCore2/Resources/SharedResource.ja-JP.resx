@@ -788,6 +788,9 @@
   <data name="Nav.ReportPrintConfigurations" xml:space="preserve">
     <value>レポート</value>
   </data>
+  <data name="Nav.CustomTables" xml:space="preserve">
+    <value>カスタムテーブル</value>
+  </data>
   <data name="Nav.DefaultUser" xml:space="preserve">
     <value>ユーザー</value>
   </data>

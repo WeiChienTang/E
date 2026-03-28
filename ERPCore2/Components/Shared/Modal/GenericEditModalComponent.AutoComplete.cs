@@ -1,5 +1,6 @@
 using ERPCore2.Data;
 using ERPCore2.Components.Shared.UI.Form;
+using ERPCore2.FieldConfiguration;
 
 namespace ERPCore2.Components.Shared.Modal;
 
@@ -14,6 +15,7 @@ public partial class GenericEditModalComponent<TEntity, TService>
     /// <summary>
     /// 取得處理後的表單欄位（結果快取，僅在資料變更時重建）
     /// 每次存取時同步 IsReadOnly / IsDisabled / Options，因為父組件可能在快取建立後修改這些屬性
+    /// 同時套用 EBC 欄位顯示設定（FieldDisplaySetting）的覆蓋值
     /// </summary>
     private List<FormFieldDefinition> GetProcessedFormFields()
     {
@@ -36,7 +38,53 @@ public partial class GenericEditModalComponent<TEntity, TService>
             }
         }
 
+        // 套用 EBC 欄位顯示設定覆蓋
+        ApplyFieldDisplaySettings(result);
+
         return result;
+    }
+
+    /// <summary>
+    /// 套用 FieldDisplaySetting 的覆蓋值到已處理的表單欄位
+    /// 規則：資料庫設定值為 null 時使用程式碼預設值，非 null 時覆蓋
+    /// 同時遵循 FieldProtectionLevel 保護等級：
+    ///   SystemRequired  → 跳過所有覆蓋（顯示、必填、名稱、提示皆不動）
+    ///   BusinessRequired → 跳過顯示/隱藏覆蓋（不可隱藏），允許必填、名稱、提示覆蓋
+    ///   Normal          → 全部允許覆蓋
+    /// </summary>
+    private void ApplyFieldDisplaySettings(List<FormFieldDefinition> fields)
+    {
+        if (_fieldDisplaySettings == null || !_fieldDisplaySettings.Any())
+            return;
+
+        foreach (var field in fields)
+        {
+            var setting = _fieldDisplaySettings
+                .FirstOrDefault(s => s.FieldName == field.PropertyName);
+
+            if (setting == null)
+                continue;
+
+            // SystemRequired：完全不套用任何覆蓋，跳過
+            if (field.ProtectionLevel == FieldProtectionLevel.SystemRequired)
+                continue;
+
+            // 覆蓋顯示/隱藏（BusinessRequired 不可隱藏）
+            if (setting.ShowInForm.HasValue && field.ProtectionLevel == FieldProtectionLevel.Normal)
+                field.IsVisible = setting.ShowInForm.Value;
+
+            // 覆蓋必填（Normal 和 BusinessRequired 都允許）
+            if (setting.IsRequiredOverride.HasValue)
+                field.IsRequired = setting.IsRequiredOverride.Value;
+
+            // 覆蓋顯示名稱（Normal 和 BusinessRequired 都允許）
+            if (!string.IsNullOrEmpty(setting.DisplayNameOverride))
+                field.Label = setting.DisplayNameOverride;
+
+            // 覆蓋提示文字（Normal 和 BusinessRequired 都允許）
+            if (!string.IsNullOrEmpty(setting.HelpTextOverride))
+                field.HelpText = setting.HelpTextOverride;
+        }
     }
 
     /// <summary>
@@ -84,6 +132,7 @@ public partial class GenericEditModalComponent<TEntity, TService>
                 LabelHelpItems = field.LabelHelpItems,
                 AutoCompleteAttribute = field.AutoCompleteAttribute,
                 IsFilterOnly = field.IsFilterOnly,
+                ProtectionLevel = field.ProtectionLevel,
             };
 
             // 如果是 AutoComplete 欄位，包裝搜尋函式以支援智能預填
@@ -110,6 +159,10 @@ public partial class GenericEditModalComponent<TEntity, TService>
 
             processedFields.Add(processedField);
         }
+
+        // 自動推斷欄位保護等級（Code → SystemRequired, 必要外鍵 → SystemRequired, 必填 → BusinessRequired）
+        // 已由模組手動設定的 ProtectionLevel 不會被覆蓋
+        FormFieldConfigurationHelper.ApplyProtectionLevels(processedFields);
 
         return processedFields;
     }

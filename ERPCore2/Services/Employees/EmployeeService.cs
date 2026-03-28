@@ -28,11 +28,13 @@ namespace ERPCore2.Services
             ILogger<GenericManagementService<Employee>> logger,
             IPermissionService permissionService,
             INavigationPermissionService navigationPermissionService,
-            AuthenticationStateProvider? authenticationStateProvider = null) : base(contextFactory, logger)
+            AuthenticationStateProvider? authenticationStateProvider = null,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _authenticationStateProvider = authenticationStateProvider;
             _permissionService = permissionService;
             _navigationPermissionService = navigationPermissionService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>
@@ -648,17 +650,21 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 // 檢查必要欄位
+                // ── 業務必填驗證（BusinessRequired — 可被 EBC 覆蓋為選填） ──
                 // 系統使用者的帳號和密碼驗證
                 if (entity.IsSystemUser)
                 {
-                    if (string.IsNullOrWhiteSpace(entity.Account))
+                    if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Account))
+                        && string.IsNullOrWhiteSpace(entity.Account))
                         errors.Add("系統使用者必須設定帳號");
-                    
-                    if (string.IsNullOrWhiteSpace(entity.Password))
+
+                    if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Password))
+                        && string.IsNullOrWhiteSpace(entity.Password))
                         errors.Add("系統使用者必須設定密碼");
                 }
 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("名字為必填");
 
                 if (string.IsNullOrWhiteSpace(entity.Code))

@@ -28,9 +28,11 @@ namespace ERPCore2.Services
         }
 
         public InventoryStockService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<InventoryStock>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<InventoryStock>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         #region 覆寫基本方法

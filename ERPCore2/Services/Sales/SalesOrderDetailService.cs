@@ -17,9 +17,11 @@ namespace ERPCore2.Services
         /// 完整建構子 - 使用 ILogger
         /// </summary>
         public SalesOrderDetailService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<SalesOrderDetail>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<SalesOrderDetail>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>

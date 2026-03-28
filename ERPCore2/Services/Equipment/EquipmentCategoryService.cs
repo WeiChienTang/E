@@ -14,8 +14,10 @@ namespace ERPCore2.Services
     {
         public EquipmentCategoryService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<EquipmentCategory>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<EquipmentCategory>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public EquipmentCategoryService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
@@ -81,9 +83,11 @@ namespace ERPCore2.Services
                 else if (await IsEquipmentCategoryCodeExistsAsync(entity.Code, entity.Id > 0 ? entity.Id : null))
                     errors.Add("類別編號已存在");
 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("類別名稱為必填欄位");
-                else if (await IsEquipmentCategoryNameExistsAsync(entity.Name, entity.Id > 0 ? entity.Id : null))
+                else if (!string.IsNullOrWhiteSpace(entity.Name)
+                    && await IsEquipmentCategoryNameExistsAsync(entity.Name, entity.Id > 0 ? entity.Id : null))
                     errors.Add("類別名稱已存在");
 
                 return errors.Any()

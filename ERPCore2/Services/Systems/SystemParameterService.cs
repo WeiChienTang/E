@@ -20,8 +20,10 @@ namespace ERPCore2.Services
 
         public SystemParameterService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<SystemParameter>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<SystemParameter>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>

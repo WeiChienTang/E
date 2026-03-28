@@ -9,9 +9,13 @@ namespace ERPCore2.Services
 {
     public class CurrencyService : GenericManagementService<Currency>, ICurrencyService
     {
-        public CurrencyService(IDbContextFactory<AppDbContext> contextFactory, ILogger<GenericManagementService<Currency>> logger)
+        public CurrencyService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<Currency>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null)
             : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public override async Task<List<Currency>> SearchAsync(string searchTerm)
@@ -129,7 +133,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("貨幣編號為必填欄位");
 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("貨幣名稱為必填欄位");
 
                 if (!string.IsNullOrWhiteSpace(entity.Code) && await IsCurrencyCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))

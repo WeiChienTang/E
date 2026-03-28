@@ -17,9 +17,11 @@ namespace ERPCore2.Services
         }
 
         public MaterialIssueDetailService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<MaterialIssueDetail>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<MaterialIssueDetail>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         #region 覆寫基底類別方法

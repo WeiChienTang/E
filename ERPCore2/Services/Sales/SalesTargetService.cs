@@ -15,8 +15,10 @@ namespace ERPCore2.Services
     {
         public SalesTargetService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<SalesTarget>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<SalesTarget>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         #region 覆寫基底方法

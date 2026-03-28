@@ -16,8 +16,10 @@ namespace ERPCore2.Services
     {
         public ProductionScheduleDetailService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<ProductionScheduleDetail>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<ProductionScheduleDetail>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public ProductionScheduleDetailService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)

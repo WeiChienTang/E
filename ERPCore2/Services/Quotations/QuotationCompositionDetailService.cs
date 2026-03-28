@@ -16,9 +16,11 @@ namespace ERPCore2.Services
         public QuotationCompositionDetailService(
             IDbContextFactory<AppDbContext> contextFactory,
             IItemCompositionDetailService productCompositionDetailService,
-            ILogger<GenericManagementService<QuotationCompositionDetail>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<QuotationCompositionDetail>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _productCompositionDetailService = productCompositionDetailService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
         
         /// <summary>

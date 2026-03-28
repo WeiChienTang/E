@@ -18,9 +18,11 @@ namespace ERPCore2.Services
         /// 完整建構子 - 使用 ILogger
         /// </summary>
         public PermissionManagementService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<Permission>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<Permission>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>
@@ -351,8 +353,9 @@ namespace ERPCore2.Services
                 if (existsResult.Data)
                     return ServiceResult.Failure("權限編號已存在");
 
-                // 檢查權限名稱
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                // ── 業務必填驗證（BusinessRequired — 可被 EBC 覆蓋為選填） ──
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     return ServiceResult.Failure("權限名稱不能為空");
 
                 if (entity.Name.Length > 100)

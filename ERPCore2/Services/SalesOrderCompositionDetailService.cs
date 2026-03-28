@@ -18,9 +18,11 @@ namespace ERPCore2.Services
         public SalesOrderCompositionDetailService(
             IDbContextFactory<AppDbContext> contextFactory,
             IItemCompositionDetailService productCompositionDetailService,
-            ILogger<GenericManagementService<SalesOrderCompositionDetail>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<SalesOrderCompositionDetail>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _productCompositionDetailService = productCompositionDetailService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>

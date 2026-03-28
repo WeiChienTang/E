@@ -13,8 +13,10 @@ namespace ERPCore2.Services
     {
         public ItemPhotoService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<ItemPhoto>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<ItemPhoto>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public ItemPhotoService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
@@ -35,7 +37,8 @@ namespace ERPCore2.Services
                 if (entity.ItemId <= 0)
                     return ServiceResult.Failure("品項ID無效");
 
-                if (string.IsNullOrWhiteSpace(entity.PhotoPath))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.PhotoPath))
+                    && string.IsNullOrWhiteSpace(entity.PhotoPath))
                     return ServiceResult.Failure("照片路徑不可為空");
 
                 return ServiceResult.Success();

@@ -1,0 +1,591 @@
+@* 自訂資料表管理 Modal — 管理表定義與欄位設定 *@
+@using ERPCore2.Data.Entities.CustomTables
+@using ERPCore2.Models.Enums
+@using ERPCore2.Services.CustomTables
+
+@inject ICustomTableDefinitionService CustomTableService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+
+<BaseModalComponent IsVisible="@IsVisible"
+                    IsVisibleChanged="@IsVisibleChanged"
+                    Title="自訂資料表管理"
+                    Icon="bi-table"
+                    Size="BaseModalComponent.ModalSize.Desktop"
+                    CloseOnEscape="true"
+                    CloseOnBackdropClick="false"
+                    IsLoading="@_isLoading"
+                    OnClose="@HandleClose"
+                    DebugComponentName="CustomTableManagementModal">
+    <HeaderButtons>
+        @if (_currentView == ViewMode.List)
+        {
+            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                   Text="新增資料表"
+                                   IconClass="bi bi-plus-lg"
+                                   OnClick="StartCreateTable"
+                                   IsDisabled="@_isLoading" />
+        }
+        else
+        {
+            <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
+                                   Text="儲存"
+                                   IconClass="bi bi-check-lg"
+                                   OnClick="HandleSaveTable"
+                                   IsDisabled="@_isSaving"
+                                   IsLoading="@_isSaving" />
+            <GenericButtonComponent Variant="ButtonVariant.Red"
+                                   Text="取消"
+                                   OnClick="BackToList" />
+        }
+    </HeaderButtons>
+    <BodyContent>
+        @if (_currentView == ViewMode.List)
+        {
+            @* ===== 表定義列表 ===== *@
+            @if (!_tables.Any())
+            {
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-table fs-1 d-block mb-3"></i>
+                    <p class="mb-2">尚未建立任何自訂資料表</p>
+                    <p class="small">點擊「新增資料表」開始建立</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 5%"></th>
+                                <th style="width: 25%">名稱</th>
+                                <th style="width: 10%">前綴</th>
+                                <th style="width: 30%">說明</th>
+                                <th style="width: 10%" class="text-center">欄位數</th>
+                                <th style="width: 10%" class="text-center">狀態</th>
+                                <th style="width: 10%" class="text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var table in _tables)
+                            {
+                                <tr>
+                                    <td>
+                                        <i class="@(table.IconClass ?? "bi bi-table") text-primary"></i>
+                                    </td>
+                                    <td>
+                                        <strong>@table.TableName</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">@(table.CodePrefix ?? "—")</span>
+                                    </td>
+                                    <td class="text-muted">@(table.Description ?? "—")</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info">@table.FieldDefinitions.Count</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (table.Status == EntityStatus.Active)
+                                        {
+                                            <span class="badge bg-success">啟用</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">停用</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary btn-sm"
+                                                    @onclick="() => StartEditTable(table)"
+                                                    title="編輯">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm"
+                                                    @onclick="() => HandleDeleteTable(table)"
+                                                    title="刪除">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        }
+        else
+        {
+            @* ===== 新增/編輯表定義 ===== *@
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">資料表名稱 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control"
+                           placeholder="例如：耐熱測試紀錄"
+                           @bind="_editingTable.TableName" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">編號前綴 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control"
+                           placeholder="例如：HT"
+                           maxlength="10"
+                           @bind="_editingTable.CodePrefix" />
+                    <div class="form-text">自動產生編號用，如 HT-001</div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">圖示</label>
+                    <select class="form-select" @bind="_editingTable.IconClass">
+                        <option value="bi bi-table">表格 (預設)</option>
+                        <option value="bi bi-clipboard-data">剪貼簿</option>
+                        <option value="bi bi-file-earmark-text">文件</option>
+                        <option value="bi bi-tools">工具</option>
+                        <option value="bi bi-thermometer-half">溫度計</option>
+                        <option value="bi bi-speedometer2">儀表板</option>
+                        <option value="bi bi-check2-square">檢核表</option>
+                        <option value="bi bi-card-checklist">清單</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-bold">說明</label>
+                    <input type="text" class="form-control"
+                           placeholder="簡述此資料表的用途"
+                           @bind="_editingTable.Description" />
+                </div>
+            </div>
+
+            @* ===== 欄位定義 ===== *@
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0 fw-bold">
+                    <i class="bi bi-list-columns me-1"></i>欄位定義
+                </h6>
+                <button class="btn btn-sm btn-outline-primary"
+                        @onclick="AddField">
+                    <i class="bi bi-plus-lg me-1"></i>新增欄位
+                </button>
+            </div>
+
+            <div class="small text-muted mb-2">
+                <i class="bi bi-info-circle me-1"></i>
+                系統欄位（編號、狀態、建立時間、建立者、備註、草稿）已自動包含，無需重複設定
+            </div>
+
+            @if (!_editingFields.Any())
+            {
+                <div class="text-center text-muted py-3 border rounded">
+                    <p class="mb-0">尚未新增任何欄位，請點擊「新增欄位」</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 5%">#</th>
+                                <th style="width: 20%">顯示名稱</th>
+                                <th style="width: 15%">欄位名稱</th>
+                                <th style="width: 15%">類型</th>
+                                <th style="width: 20%">選項（Select 用）</th>
+                                <th style="width: 8%" class="text-center">必填</th>
+                                <th style="width: 8%" class="text-center">列表</th>
+                                <th style="width: 9%" class="text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < _editingFields.Count; i++)
+                            {
+                                var index = i;
+                                var field = _editingFields[index];
+                                <tr>
+                                    <td class="text-center align-middle text-muted">@(index + 1)</td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm"
+                                               placeholder="顯示名稱"
+                                               @bind="field.DisplayName" />
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm"
+                                               placeholder="英文識別名"
+                                               @bind="field.FieldName" />
+                                    </td>
+                                    <td>
+                                        <select class="form-select form-select-sm"
+                                                @bind="field.FieldType">
+                                            <option value="@CustomFieldType.Text">文字</option>
+                                            <option value="@CustomFieldType.TextArea">多行文字</option>
+                                            <option value="@CustomFieldType.Number">數值</option>
+                                            <option value="@CustomFieldType.Date">日期</option>
+                                            <option value="@CustomFieldType.DateTime">日期時間</option>
+                                            <option value="@CustomFieldType.Boolean">是/否</option>
+                                            <option value="@CustomFieldType.Select">下拉選單</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        @if (field.FieldType == CustomFieldType.Select)
+                                        {
+                                            <input type="text" class="form-control form-control-sm"
+                                                   placeholder="以逗號分隔，如：通過,不通過"
+                                                   @bind="field.OptionsInput" />
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <input type="checkbox" class="form-check-input"
+                                               @bind="field.IsRequired" />
+                                    </td>
+                                    <td class="text-center">
+                                        <input type="checkbox" class="form-check-input"
+                                               @bind="field.ShowInList" />
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            @if (index > 0)
+                                            {
+                                                <button class="btn btn-outline-secondary btn-sm"
+                                                        @onclick="() => MoveFieldUp(index)" title="上移">
+                                                    <i class="bi bi-arrow-up"></i>
+                                                </button>
+                                            }
+                                            @if (index < _editingFields.Count - 1)
+                                            {
+                                                <button class="btn btn-outline-secondary btn-sm"
+                                                        @onclick="() => MoveFieldDown(index)" title="下移">
+                                                    <i class="bi bi-arrow-down"></i>
+                                                </button>
+                                            }
+                                            <button class="btn btn-outline-danger btn-sm"
+                                                    @onclick="() => RemoveField(index)" title="刪除">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        }
+    </BodyContent>
+</BaseModalComponent>
+
+@* 刪除確認 *@
+<GenericConfirmModalComponent IsVisible="@_isDeleteConfirmVisible"
+                              IsVisibleChanged="@((value) => _isDeleteConfirmVisible = value)"
+                              Title="確認刪除"
+                              Icon="bi-trash"
+                              Message="@($"確定要刪除資料表「{_tableToDelete?.TableName}」嗎？此操作將同時刪除所有欄位定義與資料，無法復原。")"
+                              ConfirmButtonText="確認刪除"
+                              ConfirmButtonVariant="ButtonVariant.Red"
+                              OnConfirm="ConfirmDeleteTable" />
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    // ===== 狀態 =====
+    private enum ViewMode { List, Create, Edit }
+    private ViewMode _currentView = ViewMode.List;
+    private bool _isLoading;
+    private bool _isSaving;
+
+    // ===== 列表 =====
+    private List<CustomTableDefinition> _tables = new();
+
+    // ===== 編輯中 =====
+    private CustomTableDefinition _editingTable = new();
+    private List<FieldEditRow> _editingFields = new();
+    private int? _editingTableId;
+
+    // ===== 刪除確認 =====
+    private bool _isDeleteConfirmVisible;
+    private CustomTableDefinition? _tableToDelete;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await LoadTables();
+        }
+    }
+
+    private async Task LoadTables()
+    {
+        _isLoading = true;
+        StateHasChanged();
+        try
+        {
+            _tables = await CustomTableService.GetAllAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 列表操作 =====
+
+    private void StartCreateTable()
+    {
+        _editingTable = new CustomTableDefinition { IconClass = "bi bi-table" };
+        _editingFields = new List<FieldEditRow>();
+        _editingTableId = null;
+        _currentView = ViewMode.Create;
+    }
+
+    private void StartEditTable(CustomTableDefinition table)
+    {
+        _editingTable = new CustomTableDefinition
+        {
+            Id = table.Id,
+            TableName = table.TableName,
+            Description = table.Description,
+            CodePrefix = table.CodePrefix,
+            IconClass = table.IconClass ?? "bi bi-table",
+            Status = table.Status
+        };
+        _editingFields = table.FieldDefinitions
+            .OrderBy(f => f.SortOrder)
+            .Select(f => new FieldEditRow
+            {
+                Id = f.Id,
+                FieldName = f.FieldName,
+                DisplayName = f.DisplayName,
+                FieldType = f.FieldType,
+                IsRequired = f.IsRequired,
+                ShowInList = f.ShowInList,
+                OptionsInput = f.Options != null
+                    ? string.Join(",", System.Text.Json.JsonSerializer.Deserialize<List<string>>(f.Options) ?? new())
+                    : ""
+            })
+            .ToList();
+        _editingTableId = table.Id;
+        _currentView = ViewMode.Edit;
+    }
+
+    private async Task BackToList()
+    {
+        _currentView = ViewMode.List;
+        await LoadTables();
+    }
+
+    private async Task HandleClose()
+    {
+        _currentView = ViewMode.List;
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    // ===== 儲存 =====
+
+    private async Task HandleSaveTable()
+    {
+        // 驗證基本資訊
+        if (string.IsNullOrWhiteSpace(_editingTable.TableName))
+        {
+            await NotificationService.ShowErrorAsync("資料表名稱為必填");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_editingTable.CodePrefix))
+        {
+            await NotificationService.ShowErrorAsync("編號前綴為必填");
+            return;
+        }
+
+        // 驗證欄位
+        foreach (var field in _editingFields)
+        {
+            if (string.IsNullOrWhiteSpace(field.DisplayName))
+            {
+                await NotificationService.ShowErrorAsync("所有欄位的顯示名稱為必填");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(field.FieldName))
+            {
+                await NotificationService.ShowErrorAsync("所有欄位的欄位名稱為必填");
+                return;
+            }
+        }
+
+        _isSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            if (_currentView == ViewMode.Create)
+            {
+                // 建立表定義
+                var result = await CustomTableService.CreateAsync(_editingTable);
+                if (!result.IsSuccess)
+                {
+                    await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "建立失敗");
+                    return;
+                }
+
+                // 建立欄位定義
+                var tableId = result.Data!.Id;
+                for (int i = 0; i < _editingFields.Count; i++)
+                {
+                    var field = _editingFields[i];
+                    var fieldDef = ToFieldDefinition(field, tableId, i);
+                    var fieldResult = await CustomTableService.AddFieldDefinitionAsync(fieldDef);
+                    if (!fieldResult.IsSuccess)
+                    {
+                        await NotificationService.ShowErrorAsync($"欄位「{field.DisplayName}」建立失敗：{fieldResult.ErrorMessage}");
+                        return;
+                    }
+                }
+
+                await NotificationService.ShowSuccessAsync($"資料表「{_editingTable.TableName}」建立成功");
+            }
+            else
+            {
+                // 更新表定義
+                var result = await CustomTableService.UpdateAsync(_editingTable);
+                if (!result.IsSuccess)
+                {
+                    await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "更新失敗");
+                    return;
+                }
+
+                // 更新欄位：刪除已移除的 → 更新/新增
+                var existingFields = await CustomTableService.GetFieldDefinitionsAsync(_editingTable.Id);
+                var editingIds = _editingFields.Where(f => f.Id > 0).Select(f => f.Id).ToHashSet();
+
+                // 刪除不在編輯列表中的欄位
+                foreach (var existing in existingFields)
+                {
+                    if (!editingIds.Contains(existing.Id))
+                    {
+                        await CustomTableService.DeleteFieldDefinitionAsync(existing.Id);
+                    }
+                }
+
+                // 新增/更新欄位
+                for (int i = 0; i < _editingFields.Count; i++)
+                {
+                    var field = _editingFields[i];
+                    var fieldDef = ToFieldDefinition(field, _editingTable.Id, i);
+
+                    if (field.Id > 0)
+                    {
+                        fieldDef.Id = field.Id;
+                        await CustomTableService.UpdateFieldDefinitionAsync(fieldDef);
+                    }
+                    else
+                    {
+                        await CustomTableService.AddFieldDefinitionAsync(fieldDef);
+                    }
+                }
+
+                await NotificationService.ShowSuccessAsync($"資料表「{_editingTable.TableName}」更新成功");
+            }
+
+            await BackToList();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存失敗：{ex.Message}");
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== 刪除 =====
+
+    private void HandleDeleteTable(CustomTableDefinition table)
+    {
+        _tableToDelete = table;
+        _isDeleteConfirmVisible = true;
+    }
+
+    private async Task ConfirmDeleteTable()
+    {
+        if (_tableToDelete == null) return;
+
+        var result = await CustomTableService.DeleteAsync(_tableToDelete.Id);
+        if (result.IsSuccess)
+        {
+            await NotificationService.ShowSuccessAsync($"資料表「{_tableToDelete.TableName}」已刪除");
+            await LoadTables();
+        }
+        else
+        {
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "刪除失敗");
+        }
+        _tableToDelete = null;
+    }
+
+    // ===== 欄位操作 =====
+
+    private void AddField()
+    {
+        _editingFields.Add(new FieldEditRow
+        {
+            ShowInList = true,
+            FieldType = CustomFieldType.Text
+        });
+    }
+
+    private void RemoveField(int index)
+    {
+        _editingFields.RemoveAt(index);
+    }
+
+    private void MoveFieldUp(int index)
+    {
+        if (index <= 0) return;
+        (_editingFields[index], _editingFields[index - 1]) =
+            (_editingFields[index - 1], _editingFields[index]);
+    }
+
+    private void MoveFieldDown(int index)
+    {
+        if (index >= _editingFields.Count - 1) return;
+        (_editingFields[index], _editingFields[index + 1]) =
+            (_editingFields[index + 1], _editingFields[index]);
+    }
+
+    // ===== Helpers =====
+
+    private static CustomFieldDefinition ToFieldDefinition(FieldEditRow row, int tableId, int sortOrder)
+    {
+        string? options = null;
+        if (row.FieldType == CustomFieldType.Select && !string.IsNullOrWhiteSpace(row.OptionsInput))
+        {
+            var items = row.OptionsInput.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            options = System.Text.Json.JsonSerializer.Serialize(items);
+        }
+
+        return new CustomFieldDefinition
+        {
+            CustomTableDefinitionId = tableId,
+            FieldName = row.FieldName,
+            DisplayName = row.DisplayName,
+            FieldType = row.FieldType,
+            IsRequired = row.IsRequired,
+            ShowInList = row.ShowInList,
+            ShowInForm = true,
+            SortOrder = sortOrder,
+            Options = options
+        };
+    }
+
+    /// <summary>UI 用的欄位編輯暫存結構</summary>
+    private class FieldEditRow
+    {
+        public int Id { get; set; }
+        public string FieldName { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public CustomFieldType FieldType { get; set; } = CustomFieldType.Text;
+        public bool IsRequired { get; set; }
+        public bool ShowInList { get; set; } = true;
+        public string OptionsInput { get; set; } = string.Empty;
+    }
+}

@@ -8,9 +8,13 @@ namespace ERPCore2.Services
 {
     public class DocumentService : GenericManagementService<Document>, IDocumentService
     {
-        public DocumentService(IDbContextFactory<AppDbContext> contextFactory, ILogger<GenericManagementService<Document>> logger)
+        public DocumentService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<Document>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null)
             : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         protected override IQueryable<Document> BuildGetAllQuery(AppDbContext context)
@@ -129,7 +133,8 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
-                if (string.IsNullOrWhiteSpace(entity.Title))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Title))
+                    && string.IsNullOrWhiteSpace(entity.Title))
                     errors.Add("文件標題為必填欄位");
 
                 if (errors.Any())

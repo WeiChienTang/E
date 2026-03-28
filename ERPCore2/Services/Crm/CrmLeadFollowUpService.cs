@@ -13,8 +13,10 @@ namespace ERPCore2.Services.Crm
     {
         public CrmLeadFollowUpService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<CrmLeadFollowUp>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<CrmLeadFollowUp>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         protected override IQueryable<CrmLeadFollowUp> BuildGetAllQuery(AppDbContext context)

@@ -509,8 +509,11 @@ public partial class GenericEditModalComponent<TEntity, TService>
         if (Entity == null || FormFields == null || !FormFields.Any())
             return errors;
 
+        // 使用處理後的欄位（含 EBC FieldDisplaySetting 覆蓋），
+        // 這樣使用者透過欄位設定面板新增的「必填」才會在儲存時生效
+        var processedFields = GetProcessedFormFields();
         var entityType = Entity.GetType();
-        foreach (var field in FormFields.Where(f => f.IsRequired && f.IsVisible))
+        foreach (var field in processedFields.Where(f => f.IsRequired && f.IsVisible))
         {
             var prop = GetCachedProperty(entityType, field.PropertyName);
             if (prop == null) continue;

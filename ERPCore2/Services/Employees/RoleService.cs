@@ -20,10 +20,12 @@ namespace ERPCore2.Services
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<Role>> logger,
             IPermissionService permissionService,
-            INavigationPermissionService navigationPermissionService) : base(contextFactory, logger)
+            INavigationPermissionService navigationPermissionService,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _permissionService = permissionService;
             _navigationPermissionService = navigationPermissionService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public RoleService(IDbContextFactory<AppDbContext> contextFactory, IPermissionService permissionService) : base(contextFactory)
@@ -568,10 +570,16 @@ namespace ERPCore2.Services
         {
             try
             {
-                // 執行業務特定驗證
-                var businessValidation = ValidateRoleData(entity);
-                if (!businessValidation.IsSuccess)
-                    return ServiceResult.Failure(businessValidation.ErrorMessage);
+                if (entity == null)
+                    return ServiceResult.Failure("角色資料不能為空");
+
+                // ── 業務必填驗證（BusinessRequired — 可被 EBC 覆蓋為選填） ──
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
+                    return ServiceResult.Failure("角色名稱不能為空");
+
+                if (entity.Name != null && entity.Name.Length > 100)
+                    return ServiceResult.Failure("角色名稱長度不能超過100個字元");
 
                 // 檢查角色名稱是否已存在
                 var nameCheck = await IsRoleNameExistsAsync(entity.Name, entity.Id);

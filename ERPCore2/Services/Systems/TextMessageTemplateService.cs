@@ -14,8 +14,10 @@ namespace ERPCore2.Services
     {
         public TextMessageTemplateService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<TextMessageTemplate>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<TextMessageTemplate>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>
@@ -30,7 +32,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.TemplateCode))
                     errors.Add("「範本代碼」為必填欄位");
 
-                if (string.IsNullOrWhiteSpace(entity.TemplateName))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.TemplateName))
+                    && string.IsNullOrWhiteSpace(entity.TemplateName))
                     errors.Add("「範本名稱」為必填欄位");
 
                 // 問候語和結語可以為空白，不需驗證

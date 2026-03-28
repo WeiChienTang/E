@@ -20,6 +20,8 @@ public static class PermissionRegistry
     {
         public const string Admin = "System.Admin";
         public const string CodeSettings = "System.CodeSettings";
+        public const string FieldSettings = "System.FieldSettings";
+        public const string CustomTable = "System.CustomTable";
     }
 
     public static class EmployeeAccount
@@ -419,6 +421,8 @@ public static class PermissionRegistry
         // ===== 敏感權限：系統 =====
         new(System.Admin,           "系統管理",        PermissionLevel.Sensitive, "系統最高管理權限，擁有所有功能存取權限",  "Nav.SystemGroup"),
         new(System.CodeSettings,    "代碼自動產生設定", PermissionLevel.Sensitive, "管理各模組的自動編號格式與流水號設定",    "Nav.SystemGroup"),
+        new(System.FieldSettings,   "欄位顯示設定",    PermissionLevel.Sensitive, "管理各模組欄位的顯示、隱藏、必填與名稱覆蓋（全公司適用）", "Nav.SystemGroup"),
+        new(System.CustomTable,     "自訂資料表",      PermissionLevel.Sensitive, "建立與管理自訂資料表、欄位定義及資料維護",                   "Nav.SystemGroup"),
         new(EmployeeAccount.Read,   "編輯員工帳號密碼", PermissionLevel.Sensitive, "編輯員工系統帳號、密碼與角色設定權限",    "Nav.HumanResources"),
         new(Permission.Read,        "檢視權限",        PermissionLevel.Sensitive, "檢視系統功能權限設定",                   "Nav.SystemGroup"),
         new(Role.Read,              "檢視角色",        PermissionLevel.Sensitive, "檢視系統角色與權限群組設定",              "Nav.SystemGroup"),

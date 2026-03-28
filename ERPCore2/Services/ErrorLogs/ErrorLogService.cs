@@ -11,7 +11,12 @@ namespace ERPCore2.Services
     /// </summary>
     public class ErrorLogService : GenericManagementService<ErrorLog>, IErrorLogService
     {
-        public ErrorLogService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory) { }
+        public ErrorLogService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory)
+        {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
+        }
 
         /// <summary>
         /// 記錄錯誤並返回錯誤ID

@@ -14,9 +14,11 @@ namespace ERPCore2.Services
     public class PaymentMethodService : GenericManagementService<PaymentMethod>, IPaymentMethodService
     {
         public PaymentMethodService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<PaymentMethod>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<PaymentMethod>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public PaymentMethodService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
@@ -88,7 +90,8 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
                 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("付款方式名稱為必填");
                 
                 if (!string.IsNullOrWhiteSpace(entity.Name) && 

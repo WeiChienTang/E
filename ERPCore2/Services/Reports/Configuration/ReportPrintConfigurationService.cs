@@ -14,8 +14,10 @@ namespace ERPCore2.Services.Reports.Configuration
     {
         public ReportPrintConfigurationService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<ReportPrintConfiguration>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<ReportPrintConfiguration>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public override async Task<List<ReportPrintConfiguration>> SearchAsync(string searchTerm)
@@ -55,7 +57,8 @@ namespace ERPCore2.Services.Reports.Configuration
                 if (string.IsNullOrWhiteSpace(entity.ReportId))
                     return ServiceResult.Failure("報表識別碼為必填欄位");
 
-                if (string.IsNullOrWhiteSpace(entity.ReportName))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.ReportName))
+                    && string.IsNullOrWhiteSpace(entity.ReportName))
                     return ServiceResult.Failure("報表名稱為必填欄位");
 
                 // 檢查報表識別碼是否重複

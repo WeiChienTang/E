@@ -22,11 +22,13 @@ namespace ERPCore2.Services
         }
 
         public PurchaseOrderDetailService(
-            IDbContextFactory<AppDbContext> contextFactory, 
+            IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<PurchaseOrderDetail>> logger,
-            ISystemParameterService systemParameterService) : base(contextFactory, logger)
+            ISystemParameterService systemParameterService,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _systemParameterService = systemParameterService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         #region 覆寫基底類別方法

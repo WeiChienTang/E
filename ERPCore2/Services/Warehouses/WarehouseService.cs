@@ -16,9 +16,11 @@ namespace ERPCore2.Services
         /// 完整建構子 - 使用 ILogger
         /// </summary>
         public WarehouseService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<Warehouse>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<Warehouse>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>
@@ -170,7 +172,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     return ServiceResult.Failure("倉庫編號為必填");
                 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     return ServiceResult.Failure("倉庫名稱為必填");
 
                 // 檢查倉庫編號是否重複

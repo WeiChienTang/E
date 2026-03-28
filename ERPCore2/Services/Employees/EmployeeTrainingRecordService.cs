@@ -13,8 +13,10 @@ namespace ERPCore2.Services
     {
         public EmployeeTrainingRecordService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<EmployeeTrainingRecord>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<EmployeeTrainingRecord>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public EmployeeTrainingRecordService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
@@ -79,7 +81,8 @@ namespace ERPCore2.Services
                 if (entity.EmployeeId <= 0)
                     errors.Add("請選擇員工");
 
-                if (string.IsNullOrWhiteSpace(entity.CourseName))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.CourseName))
+                    && string.IsNullOrWhiteSpace(entity.CourseName))
                     errors.Add("請輸入課程名稱");
 
                 if (entity.TrainingDate == default)

@@ -74,13 +74,15 @@ namespace ERPCore2.Services
             IPurchaseReceivingDetailService detailService,
             IPurchaseOrderDetailService purchaseOrderDetailService,
             IPurchaseReturnDetailService purchaseReturnDetailService,
-            ISystemParameterService systemParameterService) : base(contextFactory, logger)
+            ISystemParameterService systemParameterService,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
             _detailService = detailService;
             _purchaseOrderDetailService = purchaseOrderDetailService;
             _purchaseReturnDetailService = purchaseReturnDetailService;
             _systemParameterService = systemParameterService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         #region 覆寫基本方法

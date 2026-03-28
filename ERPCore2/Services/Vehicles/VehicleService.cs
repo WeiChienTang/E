@@ -14,8 +14,10 @@ namespace ERPCore2.Services
     {
         public VehicleService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<Vehicle>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<Vehicle>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public VehicleService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
@@ -106,7 +108,8 @@ namespace ERPCore2.Services
                     }
                 }
 
-                if (string.IsNullOrWhiteSpace(entity.LicensePlate))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.LicensePlate))
+                    && string.IsNullOrWhiteSpace(entity.LicensePlate))
                 {
                     errors.Add("車牌號碼為必填欄位");
                 }
@@ -119,7 +122,8 @@ namespace ERPCore2.Services
                     }
                 }
 
-                if (string.IsNullOrWhiteSpace(entity.VehicleName))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.VehicleName))
+                    && string.IsNullOrWhiteSpace(entity.VehicleName))
                 {
                     errors.Add("車輛名稱為必填欄位");
                 }

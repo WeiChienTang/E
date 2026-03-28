@@ -13,8 +13,10 @@ namespace ERPCore2.Services
     {
         public SetoffPaymentService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<SetoffPayment>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<SetoffPayment>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public SetoffPaymentService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)

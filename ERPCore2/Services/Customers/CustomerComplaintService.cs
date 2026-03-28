@@ -13,8 +13,10 @@ namespace ERPCore2.Services
     {
         public CustomerComplaintService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<CustomerComplaint>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<CustomerComplaint>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public CustomerComplaintService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
@@ -81,7 +83,8 @@ namespace ERPCore2.Services
                 if (entity.CustomerId <= 0)
                     errors.Add("請選擇客戶");
 
-                if (string.IsNullOrWhiteSpace(entity.Title))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Title))
+                    && string.IsNullOrWhiteSpace(entity.Title))
                     errors.Add("請輸入投訴標題");
 
                 if (entity.ComplaintDate == default)

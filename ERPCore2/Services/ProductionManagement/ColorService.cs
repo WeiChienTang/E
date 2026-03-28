@@ -10,9 +10,11 @@ namespace ERPCore2.Services
     public class ColorService : GenericManagementService<Color>, IColorService
     {
         public ColorService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<Color>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<Color>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public ColorService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
@@ -65,7 +67,8 @@ namespace ERPCore2.Services
             try
             {
                 // 基本驗證
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     return ServiceResult.Failure("顏色名稱為必填");
 
                 // 檢查編號是否重複（只有在提供編號時才檢查）

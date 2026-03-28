@@ -26,9 +26,11 @@ namespace ERPCore2.Services
         public ProductionScheduleItemService(
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<ProductionScheduleItem>> logger,
-            IInventoryStockService inventoryStockService) : base(contextFactory, logger)
+            IInventoryStockService inventoryStockService,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>

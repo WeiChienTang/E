@@ -8,9 +8,13 @@ namespace ERPCore2.Services
 {
     public class BankService : GenericManagementService<Bank>, IBankService
     {
-        public BankService(IDbContextFactory<AppDbContext> contextFactory, ILogger<GenericManagementService<Bank>> logger)
+        public BankService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<Bank>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null)
             : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public override async Task<List<Bank>> SearchAsync(string searchTerm)
@@ -158,7 +162,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("銀行編號為必填欄位");
 
-                if (string.IsNullOrWhiteSpace(entity.BankName))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.BankName))
+                    && string.IsNullOrWhiteSpace(entity.BankName))
                     errors.Add("銀行名稱為必填欄位");
 
                 if (!string.IsNullOrWhiteSpace(entity.Code) && 

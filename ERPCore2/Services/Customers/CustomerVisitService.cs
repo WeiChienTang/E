@@ -13,8 +13,10 @@ namespace ERPCore2.Services
     {
         public CustomerVisitService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<CustomerVisit>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<CustomerVisit>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public CustomerVisitService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)

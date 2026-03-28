@@ -17,8 +17,10 @@ namespace ERPCore2.Services
         /// </summary>
         public SetoffPrepaymentService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<SetoffPrepayment>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<SetoffPrepayment>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>

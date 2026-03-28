@@ -15,8 +15,10 @@ namespace ERPCore2.Services
     {
         public SetoffDocumentService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<SetoffDocument>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<SetoffDocument>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public SetoffDocumentService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)

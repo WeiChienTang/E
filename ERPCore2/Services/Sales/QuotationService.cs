@@ -21,9 +21,11 @@ namespace ERPCore2.Services
         public QuotationService(
             IDbContextFactory<AppDbContext> contextFactory, 
             ILogger<GenericManagementService<Quotation>> logger,
-            IQuotationDetailService? detailService = null) : base(contextFactory, logger)
+            IQuotationDetailService? detailService = null,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _detailService = detailService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>

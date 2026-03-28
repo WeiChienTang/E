@@ -13,9 +13,11 @@ namespace ERPCore2.Services
     public class DepartmentService : GenericManagementService<Department>, IDepartmentService
     {
         public DepartmentService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<Department>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<Department>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public DepartmentService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
@@ -81,24 +83,28 @@ namespace ERPCore2.Services
             try
             {
                 var errors = new List<string>();
-                
+
+                // ── 結構驗證（SystemRequired — 永遠執行，不受 EBC 覆蓋） ──
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("部門編號不能為空");
-                
-                if (string.IsNullOrWhiteSpace(entity.Name))
+
+                // ── 業務必填驗證（BusinessRequired — 可被 EBC 覆蓋為選填） ──
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("部門名稱不能為空");
-                
-                if (!string.IsNullOrWhiteSpace(entity.Code) && 
+
+                // ── 唯一性驗證（結構性 — 永遠執行） ──
+                if (!string.IsNullOrWhiteSpace(entity.Code) &&
                     await IsDepartmentCodeExistsAsync(entity.Code, entity.Id == 0 ? null : entity.Id))
                     errors.Add("部門編號已存在");
-                
-                if (!string.IsNullOrWhiteSpace(entity.Name) && 
+
+                if (!string.IsNullOrWhiteSpace(entity.Name) &&
                     await IsDepartmentNameExistsAsync(entity.Name, entity.Id == 0 ? null : entity.Id))
                     errors.Add("部門名稱已存在");
-                
+
                 if (errors.Any())
                     return ServiceResult.Failure(string.Join("; ", errors));
-                    
+
                 return ServiceResult.Success();
             }
             catch (Exception ex)

@@ -21,12 +21,14 @@ namespace ERPCore2.Services
             ILogger<GenericManagementService<SalesDelivery>> logger,
             IInventoryStockService inventoryStockService,
             ISalesDeliveryDetailService? detailService = null,
-            ISalesOrderDetailService? salesOrderDetailService = null) 
+            ISalesOrderDetailService? salesOrderDetailService = null,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null)
             : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
             _detailService = detailService;
             _salesOrderDetailService = salesOrderDetailService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         #region 覆寫基底方法

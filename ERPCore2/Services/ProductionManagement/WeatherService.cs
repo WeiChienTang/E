@@ -9,9 +9,11 @@ namespace ERPCore2.Services
     public class WeatherService : GenericManagementService<Weather>, IWeatherService
     {
         public WeatherService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<Weather>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<Weather>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public WeatherService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
@@ -62,7 +64,8 @@ namespace ERPCore2.Services
             try
             {
                 // 基本驗證
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     return ServiceResult.Failure("天氣名稱為必填");
 
                 // 檢查編號

@@ -15,10 +15,12 @@ namespace ERPCore2.Services
         public JournalEntryService(
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<JournalEntry>> logger,
-            IFiscalPeriodService fiscalPeriodService)
+            IFiscalPeriodService fiscalPeriodService,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null)
             : base(contextFactory, logger)
         {
             _fiscalPeriodService = fiscalPeriodService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         protected override IQueryable<JournalEntry> BuildGetAllQuery(AppDbContext context)

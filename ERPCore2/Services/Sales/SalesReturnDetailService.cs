@@ -18,8 +18,10 @@ namespace ERPCore2.Services
 
         public SalesReturnDetailService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<SalesReturnDetail>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<SalesReturnDetail>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         protected override IQueryable<SalesReturnDetail> BuildGetAllQuery(AppDbContext context)

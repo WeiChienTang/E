@@ -13,7 +13,11 @@ namespace ERPCore2.Services.Payroll
 
         public PayrollItemService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<PayrollItem>> logger) : base(contextFactory, logger) { }
+            ILogger<GenericManagementService<PayrollItem>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
+        {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
+        }
 
         protected override IQueryable<PayrollItem> BuildGetAllQuery(AppDbContext context)
         {
@@ -54,7 +58,8 @@ namespace ERPCore2.Services.Payroll
             {
                 var errors = new List<string>();
 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("項目名稱不能為空");
 
                 if (string.IsNullOrWhiteSpace(entity.Code))

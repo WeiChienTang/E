@@ -1579,7 +1579,21 @@ public static class NavigationConfig
                         SearchKeywords = new List<string> { "報表設定", "報表配置", "report configuration", "报表设置", "帳表設定", "レポート設定", "報表格式" },
                         QuickActionId = "NewReportPrintConfiguration",
                         QuickActionName = "新增報表設定"
-                    }
+                    },
+
+                    // ── 自訂資料表 ──────────────────────────────
+                    new NavigationItem { IsDivider = true },
+
+                    NavigationActionHelper.CreateActionItem(
+                        name: "自訂資料表",
+                        description: "建立與管理自訂資料表和欄位定義",
+                        iconClass: "bi bi-caret-right-fill",
+                        actionId: "OpenCustomTableManagement",
+                        category: "系統管理",
+                        requiredPermission: PermissionRegistry.System.CustomTable,
+                        searchKeywords: new List<string> { "自訂資料表", "自定義表", "custom table", "動態表", "自訂欄位", "custom field", "カスタムテーブル" },
+                        nameKey: "Nav.CustomTables"
+                    )
                 }
             },
         };

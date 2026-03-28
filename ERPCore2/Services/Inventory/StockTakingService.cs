@@ -24,10 +24,12 @@ namespace ERPCore2.Services
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<StockTaking>> logger,
             IInventoryStockService inventoryStockService,
-            IInventoryTransactionService inventoryTransactionService) : base(contextFactory, logger)
+            IInventoryTransactionService inventoryTransactionService,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
             _inventoryTransactionService = inventoryTransactionService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         #region 基本查詢
@@ -876,7 +878,8 @@ namespace ERPCore2.Services
 
                 var errors = new List<string>();
 
-                if(stockTaking.TakingPersonnel == null || stockTaking.TakingPersonnel.Trim() == "")
+                if (!await IsFieldRelaxedByEbcAsync(nameof(stockTaking.TakingPersonnel))
+                    && (stockTaking.TakingPersonnel == null || stockTaking.TakingPersonnel.Trim() == ""))
                     errors.Add("盤點員為必填");
 
                 if (string.IsNullOrWhiteSpace(stockTaking.TakingNumber))

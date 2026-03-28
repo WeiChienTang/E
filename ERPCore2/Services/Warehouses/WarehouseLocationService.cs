@@ -12,11 +12,13 @@ namespace ERPCore2.Services
 
         // 完整建構子
         public WarehouseLocationService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<WarehouseLocation>> logger, 
-            IErrorLogService errorLogService) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<WarehouseLocation>> logger,
+            IErrorLogService errorLogService,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _errorLogService = errorLogService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         // 簡易建構子
@@ -126,7 +128,8 @@ namespace ERPCore2.Services
                 if (!entity.WarehouseId.HasValue || entity.WarehouseId.Value <= 0)
                     return ServiceResult.Failure("必須選擇倉庫");
 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     return ServiceResult.Failure("庫位名稱為必填");
 
                 using var context = await _contextFactory.CreateDbContextAsync();

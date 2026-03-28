@@ -1,0 +1,339 @@
+@* EBC 欄位顯示設定面板 - 嵌入在 GenericEditModalComponent 中 *@
+@inject IFieldDisplaySettingService FieldDisplaySettingService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+@inject INavigationPermissionService NavigationPermissionService
+@inject IJSRuntime JSRuntime
+
+@if (IsVisible)
+{
+    <div class="field-settings-overlay" @onclick="HandleOverlayClick">
+        <div class="field-settings-panel" @onclick:stopPropagation="true">
+            @* 標題列 *@
+            <div class="field-settings-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-gear"></i>
+                    <span class="field-settings-title">欄位設定 — @ModuleDisplayName</span>
+                </div>
+                <GenericButtonComponent CssClass="btn-close btn-close-white"
+                                       OnClick="Close"
+                                       Title="關閉" />
+            </div>
+
+            <div class="field-settings-notice">
+                <i class="bi bi-info-circle me-1"></i>
+                此設定將套用到所有使用者
+            </div>
+
+            @* 欄位列表 *@
+            <div class="field-settings-body">
+                @if (_isLoading)
+                {
+                    <div class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        <span class="ms-2">載入中...</span>
+                    </div>
+                }
+                else if (_fieldRows.Any())
+                {
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 35%">欄位</th>
+                                <th style="width: 20%" class="text-center">顯示</th>
+                                <th style="width: 20%" class="text-center">必填</th>
+                                <th style="width: 25%">自訂名稱</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in _fieldRows)
+                            {
+                                var isHidden = row.ShowInForm == false;
+                                var isBusinessRequired = row.ProtectionLevel == FieldProtectionLevel.BusinessRequired;
+
+                                <tr class="@(isHidden ? "table-secondary text-muted" : "")">
+                                    <td>
+                                        <span title="@row.PropertyName">@row.OriginalLabel</span>
+                                        @if (isBusinessRequired)
+                                        {
+                                            <span class="badge bg-info ms-1" style="font-size: 0.7rem">業務必要</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (isBusinessRequired)
+                                        {
+                                            @* 業務必要：不可隱藏，顯示開關鎖定 *@
+                                            <div class="form-check form-switch d-flex justify-content-center mb-0">
+                                                <input class="form-check-input" type="checkbox"
+                                                       checked="true" disabled />
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="form-check form-switch d-flex justify-content-center mb-0">
+                                                <input class="form-check-input" type="checkbox"
+                                                       checked="@(row.ShowInForm != false)"
+                                                       @onchange="@(e => OnShowInFormChanged(row, (bool)(e.Value ?? true)))" />
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (isHidden)
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                        else
+                                        {
+                                            <select class="form-select form-select-sm text-center"
+                                                    value="@GetRequiredValue(row)"
+                                                    @onchange="@(e => OnRequiredChanged(row, e.Value?.ToString()))">
+                                                <option value="">預設</option>
+                                                <option value="true">必填</option>
+                                                <option value="false">選填</option>
+                                            </select>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!isHidden)
+                                        {
+                                            <input type="text" class="form-control form-control-sm"
+                                                   placeholder="@row.OriginalLabel"
+                                                   value="@row.DisplayNameOverride"
+                                                   @onchange="@(e => row.DisplayNameOverride = string.IsNullOrWhiteSpace(e.Value?.ToString()) ? null : e.Value?.ToString())" />
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        此模組沒有可配置的欄位
+                    </div>
+                }
+            </div>
+
+            @* 底部按鈕 *@
+            <div class="field-settings-footer">
+                <GenericButtonComponent Text="恢復預設"
+                                       IconClass="bi bi-arrow-counterclockwise"
+                                       Variant="ButtonVariant.OutlineGray"
+                                       OnClick="HandleReset"
+                                       IsDisabled="@_isSaving" />
+                <div class="d-flex gap-2">
+                    <GenericButtonComponent Text="取消"
+                                           Variant="ButtonVariant.Gray"
+                                           OnClick="Close"
+                                           IsDisabled="@_isSaving" />
+                    <GenericButtonComponent Text="儲存設定"
+                                           Variant="ButtonVariant.DarkBlue"
+                                           OnClick="HandleSave"
+                                           IsDisabled="@_isSaving"
+                                           IsLoading="@_isSaving" />
+                </div>
+            </div>
+
+            @* ===== Debug Info (僅 SuperAdmin 可見) ===== *@
+            @if (_isSuperAdmin)
+            {
+                <div class="px-3 py-1 border-top d-flex align-items-center gap-1"
+                     style="background:#1a1a2e; font-size:1rem; font-family:monospace; letter-spacing:0.03em; user-select:text; flex-shrink:0;">
+                    🔧 <strong style="color:#f8c8a0;">SuperAdmin</strong>
+                    @{ var debugName = "FieldSettingsPanel"; }
+                    <span style="color:#7ec8e3; cursor:pointer;"
+                          title="點擊複製：FieldSettingsPanel"
+                          @onclick="() => CopyDebugTextAsync(debugName)"
+                          @onclick:stopPropagation="true">FieldSettingsPanel</span>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public string TargetModule { get; set; } = string.Empty;
+    [Parameter] public string ModuleDisplayName { get; set; } = string.Empty;
+    [Parameter] public string UpdatedBy { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 當前 EditModal 中的 FormFields 定義（用來取得原始欄位名稱和預設值）
+    /// </summary>
+    [Parameter] public List<FormFieldDefinition>? FormFields { get; set; }
+
+    /// <summary>
+    /// 儲存完成後通知父元件重新載入設定
+    /// </summary>
+    [Parameter] public EventCallback OnSettingsSaved { get; set; }
+
+    private List<FieldSettingRow> _fieldRows = new();
+    private bool _isLoading;
+    private bool _isSaving;
+    private bool _isSuperAdmin;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && FormFields != null && FormFields.Any())
+        {
+            _isSuperAdmin = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
+            await LoadSettings();
+        }
+    }
+
+    private async Task LoadSettings()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            // 從資料庫讀取已儲存的覆蓋設定
+            var savedSettings = await FieldDisplaySettingService.GetByModuleAsync(TargetModule);
+
+            // 根據 FormFields 建立設定列表，合併已儲存的覆蓋值
+            // SystemRequired 欄位（如 Code、必要外鍵）不顯示在設定面板中 — 它們無法被配置
+            _fieldRows = FormFields!
+                .Where(f => f.FieldType != FormFieldType.Hidden && !f.IsFilterOnly
+                    && f.ProtectionLevel != FieldProtectionLevel.SystemRequired)
+                .Select(f =>
+                {
+                    var saved = savedSettings.FirstOrDefault(s => s.FieldName == f.PropertyName);
+                    return new FieldSettingRow
+                    {
+                        PropertyName = f.PropertyName,
+                        OriginalLabel = f.LabelFactory?.Invoke() ?? f.Label ?? f.PropertyName,
+                        OriginalIsRequired = f.IsRequired,
+                        ProtectionLevel = f.ProtectionLevel,
+                        // 從資料庫覆蓋值載入（null = 使用預設）
+                        ShowInForm = saved?.ShowInForm,
+                        IsRequiredOverride = saved?.IsRequiredOverride,
+                        DisplayNameOverride = saved?.DisplayNameOverride,
+                        SortOrder = saved?.SortOrder,
+                        HelpTextOverride = saved?.HelpTextOverride,
+                    };
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入欄位設定失敗：{ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleSave()
+    {
+        _isSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var settings = _fieldRows.Select(row => new FieldDisplaySetting
+            {
+                TargetModule = TargetModule,
+                FieldName = row.PropertyName,
+                DisplayNameOverride = row.DisplayNameOverride,
+                ShowInForm = row.ShowInForm,
+                IsRequiredOverride = row.IsRequiredOverride,
+                SortOrder = row.SortOrder,
+                HelpTextOverride = row.HelpTextOverride,
+            }).ToList();
+
+            var result = await FieldDisplaySettingService.SaveModuleSettingsAsync(TargetModule, settings, UpdatedBy);
+
+            if (result.IsSuccess)
+            {
+                await NotificationService.ShowSuccessAsync("欄位設定已儲存，所有使用者將套用新設定");
+                await OnSettingsSaved.InvokeAsync();
+                await Close();
+            }
+            else
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "儲存失敗");
+            }
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleReset()
+    {
+        var result = await FieldDisplaySettingService.ResetModuleSettingsAsync(TargetModule);
+        if (result.IsSuccess)
+        {
+            await NotificationService.ShowSuccessAsync("已恢復為程式碼預設值");
+            await OnSettingsSaved.InvokeAsync();
+            await Close();
+        }
+        else
+        {
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "重設失敗");
+        }
+    }
+
+    private async Task Close()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private void HandleOverlayClick()
+    {
+        _ = Close();
+    }
+
+    private void OnShowInFormChanged(FieldSettingRow row, bool value)
+    {
+        // true = 顯示（null = 使用預設）, false = 隱藏
+        row.ShowInForm = value ? null : false;
+    }
+
+    private void OnRequiredChanged(FieldSettingRow row, string? value)
+    {
+        row.IsRequiredOverride = value switch
+        {
+            "true" => true,
+            "false" => false,
+            _ => null   // 空字串 = 使用預設
+        };
+    }
+
+    private string GetRequiredValue(FieldSettingRow row)
+    {
+        return row.IsRequiredOverride switch
+        {
+            true => "true",
+            false => "false",
+            _ => ""
+        };
+    }
+
+    private async Task CopyDebugTextAsync(string text)
+    {
+        if (!string.IsNullOrEmpty(text))
+            await JSRuntime.InvokeVoidAsync("DebugHelper.copyText", text);
+    }
+
+    /// <summary>UI 用的暫存資料結構</summary>
+    private class FieldSettingRow
+    {
+        public string PropertyName { get; set; } = string.Empty;
+        public string OriginalLabel { get; set; } = string.Empty;
+        public bool OriginalIsRequired { get; set; }
+        public FieldProtectionLevel ProtectionLevel { get; set; } = FieldProtectionLevel.Normal;
+        public bool? ShowInForm { get; set; }
+        public bool? IsRequiredOverride { get; set; }
+        public string? DisplayNameOverride { get; set; }
+        public int? SortOrder { get; set; }
+        public string? HelpTextOverride { get; set; }
+    }
+}

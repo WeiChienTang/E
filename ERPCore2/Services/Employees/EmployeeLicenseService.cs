@@ -13,8 +13,10 @@ namespace ERPCore2.Services
     {
         public EmployeeLicenseService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<EmployeeLicense>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<EmployeeLicense>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public EmployeeLicenseService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
@@ -79,7 +81,8 @@ namespace ERPCore2.Services
                 if (entity.EmployeeId <= 0)
                     errors.Add("請選擇員工");
 
-                if (string.IsNullOrWhiteSpace(entity.LicenseName))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.LicenseName))
+                    && string.IsNullOrWhiteSpace(entity.LicenseName))
                     errors.Add("請輸入證照名稱");
 
                 if (entity.IssuedDate == default)

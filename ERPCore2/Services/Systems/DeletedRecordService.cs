@@ -17,9 +17,11 @@ namespace ERPCore2.Services
     public class DeletedRecordService : GenericManagementService<DeletedRecord>, IDeletedRecordService
     {
         public DeletedRecordService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<DeletedRecord>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<DeletedRecord>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public override async Task<List<DeletedRecord>> SearchAsync(string searchTerm)

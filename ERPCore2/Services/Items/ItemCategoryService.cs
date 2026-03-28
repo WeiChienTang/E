@@ -16,9 +16,11 @@ namespace ERPCore2.Services
         /// 完整建構子 - 包含 ILogger
         /// </summary>
         public ItemCategoryService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<ItemCategory>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<ItemCategory>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>
@@ -81,7 +83,8 @@ namespace ERPCore2.Services
                 var errors = new List<string>();
 
                 // 驗證必填欄位
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                 {
                     errors.Add("分類名稱為必填欄位");
                 }

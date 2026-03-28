@@ -1060,6 +1060,222 @@ namespace ERPCore2.Migrations
                     b.ToTable("Currencies");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.CustomTables.CustomFieldDefinition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("CustomTableDefinitionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DefaultValue")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FieldName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("FieldType")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Options")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Placeholder")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("ShowInForm")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ShowInList")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomTableDefinitionId", "FieldName")
+                        .IsUnique();
+
+                    b.ToTable("CustomFieldDefinitions");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.CustomTables.CustomFieldValue", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CustomFieldDefinitionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CustomTableRowId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Value")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomFieldDefinitionId");
+
+                    b.HasIndex("CustomTableRowId", "CustomFieldDefinitionId")
+                        .IsUnique();
+
+                    b.ToTable("CustomFieldValues");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.CustomTables.CustomTableDefinition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("CodePrefix")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("IconClass")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TableName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CustomTableDefinitions");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.CustomTables.CustomTableRow", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("CustomTableDefinitionId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomTableDefinitionId");
+
+                    b.ToTable("CustomTableRows");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.Customer", b =>
                 {
                     b.Property<int>("Id")
@@ -2674,6 +2890,80 @@ namespace ERPCore2.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ErrorLogs");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.FieldDisplaySetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("DisplayNameOverride")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FieldName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("HelpTextOverride")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsRequiredOverride")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool?>("ShowInForm")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("ShowInList")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TargetModule")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TargetModule", "FieldName")
+                        .IsUnique();
+
+                    b.ToTable("FieldDisplaySettings");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.FiscalPeriod", b =>
@@ -9962,6 +10252,47 @@ namespace ERPCore2.Migrations
                     b.Navigation("Employee");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.CustomTables.CustomFieldDefinition", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.CustomTables.CustomTableDefinition", "CustomTableDefinition")
+                        .WithMany("FieldDefinitions")
+                        .HasForeignKey("CustomTableDefinitionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CustomTableDefinition");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.CustomTables.CustomFieldValue", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.CustomTables.CustomFieldDefinition", "CustomFieldDefinition")
+                        .WithMany()
+                        .HasForeignKey("CustomFieldDefinitionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.CustomTables.CustomTableRow", "CustomTableRow")
+                        .WithMany("FieldValues")
+                        .HasForeignKey("CustomTableRowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CustomFieldDefinition");
+
+                    b.Navigation("CustomTableRow");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.CustomTables.CustomTableRow", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.CustomTables.CustomTableDefinition", "CustomTableDefinition")
+                        .WithMany("Rows")
+                        .HasForeignKey("CustomTableDefinitionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CustomTableDefinition");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.Customer", b =>
                 {
                     b.HasOne("ERPCore2.Data.Entities.Employee", null)
@@ -11901,6 +12232,18 @@ namespace ERPCore2.Migrations
             modelBuilder.Entity("ERPCore2.Data.Entities.CrmLead", b =>
                 {
                     b.Navigation("FollowUps");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.CustomTables.CustomTableDefinition", b =>
+                {
+                    b.Navigation("FieldDefinitions");
+
+                    b.Navigation("Rows");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.CustomTables.CustomTableRow", b =>
+                {
+                    b.Navigation("FieldValues");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Customer", b =>

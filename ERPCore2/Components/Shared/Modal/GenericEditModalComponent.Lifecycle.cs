@@ -138,6 +138,9 @@ public partial class GenericEditModalComponent<TEntity, TService>
             ErrorMessage = string.Empty;
             StateHasChanged();
 
+            // 載入 EBC 欄位顯示設定（快取機制，不會每次都查 DB）
+            _fieldDisplaySettings = await FieldDisplaySettingService.GetByModuleAsync(_moduleName);
+
             if (AdditionalDataLoader != null)
             {
                 await AdditionalDataLoader();

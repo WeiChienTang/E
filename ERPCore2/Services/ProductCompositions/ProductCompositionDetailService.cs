@@ -17,8 +17,10 @@ namespace ERPCore2.Services
         /// </summary>
         public ItemCompositionDetailService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<ItemCompositionDetail>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<ItemCompositionDetail>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>

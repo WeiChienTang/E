@@ -16,9 +16,11 @@ namespace ERPCore2.Services
         /// 完整建構子 - 使用 ILogger
         /// </summary>
         public SupplierPricingService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<SupplierPricing>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<SupplierPricing>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>
@@ -85,7 +87,8 @@ namespace ERPCore2.Services
                 if (entity.PurchasePrice < 0)
                     errors.Add("採購價格不能為負數");
 
-                if (string.IsNullOrWhiteSpace(entity.Currency))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Currency))
+                    && string.IsNullOrWhiteSpace(entity.Currency))
                     errors.Add("貨幣編號為必填欄位");
 
                 if (entity.MinOrderQuantity.HasValue && entity.MinOrderQuantity < 0)

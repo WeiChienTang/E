@@ -11,9 +11,11 @@ namespace ERPCore2.Services
     {
         public AccountItemService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<AccountItem>> logger)
+            ILogger<GenericManagementService<AccountItem>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null)
             : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         protected override IQueryable<AccountItem> BuildGetAllQuery(AppDbContext context)
@@ -257,7 +259,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("科目代碼為必填欄位");
 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("科目名稱為必填欄位");
 
                 if (entity.AccountLevel < 1 || entity.AccountLevel > 4)

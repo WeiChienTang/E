@@ -18,9 +18,11 @@ namespace ERPCore2.Services.Crm
         public CrmLeadService(
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<CrmLead>> logger,
-            ICustomerService customerService) : base(contextFactory, logger)
+            ICustomerService customerService,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _customerService = customerService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         protected override IQueryable<CrmLead> BuildGetAllQuery(AppDbContext context)
@@ -80,7 +82,8 @@ namespace ERPCore2.Services.Crm
             {
                 var errors = new List<string>();
 
-                if (string.IsNullOrWhiteSpace(entity.CompanyName))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.CompanyName))
+                    && string.IsNullOrWhiteSpace(entity.CompanyName))
                     errors.Add("請輸入公司名稱");
 
                 // 公司名稱重複檢查（排除自身）

@@ -23,8 +23,10 @@ namespace ERPCore2.Services
 
         public PurchaseReturnReasonService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<EntityPurchaseReturnReason>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<EntityPurchaseReturnReason>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         protected override IQueryable<EntityPurchaseReturnReason> BuildGetAllQuery(AppDbContext context)
@@ -66,7 +68,8 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("原因名稱為必填欄位");
 
                 if (string.IsNullOrWhiteSpace(entity.Code))

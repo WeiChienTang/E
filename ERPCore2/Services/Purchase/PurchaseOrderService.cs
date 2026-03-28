@@ -26,13 +26,15 @@ namespace ERPCore2.Services
         }
 
         public PurchaseOrderService(
-            IDbContextFactory<AppDbContext> contextFactory, 
+            IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<PurchaseOrder>> logger,
             IPurchaseOrderDetailService purchaseOrderDetailService,
-            ISystemParameterService systemParameterService) : base(contextFactory, logger)
+            ISystemParameterService systemParameterService,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _purchaseOrderDetailService = purchaseOrderDetailService;
             _systemParameterService = systemParameterService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         // 採購服務專注於採購流程管理，不處理庫存邏輯

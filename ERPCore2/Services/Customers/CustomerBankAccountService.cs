@@ -1,6 +1,7 @@
 using ERPCore2.Data.Context;
 using ERPCore2.Data.Entities.Customers;
 using ERPCore2.Helpers;
+using ERPCore2.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,7 +13,11 @@ namespace ERPCore2.Services.Customers
 
         public CustomerBankAccountService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<CustomerBankAccount>> logger) : base(contextFactory, logger) { }
+            ILogger<GenericManagementService<CustomerBankAccount>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
+        {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
+        }
 
         protected override IQueryable<CustomerBankAccount> BuildGetAllQuery(AppDbContext context)
         {
@@ -141,10 +146,12 @@ namespace ERPCore2.Services.Customers
                 if (entity.BankId <= 0)
                     errors.Add("請選擇銀行");
 
-                if (string.IsNullOrWhiteSpace(entity.AccountNumber))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.AccountNumber))
+                    && string.IsNullOrWhiteSpace(entity.AccountNumber))
                     errors.Add("帳號不能為空");
 
-                if (string.IsNullOrWhiteSpace(entity.AccountName))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.AccountName))
+                    && string.IsNullOrWhiteSpace(entity.AccountName))
                     errors.Add("戶名不能為空");
 
                 if (errors.Any())

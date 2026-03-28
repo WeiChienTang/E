@@ -8,9 +8,13 @@ namespace ERPCore2.Services
 {
     public class DocumentFileService : GenericManagementService<DocumentFile>, IDocumentFileService
     {
-        public DocumentFileService(IDbContextFactory<AppDbContext> contextFactory, ILogger<GenericManagementService<DocumentFile>> logger)
+        public DocumentFileService(
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<DocumentFile>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null)
             : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public override async Task<List<DocumentFile>> SearchAsync(string searchTerm)
@@ -39,7 +43,8 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
 
-                if (string.IsNullOrWhiteSpace(entity.DisplayName))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.DisplayName))
+                    && string.IsNullOrWhiteSpace(entity.DisplayName))
                     errors.Add("附件名稱為必填欄位");
 
                 if (string.IsNullOrWhiteSpace(entity.FilePath))

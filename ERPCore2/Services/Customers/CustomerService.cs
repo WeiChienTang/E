@@ -24,10 +24,12 @@ namespace ERPCore2.Services
             IDbContextFactory<AppDbContext> contextFactory,
             ISupplierService supplierService,
             ISubAccountService subAccountService,
-            ILogger<GenericManagementService<Customer>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<Customer>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _supplierService = supplierService;
             _subAccountService = subAccountService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>

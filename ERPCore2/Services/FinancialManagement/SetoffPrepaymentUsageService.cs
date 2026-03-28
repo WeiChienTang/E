@@ -19,9 +19,11 @@ namespace ERPCore2.Services
         public SetoffPrepaymentUsageService(
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<SetoffPrepaymentUsage>> logger,
-            ISetoffPrepaymentService prepaymentService) : base(contextFactory, logger)
+            ISetoffPrepaymentService prepaymentService,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
             _prepaymentService = prepaymentService;
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <summary>

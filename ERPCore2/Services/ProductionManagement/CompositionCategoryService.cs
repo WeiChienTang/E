@@ -16,9 +16,11 @@ namespace ERPCore2.Services
         }
 
         public CompositionCategoryService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<CompositionCategory>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<CompositionCategory>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         protected override IQueryable<CompositionCategory> BuildGetAllQuery(AppDbContext context)
@@ -100,7 +102,8 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(entity.Code))
                     errors.Add("物料清單類型編號不能為空");
                 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("名稱為必填欄位");
                 
                 if (!string.IsNullOrWhiteSpace(entity.Code) && 

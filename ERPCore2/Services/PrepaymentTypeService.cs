@@ -17,9 +17,11 @@ namespace ERPCore2.Services
         }
 
         public PrepaymentTypeService(
-            IDbContextFactory<AppDbContext> contextFactory, 
-            ILogger<GenericManagementService<PrepaymentType>> logger) : base(contextFactory, logger)
+            IDbContextFactory<AppDbContext> contextFactory,
+            ILogger<GenericManagementService<PrepaymentType>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         protected override IQueryable<PrepaymentType> BuildGetAllQuery(AppDbContext context)
@@ -64,7 +66,8 @@ namespace ERPCore2.Services
             {
                 var errors = new List<string>();
                 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                     errors.Add("名稱為必填欄位");
                 
                 // 檢查名稱是否重複

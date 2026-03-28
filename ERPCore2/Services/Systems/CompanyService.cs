@@ -15,8 +15,10 @@ namespace ERPCore2.Services
     {
         public CompanyService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<Company>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<Company>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public override async Task<List<Company>> SearchAsync(string searchTerm)
@@ -202,8 +204,9 @@ namespace ERPCore2.Services
         {
             try
             {
-                // 驗證必要欄位
-                if (string.IsNullOrWhiteSpace(entity.CompanyName))
+                // ── 業務必填驗證（BusinessRequired — 可被 EBC 覆蓋為選填） ──
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.CompanyName))
+                    && string.IsNullOrWhiteSpace(entity.CompanyName))
                 {
                     return ServiceResult.Failure("公司名稱為必填欄位");
                 }

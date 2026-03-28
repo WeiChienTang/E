@@ -11,9 +11,11 @@ namespace ERPCore2.Services
     {
         public FiscalPeriodService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<FiscalPeriod>> logger)
+            ILogger<GenericManagementService<FiscalPeriod>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null)
             : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         protected override IQueryable<FiscalPeriod> BuildGetAllQuery(AppDbContext context)

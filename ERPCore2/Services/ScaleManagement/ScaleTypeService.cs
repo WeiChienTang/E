@@ -14,8 +14,10 @@ namespace ERPCore2.Services
     {
         public ScaleTypeService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<ScaleType>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<ScaleType>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         public ScaleTypeService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
@@ -85,11 +87,12 @@ namespace ERPCore2.Services
                         errors.Add("磅秤類型編號已存在");
                 }
 
-                if (string.IsNullOrWhiteSpace(entity.Name))
+                if (!await IsFieldRelaxedByEbcAsync(nameof(entity.Name))
+                    && string.IsNullOrWhiteSpace(entity.Name))
                 {
                     errors.Add("磅秤類型名稱為必填欄位");
                 }
-                else
+                else if (!string.IsNullOrWhiteSpace(entity.Name))
                 {
                     if (await IsNameExistsAsync(entity.Name, entity.Id))
                         errors.Add("磅秤類型名稱已存在");

@@ -66,6 +66,41 @@ namespace ERPCore2.FieldConfiguration
         }
 
         /// <summary>
+        /// 根據慣例自動推斷欄位的保護等級（FieldProtectionLevel）
+        /// 規則：
+        ///   1. PropertyName == "Code" → SystemRequired（業務識別碼，所有 Service 的 ValidateAsync 都檢查）
+        ///   2. PropertyName 以 "Id" 結尾且 IsRequired == true → SystemRequired（必要外鍵）
+        ///   3. 其餘 IsRequired == true → BusinessRequired（業務必要，但可由使用者覆蓋為選填）
+        ///   4. 其餘 → Normal（完全自由配置）
+        /// 個別模組仍可在呼叫後手動覆蓋特定欄位的 ProtectionLevel
+        /// </summary>
+        public static List<FormFieldDefinition> ApplyProtectionLevels(List<FormFieldDefinition> formFields)
+        {
+            foreach (var field in formFields)
+            {
+                // 已被手動設定過的（非 Normal）不覆蓋
+                if (field.ProtectionLevel != FieldProtectionLevel.Normal)
+                    continue;
+
+                if (field.PropertyName == "Code")
+                {
+                    field.ProtectionLevel = FieldProtectionLevel.SystemRequired;
+                }
+                else if (field.PropertyName.EndsWith("Id") && field.IsRequired)
+                {
+                    field.ProtectionLevel = FieldProtectionLevel.SystemRequired;
+                }
+                else if (field.IsRequired)
+                {
+                    field.ProtectionLevel = FieldProtectionLevel.BusinessRequired;
+                }
+                // else: Normal (default)
+            }
+
+            return formFields;
+        }
+
+        /// <summary>
         /// 自動為所有包含 MaxLength 屬性的文字欄位套用字數限制
         /// </summary>
         /// <typeparam name="TEntity">實體類型</typeparam>

@@ -14,8 +14,10 @@ namespace ERPCore2.Services
 
         public EmployeePreferenceService(
             IDbContextFactory<AppDbContext> contextFactory,
-            ILogger<GenericManagementService<EmployeePreference>> logger) : base(contextFactory, logger)
+            ILogger<GenericManagementService<EmployeePreference>> logger,
+            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
         {
+            _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
         /// <inheritdoc />
