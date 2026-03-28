@@ -1,0 +1,59 @@
+.icon-preview-area {
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+}
+
+.icon-preview-content {
+    background-color: var(--bg-tertiary);
+}
+
+.icon-picker-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 0.5rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 80px;
+    background-color: var(--bg-primary);
+}
+
+.icon-picker-item:hover {
+    border-color: var(--color-primary);
+    background-color: var(--bg-tertiary);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.icon-picker-item.selected {
+    border-color: var(--color-primary);
+    background-color: var(--bg-secondary);
+}
+
+.icon-picker-item.selected i {
+    color: var(--color-primary);
+}
+
+.icon-picker-item.current {
+    border-color: var(--text-secondary);
+    background-color: var(--bg-tertiary);
+}
+
+.icon-picker-item .icon-name {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.2;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.icon-picker-item.selected .icon-name {
+    color: var(--color-primary);
+    font-weight: 600;
+}

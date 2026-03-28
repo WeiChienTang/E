@@ -87,10 +87,13 @@ namespace ERPCore2.Services.Reports
             var primaryCompany = await _companyService.GetPrimaryCompanyAsync();
             var companyId = criteria.CompanyId ?? primaryCompany?.Id;
 
+            // 排除 Closing 類型：年底結帳傳票會將損益科目歸零，
+            // 若包含則結帳後損益表顯示為零（與 FiscalYearClosingService.GetIncomeStatementBalancesAsync 一致）
             var query = context.JournalEntryLines
                 .Include(l => l.AccountItem)
                 .Include(l => l.JournalEntry)
                 .Where(l => l.JournalEntry.JournalEntryStatus == JournalEntryStatus.Posted
+                         && l.JournalEntry.EntryType != JournalEntryType.Closing
                          && IncomeStatementTypes.Contains(l.AccountItem.AccountType)
                          && (!companyId.HasValue || l.JournalEntry.CompanyId == companyId.Value));
 

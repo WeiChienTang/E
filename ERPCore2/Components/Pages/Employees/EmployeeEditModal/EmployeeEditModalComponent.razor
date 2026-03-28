@@ -417,7 +417,7 @@
                     Options = Enum.GetValues<Gender>().Select(g => new SelectOption { Text = GetGenderDisplayName(g), Value = ((int)g).ToString() }).ToList()
                 },
                 new() { PropertyName = nameof(Employee.BirthDate), Label = L["Field.Birthday"], FieldType = FormFieldType.Date, Placeholder = L["Placeholder.PleaseSelect", L["Field.Birthday"]], HelpText = "員工出生日期" },
-                new() { PropertyName = nameof(Employee.IdNumber), Label = L["Field.IdNumber"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.IdNumber"]], MaxLength = 10, HelpText = "員工身分證字號" },
+                new() { PropertyName = nameof(Employee.IdNumber), Label = L["Field.IdNumber"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.IdNumber"]], MaxLength = 30, HelpText = "員工身分證字號或護照號碼" },
                 new() { PropertyName = nameof(Employee.Nationality), Label = L["Field.Nationality"], FieldType = FormFieldType.Text, Placeholder = L["Placeholder.PleaseInput", L["Field.Nationality"]], MaxLength = 50, HelpText = "員工國籍" },
                 new()
                 {

@@ -1,4 +1,5 @@
 using ERPCore2.Data.Context;
+using ERPCore2.Data.Entities;
 using ERPCore2.Data.Entities.Payroll;
 using ERPCore2.Helpers;
 using ERPCore2.Models.Enums;
@@ -118,6 +119,15 @@ namespace ERPCore2.Services.Payroll
 
                 if (recordStats.Unconfirmed > 0)
                     return ServiceResult.Failure($"尚有 {recordStats.Unconfirmed} 筆薪資單未確認，請先確認所有薪資單再關帳");
+
+                // 檢查在職員工數與薪資記錄數是否一致（僅警告，不阻擋）
+                var activeEmployeeCount = await context.Employees
+                    .CountAsync(e => e.EmploymentStatus == EmployeeStatus.Active
+                                  || e.EmploymentStatus == EmployeeStatus.Probation);
+                if (recordStats.Total < activeEmployeeCount)
+                    _logger?.LogWarning("[PayrollPeriod] 關帳警告：在職員工 {ActiveCount} 人，但薪資記錄僅 {RecordCount} 筆，" +
+                        "可能有員工未計算薪資。週期：{Year}/{Month}",
+                        activeEmployeeCount, recordStats.Total, period.Year, period.Month);
 
                 period.PeriodStatus = PayrollPeriodStatus.Closed;
                 period.ClosedAt = DateTime.UtcNow;

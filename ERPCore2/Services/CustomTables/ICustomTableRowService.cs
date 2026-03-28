@@ -32,8 +32,9 @@ namespace ERPCore2.Services.CustomTables
         /// <summary>
         /// 分頁查詢指定表的資料列
         /// </summary>
+        /// <param name="isDraft">null=正式資料, true=草稿, false=全部</param>
         Task<(List<CustomTableRow> Items, int TotalCount)> GetPagedByTableIdAsync(
-            int tableDefinitionId, int pageNumber, int pageSize, string? searchTerm = null);
+            int tableDefinitionId, int pageNumber, int pageSize, string? searchTerm = null, bool? isDraft = null);
 
         /// <summary>
         /// 驗證欄位值（型別檢查、必填檢查）

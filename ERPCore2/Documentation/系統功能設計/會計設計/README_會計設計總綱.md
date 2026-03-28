@@ -1,7 +1,7 @@
 # 會計模組設計總綱
 
 ## 更新日期
-2026-03-24
+2026-03-28
 
 ---
 
@@ -115,13 +115,17 @@ Level 1: Code "1"      → 資產（ParentId: null）
 | 子科目延遲建立（GetOrCreate） | 未啟用時自動 fallback 統制科目，不影響既有流程 | ✅ 已實作 |
 | FiscalPeriod 不對 JournalEntry 加 FK | JournalEntry 維持 `FiscalYear int` + `FiscalPeriod int`，FiscalPeriod 管理表獨立維護，期間驗證在 Service 層完成（符合業界 SAP/Oracle 慣例，避免雞蛋問題與 Migration 負擔） | ✅ 已實作 |
 | 期初餘額傳票必須借貸平衡 | 不允許不平衡的期初餘額傳票過帳；差額代表輸入有誤，系統應拒絕並提示哪邊相差多少 | ✅ 已實作 |
-| FiscalPeriod 混合式初始化 | 當年度可由 `InitializeYearAsync` 批次建立 12 個月；`PostEntryAsync` 期間驗證邏輯：若期間記錄不存在（`period == null`）則**直接放行**（不自動建立期間、不記錄警告），僅在期間存在且為 Closed/Locked 時阻擋。OpeningBalance 傳票跳過所有期間檢查。 | ⚠️ 行為與原描述不同，見下方說明 |
+| FiscalPeriod 混合式初始化 | 當年度可由 `InitializeYearAsync` 批次建立 12 個月；`PostEntryAsync` 期間驗證：期間不存在時**阻擋**（回傳錯誤），Closed/Locked 時阻擋。OpeningBalance 傳票跳過所有期間檢查。 | ✅ 已實作（2026-03-25 修正為阻擋） |
 | FiscalPeriod 重開機制 | Closed 可重開（需 `Accounting.ClosePeriod` 權限）；Locked 永久不可重開；重開記錄原因與操作人員 | ✅ 已實作 |
 | 會計功能操作權限 | 不使用 SuperAdmin；改用 `Accounting.*` 系列權限（PostEntry / ClosePeriod / OpeningBalance / YearEndClosing），透過現有 Role+Permission 授予財務人員 | ✅ 已實作 |
 | AR/AP 帳齡以主檔（Invoice）層級計算 | 帳齡追蹤單位為 SalesDelivery / PurchaseReceiving 整張單據，而非逐行品項明細；帳齡天數基準 = 交貨日 + 客戶信用天數（`Customer.PaymentDays`） | ✅ 已實作 |
 | 年底結帳冪等性保護 | `ExecuteYearEndClosingAsync` 執行前先確認該年度是否已有 Closing 類型傳票，若有則拒絕重複執行 | ✅ 已實作 |
 | AR/AP 帳齡金額口徑 | 使用含稅金額（`TotalAmount + TaxAmount`）；`DiscountAmount` 已含入 `TotalAmount`，無需另扣 | ✅ 已實作 |
 | 年底結帳科目代碼 | **Step 1**：損益科目歸零轉入「本期損益」`3353`；**Step 2**：本期損益轉入「累積盈虧」`3351`。⚠️ 注意：`3351=累積盈虧`（保留盈餘帳），`3353=本期損益`（年底結帳彙總帳），兩者均存在於種子資料。`3361` 不存在，**不可使用**。 | ✅ 已實作 |
+| 傳票樂觀並發控制 | `JournalEntry.RowVersion`（SQL Server `rowversion`）；`PostEntryAsync`/`ReverseEntryAsync` 捕獲 `DbUpdateConcurrencyException` 回傳友善錯誤 | ✅ 已實作 |
+| 年底結帳並發鎖 | `FiscalYearClosingService` 使用 `SemaphoreSlim` 互斥鎖，等待 5 秒超時回傳「正在執行中」錯誤 | ✅ 已實作 |
+| 會計稽核日誌 | `AccountingAuditLog` Entity 記錄過帳/沖銷/關帳/鎖定/重開/年底結帳操作；寫入失敗不阻擋主流程（僅 Warning log） | ✅ 已實作 |
+| UI 權限強制執行 | 過帳/沖銷需 `Accounting.PostEntry`、關帳/鎖定/重開需 `Accounting.ClosePeriod`、年底結帳需 `Accounting.YearEndClosing`、期初餘額需 `Accounting.OpeningBalance`；使用 `<PermissionCheck>` 元件包裝按鈕 | ✅ 已實作 |
 
 > 詳細設計決策說明請見各子文件。
 
@@ -190,13 +194,24 @@ Level 1: Code "1"      → 資產（ParentId: null）
 |---|------|----------|----------|
 | 4 | 薪資模組已建立，但無對應傳票自動產生。目前 `JournalEntryAutoGenerationService` 無任何薪資相關方法。 | ⏸️ 暫緩 | Phase 2-A（前置條件：薪資項目結構定案、薪資計算邏輯完成、會計科目對應規則確認） |
 | 7 | ~~`ProductionScheduleCompletion.ActualUnitCost` 與 `InventoryTransactionId` 皆為 nullable；若未填入，傳票金額將為零~~ | ✅ 已處理 | `JournalizeProductionCompletionAsync` 已加入 Service 層運行時驗證：`InventoryTransactionId == null` 時回傳明確錯誤訊息，不會產生零金額傳票。DB 層維持 nullable（完工記錄建立時尚未入庫，入庫後才寫入）。 |
-| 18 | `PostEntryAsync` 期間驗證：當 FiscalPeriod 記錄不存在時直接放行過帳，不建立期間也不記錄警告。原文件描述「過去期間不存在時自動建立（記錄警告）」與程式碼行為不符。 | 🟡 低 | 需決策：(a) 維持現行「不存在就放行」的寬鬆模式，或 (b) 改為不存在時自動建立 Open 期間並記錄 Warning log。目前不影響已建立期間的 Closed/Locked 阻擋邏輯。 |
 | 19 | `JournalEntryAutoGenerationService` 中 15 個會計科目代碼硬編碼（如 `1191`、`2171`、`1231` 等），不支援多公司使用不同科目表 | 🟠 中 | 應改為從系統參數表讀取，依公司配置科目代碼對應關係。目前僅適用於台灣 112 年度商業會計項目表。 |
+
+### 已知限制（視業務需求排期）
+
+| # | 問題 | 嚴重程度 | 說明 |
+|---|------|----------|------|
+| 28 | 不支援非曆年制會計年度 | 🟡 低 | `InitializeYearAsync` 硬編碼 1-12 月；台灣多數企業使用曆年制，短期影響低 |
+| 29 | 不支援多幣別交易 | 🟡 低 | `Currency` 實體存在但未整合到傳票（無 CurrencyId/ExchangeRate/ForeignAmount 欄位） |
+| 30 | 缺少固定資產折舊機制 | 🟡 低 | 無 FixedAsset 實體、無折舊計算邏輯；固定資產折舊需手動建立傳票 |
+| 31 | 缺少定期傳票範本 | 🟡 低 | 無 JournalEntryTemplate / RecurringEntry 機制 |
+| 32 | 缺少預算管理 | 🟡 低 | 無 Budget 實體，無預算 vs 實際比較報表 |
+| 33 | 缺少台灣稅務申報匯出（401/403） | 🟡 低 | VAT 稅額正確記錄但無官方格式匯出 |
+| 34 | 缺少合併報表 | 🟡 低 | 多公司隔離正確，但無合併財務報表功能 |
 
 ### 已修正的歷史缺陷
 
 <details>
-<summary>展開查看 19 筆已修正缺陷（點擊展開）</summary>
+<summary>展開查看 28 筆已修正缺陷（點擊展開）</summary>
 
 | # | 問題 | 修正時間 | 說明 |
 |---|------|----------|------|
@@ -219,6 +234,17 @@ Level 1: Code "1"      → 資產（ParentId: null）
 | 21 | 批次轉傳票 VAT 科目不存在時靜默略過稅額行，導致借貸可能不平衡 | 2026-03-24 | 4 處 VAT null 檢查改為：稅額 > 0 但科目 null 時回傳明確錯誤訊息 |
 | 22 | 年底結帳 Step 2 失敗時 Step 1 已提交無法回復 | 2026-03-24 | Step 2 失敗時自動沖銷 Step 1 已建立的 Closing 傳票 |
 | 23 | 結帳傳票 FiscalPeriod 硬編碼為 12 | 2026-03-24 | 改為查詢該年度最後一個期間編號 |
+| 24 | UI 層權限未執行：過帳/沖銷/關帳/鎖定/重開/年底結帳/期初餘額按鈕無權限判斷 | 2026-03-28 | 各 UI 元件加入 `<PermissionCheck>` 包裝敏感操作按鈕（PostEntry / ClosePeriod / YearEndClosing / OpeningBalance） |
+| 25 | 傳票缺乏樂觀並發控制，兩人同時過帳同一張草稿可能都成功 | 2026-03-28 | `JournalEntry` 加入 `RowVersion`（SQL Server rowversion），PostEntry/ReverseEntry 捕獲 `DbUpdateConcurrencyException` |
+| 26 | 年底結帳無並發鎖定，多人可同時執行 | 2026-03-28 | `FiscalYearClosingService` 加入 `SemaphoreSlim` 互斥鎖（等待 5 秒超時回傳錯誤） |
+| 27 | 敏感會計操作無稽核日誌 | 2026-03-28 | 新增 `AccountingAuditLog` Entity + `IAccountingAuditLogService`，在 PostEntry/ReverseEntry/ClosePeriod/LockPeriod/ReopenPeriod/YearEndClosing 後自動記錄 |
+| 18 | `PostEntryAsync` 期間不存在時直接放行 | 2026-03-25 | 情境檢查修正為阻擋（回傳「會計期間尚未建立」錯誤） |
+| 35 | 損益表（FN007）未排除 Closing 傳票，年底結帳後損益表顯示為零 | 2026-03-28 | 查詢加入 `EntryType != Closing` 過濾（與 FiscalYearClosingService 一致） |
+| 36 | 試算表（FN006）本期發生額未排除 Closing 傳票 | 2026-03-28 | 期間查詢加入 `EntryType != Closing` 過濾 |
+| 37 | 銀行對帳配對無唯一約束，同一筆傳票分錄可被多個銀行明細重複配對 | 2026-03-28 | `ToggleLineMatchAsync` 新增 Service 層唯一性驗證 |
+| 38 | 銀行對帳配對無跨公司驗證，可配對到其他公司的傳票分錄 | 2026-03-28 | `ToggleLineMatchAsync` 新增 CompanyId 交叉比對 |
+| 39 | 沖款單轉傳票未驗證折讓/預收/收款金額不為負數 | 2026-03-28 | `JournalizeSetoffDocumentAsync` 新增 TotalAllowanceAmount / PrepaymentSetoffAmount / TotalCollectionAmount < 0 阻擋 |
+| 40 | 期初餘額可在已有已過帳交易的年度重複修改 | 2026-03-28 | `SaveOpeningBalanceAsync` 新增已過帳交易檢查，有交易時阻擋修改 |
 
 </details>
 

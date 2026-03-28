@@ -156,6 +156,7 @@ namespace ERPCore2.Data.Context
       public DbSet<BankStatement> BankStatements { get; set; }
       public DbSet<BankStatementLine> BankStatementLines { get; set; }
       public DbSet<JournalEntryAttachment> JournalEntryAttachments { get; set; }
+      public DbSet<AccountingAuditLog> AccountingAuditLogs { get; set; }
 
       // ── EBC 可配置化 ─────────────────────────────────────────────────────
       public DbSet<FieldDisplaySetting> FieldDisplaySettings { get; set; }
@@ -165,6 +166,10 @@ namespace ERPCore2.Data.Context
       public DbSet<CustomFieldDefinition> CustomFieldDefinitions { get; set; }
       public DbSet<CustomTableRow> CustomTableRows { get; set; }
       public DbSet<CustomFieldValue> CustomFieldValues { get; set; }
+
+      // ── 通訊系統 ────────────────────────────────────────────────────────
+      public DbSet<SystemNotification> SystemNotifications { get; set; }
+      public DbSet<ApproverAssignment> ApproverAssignments { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
@@ -1107,6 +1112,12 @@ namespace ERPCore2.Data.Context
                               .HasPrecision(5, 2); // 總共5位數，小數點後2位（可表示 0.00 到 999.99）
                   });
 
+                  // 傳票樂觀並發控制
+                  modelBuilder.Entity<JournalEntry>(entity =>
+                  {
+                        entity.Property(e => e.RowVersion).IsRowVersion();
+                  });
+
                   // 代碼自動產生設定
                   modelBuilder.Entity<CodeSetting>(entity =>
                   {
@@ -1859,6 +1870,28 @@ namespace ERPCore2.Data.Context
                               .WithMany()
                               .HasForeignKey(e => e.CustomFieldDefinitionId)
                               .OnDelete(DeleteBehavior.NoAction);
+                  });
+
+                  // ── 通訊系統 ──────────────────────────────────────────────
+                  modelBuilder.Entity<SystemNotification>(entity =>
+                  {
+                        entity.HasOne(n => n.Recipient)
+                              .WithMany()
+                              .HasForeignKey(n => n.RecipientEmployeeId)
+                              .OnDelete(DeleteBehavior.Cascade);
+
+                        entity.HasOne(n => n.Sender)
+                              .WithMany()
+                              .HasForeignKey(n => n.SenderEmployeeId)
+                              .OnDelete(DeleteBehavior.NoAction);
+                  });
+
+                  modelBuilder.Entity<ApproverAssignment>(entity =>
+                  {
+                        entity.HasOne(a => a.Approver)
+                              .WithMany()
+                              .HasForeignKey(a => a.ApproverEmployeeId)
+                              .OnDelete(DeleteBehavior.Cascade);
                   });
 
             }

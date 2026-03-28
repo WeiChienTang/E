@@ -216,6 +216,11 @@ namespace ERPCore2.Data.Entities
         [Range(0, 60)]
         public int LateTolerance { get; set; } = 0;
 
+        /// <summary>員工證照到期預設預警天數，例：30 = 到期前30天顯示「即將過期」</summary>
+        [Display(Name = "證照到期預警天數")]
+        [Range(1, 365, ErrorMessage = "預警天數必須在 1 到 365 之間")]
+        public int DefaultLicenseAlertDays { get; set; } = 30;
+
         // ── 薪資會計科目代碼（Phase 4 使用，空白時不過帳）──────────────
 
         /// <summary>薪資費用科目代碼（如 6111）</summary>

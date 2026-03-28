@@ -101,7 +101,7 @@ namespace ERPCore2.Data.Entities
         /// 身分證字號
         /// </summary>
         [Display(Name = "身分證字號")]
-        [MaxLength(10)]
+        [MaxLength(30)]
         public string? IdNumber { get; set; }
 
         /// <summary>

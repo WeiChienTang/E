@@ -451,24 +451,28 @@
             </span>
         }
 
-        @* 過帳按鈕（草稿狀態才顯示） *@
+        @* 過帳按鈕（草稿狀態 + PostEntry 權限才顯示） *@
         if (entity.JournalEntryStatus == JournalEntryStatus.Draft)
         {
-            <GenericButtonComponent Text="過帳"
-                                  Variant="ButtonVariant.Green"
-                                  OnClick="HandlePost"
-                                  IsDisabled="@(isSaving || !isBalanced || !hasValidLines)"
-                                  IsLoading="@(isSaving && saveAction == "post")" />
+            <PermissionCheck Permission="@PermissionRegistry.Accounting.PostEntry">
+                <GenericButtonComponent Text="過帳"
+                                      Variant="ButtonVariant.Green"
+                                      OnClick="HandlePost"
+                                      IsDisabled="@(isSaving || !isBalanced || !hasValidLines)"
+                                      IsLoading="@(isSaving && saveAction == "post")" />
+            </PermissionCheck>
         }
 
-        @* 沖銷按鈕（已過帳且未沖銷且非沖銷傳票才顯示） *@
+        @* 沖銷按鈕（已過帳且未沖銷且非沖銷傳票 + PostEntry 權限才顯示） *@
         if (entity.JournalEntryStatus == JournalEntryStatus.Posted && !entity.IsReversed && entity.EntryType != JournalEntryType.Reversing)
         {
-            <GenericButtonComponent Text="沖銷"
-                                  Variant="ButtonVariant.Green"
-                                  OnClick="HandleReverse"
-                                  IsDisabled="@isSaving"
-                                  IsLoading="@(isSaving && saveAction == "reverse")" />
+            <PermissionCheck Permission="@PermissionRegistry.Accounting.PostEntry">
+                <GenericButtonComponent Text="沖銷"
+                                      Variant="ButtonVariant.Green"
+                                      OnClick="HandleReverse"
+                                      IsDisabled="@isSaving"
+                                      IsLoading="@(isSaving && saveAction == "reverse")" />
+            </PermissionCheck>
         }
     };
 

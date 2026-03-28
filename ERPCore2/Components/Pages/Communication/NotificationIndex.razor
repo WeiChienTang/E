@@ -1,0 +1,258 @@
+@page "/notifications"
+@using ERPCore2.Data.Entities
+@using ERPCore2.Models.Enums
+@using ERPCore2.Services.Communication
+@inject ISystemNotificationService NotificationService
+@inject INavigationPermissionService NavigationPermissionService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<div class="notification-page">
+    <div class="notification-page-header">
+        <h4>
+            <span class="bi bi-bell me-2"></span>系統通知
+        </h4>
+        <div class="notification-page-actions">
+            @if (_unreadCount > 0)
+            {
+                <button class="btn btn-sm btn-outline-primary" @onclick="MarkAllAsRead">
+                    <span class="bi bi-check-all me-1"></span>全部標記為已讀
+                </button>
+            }
+        </div>
+    </div>
+
+    @* 篩選列 *@
+    <div class="notification-filters">
+        <button class="filter-btn @(_currentFilter == null && !_showUnreadOnly ? "active" : "")"
+                @onclick="() => ApplyFilter(null, false)">
+            全部
+            @if (_totalCount > 0) { <span class="filter-count">@_totalCount</span> }
+        </button>
+        <button class="filter-btn @(_showUnreadOnly ? "active" : "")"
+                @onclick="() => ApplyFilter(null, true)">
+            未讀
+            @if (_unreadCount > 0) { <span class="filter-count unread">@_unreadCount</span> }
+        </button>
+        <button class="filter-btn @(_currentFilter == NotificationType.ApprovalRequest ? "active" : "")"
+                @onclick="() => ApplyFilter(NotificationType.ApprovalRequest, false)">
+            <span class="bi bi-clipboard-check me-1"></span>審核請求
+        </button>
+        <button class="filter-btn @(_currentFilter == NotificationType.ApprovalResult ? "active" : "")"
+                @onclick="() => ApplyFilter(NotificationType.ApprovalResult, false)">
+            <span class="bi bi-check-circle me-1"></span>審核結果
+        </button>
+        <button class="filter-btn @(_currentFilter == NotificationType.SystemAlert ? "active" : "")"
+                @onclick="() => ApplyFilter(NotificationType.SystemAlert, false)">
+            <span class="bi bi-exclamation-triangle me-1"></span>系統通知
+        </button>
+    </div>
+
+    @* 通知列表 *@
+    <div class="notification-list">
+        @if (_loading)
+        {
+            <div class="notification-page-empty">
+                <span class="bi bi-arrow-repeat spin"></span>
+                <span>載入中...</span>
+            </div>
+        }
+        else if (!_notifications.Any())
+        {
+            <div class="notification-page-empty">
+                <span class="bi bi-bell-slash"></span>
+                <span>@(_showUnreadOnly ? "沒有未讀通知" : _currentFilter.HasValue ? "沒有此類型的通知" : "目前沒有通知")</span>
+            </div>
+        }
+        else
+        {
+            @foreach (var notification in _notifications)
+            {
+                <div class="notification-list-item @(notification.IsRead ? "read" : "unread")">
+                    <div class="notification-list-icon">
+                        <span class="bi @notification.TypeIconClass"></span>
+                    </div>
+                    <div class="notification-list-body" @onclick="() => HandleClick(notification)">
+                        <div class="notification-list-title">
+                            @if (!notification.IsRead)
+                            {
+                                <span class="unread-dot"></span>
+                            }
+                            @notification.Title
+                        </div>
+                        @if (!string.IsNullOrEmpty(notification.Content))
+                        {
+                            <div class="notification-list-content">@notification.Content</div>
+                        }
+                        <div class="notification-list-meta">
+                            <span class="meta-type">@notification.NotificationTypeText</span>
+                            <span class="meta-separator">·</span>
+                            <span class="meta-sender">@notification.SenderDisplayName</span>
+                            <span class="meta-separator">·</span>
+                            <span class="meta-time">@FormatTime(notification.CreatedAt)</span>
+                            @if (notification.Priority >= NotificationPriority.High)
+                            {
+                                <span class="meta-separator">·</span>
+                                <span class="meta-priority priority-high">@notification.PriorityText</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="notification-list-actions">
+                        @if (!notification.IsRead)
+                        {
+                            <button class="action-btn" @onclick="() => MarkAsRead(notification)" title="標記為已讀">
+                                <span class="bi bi-check"></span>
+                            </button>
+                        }
+                        <button class="action-btn action-delete" @onclick="() => DeleteNotification(notification)" title="刪除">
+                            <span class="bi bi-trash"></span>
+                        </button>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    @* 分頁 *@
+    @if (_totalFilteredCount > _pageSize)
+    {
+        <div class="notification-pagination">
+            <button class="btn btn-sm btn-outline-secondary" disabled="@(_pageNumber <= 1)" @onclick="PrevPage">
+                <span class="bi bi-chevron-left"></span> 上一頁
+            </button>
+            <span class="pagination-info">
+                第 @_pageNumber / @TotalPages 頁（共 @_totalFilteredCount 筆）
+            </span>
+            <button class="btn btn-sm btn-outline-secondary" disabled="@(_pageNumber >= TotalPages)" @onclick="NextPage">
+                下一頁 <span class="bi bi-chevron-right"></span>
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    private int _employeeId;
+    private bool _loading = true;
+    private List<SystemNotification> _notifications = new();
+    private int _unreadCount;
+    private int _totalCount;
+    private int _totalFilteredCount;
+    private int _pageNumber = 1;
+    private const int _pageSize = 20;
+    private bool _showUnreadOnly;
+    private NotificationType? _currentFilter;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling((double)_totalFilteredCount / _pageSize));
+
+    protected override async Task OnInitializedAsync()
+    {
+        _employeeId = await NavigationPermissionService.GetCurrentEmployeeIdAsync();
+        if (_employeeId > 0)
+        {
+            await LoadNotificationsAsync();
+        }
+    }
+
+    private async Task LoadNotificationsAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        try
+        {
+            _unreadCount = await NotificationService.GetUnreadCountAsync(_employeeId);
+
+            var (items, totalCount) = await NotificationService.GetByEmployeeIdAsync(
+                _employeeId, _pageNumber, _pageSize, _showUnreadOnly, _currentFilter);
+            _notifications = items;
+            _totalFilteredCount = totalCount;
+
+            // total count (unfiltered)
+            if (!_showUnreadOnly && !_currentFilter.HasValue)
+            {
+                _totalCount = totalCount;
+            }
+            else
+            {
+                var (_, total) = await NotificationService.GetByEmployeeIdAsync(_employeeId, 1, 1);
+                _totalCount = total;
+            }
+        }
+        catch
+        {
+            _notifications = new();
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ApplyFilter(NotificationType? type, bool unreadOnly)
+    {
+        _currentFilter = type;
+        _showUnreadOnly = unreadOnly;
+        _pageNumber = 1;
+        await LoadNotificationsAsync();
+    }
+
+    private async Task HandleClick(SystemNotification notification)
+    {
+        if (!notification.IsRead)
+        {
+            await NotificationService.MarkAsReadAsync(notification.Id, _employeeId);
+            notification.IsRead = true;
+            _unreadCount = Math.Max(0, _unreadCount - 1);
+        }
+
+        if (!string.IsNullOrEmpty(notification.NavigationUrl))
+        {
+            Navigation.NavigateTo(notification.NavigationUrl);
+        }
+    }
+
+    private async Task MarkAsRead(SystemNotification notification)
+    {
+        await NotificationService.MarkAsReadAsync(notification.Id, _employeeId);
+        notification.IsRead = true;
+        notification.ReadAt = DateTime.UtcNow;
+        _unreadCount = Math.Max(0, _unreadCount - 1);
+    }
+
+    private async Task MarkAllAsRead()
+    {
+        await NotificationService.MarkAllAsReadAsync(_employeeId);
+        _unreadCount = 0;
+        foreach (var n in _notifications) { n.IsRead = true; n.ReadAt = DateTime.UtcNow; }
+    }
+
+    private async Task DeleteNotification(SystemNotification notification)
+    {
+        await NotificationService.DeleteAsync(notification.Id, _employeeId);
+        _notifications.Remove(notification);
+        _totalFilteredCount--;
+        _totalCount--;
+        if (!notification.IsRead) _unreadCount = Math.Max(0, _unreadCount - 1);
+    }
+
+    private async Task PrevPage()
+    {
+        if (_pageNumber > 1) { _pageNumber--; await LoadNotificationsAsync(); }
+    }
+
+    private async Task NextPage()
+    {
+        if (_pageNumber < TotalPages) { _pageNumber++; await LoadNotificationsAsync(); }
+    }
+
+    private static string FormatTime(DateTime createdAt)
+    {
+        var diff = DateTime.UtcNow - createdAt;
+        if (diff.TotalMinutes < 1) return "剛剛";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} 分鐘前";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} 小時前";
+        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays} 天前";
+        return createdAt.ToLocalTime().ToString("yyyy/MM/dd HH:mm");
+    }
+}

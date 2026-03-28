@@ -11,15 +11,18 @@ namespace ERPCore2.Services
     public class JournalEntryService : GenericManagementService<JournalEntry>, IJournalEntryService
     {
         private readonly IFiscalPeriodService _fiscalPeriodService;
+        private readonly IAccountingAuditLogService _auditLogService;
 
         public JournalEntryService(
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<JournalEntry>> logger,
             IFiscalPeriodService fiscalPeriodService,
+            IAccountingAuditLogService auditLogService,
             IFieldDisplaySettingService? fieldDisplaySettingService = null)
             : base(contextFactory, logger)
         {
             _fiscalPeriodService = fiscalPeriodService;
+            _auditLogService = auditLogService;
             _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
@@ -308,7 +311,17 @@ namespace ERPCore2.Services
                 entry.UpdatedBy = updatedBy;
 
                 await context.SaveChangesAsync();
+
+                // 記錄稽核日誌
+                await _auditLogService.LogAsync("PostEntry", "JournalEntry", entry.Id,
+                    entry.Code, $"過帳傳票 {entry.Code}（{entry.EntryType}，借方 {entry.TotalDebitAmount:N2}）",
+                    "Draft", "Posted", entry.CompanyId, updatedBy);
+
                 return (true, string.Empty);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return (false, "此傳票已被其他使用者修改，請重新整理後再試");
             }
             catch (Exception ex)
             {
@@ -431,7 +444,17 @@ namespace ERPCore2.Services
 
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                // 記錄稽核日誌
+                await _auditLogService.LogAsync("ReverseEntry", "JournalEntry", original.Id,
+                    original.Code, $"沖銷傳票 {original.Code}，產生沖銷傳票 {reversalEntry.Code}",
+                    "Posted", "Reversed", original.CompanyId, updatedBy);
+
                 return (true, string.Empty, reversalEntry);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return (false, "此傳票已被其他使用者修改，請重新整理後再試", null);
             }
             catch (Exception ex)
             {
@@ -486,8 +509,13 @@ namespace ERPCore2.Services
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
 
-                // 重新計算合計
+                // 驗證分錄金額（Service 層防護，不依賴 DataAnnotation）
                 var lines = journalEntry.Lines.ToList();
+                var invalidAmountLines = lines.Where(l => l.Amount <= 0).ToList();
+                if (invalidAmountLines.Any())
+                    return (false, $"分錄金額必須大於零，第 {string.Join("、", invalidAmountLines.Select(l => l.LineNumber))} 行金額無效");
+
+                // 重新計算合計
                 journalEntry.TotalDebitAmount = lines
                     .Where(l => l.Direction == AccountDirection.Debit)
                     .Sum(l => l.Amount);
@@ -782,6 +810,16 @@ namespace ERPCore2.Services
                     .ToListAsync();
                 if (nonDetailAccounts.Any())
                     return (false, $"以下科目非明細科目，不可記帳：{string.Join("、", nonDetailAccounts)}");
+
+                // 驗證：若該年度已有非期初的已過帳傳票，警告使用者（修改期初餘額可能導致報表不一致）
+                var hasPostedTransactions = await context.JournalEntries
+                    .AnyAsync(je =>
+                        je.FiscalYear == fiscalYear &&
+                        je.CompanyId == companyId &&
+                        je.EntryType != JournalEntryType.OpeningBalance &&
+                        je.JournalEntryStatus == JournalEntryStatus.Posted);
+                if (hasPostedTransactions)
+                    return (false, $"{fiscalYear} 年度已有已過帳的交易傳票，不允許修改期初餘額。若需調整，請建立調整分錄。");
 
                 // 查找是否已存在有效的期初餘額傳票（Draft 或 Posted），忽略已作廢/已沖銷的記錄
                 var existing = await context.JournalEntries

@@ -206,6 +206,37 @@ EBC 的組合式架構讓中小企業可以：
 
 > 這是 EBC 與傳統 ERP 最關鍵的差異：使用者自己組合能力，而非工程師客製開發。
 
+### 階段二‧五：通訊系統（Communication System）
+
+**目標**：建立模組間事件通訊機制，讓審核者即時收到通知，為 EBC 事件驅動架構打基礎
+
+| 層次 | 說明 | 狀態 |
+|------|------|------|
+| **Phase 1：持久化通知** | `SystemNotification` Entity + 通知鈴鐺 + 通知列表頁面 | ✅ 已實作（2026-03-28） |
+| **Phase 2：事件匯流排** | `IEventBus` 進程內事件匯流排 + 審核流程自動通知 | ✅ 已實作（2026-03-28） |
+| **Phase 3：即時推送** | SignalR `NotificationHub` + 即時通知推送 | 規劃中 |
+| **Phase 4：使用者訊息** | `UserMessage` 使用者間直接通訊 | 規劃中 |
+
+**Phase 1 已實作內容（2026-03-28）：**
+- `SystemNotification` 持久化通知 Entity（收件人、發送人、類型、優先程度、標題、內容、已讀狀態、來源模組關聯、導航 URL）
+- `NotificationType` 列舉：審核請求、審核結果、系統通知、使用者訊息、提醒
+- `ISystemNotificationService` 通知服務（CRUD、未讀數查詢、標記已讀、批次操作、舊通知清理）
+- `NotificationBell` 通知鈴鐺元件（嵌入 MainLayout 搜尋列旁，下拉面板顯示最近通知）
+- `/notifications` 通知列表頁面（分頁、篩選：全部/未讀/依類型）
+- 權限控制：`Notification.Read`（Normal）+ `Notification.Manage`（Sensitive）
+
+**Phase 2 已實作內容（2026-03-28）：**
+- 輕量級進程內事件匯流排：`IEventBus`（Singleton）+ `IBusinessEventHandler<T>`（Scoped，由 `IServiceScopeFactory` 解析）
+- 業務事件類型：`DocumentCreatedEvent`、`DocumentSubmittedForApprovalEvent`、`DocumentApprovedEvent`、`DocumentRejectedEvent`、`EntityStatusChangedEvent`
+- `ApproverAssignment` 審核人員指派 Entity（模組 + 審核人員 + 主要旗標）
+- `ApprovalNotificationHandler` 審核通知處理器：
+  - 文件提交審核 → 通知指定審核人員（`ApprovalRequest`）
+  - 文件核准 → 通知建立者（`ApprovalResult`）
+  - 文件駁回 → 通知建立者含駁回原因（`ApprovalResult` + `High` 優先程度）
+- 7 個審核服務整合事件發布：SalesOrder、Quotation、SalesDelivery、SalesReturn、PurchaseOrder、PurchaseReceiving、PurchaseReturn
+
+> 通訊系統是 EBC 事件驅動架構的基礎。事件匯流排與未來 Level 2 業務規則引擎的 `SendNotification` 動作自然銜接。
+
 ### 階段三：API 化與模組解耦（PBC 基礎建設）
 
 **目標**：為 EBC 對外平台打下技術基礎

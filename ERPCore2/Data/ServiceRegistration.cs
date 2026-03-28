@@ -105,6 +105,7 @@ namespace ERPCore2.Data
             services.AddScoped<IJournalEntryAutoGenerationService, JournalEntryAutoGenerationService>();
             services.AddScoped<IFiscalYearClosingService, FiscalYearClosingService>();
             services.AddScoped<IJournalEntryAttachmentService, JournalEntryAttachmentService>();
+            services.AddScoped<IAccountingAuditLogService, AccountingAuditLogService>();
             services.AddScoped<IBankStatementImportService, BankStatementImportService>();
             services.AddScoped<ISetoffDocumentService, SetoffDocumentService>();
             services.AddScoped<ISetoffItemDetailService, SetoffItemDetailService>();
@@ -265,6 +266,22 @@ namespace ERPCore2.Data
             // 自訂資料表服務（EBC Level 1）
             services.AddScoped<ICustomTableDefinitionService, CustomTableDefinitionService>();
             services.AddScoped<ICustomTableRowService, CustomTableRowService>();
+
+            // 通訊系統（通知 + 事件匯流排 + 審核人員指派）
+            services.AddScoped<ERPCore2.Services.Communication.ISystemNotificationService,
+                              ERPCore2.Services.Communication.SystemNotificationService>();
+            services.AddScoped<ERPCore2.Services.Communication.IApproverAssignmentService,
+                              ERPCore2.Services.Communication.ApproverAssignmentService>();
+            services.AddSingleton<ERPCore2.Services.Communication.Events.IEventBus,
+                                 ERPCore2.Services.Communication.Events.InProcessEventBus>();
+
+            // 事件處理器（Scoped — 由 EventBus 的 IServiceScopeFactory 解析）
+            services.AddScoped<ERPCore2.Services.Communication.Events.IBusinessEventHandler<ERPCore2.Services.Communication.Events.DocumentSubmittedForApprovalEvent>,
+                              ERPCore2.Services.Communication.Handlers.ApprovalNotificationHandler>();
+            services.AddScoped<ERPCore2.Services.Communication.Events.IBusinessEventHandler<ERPCore2.Services.Communication.Events.DocumentApprovedEvent>,
+                              ERPCore2.Services.Communication.Handlers.ApprovalNotificationHandler>();
+            services.AddScoped<ERPCore2.Services.Communication.Events.IBusinessEventHandler<ERPCore2.Services.Communication.Events.DocumentRejectedEvent>,
+                              ERPCore2.Services.Communication.Handlers.ApprovalNotificationHandler>();
 
             // 代碼自動產生設定服務
             services.AddScoped<ICodeSettingService, CodeSettingService>();

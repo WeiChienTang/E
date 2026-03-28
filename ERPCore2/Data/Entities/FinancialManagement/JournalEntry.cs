@@ -106,6 +106,11 @@ namespace ERPCore2.Data.Entities
         public decimal TotalCreditAmount { get; set; } = 0;
 
         /// <summary>
+        /// 樂觀並發控制版本號 — 防止多用戶同時過帳/沖銷同一張傳票
+        /// </summary>
+        public byte[]? RowVersion { get; set; }
+
+        /// <summary>
         /// 是否已沖銷
         /// </summary>
         [Display(Name = "已沖銷")]

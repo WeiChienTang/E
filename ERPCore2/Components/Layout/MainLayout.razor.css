@@ -45,6 +45,14 @@ main {
     background-color: var(--nav-bg);
     padding: 0.75rem 1.5rem;
     border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+::deep .global-search-bar > :first-child {
+    flex: 1;
+    min-width: 0;
 }
 
 @media (max-width: 640.98px) {

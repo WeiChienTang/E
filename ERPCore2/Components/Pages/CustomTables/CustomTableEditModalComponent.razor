@@ -1,0 +1,529 @@
+@* 自訂資料表資料列編輯 Modal — 模擬 GenericEditModalComponent UX *@
+@using ERPCore2.Data.Entities.CustomTables
+@using ERPCore2.Services.CustomTables
+@using System.Text.Json
+
+@inject ICustomTableRowService RowService
+@inject INotificationService NotificationService
+@inject IStringLocalizer<SharedResource> L
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<BaseModalComponent IsVisible="@IsVisible"
+                    IsVisibleChanged="@HandleVisibleChanged"
+                    Title="@GetModalTitle()"
+                    Icon="@(TableDefinition?.IconClass ?? "bi bi-table")"
+                    Size="BaseModalComponent.ModalSize.Desktop"
+                    CloseOnEscape="true"
+                    CloseOnBackdropClick="false"
+                    IsLoading="@_isLoading"
+                    ShowFooter="@_isEditMode"
+                    AuditInfo="@GetAuditInfo()"
+                    BodyCssClass="p-0"
+                    OnClose="@HandleCancel"
+                    DebugComponentName="CustomTableEditModal">
+    <HeaderButtons>
+        <div class="w-100 d-flex flex-wrap align-items-center px-2 modal-buttons-container">
+            @* 左側：狀態訊息 *@
+            <div class="flex-grow-1">
+                @if (_isEditMode && _editingRow != null)
+                {
+                    @if (_editingRow.IsDraft)
+                    {
+                        <span class="badge bg-warning me-2 fs-6">
+                            <i class="bi bi-pencil-square me-1"></i>草稿
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-@(_editingRow.Status == EntityStatus.Active ? "success" : "secondary") me-2 fs-6">
+                            <i class="bi bi-@(_editingRow.Status == EntityStatus.Active ? "check-circle" : "x-circle") me-1"></i>
+                            @(_editingRow.Status == EntityStatus.Active ? "啟用" : "停用")
+                        </span>
+                    }
+                }
+            </div>
+
+            @* 右側：操作按鈕 *@
+            <div class="d-flex gap-2">
+                @* 儲存 *@
+                <GenericButtonComponent Text="@L["Button.Save"]"
+                                        Variant="ButtonVariant.DarkBlue"
+                                        OnClick="HandleSave"
+                                        IsDisabled="@(_isSaving || _isLoading)"
+                                        IsLoading="@_isSaving" />
+
+                @* 儲存草稿 *@
+                @if (!_isEditMode || (_editingRow?.IsDraft == true))
+                {
+                    <GenericButtonComponent Text="儲存草稿"
+                                            Variant="ButtonVariant.Gray"
+                                            OnClick="HandleSaveDraft"
+                                            IsDisabled="@(_isSaving || _isLoading)" />
+                }
+
+                @* 新增 (僅編輯模式) *@
+                @if (_isEditMode)
+                {
+                    <GenericButtonComponent Text="@L["Button.Add"]"
+                                            Variant="ButtonVariant.DarkBlue"
+                                            OnClick="HandleAddNew"
+                                            IsDisabled="@(_isSaving || _isLoading)" />
+                }
+
+                @* 上一筆 / 下一筆 *@
+                @if (_isEditMode)
+                {
+                    <GenericButtonComponent Text="@L["Button.Prev"]"
+                                            Variant="ButtonVariant.Green"
+                                            OnClick="HandlePrevious"
+                                            IsDisabled="@(_isSaving || _isLoading)" />
+                    <GenericButtonComponent Text="@L["Button.Next"]"
+                                            Variant="ButtonVariant.Green"
+                                            OnClick="HandleNext"
+                                            IsDisabled="@(_isSaving || _isLoading)" />
+                }
+
+                @* 刪除 (僅編輯模式) *@
+                @if (_isEditMode)
+                {
+                    <GenericButtonComponent Text="@L["Button.Delete"]"
+                                            Variant="ButtonVariant.Red"
+                                            OnClick="() => _isDeleteConfirmVisible = true"
+                                            IsDisabled="@(_isSaving || _isLoading)" />
+                }
+            </div>
+        </div>
+    </HeaderButtons>
+
+    <BodyContent>
+        @if (TableDefinition != null)
+        {
+            <div class="edit-form-container px-3 py-3">
+                @* ===== 基本資訊區段 ===== *@
+                <div class="row g-3 mb-3">
+                    @* 編號 *@
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">@L["Label.Code"]</label>
+                        <input type="text" class="form-control"
+                               value="@(_editingRow?.Code ?? "(自動產生)")"
+                               readonly disabled />
+                    </div>
+                    @* 狀態切換 (僅編輯模式非草稿) *@
+                    @if (_isEditMode && _editingRow?.IsDraft == false)
+                    {
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">@L["Label.Status"]</label>
+                            <select class="form-select"
+                                    value="@_editingRow!.Status"
+                                    @onchange="HandleStatusChange">
+                                <option value="@EntityStatus.Active">啟用</option>
+                                <option value="@EntityStatus.Inactive">停用</option>
+                            </select>
+                        </div>
+                    }
+                </div>
+
+                @* ===== 自訂欄位區段 ===== *@
+                <div class="row g-3 mb-3">
+                    @foreach (var field in _formFields)
+                    {
+                        <div class="@(field.FieldType == CustomFieldType.TextArea ? "col-12" : "col-md-6")">
+                            <label class="form-label fw-semibold">
+                                @field.DisplayName
+                                @if (field.IsRequired)
+                                {
+                                    <span class="text-danger ms-1">*</span>
+                                }
+                            </label>
+                            @switch (field.FieldType)
+                            {
+                                case CustomFieldType.Text:
+                                    <input type="text" class="form-control"
+                                           placeholder="@field.Placeholder"
+                                           value="@GetFormValue(field.Id)"
+                                           @oninput="e => SetFormValue(field.Id, e.Value?.ToString() ?? string.Empty)" />
+                                    break;
+                                case CustomFieldType.TextArea:
+                                    <textarea class="form-control" rows="3"
+                                              placeholder="@field.Placeholder"
+                                              value="@GetFormValue(field.Id)"
+                                              @oninput="e => SetFormValue(field.Id, e.Value?.ToString() ?? string.Empty)"></textarea>
+                                    break;
+                                case CustomFieldType.Number:
+                                    <input type="number" class="form-control"
+                                           placeholder="@field.Placeholder"
+                                           value="@GetFormValue(field.Id)"
+                                           @oninput="e => SetFormValue(field.Id, e.Value?.ToString() ?? string.Empty)" />
+                                    break;
+                                case CustomFieldType.Date:
+                                    <input type="date" class="form-control"
+                                           value="@GetFormValue(field.Id)"
+                                           @oninput="e => SetFormValue(field.Id, e.Value?.ToString() ?? string.Empty)" />
+                                    break;
+                                case CustomFieldType.DateTime:
+                                    <input type="datetime-local" class="form-control"
+                                           value="@GetFormValue(field.Id)"
+                                           @oninput="e => SetFormValue(field.Id, e.Value?.ToString() ?? string.Empty)" />
+                                    break;
+                                case CustomFieldType.Boolean:
+                                    <div class="form-check mt-2">
+                                        <input type="checkbox" class="form-check-input"
+                                               id="field_@field.Id"
+                                               checked="@(GetFormValue(field.Id) == "true")"
+                                               @onchange="e => SetFormValue(field.Id, ((bool)(e.Value ?? false)).ToString().ToLower())" />
+                                        <label class="form-check-label" for="field_@field.Id">@field.DisplayName</label>
+                                    </div>
+                                    break;
+                                case CustomFieldType.Select:
+                                    <select class="form-select"
+                                            value="@GetFormValue(field.Id)"
+                                            @onchange="e => SetFormValue(field.Id, e.Value?.ToString() ?? string.Empty)">
+                                        <option value="">（請選擇）</option>
+                                        @foreach (var opt in GetSelectOptions(field))
+                                        {
+                                            <option value="@opt">@opt</option>
+                                        }
+                                    </select>
+                                    break;
+                            }
+                        </div>
+                    }
+                </div>
+
+                @* ===== 備註區段 ===== *@
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">@L["Label.Remarks"]</label>
+                        <textarea class="form-control" rows="2"
+                                  placeholder="備註..."
+                                  value="@_remarks"
+                                  @oninput="e => _remarks = e.Value?.ToString() ?? string.Empty"></textarea>
+                    </div>
+                </div>
+            </div>
+        }
+    </BodyContent>
+</BaseModalComponent>
+
+@* 刪除確認 *@
+<GenericConfirmModalComponent IsVisible="@_isDeleteConfirmVisible"
+                              IsVisibleChanged="@((v) => _isDeleteConfirmVisible = v)"
+                              Title="確認刪除"
+                              Icon="bi-trash"
+                              Message="確定要刪除這筆資料嗎？此操作無法復原。"
+                              ConfirmButtonText="確認刪除"
+                              ConfirmButtonVariant="ButtonVariant.Red"
+                              OnConfirm="HandleDelete" />
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? RowId { get; set; }
+    [Parameter] public EventCallback<int?> RowIdChanged { get; set; }
+    [Parameter] public int TableDefinitionId { get; set; }
+    [Parameter] public CustomTableDefinition? TableDefinition { get; set; }
+    [Parameter] public EventCallback OnRowSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // ===== 狀態 =====
+    private bool _isLoading;
+    private bool _isSaving;
+    private bool _isEditMode;
+    private bool _isDeleteConfirmVisible;
+
+    // ===== 資料 =====
+    private CustomTableRow? _editingRow;
+    private List<CustomFieldDefinition> _formFields = new();
+    private Dictionary<int, string> _formValues = new();
+    private string _remarks = string.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && TableDefinition != null)
+        {
+            _formFields = TableDefinition.FieldDefinitions
+                .Where(f => f.ShowInForm)
+                .OrderBy(f => f.SortOrder)
+                .ToList();
+
+            if (RowId.HasValue && RowId.Value > 0)
+            {
+                await LoadRowAsync(RowId.Value);
+            }
+            else
+            {
+                InitNewRow();
+            }
+        }
+    }
+
+    private async Task LoadRowAsync(int rowId)
+    {
+        _isLoading = true;
+        StateHasChanged();
+        try
+        {
+            _editingRow = await RowService.GetByIdWithValuesAsync(rowId);
+            if (_editingRow != null)
+            {
+                _isEditMode = true;
+                _remarks = _editingRow.Remarks ?? string.Empty;
+                _formValues = new Dictionary<int, string>();
+                foreach (var field in TableDefinition!.FieldDefinitions)
+                {
+                    var existing = _editingRow.FieldValues.FirstOrDefault(v => v.CustomFieldDefinitionId == field.Id);
+                    _formValues[field.Id] = existing?.Value ?? field.DefaultValue ?? (field.FieldType == CustomFieldType.Boolean ? "false" : "");
+                }
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void InitNewRow()
+    {
+        _editingRow = null;
+        _isEditMode = false;
+        _remarks = string.Empty;
+        _formValues = new Dictionary<int, string>();
+        if (TableDefinition != null)
+        {
+            foreach (var field in TableDefinition.FieldDefinitions)
+            {
+                _formValues[field.Id] = field.DefaultValue ?? (field.FieldType == CustomFieldType.Boolean ? "false" : "");
+            }
+        }
+    }
+
+    // ===== Title & Info =====
+
+    private string GetModalTitle()
+    {
+        var tableName = TableDefinition?.TableName ?? "自訂資料表";
+        if (!_isEditMode) return $"新增 - {tableName}";
+        return $"編輯 - {tableName}" + (_editingRow?.Code != null ? $" ({_editingRow.Code})" : "");
+    }
+
+    private BaseModalComponent.ModalAuditInfo? GetAuditInfo()
+    {
+        if (_editingRow == null || !_isEditMode) return null;
+        return new BaseModalComponent.ModalAuditInfo
+        {
+            CreatedAt = _editingRow.CreatedAt != default ? _editingRow.CreatedAt : null,
+            CreatedBy = _editingRow.CreatedBy,
+            UpdatedAt = _editingRow.UpdatedAt,
+            UpdatedBy = _editingRow.UpdatedBy
+        };
+    }
+
+    // ===== Save =====
+
+    private async Task HandleSave() => await SaveAsync(isDraft: false);
+    private async Task HandleSaveDraft() => await SaveAsync(isDraft: true);
+
+    private async Task SaveAsync(bool isDraft)
+    {
+        if (TableDefinition == null) return;
+
+        // 必填驗證（非草稿時）
+        if (!isDraft)
+        {
+            foreach (var field in _formFields.Where(f => f.IsRequired))
+            {
+                var value = GetFormValue(field.Id);
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    await NotificationService.ShowErrorAsync($"「{field.DisplayName}」為必填欄位");
+                    return;
+                }
+            }
+        }
+
+        _isSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var currentUser = await GetCurrentUserNameAsync();
+            var fieldValues = _formValues
+                .Select(kvp => new CustomFieldValue
+                {
+                    CustomFieldDefinitionId = kvp.Key,
+                    Value = kvp.Value
+                })
+                .ToList();
+
+            if (!_isEditMode)
+            {
+                // 新增
+                var newRow = new CustomTableRow
+                {
+                    CustomTableDefinitionId = TableDefinitionId,
+                    IsDraft = isDraft,
+                    Status = isDraft ? EntityStatus.Active : EntityStatus.Active,
+                    Remarks = _remarks,
+                    CreatedBy = currentUser
+                };
+                var result = await RowService.CreateRowWithValuesAsync(newRow, fieldValues);
+                if (result.IsSuccess)
+                {
+                    await NotificationService.ShowSuccessAsync(isDraft ? "草稿已儲存" : "新增成功");
+                    // 切換到編輯模式
+                    await RowIdChanged.InvokeAsync(result.Data!.Id);
+                    await OnRowSaved.InvokeAsync();
+                }
+                else
+                {
+                    await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "新增失敗");
+                }
+            }
+            else
+            {
+                // 更新
+                foreach (var fv in fieldValues)
+                    fv.CustomTableRowId = _editingRow!.Id;
+
+                _editingRow!.IsDraft = isDraft;
+                _editingRow.Remarks = _remarks;
+                _editingRow.UpdatedBy = currentUser;
+
+                var result = await RowService.UpdateRowWithValuesAsync(_editingRow, fieldValues);
+                if (result.IsSuccess)
+                {
+                    await NotificationService.ShowSuccessAsync(isDraft ? "草稿已儲存" : "更新成功");
+                    await OnRowSaved.InvokeAsync();
+                }
+                else
+                {
+                    await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "更新失敗");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"儲存失敗：{ex.Message}");
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    // ===== Navigation =====
+
+    private async Task HandlePrevious()
+    {
+        if (_editingRow == null) return;
+        var prevId = await RowService.GetPreviousIdAsync(_editingRow.Id);
+        if (prevId.HasValue)
+        {
+            await RowIdChanged.InvokeAsync(prevId.Value);
+        }
+        else
+        {
+            await NotificationService.ShowInfoAsync("已經是第一筆");
+        }
+    }
+
+    private async Task HandleNext()
+    {
+        if (_editingRow == null) return;
+        var nextId = await RowService.GetNextIdAsync(_editingRow.Id);
+        if (nextId.HasValue)
+        {
+            await RowIdChanged.InvokeAsync(nextId.Value);
+        }
+        else
+        {
+            await NotificationService.ShowInfoAsync("已經是最後一筆");
+        }
+    }
+
+    private async Task HandleAddNew()
+    {
+        await RowIdChanged.InvokeAsync(null);
+    }
+
+    // ===== Delete =====
+
+    private async Task HandleDelete()
+    {
+        if (_editingRow == null) return;
+
+        var result = await RowService.DeleteAsync(_editingRow.Id);
+        if (result.IsSuccess)
+        {
+            await NotificationService.ShowSuccessAsync("已刪除");
+            await OnRowSaved.InvokeAsync();
+            await HandleCancel();
+        }
+        else
+        {
+            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "刪除失敗");
+        }
+    }
+
+    // ===== Status =====
+
+    private void HandleStatusChange(ChangeEventArgs e)
+    {
+        if (_editingRow != null && Enum.TryParse<EntityStatus>(e.Value?.ToString(), out var status))
+        {
+            _editingRow.Status = status;
+        }
+    }
+
+    // ===== Modal Visibility =====
+
+    private async Task HandleVisibleChanged(bool visible)
+    {
+        if (!visible)
+        {
+            await HandleCancel();
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+        await OnCancel.InvokeAsync();
+    }
+
+    // ===== Form Helpers =====
+
+    private string GetFormValue(int fieldId) =>
+        _formValues.TryGetValue(fieldId, out var v) ? v : "";
+
+    private void SetFormValue(int fieldId, string value) =>
+        _formValues[fieldId] = value;
+
+    private IEnumerable<string> GetSelectOptions(CustomFieldDefinition field)
+    {
+        if (string.IsNullOrEmpty(field.Options)) return Enumerable.Empty<string>();
+        try
+        {
+            return JsonSerializer.Deserialize<List<string>>(field.Options) ?? new List<string>();
+        }
+        catch
+        {
+            return Enumerable.Empty<string>();
+        }
+    }
+
+    private async Task<string> GetCurrentUserNameAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            return authState.User?.Identity?.Name ?? "System";
+        }
+        catch
+        {
+            return "System";
+        }
+    }
+}

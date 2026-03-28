@@ -102,6 +102,10 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
     // 追蹤已初始化的數字輸入欄位
     protected HashSet<string> initializedNumberInputs = new();
 
+    // IME 組字追蹤（容器級事件委派）
+    protected ElementReference _formContainerRef;
+    private bool _imeContainerAttached;
+
     #endregion
 
     #region Lifecycle
@@ -255,7 +259,18 @@ public partial class GenericFormComponent<TModel> : ComponentBase, IDisposable
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await base.OnAfterRenderAsync(firstRender);
-        
+
+        // 初始化 IME 組字追蹤（容器級事件委派，防止中文輸入重複）
+        if (firstRender && !_imeContainerAttached)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("ImeHelper.attachContainer", _formContainerRef);
+                _imeContainerAttached = true;
+            }
+            catch { /* 忽略 JS 初始化錯誤 */ }
+        }
+
         // 初始化 Popover (每次渲染都需要，因為可能有新的 Popover 元素)
         try
         {

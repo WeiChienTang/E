@@ -677,7 +677,15 @@
             
             if (IsVisible && CloseOnEscape)
             {
-                await HandleClose();
+                if (_showFeatureGuide)
+                {
+                    CloseFeatureGuide();
+                    StateHasChanged();
+                }
+                else
+                {
+                    await HandleClose();
+                }
             }
         }
         catch (ObjectDisposedException)

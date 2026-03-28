@@ -15,9 +15,10 @@ namespace ERPCore2.Services
     {
         private readonly IPurchaseOrderDetailService _purchaseOrderDetailService;
         private readonly ISystemParameterService _systemParameterService;
+        private readonly Communication.Events.IEventBus? _eventBus;
 
         public PurchaseOrderService(
-            IDbContextFactory<AppDbContext> contextFactory, 
+            IDbContextFactory<AppDbContext> contextFactory,
             IPurchaseOrderDetailService purchaseOrderDetailService,
             ISystemParameterService systemParameterService) : base(contextFactory)
         {
@@ -30,11 +31,13 @@ namespace ERPCore2.Services
             ILogger<GenericManagementService<PurchaseOrder>> logger,
             IPurchaseOrderDetailService purchaseOrderDetailService,
             ISystemParameterService systemParameterService,
-            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
+            IFieldDisplaySettingService? fieldDisplaySettingService = null,
+            Communication.Events.IEventBus? eventBus = null) : base(contextFactory, logger)
         {
             _purchaseOrderDetailService = purchaseOrderDetailService;
             _systemParameterService = systemParameterService;
             _fieldDisplaySettingService = fieldDisplaySettingService;
+            _eventBus = eventBus;
         }
 
         // 採購服務專注於採購流程管理，不處理庫存邏輯
@@ -436,6 +439,11 @@ namespace ERPCore2.Services
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
+                    if (_eventBus != null)
+                        await _eventBus.PublishAsync(new Communication.Events.DocumentApprovedEvent(
+                            SourceModule: "PurchaseOrder", SourceId: orderId, TriggeredBy: approvedBy,
+                            DocumentCode: order.Code ?? "", ApprovedBy: approvedBy ?? 0));
+
                     return ServiceResult.Success();
                 }
                 catch
@@ -446,11 +454,11 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ApproveOrderAsync), GetType(), _logger, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ApproveOrderAsync), GetType(), _logger, new {
                     Method = nameof(ApproveOrderAsync),
                     ServiceType = GetType().Name,
                     OrderId = orderId,
-                    ApprovedBy = approvedBy 
+                    ApprovedBy = approvedBy
                 });
                 return ServiceResult.Failure("核准訂單時發生錯誤");
             }
@@ -490,6 +498,12 @@ namespace ERPCore2.Services
                     
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
+
+                    if (_eventBus != null)
+                        await _eventBus.PublishAsync(new Communication.Events.DocumentRejectedEvent(
+                            SourceModule: "PurchaseOrder", SourceId: orderId, TriggeredBy: rejectedBy,
+                            DocumentCode: order.Code ?? "", RejectedBy: rejectedBy, Reason: reason));
+
                     return ServiceResult.Success();
                 }
                 catch
@@ -500,12 +514,12 @@ namespace ERPCore2.Services
             }
             catch (Exception ex)
             {
-                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(RejectOrderAsync), GetType(), _logger, new { 
+                await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(RejectOrderAsync), GetType(), _logger, new {
                     Method = nameof(RejectOrderAsync),
                     ServiceType = GetType().Name,
                     OrderId = orderId,
                     RejectedBy = rejectedBy,
-                    Reason = reason 
+                    Reason = reason
                 });
                 return ServiceResult.Failure("駁回訂單時發生錯誤");
             }

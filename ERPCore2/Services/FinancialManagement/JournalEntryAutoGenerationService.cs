@@ -610,6 +610,14 @@ namespace ERPCore2.Services
                 if (doc.CurrentSetoffAmount <= 0)
                     return (false, "沖銷金額為零，無需轉傳票");
 
+                // 驗證金額不為負數（防止資料異常導致借貸方向錯誤）
+                if (doc.TotalAllowanceAmount < 0)
+                    return (false, $"折讓金額不可為負數（{doc.TotalAllowanceAmount:N2}）");
+                if (doc.PrepaymentSetoffAmount < 0)
+                    return (false, $"預收/預付沖回金額不可為負數（{doc.PrepaymentSetoffAmount:N2}）");
+                if (doc.TotalCollectionAmount < 0)
+                    return (false, $"收/付款金額不可為負數（{doc.TotalCollectionAmount:N2}）");
+
                 // 共用科目
                 var bank = await _accountItemService.GetByCodeAsync(BankDepositCode);
                 if (bank == null) return (false, $"找不到科目 {BankDepositCode}（銀行存款）");

@@ -137,6 +137,125 @@ namespace ERPCore2.Migrations
                     b.ToTable("AccountItems");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.AccountingAuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("EntityCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("EntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("NewValue")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("PerformedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("PerformedByEmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PerformedByName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PreviousValue")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActionType");
+
+                    b.HasIndex("PerformedAt");
+
+                    b.HasIndex("PerformedByEmployeeId");
+
+                    b.HasIndex("EntityType", "EntityId");
+
+                    b.ToTable("AccountingAuditLogs");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.ApproverAssignment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ApproverEmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ModuleName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApproverEmployeeId");
+
+                    b.HasIndex("ModuleName");
+
+                    b.ToTable("ApproverAssignments");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.Bank", b =>
                 {
                     b.Property<int>("Id")
@@ -2061,8 +2180,8 @@ namespace ERPCore2.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("IdNumber")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<bool>("IsDraft")
                         .HasColumnType("bit");
@@ -4197,6 +4316,11 @@ namespace ERPCore2.Migrations
 
                     b.Property<int?>("ReversedEntryId")
                         .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<string>("SourceDocumentCode")
                         .HasMaxLength(50)
@@ -9226,6 +9350,91 @@ namespace ERPCore2.Migrations
                     b.ToTable("SupplierBankAccounts");
                 });
 
+            modelBuilder.Entity("ERPCore2.Data.Entities.SystemNotification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Content")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("NavigationUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("NotificationType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RecipientEmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("SenderEmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SourceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SourceModule")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SenderEmployeeId");
+
+                    b.HasIndex("RecipientEmployeeId", "CreatedAt");
+
+                    b.HasIndex("RecipientEmployeeId", "IsRead", "CreatedAt");
+
+                    b.ToTable("SystemNotifications");
+                });
+
             modelBuilder.Entity("ERPCore2.Data.Entities.SystemParameter", b =>
                 {
                     b.Property<int>("Id")
@@ -9277,6 +9486,9 @@ namespace ERPCore2.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("DefaultLicenseAlertDays")
+                        .HasColumnType("int");
 
                     b.Property<string>("HealthInsuranceExpenseAccountCode")
                         .HasMaxLength(20)
@@ -10171,6 +10383,17 @@ namespace ERPCore2.Migrations
                     b.Navigation("LinkedSupplier");
 
                     b.Navigation("Parent");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.ApproverAssignment", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "Approver")
+                        .WithMany()
+                        .HasForeignKey("ApproverEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Approver");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.BankStatement", b =>
@@ -12108,6 +12331,24 @@ namespace ERPCore2.Migrations
                     b.Navigation("Bank");
 
                     b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("ERPCore2.Data.Entities.SystemNotification", b =>
+                {
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "Recipient")
+                        .WithMany()
+                        .HasForeignKey("RecipientEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ERPCore2.Data.Entities.Employee", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderEmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Recipient");
+
+                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("ERPCore2.Data.Entities.Systems.CompanyBankAccount", b =>

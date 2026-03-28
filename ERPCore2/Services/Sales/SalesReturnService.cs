@@ -15,6 +15,7 @@ namespace ERPCore2.Services
     public class SalesReturnService : GenericManagementService<SalesReturn>, ISalesReturnService
     {
         private readonly IInventoryStockService? _inventoryStockService;
+        private readonly Communication.Events.IEventBus? _eventBus;
 
         public SalesReturnService(IDbContextFactory<AppDbContext> contextFactory) : base(contextFactory)
         {
@@ -30,10 +31,12 @@ namespace ERPCore2.Services
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<SalesReturn>> logger,
             IInventoryStockService inventoryStockService,
-            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
+            IFieldDisplaySettingService? fieldDisplaySettingService = null,
+            Communication.Events.IEventBus? eventBus = null) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
             _fieldDisplaySettingService = fieldDisplaySettingService;
+            _eventBus = eventBus;
         }
 
         protected override IQueryable<SalesReturn> BuildGetAllQuery(AppDbContext context)
@@ -1405,6 +1408,12 @@ namespace ERPCore2.Services
 
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                if (_eventBus != null)
+                    await _eventBus.PublishAsync(new Communication.Events.DocumentApprovedEvent(
+                        SourceModule: "SalesReturn", SourceId: id, TriggeredBy: approvedBy,
+                        DocumentCode: entity.Code ?? "", ApprovedBy: approvedBy ?? 0));
+
                 return ServiceResult.Success();
             }
             catch
@@ -1428,6 +1437,12 @@ namespace ERPCore2.Services
             entity.UpdatedAt = DateTime.UtcNow;
 
             await context.SaveChangesAsync();
+
+            if (_eventBus != null)
+                await _eventBus.PublishAsync(new Communication.Events.DocumentRejectedEvent(
+                    SourceModule: "SalesReturn", SourceId: id, TriggeredBy: rejectedBy,
+                    DocumentCode: entity.Code ?? "", RejectedBy: rejectedBy, Reason: reason));
+
             return ServiceResult.Success();
         }
 

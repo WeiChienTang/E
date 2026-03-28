@@ -1,0 +1,62 @@
+/* 自訂資料表資料頁面 — 草稿/正式 Tab 樣式（複製自 GenericIndexPageComponent） */
+
+.index-draft-tab-btn-group {
+    display: inline-flex;
+    gap: 0.25rem;
+    padding: 0.15rem;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 0.5rem;
+    margin-right: 0.5rem;
+}
+
+.index-draft-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    white-space: nowrap;
+}
+
+.index-draft-tab-btn:hover {
+    color: var(--primary-blue);
+    background-color: rgba(var(--primary-blue-rgb), 0.1);
+    border-color: rgba(var(--primary-blue-rgb), 0.4);
+}
+
+.index-draft-tab-btn.active {
+    color: #fff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    font-weight: 600;
+}
+
+.index-draft-tab-btn.active:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+    color: #fff;
+}
+
+@media (max-width: 576px) {
+    .index-draft-tab-btn-group {
+        margin-right: 0.25rem;
+    }
+
+    .index-draft-tab-btn {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+[data-bs-theme=dark] .index-draft-tab-btn.active {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}

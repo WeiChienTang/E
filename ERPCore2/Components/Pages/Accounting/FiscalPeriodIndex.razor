@@ -198,10 +198,12 @@
     // 年底結帳按鈕（追加在預設按鈕列後）
     private RenderFragment yearEndButton => __builder =>
     {
-        <GenericButtonComponent Variant="ButtonVariant.Yellow"
-                                Text="@L["YearEnd.OpenButton"]"
-                                Icon="bi-calendar-check"
-                                OnClick="OpenYearEndModalAsync" />;
+        <PermissionCheck Permission="@PermissionRegistry.Accounting.YearEndClosing">
+            <GenericButtonComponent Variant="ButtonVariant.Yellow"
+                                    Text="@L["YearEnd.OpenButton"]"
+                                    Icon="bi-calendar-check"
+                                    OnClick="OpenYearEndModalAsync" />
+        </PermissionCheck>;
     };
 
     // 年底結帳 Modal 狀態

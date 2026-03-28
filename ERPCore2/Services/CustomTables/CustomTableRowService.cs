@@ -254,7 +254,7 @@ namespace ERPCore2.Services.CustomTables
         }
 
         public async Task<(List<CustomTableRow> Items, int TotalCount)> GetPagedByTableIdAsync(
-            int tableDefinitionId, int pageNumber, int pageSize, string? searchTerm = null)
+            int tableDefinitionId, int pageNumber, int pageSize, string? searchTerm = null, bool? isDraft = null)
         {
             try
             {
@@ -263,7 +263,13 @@ namespace ERPCore2.Services.CustomTables
                 var query = context.CustomTableRows
                     .Include(r => r.FieldValues)
                         .ThenInclude(v => v.CustomFieldDefinition)
-                    .Where(r => r.CustomTableDefinitionId == tableDefinitionId && !r.IsDraft);
+                    .Where(r => r.CustomTableDefinitionId == tableDefinitionId);
+
+                // isDraft: null=正式(預設), true=草稿, false=全部
+                if (isDraft == null)
+                    query = query.Where(r => !r.IsDraft);
+                else if (isDraft == true)
+                    query = query.Where(r => r.IsDraft);
 
                 // 搜尋
                 if (!string.IsNullOrWhiteSpace(searchTerm))

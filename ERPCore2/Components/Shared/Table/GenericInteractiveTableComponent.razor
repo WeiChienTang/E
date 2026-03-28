@@ -8,7 +8,7 @@
 @inject IStringLocalizer<SharedResource> L
 @typeparam TItem
 
-<div class="generic-table-wrapper" data-ctx-menu="@_ctxMenuAttr">
+<div class="generic-table-wrapper" data-ctx-menu="@_ctxMenuAttr" @ref="_tableContainerRef">
 <div class="table-responsive table-container-hover interactive-table-container">
     @if (!string.IsNullOrEmpty(DebugTableName))
     {
@@ -705,6 +705,10 @@
     // Number 輸入框編輯狀態追蹤（防止輸入過程中被格式化覆蓋）
     private string? _focusedNumberInputId = null;
 
+    // IME 組字追蹤（容器級事件委派）
+    private ElementReference _tableContainerRef;
+    private bool _imeContainerAttached;
+
     // Reflection 快取（靜態，跨實例共享，避免重複查找 PropertyInfo）
     private static readonly ConcurrentDictionary<string, PropertyInfo?> _propCache = new();
 
@@ -784,6 +788,17 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await base.OnAfterRenderAsync(firstRender);
+
+        // 初始化 IME 組字追蹤（容器級事件委派，防止中文輸入重複）
+        if (firstRender && !_imeContainerAttached)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("ImeHelper.attachContainer", _tableContainerRef);
+                _imeContainerAttached = true;
+            }
+            catch { /* 忽略 JS 初始化錯誤 */ }
+        }
 
         // 初始化欄位寬度拖曳調整
         if (firstRender && EnableColumnResize)

@@ -22,15 +22,16 @@
 驗證重點： 津貼的免稅/課稅分類、IsProrated 按比例發放、免稅上限（伙食 3,000 / 交通 3,000）
 情境 3：出勤不全的月薪計算
 
-員工 C 本薪 40,000，本月應出勤 22 天，實際出勤 18 天
-在 MonthlyAttendanceSummary 設定：ScheduledWorkDays=22、ActualWorkDays=18、AbsentDays=2、SickLeaveDays=1、PersonalLeaveDays=1
-計算薪資 → 確認：本薪 = 40,000 × (18/22) = 32,727（四捨五入到元）
+員工 C 本薪 40,000，本月應出勤 22 天，曠職 2 天、病假 1 天、事假 1 天
+在 MonthlyAttendanceSummary 設定：ScheduledWorkDays=22、ActualWorkDays=22（ratio=1 設計）、AbsentDays=2、SickLeaveDays=1、PersonalLeaveDays=1
+計算薪資 → 確認：本薪 = 40,000（全額，出勤比例維持 1.0，假別影響由獨立扣款處理）
 確認曠職扣薪：2 天 × (40,000/30) = -2,667
 確認病假半薪扣除：1 天 × (40,000/30) × 0.5 = -667
 確認事假扣除：1 天 × (40,000/30) = -1,333
-確認 IsProrated=true 的津貼也按 18/22 比例縮減
+確認 IsProrated=true 的津貼在 ratio=1 時全額發放（津貼縮減僅在手動調整 ActualWorkDays 時觸發）
+確認雙重扣薪防護：若手動設定 ActualWorkDays=18，因有假別天數存在，系統自動修正為 ActualWorkDays=22（ratio=1）
 
-驗證重點： 出勤比例的分子分母正確、三種假別（曠職/病假/事假）的扣薪公式各不同
+驗證重點： ratio=1 設計下假別以獨立扣款處理、三種假別（曠職/病假/事假）的扣薪公式各不同、雙重扣薪防護機制
 情境 4：含加班費的薪資計算
 
 員工 D 本薪 36,000，時薪 = 36,000/30/8 = 150
@@ -306,7 +307,7 @@ GetPrimaryAccountAsync → 確認回傳帳戶 B
 |------|------|------|
 | 1 全勤月薪標準計算 | ✅ 通過 | 本薪×出勤比例、勞健保扣除、稅額查表、NetPay 數學關係、雇主成本 均正確 |
 | 2 含固定津貼計算 | ✅ 通過 | IsProrated 按比例、IsTaxable 免稅/課稅分類、MEAL/TRANSPORT 免稅上限 3,000 均正確 |
-| 3 出勤不全計算 | 🔧 已修正 | **發現雙重扣薪風險**：手動設 ActualWorkDays<ScheduledWorkDays 且有假別天數時，ratio 縮減+扣款會同時套用。已加入自動修正防護（PayrollCalculationService 第 0b 段） |
+| 3 出勤不全計算 | 🔧 已修正 | **發現雙重扣薪風險**：手動設 ActualWorkDays<ScheduledWorkDays 且有假別天數時，ratio 縮減+扣款會同時套用。已加入自動修正防護（PayrollCalculationService 第 0b 段）。情境文件已更新為 ratio=1 設計描述（2026-03-28） |
 | 4 含加班費計算 | ✅ 通過 | 四種加班費倍率正確：OT1=4/3、OT2=5/3、休息日前2hr/後續分段、國定假日 1.0 倍 |
 | 5 含眷屬健保費 | ✅ 通過 | multiplier = Min(DependentCount,3)+1，最多 4；雇主也用同乘數 |
 | 6 勞退自提 | ✅ 通過 | 自提金額正確、免稅扣除正確、Rate=0 不產生明細 |
@@ -378,4 +379,4 @@ GetPrimaryAccountAsync → 確認回傳帳戶 B
 |------|------|
 | 情境 17 補班日 ScheduledWorkDays | GetWorkDaysInMonth 不計算補班日（週六），因 ratio=1 短期不影響薪資，但 ScheduledWorkDays 數值不精確 |
 | 情境 10 特休未休折算 | 離職員工特休未休折算尚無系統化處理 |
-| 情境 3 文件修正 | 情境文件描述的計算方式（ratio 制+扣款制）與程式碼設計（ratio=1 純扣款制）不一致，建議更新情境文件描述 |
+| ~~情境 3 文件修正~~ | ~~已修正（2026-03-28）：情境文件已更新為 ratio=1 純扣款制描述~~ |

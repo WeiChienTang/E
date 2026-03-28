@@ -26,7 +26,7 @@
     <BodyContent>
         @* 預覽區域 *@
         <div class="icon-preview-area mb-3">
-            <div class="d-flex align-items-center justify-content-center p-3 bg-light rounded">
+            <div class="d-flex align-items-center justify-content-center p-3 rounded icon-preview-content">
                 <i class="@(string.IsNullOrEmpty(selectedIconClass) ? (CurrentIcon ?? "bi bi-grid-fill") : selectedIconClass) fs-1 me-3"></i>
                 <div>
                     <div class="small text-muted">@L["Dashboard.CurrentSelection"]</div>
@@ -66,63 +66,6 @@
     </BodyContent>
 </BaseModalComponent>
 
-<style>
-    .icon-preview-area {
-        border: 1px solid #dee2e6;
-        border-radius: 0.5rem;
-    }
-
-    .icon-picker-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 0.75rem 0.5rem;
-        border: 2px solid #e9ecef;
-        border-radius: 0.5rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        min-height: 80px;
-        background-color: #fff;
-    }
-
-    .icon-picker-item:hover {
-        border-color: #0d6efd;
-        background-color: #f8f9fa;
-        transform: translateY(-2px);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .icon-picker-item.selected {
-        border-color: #0d6efd;
-        background-color: #e7f0ff;
-    }
-
-    .icon-picker-item.selected i {
-        color: #0d6efd;
-    }
-
-    .icon-picker-item.current {
-        border-color: #6c757d;
-        background-color: #f8f9fa;
-    }
-
-    .icon-picker-item .icon-name {
-        text-align: center;
-        color: #6c757d;
-        font-size: 1rem;
-        line-height: 1.2;
-        max-width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .icon-picker-item.selected .icon-name {
-        color: #0d6efd;
-        font-weight: 600;
-    }
-</style>
 
 @code {
     /// <summary>

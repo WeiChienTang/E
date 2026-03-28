@@ -3,11 +3,13 @@
 @using ERPCore2.Data.Entities.CustomTables
 @using ERPCore2.Services.CustomTables
 @using System.Text.Json
+@using ERPCore2.Models.Navigation
 
 @inject ICustomTableDefinitionService TableDefinitionService
 @inject ICustomTableRowService RowService
 @inject INotificationService NotificationService
 @inject INavigationPermissionService PermissionService
+@inject IStringLocalizer<SharedResource> L
 @inject NavigationManager NavigationManager
 
 <PageTitle>@(_tableDefinition?.TableName ?? "自訂資料表")</PageTitle>
@@ -46,29 +48,50 @@ else if (_tableDefinition == null)
 }
 else
 {
-    @* ===== 頁面標題列 ===== *@
-    <div class="page-header d-flex justify-content-between align-items-center px-4 pt-3 pb-2 border-bottom mb-3">
-        <div class="d-flex align-items-center">
-            <i class="@(_tableDefinition.IconClass ?? "bi bi-table") fs-4 me-2 text-primary"></i>
-            <div>
-                <h5 class="mb-0 fw-bold">@_tableDefinition.TableName</h5>
-                @if (!string.IsNullOrEmpty(_tableDefinition.Description))
-                {
-                    <small class="text-muted">@_tableDefinition.Description</small>
-                }
+    @* ===== 頁面標題 ===== *@
+    <GenericHeaderComponent Title="@_tableDefinition.TableName"
+                            Subtitle="@_tableDefinition.Description"
+                            BreadcrumbItems="@_breadcrumbItems"
+                            ShowDivider="true">
+        <ActionButtons>
+            @* 草稿/正式 Tab *@
+            <div class="index-draft-tab-btn-group">
+                <button type="button"
+                        class="index-draft-tab-btn @(!_showingDrafts ? "active" : "")"
+                        @onclick="@(() => SwitchDraftTab(false))">
+                    <i class="bi bi-check-circle me-1"></i>
+                    @L["Label.Official"]
+                </button>
+                <button type="button"
+                        class="index-draft-tab-btn @(_showingDrafts ? "active" : "")"
+                        @onclick="@(() => SwitchDraftTab(true))">
+                    <i class="bi bi-pencil-square me-1"></i>
+                    @L["Label.Draft"]
+                    @if (_draftCount > 0)
+                    {
+                        <span class="badge bg-danger ms-1">@_draftCount</span>
+                    }
+                </button>
             </div>
-        </div>
-        <div class="d-flex gap-2">
+
             <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                                   Text="新增資料列"
+                                   Text="@L["Button.Add"]"
                                    IconClass="bi bi-plus-lg"
-                                   OnClick="StartAddRow"
-                                   IsDisabled="@_isFormVisible" />
-        </div>
+                                   OnClick="HandleAdd" />
+        </ActionButtons>
+    </GenericHeaderComponent>
+
+    @* ===== 搜尋列 ===== *@
+    <div class="px-3 mb-2">
+        <GenericSearchFilterComponent TModel="SearchFilterModel"
+                                     FilterModel="@_searchModel"
+                                     OnSearch="@HandleSearch"
+                                     AutoSearch="true"
+                                     SearchDelayMs="300" />
     </div>
 
-    @* ===== 資料列表 ===== *@
-    <div class="px-4">
+    @* ===== 資料表格 ===== *@
+    <div class="px-3">
         @if (_isTableLoading)
         {
             <div class="text-center py-4">
@@ -76,191 +99,40 @@ else
                 <span class="ms-2 text-muted">載入中...</span>
             </div>
         }
-        else if (!_rows.Any())
-        {
-            <div class="text-center text-muted py-5 border rounded">
-                <i class="@(_tableDefinition.IconClass ?? "bi bi-table") fs-1 d-block mb-3"></i>
-                <p class="mb-1">尚無資料</p>
-                <p class="small">點擊「新增資料列」開始新增</p>
-            </div>
-        }
         else
         {
-            <div class="table-responsive">
-                <table class="table table-hover table-sm mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th style="width: 8%">編號</th>
-                            @foreach (var field in _listFields)
-                            {
-                                <th>@field.DisplayName</th>
-                            }
-                            <th style="width: 6%" class="text-center">狀態</th>
-                            <th style="width: 10%">建立時間</th>
-                            <th style="width: 8%" class="text-center">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var row in _rows)
-                        {
-                            <tr>
-                                <td class="align-middle">
-                                    <small class="text-muted">@row.Code</small>
-                                </td>
-                                @foreach (var field in _listFields)
-                                {
-                                    <td class="align-middle">@RenderFieldValue(row, field)</td>
-                                }
-                                <td class="align-middle text-center">
-                                    <GenericStatusBadgeComponent Status="@row.Status" />
-                                </td>
-                                <td class="align-middle">
-                                    <small class="text-muted">@row.CreatedAt.ToString("yyyy/MM/dd")</small>
-                                </td>
-                                <td class="align-middle text-center">
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-primary btn-sm"
-                                                @onclick="() => StartEditRow(row)"
-                                                title="編輯">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-outline-danger btn-sm"
-                                                @onclick="() => HandleDeleteRow(row)"
-                                                title="刪除">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+            <GenericTableComponent TItem="CustomTableRow"
+                                  Items="@_rows"
+                                  ColumnDefinitions="@_columnDefinitions"
+                                  EnableRowClick="true"
+                                  OnRowClick="@HandleRowClick"
+                                  IsStriped="true"
+                                  IsHoverable="true"
+                                  IsBordered="true"
+                                  EmptyMessage="@(_showingDrafts ? "尚無草稿資料" : "尚無資料，點擊「新增」開始建立")" />
 
-            @* ===== 分頁 ===== *@
-            @if (_totalCount > _pageSize)
-            {
-                <div class="d-flex justify-content-between align-items-center mt-3">
-                    <small class="text-muted">共 @_totalCount 筆，第 @_currentPage / @TotalPages 頁</small>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-secondary" disabled="@(_currentPage <= 1)"
-                                @onclick="() => GoToPage(_currentPage - 1)">
-                            <i class="bi bi-chevron-left"></i>
-                        </button>
-                        <button class="btn btn-outline-secondary" disabled="@(_currentPage >= TotalPages)"
-                                @onclick="() => GoToPage(_currentPage + 1)">
-                            <i class="bi bi-chevron-right"></i>
-                        </button>
-                    </div>
-                </div>
-            }
+            <GenericPaginationComponent CurrentPage="@_currentPage"
+                                       PageSize="@_pageSize"
+                                       TotalItems="@_totalCount"
+                                       OnPageChanged="@HandlePageChanged"
+                                       OnPageSizeChanged="@HandlePageSizeChanged"
+                                       ShowPageSizeSelector="true" />
         }
     </div>
 }
 
-@* ===== 新增/編輯 Modal ===== *@
-<BaseModalComponent IsVisible="@_isFormVisible"
-                    IsVisibleChanged="@((v) => _isFormVisible = v)"
-                    Title="@(_editingRow == null ? $"新增 - {_tableDefinition?.TableName}" : $"編輯 - {_tableDefinition?.TableName}")"
-                    Icon="@(_tableDefinition?.IconClass ?? "bi bi-table")"
-                    Size="BaseModalComponent.ModalSize.Large"
-                    CloseOnEscape="true"
-                    CloseOnBackdropClick="false"
-                    IsLoading="@_isSaving"
-                    OnClose="@CloseForm"
-                    DebugComponentName="CustomTableDataPage">
-    <HeaderButtons>
-        <GenericButtonComponent Variant="ButtonVariant.DarkBlue"
-                               Text="儲存"
-                               IconClass="bi bi-check-lg"
-                               OnClick="HandleSaveRow"
-                               IsDisabled="@_isSaving"
-                               IsLoading="@_isSaving" />
-        <GenericButtonComponent Variant="ButtonVariant.Red"
-                               Text="取消"
-                               OnClick="CloseForm" />
-    </HeaderButtons>
-    <BodyContent>
-        @if (_tableDefinition != null)
-        {
-            <div class="row g-3">
-                @foreach (var field in _tableDefinition.FieldDefinitions.Where(f => f.ShowInForm).OrderBy(f => f.SortOrder))
-                {
-                    <div class="@(field.FieldType == CustomFieldType.TextArea ? "col-12" : "col-md-6")">
-                        <label class="form-label fw-semibold">
-                            @field.DisplayName
-                            @if (field.IsRequired)
-                            {
-                                <span class="text-danger ms-1">*</span>
-                            }
-                        </label>
-                        @switch (field.FieldType)
-                        {
-                            case CustomFieldType.Text:
-                                <input type="text" class="form-control"
-                                       placeholder="@field.Placeholder"
-                                       value="@GetFormValue(field.Id)"
-                                       @oninput="e => SetFormValue(field.Id, e.Value?.ToString() ?? string.Empty)" />
-                                break;
-                            case CustomFieldType.TextArea:
-                                <textarea class="form-control" rows="3"
-                                          placeholder="@field.Placeholder"
-                                          value="@GetFormValue(field.Id)"
-                                          @oninput="e => SetFormValue(field.Id, e.Value?.ToString() ?? string.Empty)"></textarea>
-                                break;
-                            case CustomFieldType.Number:
-                                <input type="number" class="form-control"
-                                       placeholder="@field.Placeholder"
-                                       value="@GetFormValue(field.Id)"
-                                       @oninput="e => SetFormValue(field.Id, e.Value?.ToString() ?? string.Empty)" />
-                                break;
-                            case CustomFieldType.Date:
-                                <input type="date" class="form-control"
-                                       value="@GetFormValue(field.Id)"
-                                       @oninput="e => SetFormValue(field.Id, e.Value?.ToString() ?? string.Empty)" />
-                                break;
-                            case CustomFieldType.DateTime:
-                                <input type="datetime-local" class="form-control"
-                                       value="@GetFormValue(field.Id)"
-                                       @oninput="e => SetFormValue(field.Id, e.Value?.ToString() ?? string.Empty)" />
-                                break;
-                            case CustomFieldType.Boolean:
-                                <div class="form-check mt-2">
-                                    <input type="checkbox" class="form-check-input"
-                                           id="field_@field.Id"
-                                           checked="@(GetFormValue(field.Id) == "true")"
-                                           @onchange="e => SetFormValue(field.Id, ((bool)(e.Value ?? false)).ToString().ToLower())" />
-                                    <label class="form-check-label" for="field_@field.Id">@field.DisplayName</label>
-                                </div>
-                                break;
-                            case CustomFieldType.Select:
-                                <select class="form-select"
-                                        value="@GetFormValue(field.Id)"
-                                        @onchange="e => SetFormValue(field.Id, e.Value?.ToString() ?? string.Empty)">
-                                    <option value="">（請選擇）</option>
-                                    @foreach (var opt in GetSelectOptions(field))
-                                    {
-                                        <option value="@opt">@opt</option>
-                                    }
-                                </select>
-                                break;
-                        }
-                    </div>
-                }
-            </div>
-        }
-    </BodyContent>
-</BaseModalComponent>
-
-@* ===== 刪除確認 ===== *@
-<GenericConfirmModalComponent IsVisible="@_isDeleteConfirmVisible"
-                              IsVisibleChanged="@((v) => _isDeleteConfirmVisible = v)"
-                              Title="確認刪除"
-                              Icon="bi-trash"
-                              Message="@($"確定要刪除這筆資料列嗎？此操作無法復原。")"
-                              ConfirmButtonText="確認刪除"
-                              ConfirmButtonVariant="ButtonVariant.Red"
-                              OnConfirm="ConfirmDeleteRow" />
+@* ===== 編輯 Modal ===== *@
+@if (_tableDefinition != null)
+{
+    <CustomTableEditModalComponent IsVisible="@_showEditModal"
+                                   IsVisibleChanged="@((v) => _showEditModal = v)"
+                                   RowId="@_editingRowId"
+                                   RowIdChanged="@HandleRowIdChanged"
+                                   TableDefinitionId="@TableId"
+                                   TableDefinition="@_tableDefinition"
+                                   OnRowSaved="@HandleRowSaved"
+                                   OnCancel="@HandleModalCancel" />
+}
 
 @code {
     [Parameter] public int TableId { get; set; }
@@ -269,25 +141,24 @@ else
     private bool _isAuthorized;
     private bool _isLoading = true;
     private bool _isTableLoading;
-    private bool _isSaving;
+    private bool _showingDrafts;
+    private int _draftCount;
 
     // ===== 資料 =====
+    private List<BreadcrumbItem> _breadcrumbItems = new();
     private CustomTableDefinition? _tableDefinition;
-    private List<CustomFieldDefinition> _listFields = new();
     private List<CustomTableRow> _rows = new();
+    private List<TableColumnDefinition> _columnDefinitions = new();
     private int _totalCount;
     private int _currentPage = 1;
-    private const int _pageSize = 20;
-    private int TotalPages => (int)Math.Ceiling((double)_totalCount / _pageSize);
+    private int _pageSize = 20;
 
-    // ===== 表單 =====
-    private bool _isFormVisible;
-    private CustomTableRow? _editingRow;
-    private Dictionary<int, string> _formValues = new();
+    // ===== 搜尋 =====
+    private SearchFilterModel _searchModel = new();
 
-    // ===== 刪除確認 =====
-    private bool _isDeleteConfirmVisible;
-    private CustomTableRow? _rowToDelete;
+    // ===== Modal =====
+    private bool _showEditModal;
+    private int? _editingRowId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -306,7 +177,9 @@ else
 
         if (_tableDefinition != null)
         {
+            BuildColumnDefinitions();
             await LoadRowsAsync();
+            await LoadDraftCountAsync();
         }
     }
 
@@ -315,12 +188,90 @@ else
         _tableDefinition = await TableDefinitionService.GetByIdWithFieldsAsync(TableId);
         if (_tableDefinition != null)
         {
-            _listFields = _tableDefinition.FieldDefinitions
-                .Where(f => f.ShowInList)
-                .OrderBy(f => f.SortOrder)
-                .ToList();
+            _breadcrumbItems = new List<BreadcrumbItem>
+            {
+                new("首頁", "/"),
+                new(_tableDefinition.TableName)
+            };
         }
     }
+
+    // ===== 欄位定義 → 表格欄位 =====
+
+    private void BuildColumnDefinitions()
+    {
+        if (_tableDefinition == null) return;
+
+        var columns = new List<TableColumnDefinition>();
+
+        // 編號欄
+        var codeCol = TableColumnDefinition.Text("編號", nameof(CustomTableRow.Code));
+        codeCol.Width = "8%";
+        codeCol.CellCssClass = "text-muted";
+        columns.Add(codeCol);
+
+        // 動態欄位（ShowInList）
+        var listFields = _tableDefinition.FieldDefinitions
+            .Where(f => f.ShowInList)
+            .OrderBy(f => f.SortOrder)
+            .ToList();
+
+        foreach (var field in listFields)
+        {
+            var capturedField = field;
+            columns.Add(TableColumnDefinition.Template(
+                field.DisplayName,
+                (object item) =>
+                {
+                    var row = (CustomTableRow)item;
+                    return RenderFieldValueFragment(row, capturedField);
+                }
+            ));
+        }
+
+        // 狀態欄
+        var statusCol = TableColumnDefinition.Status("狀態", nameof(CustomTableRow.Status),
+            new Dictionary<object, string>
+            {
+                { EntityStatus.Active, "bg-success:啟用" },
+                { EntityStatus.Inactive, "bg-secondary:停用" }
+            });
+        statusCol.Width = "6%";
+        statusCol.CellCssClass = "text-center";
+        statusCol.HeaderCssClass = "text-center";
+        columns.Add(statusCol);
+
+        // 建立時間
+        var dateCol = TableColumnDefinition.Date("建立時間", nameof(CustomTableRow.CreatedAt));
+        dateCol.Width = "10%";
+        columns.Add(dateCol);
+
+        _columnDefinitions = columns;
+    }
+
+    private RenderFragment RenderFieldValueFragment(CustomTableRow row, CustomFieldDefinition field)
+    {
+        return builder =>
+        {
+            var fv = row.FieldValues.FirstOrDefault(v => v.CustomFieldDefinitionId == field.Id);
+            var displayText = FormatFieldValue(fv?.Value, field.FieldType);
+            builder.AddContent(0, displayText);
+        };
+    }
+
+    private static string FormatFieldValue(string? value, CustomFieldType fieldType)
+    {
+        if (value == null) return "—";
+        return fieldType switch
+        {
+            CustomFieldType.Boolean => value == "true" ? "是" : "否",
+            CustomFieldType.Date => DateTime.TryParse(value, out var d) ? d.ToString("yyyy/MM/dd") : value,
+            CustomFieldType.DateTime => DateTime.TryParse(value, out var dt) ? dt.ToString("yyyy/MM/dd HH:mm") : value,
+            _ => value
+        };
+    }
+
+    // ===== 資料載入 =====
 
     private async Task LoadRowsAsync()
     {
@@ -328,7 +279,10 @@ else
         StateHasChanged();
         try
         {
-            var (items, total) = await RowService.GetPagedByTableIdAsync(TableId, _currentPage, _pageSize);
+            var searchTerm = _searchModel.TextFilters.TryGetValue("Search", out var s) ? s : null;
+            bool? isDraftParam = _showingDrafts ? true : null; // null=正式, true=草稿
+            var (items, total) = await RowService.GetPagedByTableIdAsync(
+                TableId, _currentPage, _pageSize, searchTerm, isDraftParam);
             _rows = items;
             _totalCount = total;
         }
@@ -339,186 +293,74 @@ else
         }
     }
 
-    private async Task GoToPage(int page)
+    private async Task LoadDraftCountAsync()
+    {
+        var (_, draftTotal) = await RowService.GetPagedByTableIdAsync(TableId, 1, 1, isDraft: true);
+        _draftCount = draftTotal;
+    }
+
+    // ===== Tab 切換 =====
+
+    private async Task SwitchDraftTab(bool showDrafts)
+    {
+        if (_showingDrafts == showDrafts) return;
+        _showingDrafts = showDrafts;
+        _currentPage = 1;
+        await LoadRowsAsync();
+    }
+
+    // ===== 搜尋 =====
+
+    private async Task HandleSearch(SearchFilterModel model)
+    {
+        _searchModel = model;
+        _currentPage = 1;
+        await LoadRowsAsync();
+    }
+
+    // ===== 分頁 =====
+
+    private async Task HandlePageChanged(int page)
     {
         _currentPage = page;
         await LoadRowsAsync();
     }
 
-    // ===== 新增/編輯 =====
-
-    private void StartAddRow()
+    private async Task HandlePageSizeChanged(int pageSize)
     {
-        _editingRow = null;
-        _formValues = new Dictionary<int, string>();
-        if (_tableDefinition != null)
-        {
-            foreach (var field in _tableDefinition.FieldDefinitions)
-            {
-                _formValues[field.Id] = field.DefaultValue ?? (field.FieldType == CustomFieldType.Boolean ? "false" : "");
-            }
-        }
-        _isFormVisible = true;
+        _pageSize = pageSize;
+        _currentPage = 1;
+        await LoadRowsAsync();
     }
 
-    private void StartEditRow(CustomTableRow row)
+    // ===== Modal 操作 =====
+
+    private void HandleAdd()
     {
-        _editingRow = row;
-        _formValues = new Dictionary<int, string>();
-        if (_tableDefinition != null)
-        {
-            foreach (var field in _tableDefinition.FieldDefinitions)
-            {
-                var existingValue = row.FieldValues.FirstOrDefault(v => v.CustomFieldDefinitionId == field.Id);
-                _formValues[field.Id] = existingValue?.Value ?? field.DefaultValue ?? (field.FieldType == CustomFieldType.Boolean ? "false" : "");
-            }
-        }
-        _isFormVisible = true;
+        _editingRowId = null;
+        _showEditModal = true;
     }
 
-    private void CloseForm()
+    private void HandleRowClick(CustomTableRow row)
     {
-        _isFormVisible = false;
-        _editingRow = null;
-        _formValues = new();
+        _editingRowId = row.Id;
+        _showEditModal = true;
     }
 
-    private async Task HandleSaveRow()
+    private async Task HandleRowIdChanged(int? newRowId)
     {
-        if (_tableDefinition == null) return;
-
-        // 必填驗證
-        foreach (var field in _tableDefinition.FieldDefinitions.Where(f => f.IsRequired))
-        {
-            var value = GetFormValue(field.Id);
-            if (string.IsNullOrWhiteSpace(value) || (field.FieldType == CustomFieldType.Select && string.IsNullOrEmpty(value)))
-            {
-                await NotificationService.ShowErrorAsync($"「{field.DisplayName}」為必填欄位");
-                return;
-            }
-        }
-
-        _isSaving = true;
-        StateHasChanged();
-
-        try
-        {
-            var fieldValues = _formValues
-                .Select(kvp => new CustomFieldValue
-                {
-                    CustomFieldDefinitionId = kvp.Key,
-                    Value = kvp.Value
-                })
-                .ToList();
-
-            if (_editingRow == null)
-            {
-                // 新增
-                var newRow = new CustomTableRow
-                {
-                    CustomTableDefinitionId = TableId
-                };
-                var result = await RowService.CreateRowWithValuesAsync(newRow, fieldValues);
-                if (result.IsSuccess)
-                {
-                    await NotificationService.ShowSuccessAsync("新增成功");
-                    CloseForm();
-                    await LoadRowsAsync();
-                }
-                else
-                {
-                    await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "新增失敗");
-                }
-            }
-            else
-            {
-                // 更新
-                foreach (var fv in fieldValues)
-                    fv.CustomTableRowId = _editingRow.Id;
-
-                var result = await RowService.UpdateRowWithValuesAsync(_editingRow, fieldValues);
-                if (result.IsSuccess)
-                {
-                    await NotificationService.ShowSuccessAsync("更新成功");
-                    CloseForm();
-                    await LoadRowsAsync();
-                }
-                else
-                {
-                    await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "更新失敗");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            await NotificationService.ShowErrorAsync($"儲存失敗：{ex.Message}");
-        }
-        finally
-        {
-            _isSaving = false;
-            StateHasChanged();
-        }
+        _editingRowId = newRowId;
     }
 
-    // ===== 刪除 =====
-
-    private void HandleDeleteRow(CustomTableRow row)
+    private async Task HandleRowSaved()
     {
-        _rowToDelete = row;
-        _isDeleteConfirmVisible = true;
+        await LoadRowsAsync();
+        await LoadDraftCountAsync();
     }
 
-    private async Task ConfirmDeleteRow()
+    private void HandleModalCancel()
     {
-        if (_rowToDelete == null) return;
-
-        var result = await RowService.DeleteAsync(_rowToDelete.Id);
-        if (result.IsSuccess)
-        {
-            await NotificationService.ShowSuccessAsync("已刪除");
-            if (_rows.Count == 1 && _currentPage > 1)
-                _currentPage--;
-            await LoadRowsAsync();
-        }
-        else
-        {
-            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "刪除失敗");
-        }
-        _rowToDelete = null;
-    }
-
-    // ===== 輔助方法 =====
-
-    private string GetFormValue(int fieldId) =>
-        _formValues.TryGetValue(fieldId, out var v) ? v : "";
-
-    private void SetFormValue(int fieldId, string value) =>
-        _formValues[fieldId] = value;
-
-    private string RenderFieldValue(CustomTableRow row, CustomFieldDefinition field)
-    {
-        var fv = row.FieldValues.FirstOrDefault(v => v.CustomFieldDefinitionId == field.Id);
-        if (fv?.Value == null) return "—";
-
-        return field.FieldType switch
-        {
-            CustomFieldType.Boolean => fv.Value == "true" ? "是" : "否",
-            CustomFieldType.Date => DateTime.TryParse(fv.Value, out var d) ? d.ToString("yyyy/MM/dd") : fv.Value,
-            CustomFieldType.DateTime => DateTime.TryParse(fv.Value, out var dt) ? dt.ToString("yyyy/MM/dd HH:mm") : fv.Value,
-            _ => fv.Value
-        };
-    }
-
-    private IEnumerable<string> GetSelectOptions(CustomFieldDefinition field)
-    {
-        if (string.IsNullOrEmpty(field.Options)) return Enumerable.Empty<string>();
-        try
-        {
-            return JsonSerializer.Deserialize<List<string>>(field.Options) ?? new List<string>();
-        }
-        catch
-        {
-            return Enumerable.Empty<string>();
-        }
+        _showEditModal = false;
+        _editingRowId = null;
     }
 }

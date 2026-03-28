@@ -3,6 +3,7 @@
 @using ERPCore2.Components.Shared.Report
 @using ERPCore2.Data.Entities
 @using ERPCore2.Components.Shared.PersonalTools
+@using ERPCore2.Components.Shared.Communication
 @using ERPCore2.Components.Pages.Reports
 @using ERPCore2.Components.Pages.Employees
 @using ERPCore2.Components.Pages.Suppliers
@@ -38,6 +39,7 @@
                                 CategoryDisplayNameFunc="@ReportSearchService.GetCategoryDisplayName"
                                 OnPageSelected="@HandleSearchBarPageSelected"
                                 OnReportSelected="@HandleSearchBarReportSelected" />
+            <NotificationBell @ref="_notificationBellRef" EmployeeId="@_currentEmployeeId" />
         </div>
         <article class="content px-4">
             @Body
@@ -338,6 +340,9 @@
     private PeriodicTimer? _notificationTimer;
     private CancellationTokenSource _timerCts = new();
     private List<ERPCore2.Data.Entities.CalendarEvent> _dueReminders = new();
+
+    // 系統通知鈴鐺
+    private NotificationBell? _notificationBellRef;
 
     // Action 處理器註册表
     private NavigationActionHelper.ActionHandlerRegistry? actionRegistry;

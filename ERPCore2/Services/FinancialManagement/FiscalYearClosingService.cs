@@ -31,6 +31,12 @@ namespace ERPCore2.Services
         private readonly IAccountItemService _accountItemService;
         private readonly ICompanyService _companyService;
         private readonly ILogger<FiscalYearClosingService> _logger;
+        private readonly IAccountingAuditLogService _auditLogService;
+
+        /// <summary>
+        /// 年底結帳並發鎖 — 防止多用戶同時執行同年度結帳
+        /// </summary>
+        private static readonly SemaphoreSlim _closingLock = new(1, 1);
 
         // 結帳用科目代碼（對應種子資料 AccountItemSeeder）
         private const string CurrentPeriodIncomeCode = "3353"; // 本期損益（Income Summary — 損益科目的中間彙總帳）
@@ -54,6 +60,7 @@ namespace ERPCore2.Services
             IJournalEntryService journalEntryService,
             IAccountItemService accountItemService,
             ICompanyService companyService,
+            IAccountingAuditLogService auditLogService,
             ILogger<FiscalYearClosingService> logger)
         {
             _contextFactory = contextFactory;
@@ -61,6 +68,7 @@ namespace ERPCore2.Services
             _journalEntryService = journalEntryService;
             _accountItemService = accountItemService;
             _companyService = companyService;
+            _auditLogService = auditLogService;
             _logger = logger;
         }
 
@@ -133,6 +141,10 @@ namespace ERPCore2.Services
         public async Task<(bool Success, string ErrorMessage)> ExecuteYearEndClosingAsync(
             int year, int companyId, string executedBy)
         {
+            // 嘗試取得並發鎖（等待最多 5 秒）
+            if (!await _closingLock.WaitAsync(TimeSpan.FromSeconds(5)))
+                return (false, "年底結帳正在執行中，請稍候再試");
+
             try
             {
                 // 前置檢查
@@ -314,6 +326,11 @@ namespace ERPCore2.Services
                 // ===== Step 4：初始化下一年度 =====
                 await _fiscalPeriodService.InitializeYearAsync(year + 1, companyId);
 
+                // 記錄稽核日誌
+                await _auditLogService.LogAsync("YearEndClosing", "FiscalPeriod", year,
+                    $"{year}年度", $"執行 {year} 年度年底結帳（損益歸零→鎖定期間→初始化 {year + 1} 年度）",
+                    "Closed", "Locked", companyId, executedBy);
+
                 return (true, string.Empty);
             }
             catch (Exception ex)
@@ -321,6 +338,10 @@ namespace ERPCore2.Services
                 await ErrorHandlingHelper.HandleServiceErrorAsync(ex, nameof(ExecuteYearEndClosingAsync), GetType(), _logger,
                     new { Year = year, CompanyId = companyId });
                 return (false, "年底結帳過程發生錯誤，請稍後再試");
+            }
+            finally
+            {
+                _closingLock.Release();
             }
         }
 

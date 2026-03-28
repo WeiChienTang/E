@@ -1,0 +1,212 @@
+@using ERPCore2.Data.Entities
+@using ERPCore2.Models.Enums
+@using ERPCore2.Services.Communication
+@inject ISystemNotificationService NotificationService
+@inject INavigationPermissionService NavigationPermissionService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<div class="notification-bell-container">
+    <button class="notification-bell-btn" @onclick="TogglePanel" title="系統通知">
+        <span class="bi bi-bell"></span>
+        @if (_unreadCount > 0)
+        {
+            <span class="notification-bell-badge">@(_unreadCount > 9 ? "9+" : _unreadCount.ToString())</span>
+        }
+    </button>
+
+    @if (_showPanel)
+    {
+        <div class="notification-backdrop" @onclick="ClosePanel"></div>
+        <div class="notification-panel">
+            <div class="notification-panel-header">
+                <span class="panel-title">
+                    <span class="bi bi-bell me-1"></span>
+                    系統通知
+                    @if (_unreadCount > 0)
+                    {
+                        <span class="unread-count-text">(@_unreadCount 則未讀)</span>
+                    }
+                </span>
+                <div class="panel-header-actions">
+                    @if (_unreadCount > 0)
+                    {
+                        <button class="panel-action-btn" @onclick="MarkAllAsRead" title="全部標記為已讀">
+                            <span class="bi bi-check-all"></span>
+                        </button>
+                    }
+                    <button class="panel-action-btn" @onclick="ClosePanel" title="關閉">
+                        <span class="bi bi-x-lg"></span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="notification-panel-body">
+                @if (_loading)
+                {
+                    <div class="notification-empty-state">
+                        <span class="bi bi-arrow-repeat spin"></span>
+                        <span>載入中...</span>
+                    </div>
+                }
+                else if (!_recentNotifications.Any())
+                {
+                    <div class="notification-empty-state">
+                        <span class="bi bi-bell-slash"></span>
+                        <span>目前沒有通知</span>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var notification in _recentNotifications)
+                    {
+                        <div class="notification-item @(notification.IsRead ? "" : "unread")"
+                             @onclick="() => HandleNotificationClick(notification)">
+                            <div class="notification-item-icon">
+                                <span class="bi @notification.TypeIconClass"></span>
+                            </div>
+                            <div class="notification-item-content">
+                                <div class="notification-item-title">@notification.Title</div>
+                                @if (!string.IsNullOrEmpty(notification.Content))
+                                {
+                                    <div class="notification-item-text">@TruncateContent(notification.Content)</div>
+                                }
+                                <div class="notification-item-meta">
+                                    <span class="notification-item-type">@notification.NotificationTypeText</span>
+                                    <span class="notification-item-time">@FormatTimeAgo(notification.CreatedAt)</span>
+                                </div>
+                            </div>
+                            @if (!notification.IsRead)
+                            {
+                                <div class="notification-item-dot"></div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+
+            <div class="notification-panel-footer">
+                <button class="view-all-btn" @onclick="NavigateToAll">
+                    查看全部通知
+                    <span class="bi bi-arrow-right ms-1"></span>
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private int _employeeId;
+    private int _unreadCount;
+    private bool _showPanel;
+    private bool _loading;
+    private List<SystemNotification> _recentNotifications = new();
+
+    [Parameter]
+    public int EmployeeId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (EmployeeId > 0 && _employeeId != EmployeeId)
+        {
+            _employeeId = EmployeeId;
+            await RefreshUnreadCountAsync();
+        }
+    }
+
+    public async Task RefreshUnreadCountAsync()
+    {
+        if (_employeeId <= 0) return;
+        try
+        {
+            _unreadCount = await NotificationService.GetUnreadCountAsync(_employeeId);
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    private async Task TogglePanel()
+    {
+        if (_showPanel)
+        {
+            _showPanel = false;
+            return;
+        }
+
+        _showPanel = true;
+        _loading = true;
+        StateHasChanged();
+
+        try
+        {
+            var (items, _) = await NotificationService.GetByEmployeeIdAsync(_employeeId, 1, 10);
+            _recentNotifications = items;
+        }
+        catch
+        {
+            _recentNotifications = new();
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ClosePanel()
+    {
+        _showPanel = false;
+    }
+
+    private async Task HandleNotificationClick(SystemNotification notification)
+    {
+        if (!notification.IsRead)
+        {
+            await NotificationService.MarkAsReadAsync(notification.Id, _employeeId);
+            notification.IsRead = true;
+            notification.ReadAt = DateTime.UtcNow;
+            _unreadCount = Math.Max(0, _unreadCount - 1);
+        }
+
+        _showPanel = false;
+
+        if (!string.IsNullOrEmpty(notification.NavigationUrl))
+        {
+            Navigation.NavigateTo(notification.NavigationUrl);
+        }
+    }
+
+    private async Task MarkAllAsRead()
+    {
+        await NotificationService.MarkAllAsReadAsync(_employeeId);
+        _unreadCount = 0;
+        foreach (var n in _recentNotifications)
+        {
+            n.IsRead = true;
+            n.ReadAt = DateTime.UtcNow;
+        }
+    }
+
+    private void NavigateToAll()
+    {
+        _showPanel = false;
+        Navigation.NavigateTo("/notifications");
+    }
+
+    private static string TruncateContent(string content)
+    {
+        return content.Length > 80 ? content[..80] + "..." : content;
+    }
+
+    private static string FormatTimeAgo(DateTime createdAt)
+    {
+        var diff = DateTime.UtcNow - createdAt;
+        if (diff.TotalMinutes < 1) return "剛剛";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} 分鐘前";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} 小時前";
+        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays} 天前";
+        return createdAt.ToLocalTime().ToString("MM/dd HH:mm");
+    }
+
+    public void Dispose() { }
+}

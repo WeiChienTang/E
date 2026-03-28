@@ -38,6 +38,7 @@ namespace ERPCore2.Services
     /// 系統參數服務 - 用於檢查是否啟用採購單審核
     /// </summary>
     private readonly ISystemParameterService? _systemParameterService;
+    private readonly Communication.Events.IEventBus? _eventBus;
 
     /// <summary>
     /// 簡易建構子 - 適用於測試環境或最小依賴場景
@@ -75,7 +76,8 @@ namespace ERPCore2.Services
             IPurchaseOrderDetailService purchaseOrderDetailService,
             IPurchaseReturnDetailService purchaseReturnDetailService,
             ISystemParameterService systemParameterService,
-            IFieldDisplaySettingService? fieldDisplaySettingService = null) : base(contextFactory, logger)
+            IFieldDisplaySettingService? fieldDisplaySettingService = null,
+            Communication.Events.IEventBus? eventBus = null) : base(contextFactory, logger)
         {
             _inventoryStockService = inventoryStockService;
             _detailService = detailService;
@@ -83,6 +85,7 @@ namespace ERPCore2.Services
             _purchaseReturnDetailService = purchaseReturnDetailService;
             _systemParameterService = systemParameterService;
             _fieldDisplaySettingService = fieldDisplaySettingService;
+            _eventBus = eventBus;
         }
 
         #region 覆寫基本方法
@@ -1340,6 +1343,12 @@ namespace ERPCore2.Services
 
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                if (_eventBus != null)
+                    await _eventBus.PublishAsync(new Communication.Events.DocumentApprovedEvent(
+                        SourceModule: "PurchaseReceiving", SourceId: id, TriggeredBy: approvedBy,
+                        DocumentCode: entity.Code ?? "", ApprovedBy: approvedBy ?? 0));
+
                 return ServiceResult.Success();
             }
             catch
@@ -1363,6 +1372,12 @@ namespace ERPCore2.Services
             entity.UpdatedAt = DateTime.UtcNow;
 
             await context.SaveChangesAsync();
+
+            if (_eventBus != null)
+                await _eventBus.PublishAsync(new Communication.Events.DocumentRejectedEvent(
+                    SourceModule: "PurchaseReceiving", SourceId: id, TriggeredBy: rejectedBy,
+                    DocumentCode: entity.Code ?? "", RejectedBy: rejectedBy, Reason: reason));
+
             return ServiceResult.Success();
         }
 

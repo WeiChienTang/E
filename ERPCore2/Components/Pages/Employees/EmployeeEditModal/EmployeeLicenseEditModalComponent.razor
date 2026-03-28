@@ -1,6 +1,7 @@
 ﻿@* 員工證照編輯組件 - 用於教育訓練 Tab 中 *@
 @inject IEmployeeLicenseService EmployeeLicenseService
 @inject INotificationService NotificationService
+@inject ISystemParameterService SystemParameterService
 @inject IStringLocalizer<SharedResource> L
 @using ERPCore2.Models.FeatureGuides.GuideDefinitions
 
@@ -59,10 +60,12 @@
         {
             if (!EmployeeLicenseId.HasValue)
             {
+                var systemParam = await SystemParameterService.GetSystemParameterAsync();
+                var defaultAlertDays = systemParam?.DefaultLicenseAlertDays ?? 30;
                 var newLicense = new EmployeeLicense
                 {
                     IssuedDate = DateTime.Today,
-                    AlertDays = 30,
+                    AlertDays = defaultAlertDays,
                     Status = EntityStatus.Active
                 };
 

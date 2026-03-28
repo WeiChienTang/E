@@ -217,9 +217,31 @@ namespace ERPCore2.Services
             try
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
-                var line = await context.BankStatementLines.FindAsync(lineId);
+                var line = await context.BankStatementLines
+                    .Include(l => l.BankStatement)
+                    .FirstOrDefaultAsync(l => l.Id == lineId);
                 if (line == null)
                     return ServiceResult.Failure("找不到對帳明細行");
+
+                if (journalEntryLineId.HasValue)
+                {
+                    // 驗證：同一筆傳票分錄不能被多個銀行明細配對
+                    var alreadyMatched = await context.BankStatementLines
+                        .AnyAsync(l => l.Id != lineId
+                            && l.MatchedJournalEntryLineId == journalEntryLineId.Value
+                            && l.IsMatched);
+                    if (alreadyMatched)
+                        return ServiceResult.Failure("此傳票分錄已被其他銀行明細配對，不允許重複配對");
+
+                    // 驗證：不允許跨公司配對
+                    var journalLine = await context.JournalEntryLines
+                        .Include(l => l.JournalEntry)
+                        .FirstOrDefaultAsync(l => l.Id == journalEntryLineId.Value);
+                    if (journalLine == null)
+                        return ServiceResult.Failure("找不到指定的傳票分錄");
+                    if (journalLine.JournalEntry.CompanyId != line.BankStatement.CompanyId)
+                        return ServiceResult.Failure("不允許跨公司配對（傳票分錄與銀行對帳單屬於不同公司）");
+                }
 
                 line.IsMatched = journalEntryLineId.HasValue;
                 line.MatchedJournalEntryLineId = journalEntryLineId;

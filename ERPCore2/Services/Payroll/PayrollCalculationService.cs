@@ -603,20 +603,31 @@ namespace ERPCore2.Services.Payroll
             }
 
             // ── 13. 課稅所得 ─────────────────────────────────────────
-            // 依各津貼項目 PayrollItem.IsTaxable 旗標決定免稅額
+            // 13a. 假別扣薪（曠職/病假/事假）減少實際薪資所得，須從課稅基礎中扣除
+            decimal leaveDeductions = Math.Abs(details
+                .Where(d => d.Amount < 0 && d.Item != null &&
+                       (d.Item.Code == "ABSENT" || d.Item.Code == "SICK" || d.Item.Code == "PERSONAL_LEAVE"))
+                .Sum(d => d.Amount));
+
+            // 13b. 依各津貼項目 PayrollItem.IsTaxable 旗標決定免稅額
             // MEAL / TRANSPORT 有法定免稅上限（來自 InsuranceRate 表）；其他 IsTaxable=false 項目全額免稅
+            // 使用已計入 details 的實際發放金額（已按出勤比例調整），而非 EmployeeSalaryItem 設定值
             decimal taxFreeFromAllowances = 0;
             foreach (var allowance in salary.AllowanceItems
                 .Where(i => i.PayrollItem != null && !i.PayrollItem.IsTaxable && i.Amount > 0))
             {
-                decimal taxFreeAmount = allowance.Amount;
+                // 從 details 中取得該津貼的實際發放金額（已計入 IsProrated 比例調整）
+                var actualDetail = details.FirstOrDefault(d => d.Item?.Code == allowance.PayrollItem!.Code && d.Amount > 0);
+                decimal actualAmount = actualDetail?.Amount ?? allowance.Amount;
+
+                decimal taxFreeAmount = actualAmount;
                 if (allowance.PayrollItem!.Code == "MEAL")
-                    taxFreeAmount = Math.Min(allowance.Amount, mealTaxFreeLimit);
+                    taxFreeAmount = Math.Min(actualAmount, mealTaxFreeLimit);
                 else if (allowance.PayrollItem!.Code == "TRANSPORT")
-                    taxFreeAmount = Math.Min(allowance.Amount, transportTaxFreeLimit);
+                    taxFreeAmount = Math.Min(actualAmount, transportTaxFreeLimit);
                 taxFreeFromAllowances += taxFreeAmount;
             }
-            decimal taxableIncome = grossIncome - taxFreeFromAllowances - laborInsuranceEE - healthInsuranceEE - voluntaryRetirement;
+            decimal taxableIncome = grossIncome - leaveDeductions - taxFreeFromAllowances - laborInsuranceEE - healthInsuranceEE - voluntaryRetirement;
             taxableIncome = Math.Max(taxableIncome, 0);
 
             // ── 14. 查扣繳稅額表 ─────────────────────────────────────

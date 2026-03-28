@@ -9,12 +9,16 @@ namespace ERPCore2.Services
 {
     public class FiscalPeriodService : GenericManagementService<FiscalPeriod>, IFiscalPeriodService
     {
+        private readonly IAccountingAuditLogService _auditLogService;
+
         public FiscalPeriodService(
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<GenericManagementService<FiscalPeriod>> logger,
+            IAccountingAuditLogService auditLogService,
             IFieldDisplaySettingService? fieldDisplaySettingService = null)
             : base(contextFactory, logger)
         {
+            _auditLogService = auditLogService;
             _fieldDisplaySettingService = fieldDisplaySettingService;
         }
 
@@ -225,6 +229,11 @@ namespace ERPCore2.Services
                 period.ClosedByEmployeeId = closedByEmployeeId;
                 period.UpdatedAt = DateTime.UtcNow;
                 await context.SaveChangesAsync();
+
+                await _auditLogService.LogAsync("ClosePeriod", "FiscalPeriod", period.Id,
+                    period.DisplayName, $"關帳期間 {period.DisplayName}",
+                    "Open", "Closed", period.CompanyId, closedByEmployeeId?.ToString());
+
                 return (true, string.Empty);
             }
             catch (Exception ex)
@@ -250,6 +259,11 @@ namespace ERPCore2.Services
                 period.PeriodStatus = FiscalPeriodStatus.Locked;
                 period.UpdatedAt = DateTime.UtcNow;
                 await context.SaveChangesAsync();
+
+                await _auditLogService.LogAsync("LockPeriod", "FiscalPeriod", period.Id,
+                    period.DisplayName, $"永久鎖定期間 {period.DisplayName}",
+                    "Closed", "Locked", period.CompanyId, null);
+
                 return (true, string.Empty);
             }
             catch (Exception ex)
@@ -280,6 +294,11 @@ namespace ERPCore2.Services
                 period.ReopenedAt = DateTime.UtcNow;
                 period.UpdatedAt = DateTime.UtcNow;
                 await context.SaveChangesAsync();
+
+                await _auditLogService.LogAsync("ReopenPeriod", "FiscalPeriod", period.Id,
+                    period.DisplayName, $"重開期間 {period.DisplayName}，原因：{reason}",
+                    "Closed", "Open", period.CompanyId, null);
+
                 return (true, string.Empty);
             }
             catch (Exception ex)

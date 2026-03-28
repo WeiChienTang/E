@@ -1,0 +1,232 @@
+@* 審核設定區段 — 嵌入在 FieldSettingsPanel 的「審核」書籤中 *@
+@inject ISystemParameterService SystemParameterService
+@inject ERPCore2.Services.Communication.IApproverAssignmentService ApproverAssignmentService
+@inject IEmployeeService EmployeeService
+@inject INotificationService NotificationService
+
+<div class="settings-section">
+    <div class="settings-section-title">
+        <i class="bi bi-clipboard-check me-2"></i>審核設定
+    </div>
+
+    @if (_isLoading)
+    {
+        <div class="text-center py-4">
+            <div class="spinner-border spinner-border-sm" role="status"></div>
+            <span class="ms-2">載入中...</span>
+        </div>
+    }
+    else
+    {
+        @* 審核模式開關 *@
+        <div class="approval-mode-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <strong>審核模式</strong>
+                    <div class="text-muted small mt-1">
+                        @(_isManualApproval ? "需經人工審核後才生效" : "儲存後自動核准")
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge @(_isManualApproval ? "bg-warning text-dark" : "bg-success")">
+                        @(_isManualApproval ? "手動審核" : "自動審核")
+                    </span>
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox"
+                               checked="@_isManualApproval"
+                               @onchange="HandleApprovalModeToggle" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* 審核人員指派 *@
+        <div class="approval-assignees-section">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <strong class="small">審核人員指派</strong>
+            </div>
+
+            @if (_approverAssignments.Any())
+            {
+                <div class="approver-list">
+                    @foreach (var assignment in _approverAssignments)
+                    {
+                        <div class="approver-item">
+                            <div class="approver-info">
+                                <i class="bi bi-person-circle me-2"></i>
+                                <span>@assignment.ApproverDisplayName</span>
+                                @if (assignment.IsPrimary)
+                                {
+                                    <span class="badge bg-primary ms-2" style="font-size: 0.7rem;">主要</span>
+                                }
+                            </div>
+                            <div class="approver-actions">
+                                <button class="btn btn-sm btn-link p-0 me-2"
+                                        title="@(assignment.IsPrimary ? "取消主要" : "設為主要")"
+                                        @onclick="() => TogglePrimary(assignment)">
+                                    <i class="bi @(assignment.IsPrimary ? "bi-star-fill text-warning" : "bi-star")"></i>
+                                </button>
+                                <button class="btn btn-sm btn-link text-danger p-0"
+                                        title="移除"
+                                        @onclick="() => RemoveApprover(assignment)">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            @* 新增審核人員 *@
+            <div class="add-approver-row">
+                <select class="form-select form-select-sm" @bind="_selectedEmployeeId">
+                    <option value="0">— 選擇員工 —</option>
+                    @foreach (var emp in _availableEmployees)
+                    {
+                        <option value="@emp.Id">@emp.Name（@emp.Code）</option>
+                    }
+                </select>
+                <GenericButtonComponent Text="新增"
+                                       Variant="ButtonVariant.DarkBlue"
+                                       Size="ButtonSize.Small"
+                                       OnClick="AddApprover"
+                                       IsDisabled="@(_selectedEmployeeId <= 0)" />
+            </div>
+
+            <div class="approval-hint">
+                <i class="bi bi-info-circle me-1"></i>
+                未指派審核人員時，不會發送審核請求通知
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>目標模組名稱（如 "SalesOrder"）</summary>
+    [Parameter, EditorRequired]
+    public string TargetModule { get; set; } = string.Empty;
+
+    // ===== 狀態 =====
+    private bool _isLoading;
+    private bool _isManualApproval;
+    private List<ERPCore2.Data.Entities.ApproverAssignment> _approverAssignments = new();
+    private List<ERPCore2.Data.Entities.Employee> _availableEmployees = new();
+    private int _selectedEmployeeId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(TargetModule))
+        {
+            await LoadAsync();
+        }
+    }
+
+    /// <summary>載入審核設定</summary>
+    public async Task LoadAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            if (Enum.TryParse<ApprovalType>(TargetModule, out var approvalType))
+            {
+                _isManualApproval = await SystemParameterService.IsManualApprovalAsync(approvalType);
+            }
+
+            _approverAssignments = await ApproverAssignmentService.GetByModuleAsync(TargetModule);
+
+            var allEmployees = await EmployeeService.GetAllAsync();
+            var assignedIds = _approverAssignments.Select(a => a.ApproverEmployeeId).ToHashSet();
+            _availableEmployees = allEmployees
+                .Where(e => !assignedIds.Contains(e.Id))
+                .OrderBy(e => e.Code)
+                .ToList();
+            _selectedEmployeeId = 0;
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"載入審核設定失敗：{ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>儲存審核人員指派（由父元件 HandleSave 呼叫）</summary>
+    public async Task<ERPCore2.Services.ServiceResult> SaveAsync()
+    {
+        return await ApproverAssignmentService.SaveAssignmentsAsync(TargetModule, _approverAssignments);
+    }
+
+    // ===== 審核模式切換 =====
+
+    private async Task HandleApprovalModeToggle(ChangeEventArgs e)
+    {
+        var newValue = (bool)(e.Value ?? false);
+        _isManualApproval = newValue;
+
+        try
+        {
+            var param = await SystemParameterService.GetSystemParameterAsync();
+            if (param == null) return;
+
+            switch (TargetModule)
+            {
+                case nameof(ApprovalType.Quotation): param.QuotationManualApproval = newValue; break;
+                case nameof(ApprovalType.SalesOrder): param.SalesOrderManualApproval = newValue; break;
+                case nameof(ApprovalType.SalesDelivery): param.SalesDeliveryManualApproval = newValue; break;
+                case nameof(ApprovalType.SalesReturn): param.SalesReturnManualApproval = newValue; break;
+                case nameof(ApprovalType.PurchaseOrder): param.PurchaseOrderManualApproval = newValue; break;
+                case nameof(ApprovalType.PurchaseReceiving): param.PurchaseReceivingManualApproval = newValue; break;
+                case nameof(ApprovalType.PurchaseReturn): param.PurchaseReturnManualApproval = newValue; break;
+                case nameof(ApprovalType.InventoryTransfer): param.InventoryTransferManualApproval = newValue; break;
+            }
+
+            await SystemParameterService.UpdateAsync(param);
+            SystemParameterService.ClearApprovalConfigCache();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.ShowErrorAsync($"切換審核模式失敗：{ex.Message}");
+        }
+    }
+
+    // ===== 審核人員管理 =====
+
+    private void AddApprover()
+    {
+        if (_selectedEmployeeId <= 0) return;
+
+        var employee = _availableEmployees.FirstOrDefault(e => e.Id == _selectedEmployeeId);
+        if (employee == null) return;
+
+        _approverAssignments.Add(new ERPCore2.Data.Entities.ApproverAssignment
+        {
+            ModuleName = TargetModule,
+            ApproverEmployeeId = _selectedEmployeeId,
+            IsPrimary = !_approverAssignments.Any(),
+            Approver = employee
+        });
+
+        _availableEmployees.Remove(employee);
+        _selectedEmployeeId = 0;
+    }
+
+    private void RemoveApprover(ERPCore2.Data.Entities.ApproverAssignment assignment)
+    {
+        _approverAssignments.Remove(assignment);
+        if (assignment.Approver != null)
+        {
+            _availableEmployees.Add(assignment.Approver);
+            _availableEmployees = _availableEmployees.OrderBy(e => e.Code).ToList();
+        }
+    }
+
+    private void TogglePrimary(ERPCore2.Data.Entities.ApproverAssignment assignment)
+    {
+        assignment.IsPrimary = !assignment.IsPrimary;
+    }
+}

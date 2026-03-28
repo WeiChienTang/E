@@ -1149,6 +1149,16 @@ tr.dragging .drag-handle {
     border-color: var(--border-color) !important;
 }
 
+/* select 下拉選項（深色模式 — 原生 option 需要明確背景色） */
+[data-bs-theme=dark] .interactive-table .form-select {
+    color: var(--text-primary);
+}
+
+[data-bs-theme=dark] .interactive-table .form-select option {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
 /* 唯讀 / 停用控件 */
 [data-bs-theme=dark] .interactive-table-container .form-control[readonly],
 [data-bs-theme=dark] .interactive-table-container .form-select[disabled] {

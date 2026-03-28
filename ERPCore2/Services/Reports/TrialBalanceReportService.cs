@@ -85,10 +85,12 @@ namespace ERPCore2.Services.Reports
                 openingQuery = openingQuery.Where(l => l.JournalEntry.EntryDate < criteria.StartDate.Value.Date);
 
             // Query 2: 本期發生額（StartDate ~ EndDate）
+            // 排除 Closing 類型：年底結帳傳票會將損益科目歸零，試算表應顯示結帳前的實際餘額
             var periodQuery = context.JournalEntryLines
                 .Include(l => l.AccountItem)
                 .Include(l => l.JournalEntry)
                 .Where(l => l.JournalEntry.JournalEntryStatus == JournalEntryStatus.Posted)
+                .Where(l => l.JournalEntry.EntryType != JournalEntryType.Closing)
                 .Where(l => !companyId.HasValue || l.JournalEntry.CompanyId == companyId.Value);
 
             if (criteria.StartDate.HasValue)

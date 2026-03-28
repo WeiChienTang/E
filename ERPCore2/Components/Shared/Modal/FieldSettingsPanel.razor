@@ -1,4 +1,4 @@
-@* EBC 欄位顯示設定面板 - 嵌入在 GenericEditModalComponent 中 *@
+@* EBC 模組設定面板（書籤式導航） - 嵌入在 GenericEditModalComponent 中 *@
 @inject IFieldDisplaySettingService FieldDisplaySettingService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
@@ -9,145 +9,128 @@
 {
     <div class="field-settings-overlay" @onclick="HandleOverlayClick">
         <div class="field-settings-panel" @onclick:stopPropagation="true">
-            @* 標題列 *@
-            <div class="field-settings-header">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-gear"></i>
-                    <span class="field-settings-title">欄位設定 — @ModuleDisplayName</span>
-                </div>
-                <GenericButtonComponent CssClass="btn-close btn-close-white"
-                                       OnClick="Close"
-                                       Title="關閉" />
-            </div>
 
-            <div class="field-settings-notice">
-                <i class="bi bi-info-circle me-1"></i>
-                此設定將套用到所有使用者
-            </div>
-
-            @* 欄位列表 *@
-            <div class="field-settings-body">
-                @if (_isLoading)
+            @* ===== 左側書籤列 ===== *@
+            <div class="field-settings-bookmarks">
+                @foreach (var bm in _bookmarks)
                 {
-                    <div class="text-center py-4">
-                        <div class="spinner-border spinner-border-sm" role="status"></div>
-                        <span class="ms-2">載入中...</span>
+                    <button class="field-settings-bookmark @(_activeBookmarkId == bm.Id ? "active" : "")"
+                            style="--bookmark-color: @bm.Color;"
+                            title="@bm.Label"
+                            @onclick="@(() => SwitchBookmark(bm.Id))">
+                        <span class="field-settings-bookmark-text">@bm.Label</span>
+                    </button>
+                }
+            </div>
+
+            @* ===== 右側主體 ===== *@
+            <div class="field-settings-main">
+                @* 標題列 *@
+                <div class="field-settings-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-gear"></i>
+                        <span class="field-settings-title">模組設定 — @ModuleDisplayName</span>
                     </div>
-                }
-                else if (_fieldRows.Any())
-                {
-                    <table class="table table-sm table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 35%">欄位</th>
-                                <th style="width: 20%" class="text-center">顯示</th>
-                                <th style="width: 20%" class="text-center">必填</th>
-                                <th style="width: 25%">自訂名稱</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var row in _fieldRows)
-                            {
-                                var isHidden = row.ShowInForm == false;
-                                var isBusinessRequired = row.ProtectionLevel == FieldProtectionLevel.BusinessRequired;
-
-                                <tr class="@(isHidden ? "table-secondary text-muted" : "")">
-                                    <td>
-                                        <span title="@row.PropertyName">@row.OriginalLabel</span>
-                                        @if (isBusinessRequired)
-                                        {
-                                            <span class="badge bg-info ms-1" style="font-size: 0.7rem">業務必要</span>
-                                        }
-                                    </td>
-                                    <td class="text-center">
-                                        @if (isBusinessRequired)
-                                        {
-                                            @* 業務必要：不可隱藏，顯示開關鎖定 *@
-                                            <div class="form-check form-switch d-flex justify-content-center mb-0">
-                                                <input class="form-check-input" type="checkbox"
-                                                       checked="true" disabled />
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <div class="form-check form-switch d-flex justify-content-center mb-0">
-                                                <input class="form-check-input" type="checkbox"
-                                                       checked="@(row.ShowInForm != false)"
-                                                       @onchange="@(e => OnShowInFormChanged(row, (bool)(e.Value ?? true)))" />
-                                            </div>
-                                        }
-                                    </td>
-                                    <td class="text-center">
-                                        @if (isHidden)
-                                        {
-                                            <span class="text-muted">—</span>
-                                        }
-                                        else
-                                        {
-                                            <select class="form-select form-select-sm text-center"
-                                                    value="@GetRequiredValue(row)"
-                                                    @onchange="@(e => OnRequiredChanged(row, e.Value?.ToString()))">
-                                                <option value="">預設</option>
-                                                <option value="true">必填</option>
-                                                <option value="false">選填</option>
-                                            </select>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (!isHidden)
-                                        {
-                                            <input type="text" class="form-control form-control-sm"
-                                                   placeholder="@row.OriginalLabel"
-                                                   value="@row.DisplayNameOverride"
-                                                   @onchange="@(e => row.DisplayNameOverride = string.IsNullOrWhiteSpace(e.Value?.ToString()) ? null : e.Value?.ToString())" />
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                }
-                else
-                {
-                    <div class="text-center text-muted py-4">
-                        此模組沒有可配置的欄位
-                    </div>
-                }
-            </div>
-
-            @* 底部按鈕 *@
-            <div class="field-settings-footer">
-                <GenericButtonComponent Text="恢復預設"
-                                       IconClass="bi bi-arrow-counterclockwise"
-                                       Variant="ButtonVariant.OutlineGray"
-                                       OnClick="HandleReset"
-                                       IsDisabled="@_isSaving" />
-                <div class="d-flex gap-2">
-                    <GenericButtonComponent Text="取消"
-                                           Variant="ButtonVariant.Gray"
+                    <GenericButtonComponent CssClass="btn-close btn-close-white"
                                            OnClick="Close"
-                                           IsDisabled="@_isSaving" />
-                    <GenericButtonComponent Text="儲存設定"
-                                           Variant="ButtonVariant.DarkBlue"
-                                           OnClick="HandleSave"
-                                           IsDisabled="@_isSaving"
-                                           IsLoading="@_isSaving" />
+                                           Title="關閉" />
                 </div>
-            </div>
 
-            @* ===== Debug Info (僅 SuperAdmin 可見) ===== *@
-            @if (_isSuperAdmin)
-            {
-                <div class="px-3 py-1 border-top d-flex align-items-center gap-1"
-                     style="background:#1a1a2e; font-size:1rem; font-family:monospace; letter-spacing:0.03em; user-select:text; flex-shrink:0;">
-                    🔧 <strong style="color:#f8c8a0;">SuperAdmin</strong>
-                    @{ var debugName = "FieldSettingsPanel"; }
-                    <span style="color:#7ec8e3; cursor:pointer;"
-                          title="點擊複製：FieldSettingsPanel"
-                          @onclick="() => CopyDebugTextAsync(debugName)"
-                          @onclick:stopPropagation="true">FieldSettingsPanel</span>
+                <div class="field-settings-notice">
+                    <i class="bi bi-info-circle me-1"></i>
+                    此設定將套用到所有使用者
                 </div>
-            }
+
+                @* 內容區（可捲動） *@
+                <div class="field-settings-body">
+                    @if (_isLoading)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                            <span class="ms-2">載入中...</span>
+                        </div>
+                    }
+                    else
+                    {
+                        @* ══════ 欄位設定區段 ══════ *@
+                        @if (_activeBookmarkId == "section-fields")
+                        {
+                            <div class="settings-section">
+                                <div class="settings-section-title">
+                                    <i class="bi bi-input-cursor-text me-2"></i>欄位設定
+                                </div>
+                                @if (_fieldRows.Any())
+                                {
+                                    <GenericInteractiveTableComponent TItem="FieldSettingRow"
+                                                                     Items="@_fieldRows"
+                                                                     ColumnDefinitions="@_columnDefinitions"
+                                                                     ShowRowNumbers="false"
+                                                                     ShowBuiltInActions="false"
+                                                                     IsStriped="false"
+                                                                     IsBordered="false"
+                                                                     EnableColumnResize="false"
+                                                                     GetRowCssClass="@((row, _) => row.ShowInForm == false ? "field-row-hidden" : "")"
+                                                                     EmptyMessage="此模組沒有可配置的欄位" />
+                                }
+                                else
+                                {
+                                    <div class="text-center text-muted py-4">
+                                        此模組沒有可配置的欄位
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @* ══════ 審核設定區段（僅可審核模組） ══════ *@
+                        @if (_isApprovableModule && _activeBookmarkId == "section-approval")
+                        {
+                            <ApprovalSettingsSection @ref="_approvalSectionRef"
+                                                    TargetModule="@TargetModule" />
+                        }
+                    }
+                </div>
+
+                @* 底部按鈕 *@
+                <div class="field-settings-footer">
+                    <div class="d-flex gap-2">
+                        <GenericButtonComponent Text="儲存"
+                                               Variant="ButtonVariant.DarkBlue"
+                                               OnClick="HandleSave"
+                                               IsDisabled="@_isSaving"
+                                               IsLoading="@_isSaving" />
+                        <GenericButtonComponent Text="恢復預設"
+                                               Variant="ButtonVariant.OutlineGray"
+                                               OnClick="HandleReset"
+                                               IsDisabled="@_isSaving" />
+                        <GenericButtonComponent Text="取消"
+                                               Variant="ButtonVariant.Red"
+                                               OnClick="Close"
+                                               IsDisabled="@_isSaving" />
+                    </div>
+                </div>
+
+                @* ===== Debug Info (僅 SuperAdmin 可見) ===== *@
+                @if (_isSuperAdmin)
+                {
+                    var debugParts = DebugName.Split(" > ", StringSplitOptions.RemoveEmptyEntries);
+                    <div class="px-3 py-1 border-top d-flex align-items-center gap-1"
+                         style="background:#1a1a2e; font-family:monospace; letter-spacing:0.03em; user-select:text; flex-shrink:0;">
+                        🔧 <strong style="color:#f8c8a0;">SuperAdmin</strong>
+                        @for (int i = 0; i < debugParts.Length; i++)
+                        {
+                            var part = debugParts[i];
+                            if (i > 0)
+                            {
+                                <span style="color:#555; margin:0 2px;">›</span>
+                            }
+                            <span style="color:#7ec8e3; cursor:pointer;"
+                                  title="點擊複製：@part"
+                                  @onclick="() => CopyDebugTextAsync(part)"
+                                  @onclick:stopPropagation="true">@part</span>
+                        }
+                    </div>
+                }
+            </div>
         </div>
     </div>
 }
@@ -158,43 +141,104 @@
     [Parameter] public string TargetModule { get; set; } = string.Empty;
     [Parameter] public string ModuleDisplayName { get; set; } = string.Empty;
     [Parameter] public string UpdatedBy { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 當前 EditModal 中的 FormFields 定義（用來取得原始欄位名稱和預設值）
-    /// </summary>
     [Parameter] public List<FormFieldDefinition>? FormFields { get; set; }
-
-    /// <summary>
-    /// 儲存完成後通知父元件重新載入設定
-    /// </summary>
     [Parameter] public EventCallback OnSettingsSaved { get; set; }
 
+    // ===== 欄位設定狀態 =====
     private List<FieldSettingRow> _fieldRows = new();
+    private List<InteractiveColumnDefinition> _columnDefinitions = new();
+
+    // ===== 面板狀態 =====
     private bool _isLoading;
     private bool _isSaving;
     private bool _isSuperAdmin;
+    private DotNetObjectReference<FieldSettingsPanel>? _escKeyRef;
+    private bool _escRegistered;
+    private string _activeBookmarkId = "section-fields";
+
+    // ===== 書籤 =====
+    private record PanelBookmark(string Id, string Label, string Color);
+    private List<PanelBookmark> _bookmarks = new();
+
+    // ===== 可審核模組 =====
+    private static readonly HashSet<string> ApprovableModuleNames = new(
+        Enum.GetNames<ApprovalType>());
+    private bool _isApprovableModule;
+
+    // ===== 審核子元件參考 =====
+    private ApprovalSettingsSection? _approvalSectionRef;
+
+    // ===== Debug 名稱（動態跟隨書籤） =====
+    private string DebugName => _activeBookmarkId switch
+    {
+        "section-fields" => "FieldSettingsPanel > 欄位設定",
+        "section-approval" => "FieldSettingsPanel > ApprovalSettingsSection",
+        _ => "FieldSettingsPanel"
+    };
+
+    protected override void OnInitialized()
+    {
+        _columnDefinitions = BuildColumnDefinitions();
+    }
 
     protected override async Task OnParametersSetAsync()
     {
         if (IsVisible && FormFields != null && FormFields.Any())
         {
+            _isApprovableModule = ApprovableModuleNames.Contains(TargetModule);
+            _bookmarks = BuildBookmarks();
+            _activeBookmarkId = "section-fields";
             _isSuperAdmin = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
-            await LoadSettings();
+            await LoadFieldSettings();
         }
     }
 
-    private async Task LoadSettings()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (IsVisible && !_escRegistered)
+        {
+            _escKeyRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("setupEscKeyListener", _escKeyRef);
+            _escRegistered = true;
+        }
+    }
+
+    [JSInvokable]
+    public async Task HandleEscapeKey()
+    {
+        if (IsVisible) await Close();
+    }
+
+    // ===== 書籤 =====
+
+    private List<PanelBookmark> BuildBookmarks()
+    {
+        var list = new List<PanelBookmark>
+        {
+            new("section-fields", "欄位", "#F59E0B")
+        };
+        if (_isApprovableModule)
+            list.Add(new("section-approval", "審核", "#3B82F6"));
+        return list;
+    }
+
+    private void SwitchBookmark(string targetId)
+    {
+        _activeBookmarkId = targetId;
+    }
+
+    // ===== 資料載入（僅欄位設定；審核由子元件自行載入） =====
+
+    private async Task LoadFieldSettings()
     {
         _isLoading = true;
         StateHasChanged();
 
         try
         {
-            // 從資料庫讀取已儲存的覆蓋設定
             var savedSettings = await FieldDisplaySettingService.GetByModuleAsync(TargetModule);
+            FormFieldConfigurationHelper.ApplyProtectionLevels(FormFields!);
 
-            // 根據 FormFields 建立設定列表，合併已儲存的覆蓋值
-            // SystemRequired 欄位（如 Code、必要外鍵）不顯示在設定面板中 — 它們無法被配置
             _fieldRows = FormFields!
                 .Where(f => f.FieldType != FormFieldType.Hidden && !f.IsFilterOnly
                     && f.ProtectionLevel != FieldProtectionLevel.SystemRequired)
@@ -207,7 +251,6 @@
                         OriginalLabel = f.LabelFactory?.Invoke() ?? f.Label ?? f.PropertyName,
                         OriginalIsRequired = f.IsRequired,
                         ProtectionLevel = f.ProtectionLevel,
-                        // 從資料庫覆蓋值載入（null = 使用預設）
                         ShowInForm = saved?.ShowInForm,
                         IsRequiredOverride = saved?.IsRequiredOverride,
                         DisplayNameOverride = saved?.DisplayNameOverride,
@@ -228,6 +271,8 @@
         }
     }
 
+    // ===== 儲存 =====
+
     private async Task HandleSave()
     {
         _isSaving = true;
@@ -235,6 +280,7 @@
 
         try
         {
+            // 儲存欄位設定
             var settings = _fieldRows.Select(row => new FieldDisplaySetting
             {
                 TargetModule = TargetModule,
@@ -247,17 +293,26 @@
             }).ToList();
 
             var result = await FieldDisplaySettingService.SaveModuleSettingsAsync(TargetModule, settings, UpdatedBy);
+            if (!result.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "欄位設定儲存失敗");
+                return;
+            }
 
-            if (result.IsSuccess)
+            // 儲存審核設定（僅可審核模組且子元件已載入）
+            if (_isApprovableModule && _approvalSectionRef != null)
             {
-                await NotificationService.ShowSuccessAsync("欄位設定已儲存，所有使用者將套用新設定");
-                await OnSettingsSaved.InvokeAsync();
-                await Close();
+                var approvalResult = await _approvalSectionRef.SaveAsync();
+                if (!approvalResult.IsSuccess)
+                {
+                    await NotificationService.ShowErrorAsync(approvalResult.ErrorMessage ?? "審核人員指派儲存失敗");
+                    return;
+                }
             }
-            else
-            {
-                await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "儲存失敗");
-            }
+
+            await NotificationService.ShowSuccessAsync("模組設定已儲存，所有使用者將套用新設定");
+            await OnSettingsSaved.InvokeAsync();
+            await Close();
         }
         finally
         {
@@ -283,39 +338,22 @@
 
     private async Task Close()
     {
+        await CleanupEscListener();
         await IsVisibleChanged.InvokeAsync(false);
     }
 
-    private void HandleOverlayClick()
+    private async Task CleanupEscListener()
     {
-        _ = Close();
-    }
-
-    private void OnShowInFormChanged(FieldSettingRow row, bool value)
-    {
-        // true = 顯示（null = 使用預設）, false = 隱藏
-        row.ShowInForm = value ? null : false;
-    }
-
-    private void OnRequiredChanged(FieldSettingRow row, string? value)
-    {
-        row.IsRequiredOverride = value switch
+        if (_escRegistered)
         {
-            "true" => true,
-            "false" => false,
-            _ => null   // 空字串 = 使用預設
-        };
+            _escRegistered = false;
+            try { await JSRuntime.InvokeVoidAsync("cleanupEscKeyListener"); } catch { }
+            _escKeyRef?.Dispose();
+            _escKeyRef = null;
+        }
     }
 
-    private string GetRequiredValue(FieldSettingRow row)
-    {
-        return row.IsRequiredOverride switch
-        {
-            true => "true",
-            false => "false",
-            _ => ""
-        };
-    }
+    private void HandleOverlayClick() => _ = Close();
 
     private async Task CopyDebugTextAsync(string text)
     {
@@ -323,7 +361,85 @@
             await JSRuntime.InvokeVoidAsync("DebugHelper.copyText", text);
     }
 
-    /// <summary>UI 用的暫存資料結構</summary>
+    // ===== 欄位設定表格定義 =====
+
+    private List<InteractiveColumnDefinition> BuildColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new InteractiveColumnDefinition
+            {
+                Title = "欄位",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "auto",
+                CustomTemplate = item =>
+                {
+                    var row = (FieldSettingRow)item;
+                    return builder =>
+                    {
+                        builder.OpenElement(0, "span");
+                        builder.AddAttribute(1, "title", row.PropertyName);
+                        builder.AddContent(2, row.OriginalLabel);
+                        builder.CloseElement();
+                        if (row.ProtectionLevel == FieldProtectionLevel.BusinessRequired)
+                        {
+                            builder.OpenElement(3, "span");
+                            builder.AddAttribute(4, "class", "badge bg-info ms-1");
+                            builder.AddAttribute(5, "style", "font-size: 0.7rem");
+                            builder.AddContent(6, "業務必要");
+                            builder.CloseElement();
+                        }
+                    };
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "顯示",
+                PropertyName = nameof(FieldSettingRow.IsVisibleToggle),
+                ColumnType = InteractiveColumnType.Checkbox,
+                Width = "90px",
+                HeaderCssClass = "text-center",
+                IsDisabledFunc = item => ((FieldSettingRow)item).ProtectionLevel == FieldProtectionLevel.BusinessRequired,
+                OnCheckboxChanged = EventCallback.Factory.Create<(object item, bool isChecked)>(this, args =>
+                {
+                    ((FieldSettingRow)args.item).IsVisibleToggle = args.isChecked;
+                    StateHasChanged();
+                })
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "必填",
+                PropertyName = nameof(FieldSettingRow.RequiredValue),
+                ColumnType = InteractiveColumnType.Select,
+                Width = "90px",
+                HeaderCssClass = "text-center",
+                Placeholder = "預設",
+                Options = new List<InteractiveSelectOption>
+                {
+                    new() { Value = "true", Text = "必填" },
+                    new() { Value = "false", Text = "選填" },
+                },
+                IsDisabledFunc = item => ((FieldSettingRow)item).ShowInForm == false,
+                OnSelectionChanged = EventCallback.Factory.Create<(object item, object? value)>(this, args =>
+                {
+                    ((FieldSettingRow)args.item).RequiredValue = args.value?.ToString() ?? "";
+                })
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "自訂名稱",
+                PropertyName = nameof(FieldSettingRow.DisplayNameOverride),
+                ColumnType = InteractiveColumnType.Input,
+                Width = "160px",
+                IsDisabledFunc = item => ((FieldSettingRow)item).ShowInForm == false,
+                OnInputChanged = EventCallback.Factory.Create<(object item, string? value)>(this, args =>
+                {
+                    ((FieldSettingRow)args.item).DisplayNameOverride = string.IsNullOrWhiteSpace(args.value) ? null : args.value;
+                })
+            }
+        };
+    }
+
     private class FieldSettingRow
     {
         public string PropertyName { get; set; } = string.Empty;
@@ -335,5 +451,17 @@
         public string? DisplayNameOverride { get; set; }
         public int? SortOrder { get; set; }
         public string? HelpTextOverride { get; set; }
+
+        public bool IsVisibleToggle
+        {
+            get => ShowInForm != false;
+            set => ShowInForm = value ? null : false;
+        }
+
+        public string RequiredValue
+        {
+            get => IsRequiredOverride switch { true => "true", false => "false", _ => "" };
+            set => IsRequiredOverride = value switch { "true" => true, "false" => false, _ => null };
+        }
     }
 }

@@ -44,87 +44,17 @@
         @if (_currentView == ViewMode.List)
         {
             @* ===== 表定義列表 ===== *@
-            @if (!_tables.Any())
-            {
-                <div class="text-center text-muted py-5">
-                    <i class="bi bi-table fs-1 d-block mb-3"></i>
-                    <p class="mb-2">尚未建立任何自訂資料表</p>
-                    <p class="small">點擊「新增資料表」開始建立</p>
-                </div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 5%"></th>
-                                <th style="width: 22%">名稱</th>
-                                <th style="width: 8%">前綴</th>
-                                <th style="width: 22%">說明</th>
-                                <th style="width: 13%">導航群組</th>
-                                <th style="width: 8%" class="text-center">欄位數</th>
-                                <th style="width: 8%" class="text-center">狀態</th>
-                                <th style="width: 10%" class="text-center">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var table in _tables)
-                            {
-                                <tr>
-                                    <td>
-                                        <i class="@(table.IconClass ?? "bi bi-table") text-primary"></i>
-                                    </td>
-                                    <td>
-                                        <strong>@table.TableName</strong>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-secondary">@(table.CodePrefix ?? "—")</span>
-                                    </td>
-                                    <td class="text-muted">@(table.Description ?? "—")</td>
-                                    <td>
-                                        @if (!string.IsNullOrEmpty(table.NavigationGroupKey))
-                                        {
-                                            <span class="badge bg-primary">@GetNavGroupDisplayName(table.NavigationGroupKey)</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">—</span>
-                                        }
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="badge bg-info">@table.FieldDefinitions.Count</span>
-                                    </td>
-                                    <td class="text-center">
-                                        @if (table.Status == EntityStatus.Active)
-                                        {
-                                            <span class="badge bg-success">啟用</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-secondary">停用</span>
-                                        }
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-primary btn-sm"
-                                                    @onclick="() => StartEditTable(table)"
-                                                    title="編輯">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-outline-danger btn-sm"
-                                                    @onclick="() => HandleDeleteTable(table)"
-                                                    title="刪除">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
+            <GenericInteractiveTableComponent TItem="CustomTableDefinition"
+                                              Items="@_tables"
+                                              ColumnDefinitions="@_tableColumnDefinitions"
+                                              ShowRowNumbers="false"
+                                              IsReadOnly="true"
+                                              ShowActions="true"
+                                              ActionsTemplate="@_tableActionsTemplate"
+                                              ActionsColumnWidth="100px"
+                                              EmptyMessage="尚未建立任何自訂資料表"
+                                              EnableAutoEmptyRow="false"
+                                              EnableColumnResize="false" />
         }
         else
         {
@@ -146,16 +76,12 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label fw-bold">圖示</label>
-                    <select class="form-select" @bind="_editingTable.IconClass">
-                        <option value="bi bi-table">表格 (預設)</option>
-                        <option value="bi bi-clipboard-data">剪貼簿</option>
-                        <option value="bi bi-file-earmark-text">文件</option>
-                        <option value="bi bi-tools">工具</option>
-                        <option value="bi bi-thermometer-half">溫度計</option>
-                        <option value="bi bi-speedometer2">儀表板</option>
-                        <option value="bi bi-check2-square">檢核表</option>
-                        <option value="bi bi-card-checklist">清單</option>
-                    </select>
+                    <button type="button" class="btn btn-outline-secondary w-100 d-flex align-items-center gap-2"
+                            @onclick="() => _showIconPicker = true">
+                        <i class="@(_editingTable.IconClass ?? "bi bi-table") fs-5"></i>
+                        <span class="text-truncate">點擊選擇圖示</span>
+                        <i class="bi bi-chevron-right ms-auto small"></i>
+                    </button>
                 </div>
                 <div class="col-12">
                     <label class="form-label fw-bold">說明</label>
@@ -200,9 +126,9 @@
             }
             else
             {
-                <div class="table-responsive">
+                <div class="table-responsive table-container-hover">
                     <table class="table table-sm table-bordered mb-0">
-                        <thead class="table-light">
+                        <thead class="table-header-primary">
                             <tr>
                                 <th style="width: 5%">#</th>
                                 <th style="width: 20%">顯示名稱</th>
@@ -295,6 +221,12 @@
     </BodyContent>
 </BaseModalComponent>
 
+@* 圖示選擇器 *@
+<IconPickerModal IsVisible="@_showIconPicker"
+                 IsVisibleChanged="@((v) => _showIconPicker = v)"
+                 CurrentIcon="@_editingTable.IconClass"
+                 OnConfirm="HandleIconSelected" />
+
 @* 刪除確認 *@
 <GenericConfirmModalComponent IsVisible="@_isDeleteConfirmVisible"
                               IsVisibleChanged="@((value) => _isDeleteConfirmVisible = value)"
@@ -324,9 +256,128 @@
     private List<FieldEditRow> _editingFields = new();
     private int? _editingTableId;
 
+    // ===== 圖示選擇 =====
+    private bool _showIconPicker;
+
     // ===== 刪除確認 =====
     private bool _isDeleteConfirmVisible;
     private CustomTableDefinition? _tableToDelete;
+
+    // ===== 表定義列表欄位定義 =====
+    private List<InteractiveColumnDefinition> _tableColumnDefinitions => new()
+    {
+        new()
+        {
+            Title = "",
+            PropertyName = nameof(CustomTableDefinition.IconClass),
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "5%",
+            CustomTemplate = obj => __builder =>
+            {
+                var item = (CustomTableDefinition)obj;
+                <i class="@(item.IconClass ?? "bi bi-table") text-primary"></i>
+            }
+        },
+        new()
+        {
+            Title = "名稱",
+            PropertyName = nameof(CustomTableDefinition.TableName),
+            ColumnType = InteractiveColumnType.Display,
+            Width = "22%",
+            DisplayFormatter = obj => $"{(obj as CustomTableDefinition)?.TableName}"
+        },
+        new()
+        {
+            Title = "前綴",
+            PropertyName = nameof(CustomTableDefinition.CodePrefix),
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "8%",
+            CustomTemplate = obj => __builder =>
+            {
+                var item = (CustomTableDefinition)obj;
+                <span class="badge bg-secondary">@(item.CodePrefix ?? "—")</span>
+            }
+        },
+        new()
+        {
+            Title = "說明",
+            PropertyName = nameof(CustomTableDefinition.Description),
+            ColumnType = InteractiveColumnType.Display,
+            Width = "22%",
+            DisplayFormatter = obj => (obj as CustomTableDefinition)?.Description ?? "—",
+            CellCssClass = "text-muted"
+        },
+        new()
+        {
+            Title = "導航群組",
+            PropertyName = nameof(CustomTableDefinition.NavigationGroupKey),
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "13%",
+            CustomTemplate = obj => __builder =>
+            {
+                var item = (CustomTableDefinition)obj;
+                if (!string.IsNullOrEmpty(item.NavigationGroupKey))
+                {
+                    <span class="badge bg-primary">@GetNavGroupDisplayName(item.NavigationGroupKey)</span>
+                }
+                else
+                {
+                    <span class="text-muted">—</span>
+                }
+            }
+        },
+        new()
+        {
+            Title = "欄位數",
+            PropertyName = "FieldCount",
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "8%",
+            HeaderCssClass = "text-center",
+            CellCssClass = "text-center",
+            CustomTemplate = obj => __builder =>
+            {
+                var item = (CustomTableDefinition)obj;
+                <span class="badge bg-info">@item.FieldDefinitions.Count</span>
+            }
+        },
+        new()
+        {
+            Title = "狀態",
+            PropertyName = nameof(CustomTableDefinition.Status),
+            ColumnType = InteractiveColumnType.Custom,
+            Width = "8%",
+            HeaderCssClass = "text-center",
+            CellCssClass = "text-center",
+            CustomTemplate = obj => __builder =>
+            {
+                var item = (CustomTableDefinition)obj;
+                if (item.Status == EntityStatus.Active)
+                {
+                    <span class="badge bg-success">啟用</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">停用</span>
+                }
+            }
+        }
+    };
+
+    private RenderFragment<CustomTableDefinition> _tableActionsTemplate => item => __builder =>
+    {
+        <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-primary btn-sm"
+                    @onclick="() => StartEditTable(item)"
+                    title="編輯">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-outline-danger btn-sm"
+                    @onclick="() => HandleDeleteTable(item)"
+                    title="刪除">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    };
 
     protected override async Task OnParametersSetAsync()
     {
@@ -589,6 +640,12 @@
         if (index >= _editingFields.Count - 1) return;
         (_editingFields[index], _editingFields[index + 1]) =
             (_editingFields[index + 1], _editingFields[index]);
+    }
+
+    private void HandleIconSelected(string iconClass)
+    {
+        _editingTable.IconClass = iconClass;
+        _showIconPicker = false;
     }
 
     // ===== Helpers =====

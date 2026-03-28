@@ -579,10 +579,6 @@ namespace ERPCore2.Services
                 if (string.IsNullOrWhiteSpace(employee.Account))
                     return ServiceResult<bool>.Failure("使用者名稱不能為空");
 
-                // 驗證員工編號格式
-                if (!Regex.IsMatch(employee.Code, @"^[A-Z0-9]+$"))
-                    return ServiceResult<bool>.Failure("員工編號只能包含大寫字母和數字");
-
                 // 驗證使用者名稱格式
                 if (!Regex.IsMatch(employee.Account, @"^[a-zA-Z0-9_]+$"))
                     return ServiceResult<bool>.Failure("使用者名稱只能包含英文字母、數字和底線");

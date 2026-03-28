@@ -11,7 +11,7 @@
 @inject IStringLocalizer<SharedResource> L
 @typeparam TModel
 
-<div class="generic-form-container @(CompactMode ? "compact" : "")">
+<div class="generic-form-container @(CompactMode ? "compact" : "")" @ref="_formContainerRef">
     @* 添加假的隱藏欄位來欺騙瀏覽器的自動填入功能 *@
     <input type="text" style="display:none" autocomplete="off" />
     <input type="password" style="display:none" autocomplete="new-password" />

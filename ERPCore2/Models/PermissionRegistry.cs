@@ -411,6 +411,14 @@ public static class PermissionRegistry
         public const string ChartRead    = "PayrollChart.Read";
     }
 
+    // ========== 通訊系統 ==========
+
+    public static class Notification
+    {
+        public const string Read   = "Notification.Read";
+        public const string Manage = "Notification.Manage";
+    }
+
     // ===== Seeder 使用 =====
 
     /// <summary>
@@ -565,5 +573,9 @@ public static class PermissionRegistry
         new(Payroll.Attendance,   "維護出勤彙總",   PermissionLevel.Sensitive, "輸入及維護員工每月出勤天數與加班時數",        "Nav.PayrollGroup"),
         new(Payroll.Payslip,      "列印薪資單",     PermissionLevel.Normal,    "列印或下載員工薪資單 PDF",                  "Nav.PayrollGroup"),
         new(Payroll.SelfView,     "查看本人薪資",   PermissionLevel.Normal,    "員工自助查看本人歷史薪資單（Phase 5）",      "Nav.PayrollGroup"),
+
+        // ===== 一般權限：通訊系統 =====
+        new(Notification.Read,    "檢視通知",       PermissionLevel.Normal,    "檢視個人系統通知與訊息",                    "Nav.SystemGroup"),
+        new(Notification.Manage,  "管理通知設定",   PermissionLevel.Sensitive, "管理通知設定與審核人員指派",                 "Nav.SystemGroup"),
     ];
 }

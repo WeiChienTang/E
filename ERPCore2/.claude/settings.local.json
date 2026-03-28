@@ -153,7 +153,8 @@
       "Bash(sqlcmd -S \".\\\\SQLEXPRESS\" -d ERPCore2 -Q \"ALTER TABLE CustomTableDefinitions ADD NavigationGroupKey NVARCHAR\\(100\\) NULL;\")",
       "Bash(sqlcmd -S \".\\\\SQLEXPRESS\" -d ERPCore2 -Q \"ALTER TABLE CustomTableDefinitions ADD NavigationGroupKey NVARCHAR\\(100\\) NULL;\" -No -C)",
       "Bash(sqlcmd -S \".\\\\SQLEXPRESS\" -d ERPCore2 -Q \"SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME=''CustomTableDefinitions'' AND COLUMN_NAME=''NavigationGroupKey'';\" -No -C)",
-      "Bash(sqlcmd -S \".\\\\SQLEXPRESS\" -d ERPCore2 -Q \"INSERT INTO [__EFMigrationsHistory] \\([MigrationId], [ProductVersion]\\) VALUES \\(''20260328013104_AddNavigationGroupKeyToCustomTable'', ''10.0.5''\\);\" -No -C)"
+      "Bash(sqlcmd -S \".\\\\SQLEXPRESS\" -d ERPCore2 -Q \"INSERT INTO [__EFMigrationsHistory] \\([MigrationId], [ProductVersion]\\) VALUES \\(''20260328013104_AddNavigationGroupKeyToCustomTable'', ''10.0.5''\\);\" -No -C)",
+      "Bash(git checkout:*)"
     ],
     "defaultMode": "bypassPermissions",
     "additionalDirectories": [

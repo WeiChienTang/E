@@ -7,6 +7,7 @@
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IStringLocalizer<SharedResource> L
+@inject IServiceProvider ServiceProvider
 
 @using ERPCore2.Data.Entities
 @using ERPCore2.Models.Enums
@@ -239,9 +240,29 @@
     {
         try
         {
-            // 權限檢查
+            // 權限檢查（需要 Accounting.OpeningBalance 權限）
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             isAuthorized = authState.User.Identity?.IsAuthenticated ?? false;
+            if (!isAuthorized) return;
+
+            // 檢查 OpeningBalance 特定權限
+            var user = authState.User;
+            var employeeIdClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(employeeIdClaim, out int empId))
+            {
+                using var scope = ServiceProvider.CreateScope();
+                var permissionService = scope.ServiceProvider.GetService<ERPCore2.Services.IPermissionService>();
+                if (permissionService != null)
+                {
+                    // System.Admin 直接放行
+                    var adminResult = await permissionService.HasPermissionAsync(empId, "System.Admin");
+                    if (!(adminResult.IsSuccess && adminResult.Data))
+                    {
+                        var result = await permissionService.HasPermissionAsync(empId, PermissionRegistry.Accounting.OpeningBalance);
+                        isAuthorized = result.IsSuccess && result.Data;
+                    }
+                }
+            }
             if (!isAuthorized) return;
 
             companies = await CompanyService.GetActiveCompaniesAsync();

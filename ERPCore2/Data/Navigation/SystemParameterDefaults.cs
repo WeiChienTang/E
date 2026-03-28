@@ -114,6 +114,9 @@ public static class SystemParameterDefaults
     /// <summary>預設圖片上傳最大檔案大小 (MB)</summary>
     public const int DefaultMaxImageFileSizeMB = 2;
 
+    /// <summary>預設證照到期預警天數</summary>
+    public const int DefaultLicenseAlertDays = 30;
+
     /// <summary>
     /// 將系統參數實體的所有業務欄位重置為預設值
     /// 保留 Id、CreatedAt、CreatedBy 等基礎欄位不變
@@ -147,5 +150,6 @@ public static class SystemParameterDefaults
         parameter.SubAccountCodeFormat = DefaultSubAccountCodeFormat;
         parameter.MaxDocumentFileSizeMB = DefaultMaxDocumentFileSizeMB;
         parameter.MaxImageFileSizeMB = DefaultMaxImageFileSizeMB;
+        parameter.DefaultLicenseAlertDays = DefaultLicenseAlertDays;
     }
 }

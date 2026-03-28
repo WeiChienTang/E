@@ -63,15 +63,17 @@
 >
 > **設計決策（v1.2 補充）**：員工薪資設定（`/payroll/salary-config`）與基本工資維護（`/payroll/minimum-wages`）保留為獨立頁面，不整合至 PayrollModalComponent。原因：此二功能為跨週期／跨年度配置，不受特定薪資週期約束，若放入以週期為中心的 Modal Tab 會造成操作語境混淆（使用者可能誤以為設定只對當前週期生效）。
 
-### 計算流程（v1.6 更新版）
+### 計算流程（v1.7 更新版）
 
 ```
 CalculateEmployeeAsync(employeeId, periodId)
     │
+    ├─ 0. 取得 InsuranceRate 費率參數（保費費率、加班倍率、免稅上限；無資料時使用法定常數備援）
+    ├─ 0b. 雙重扣薪防護：若 ActualWorkDays < ScheduledWorkDays 且有假別天數，自動修正 ratio=1
     ├─ 1. 取得員工有效薪資設定（EmployeeSalary，EffectiveDate ≤ 薪資月份）
     ├─ 2. 計算應出勤天數（GetWorkDaysInMonth，排除週末）
     ├─ 3. 查詢 MonthlyAttendanceSummary（若有該月出勤記錄，以實際出勤資料覆蓋步驟 2）
-    ├─ 4. 計算本薪（BaseSalary × 出勤比例）
+    ├─ 4. 計算本薪（月薪制：BaseSalary × 出勤比例；時薪制：時薪 × TotalWorkHours）
     ├─ 5. 加計固定月付津貼（動態讀取 EmployeeSalaryItem，依 PayrollItem.IsProrated 決定是否按出勤比例）
     ├─ 6. 加計平日加班費（OT1 前2hr ×4/3、OT2 後2hr ×5/3）— 勞基法第24條第1項
     ├─ 7. 計算休息日加班費（OT_HOLIDAY：前2hr ×4/3、後續 ×5/3）— 勞基法第24條第2項
@@ -82,9 +84,10 @@ CalculateEmployeeAsync(employeeId, periodId)
     ├─ 11. 計算勞保費（員工負擔：InsuredSalary × 費率）
     ├─ 12. 計算健保費（員工負擔：HealthInsuredAmount × 費率 × 眷屬加乘）
     ├─ 13. 計算勞退自提（BaseSalary × VoluntaryRetirementRate）
-    ├─ 14. 計算課稅所得（依 PayrollItem.IsTaxable 旗標，MEAL/TRANSPORT 有法定上限）→ 查 WithholdingTaxTable → 代扣所得稅
+    ├─ 14. 計算課稅所得（GrossIncome − 假別扣薪 − 免稅津貼 − 勞保 − 健保 − 勞退自提）→ 查 WithholdingTaxTable → 代扣所得稅
     ├─ 15. 計算雇主負擔（勞保、健保、勞退強制，存入 PayrollRecord）
-    └─ 16. 寫入 PayrollRecord + PayrollRecordDetail
+    ├─ 16. 基本工資檢查（僅警告，不阻擋）
+    └─ 17. 寫入 PayrollRecord + PayrollRecordDetail
 ```
 
 > 步驟 6–8 的加班費率自 Phase 2 起從 InsuranceRate DB 讀取，常數（4/3、5/3、1.0）為備援值。步驟 9–10b 的曠職／病假／事假扣薪依日薪計算，不使用 InsuranceRate。
@@ -92,6 +95,10 @@ CalculateEmployeeAsync(employeeId, periodId)
 > **設計決策（出勤比例策略）**：`ActualWorkDays` 固定等於 `ScheduledWorkDays`（出勤比例維持 1.0），各假別的薪資影響由步驟 9–10b 的明細扣款處理。此設計避免「出勤比例扣薪」與「明細逐項扣款」雙重扣薪。時薪制員工以實際工時計薪，不產生步驟 9–10b 的假別扣款。
 >
 > **設計決策（v1.6 — 津貼按比例發放）**：步驟 5 新增 `PayrollItem.IsProrated` 旗標。`IsProrated = true` 的津貼按出勤比例發放（如交通津貼），`IsProrated = false`（預設）全額發放（如伙食津貼）。
+>
+> **設計決策（v1.7 — 課稅所得修正）**：步驟 14 的課稅所得計算新增扣除假別扣薪（曠職/病假/事假），避免員工被按未實際領取的薪資計算所得稅。免稅津貼改用實際發放金額（已含 IsProrated 比例調整），而非 EmployeeSalaryItem 設定值。
+>
+> **已知簡化（雇主健保費）**：步驟 15 的雇主健保費按個別員工的眷屬乘數計算（`multiplier = Min(DependentCount, 3) + 1`），為每員工成本分攤估算值。台灣健保法規定雇主負擔應以全公司平均眷口數計算，實際繳納金額與此估算可能有差異。
 
 ### 出勤狀態與薪資處理對照表
 

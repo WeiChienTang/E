@@ -1,0 +1,304 @@
+/* ===== 通知鈴鐺按鈕 ===== */
+
+.notification-bell-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.notification-bell-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 1.15rem;
+    transition: background-color 0.2s, color 0.2s;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notification-bell-btn:hover {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.notification-bell-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 10px;
+    padding: 1px 5px;
+    font-size: 0.65rem;
+    font-weight: bold;
+    min-width: 16px;
+    text-align: center;
+    line-height: 1.3;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+}
+
+/* ===== 背景遮罩 ===== */
+
+.notification-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    cursor: default;
+}
+
+/* ===== 通知面板 ===== */
+
+.notification-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 380px;
+    max-height: 520px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    z-index: 1041;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: notificationPanelIn 0.2s ease;
+}
+
+@keyframes notificationPanelIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== 面板標頭 ===== */
+
+.notification-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-light);
+    background-color: var(--bg-secondary);
+    flex-shrink: 0;
+}
+
+.panel-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.unread-count-text {
+    font-weight: 400;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.panel-header-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.panel-action-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.panel-action-btn:hover {
+    background-color: var(--bg-primary);
+    color: var(--primary-blue);
+}
+
+/* ===== 面板內容 ===== */
+
+.notification-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 0;
+}
+
+.notification-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    color: var(--text-secondary);
+    gap: 8px;
+    font-size: 0.85rem;
+}
+
+.notification-empty-state .bi {
+    font-size: 1.5rem;
+    opacity: 0.6;
+}
+
+/* ===== 通知項目 ===== */
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    position: relative;
+}
+
+.notification-item:hover {
+    background-color: var(--bg-secondary);
+}
+
+.notification-item.unread {
+    background-color: color-mix(in srgb, var(--primary-blue) 5%, transparent);
+}
+
+.notification-item.unread:hover {
+    background-color: color-mix(in srgb, var(--primary-blue) 10%, transparent);
+}
+
+.notification-item-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background-color: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.notification-item.unread .notification-item-icon {
+    background-color: color-mix(in srgb, var(--primary-blue) 12%, transparent);
+    color: var(--primary-blue);
+}
+
+.notification-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-item-title {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.notification-item.unread .notification-item-title {
+    font-weight: 600;
+}
+
+.notification-item-text {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.3;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.notification-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 3px;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+.notification-item-type {
+    opacity: 0.8;
+}
+
+.notification-item-time {
+    opacity: 0.6;
+}
+
+.notification-item-dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--primary-blue);
+    margin-top: 4px;
+}
+
+/* ===== 面板底部 ===== */
+
+.notification-panel-footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border-light);
+    flex-shrink: 0;
+}
+
+.view-all-btn {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--primary-blue);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 6px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.view-all-btn:hover {
+    background-color: color-mix(in srgb, var(--primary-blue) 8%, transparent);
+}
+
+/* ===== 動畫 ===== */
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ===== 響應式 ===== */
+
+@media (max-width: 640.98px) {
+    .notification-panel {
+        position: fixed;
+        top: 3.5rem;
+        right: 8px;
+        left: 8px;
+        width: auto;
+        max-height: calc(100dvh - 4rem);
+    }
+}

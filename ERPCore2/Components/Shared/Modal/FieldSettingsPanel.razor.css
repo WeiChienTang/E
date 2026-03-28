@@ -1,4 +1,4 @@
-/* EBC 欄位設定面板 — 字型遵循 typography.css 變數 */
+/* EBC 模組設定面板（書籤式導航） — 字型遵循 typography.css 變數 */
 
 .field-settings-overlay {
     position: fixed;
@@ -12,25 +12,80 @@
     justify-content: flex-end;
 }
 
+/* ===== 面板外層（flex-row：書籤 + 主體） ===== */
+
 .field-settings-panel {
-    width: 520px;
-    max-width: 90vw;
-    height: 100vh;
-    background: var(--bs-body-bg, #fff);
-    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    height: 100vh;
     animation: slideInRight 0.25s ease-out;
-    font-size: 1rem; /* 基礎字型 = 瀏覽器預設 (typography.css 不需變數) */
 }
 
 @@keyframes slideInRight {
-    from {
-        transform: translateX(100%);
-    }
-    to {
-        transform: translateX(0);
-    }
+    from { transform: translateX(100%); }
+    to   { transform: translateX(0); }
+}
+
+/* ===== 左側書籤列（複用 FeatureGuide 書籤樣式） ===== */
+
+.field-settings-bookmarks {
+    display: flex;
+    flex-direction: column;
+    padding-top: 3.2rem;
+    gap: 0.25rem;
+    position: relative;
+    z-index: 2;
+}
+
+.field-settings-bookmark {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    border: none;
+    background-color: var(--bookmark-color, #3B82F6);
+    color: #fff;
+    font-weight: 600;
+    padding: 0.55rem 0.35rem;
+    cursor: pointer;
+    border-radius: 0.4rem 0 0 0.4rem;
+    transition: filter 0.15s, transform 0.15s, padding 0.15s;
+    white-space: nowrap;
+    letter-spacing: 0.08em;
+    min-width: 1.85rem;
+    text-align: center;
+    box-shadow: -2px 1px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    left: 1px;
+    font-size: 0.85rem;
+}
+
+.field-settings-bookmark:hover {
+    filter: brightness(1.1);
+    transform: translateX(-3px);
+    padding: 0.55rem 0.4rem;
+}
+
+.field-settings-bookmark.active {
+    filter: brightness(1.15);
+    transform: translateX(-4px);
+    padding: 0.55rem 0.45rem;
+    box-shadow: -3px 1px 8px rgba(0, 0, 0, 0.18);
+}
+
+.field-settings-bookmark-text {
+    display: block;
+}
+
+/* ===== 右側主體 ===== */
+
+.field-settings-main {
+    width: 620px;
+    max-width: 90vw;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+    font-size: 1rem;
 }
 
 .field-settings-header {
@@ -38,61 +93,186 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1rem;
-    background: var(--bs-primary, #0d6efd);
-    color: white;
+    background: var(--color-primary);
+    color: var(--primary-white);
     flex-shrink: 0;
 }
 
 .field-settings-title {
-    font-size: var(--fs-md); /* 1.25rem — 強調文字 (typography.css) */
+    font-size: var(--fs-md);
     font-weight: 600;
     line-height: 1.3;
 }
 
 .field-settings-notice {
     padding: 0.5rem 1rem;
-    background: var(--bs-warning-bg-subtle, #fff3cd);
-    color: var(--bs-warning-text-emphasis, #664d03);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
     font-size: 1rem;
-    border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+    border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
 }
 
 .field-settings-body {
     flex: 1;
-    overflow-y: auto;
+    overflow: auto;
     padding: 0;
 }
 
-    .field-settings-body .table {
-        margin-bottom: 0;
-        font-size: 1rem;
-    }
-
-        .field-settings-body .table th {
-            position: sticky;
-            top: 0;
-            z-index: 1;
-            font-weight: 600;
-            font-size: 1rem;
-        }
-
-        .field-settings-body .table td {
-            vertical-align: middle;
-        }
-
-    .field-settings-body .form-select-sm,
-    .field-settings-body .form-control-sm {
-        font-size: 1rem;
-        padding: 0.2rem 0.5rem;
-    }
+/* 讓 .field-settings-body 統一處理捲動，table-responsive 不再產生自己的捲軸 */
+::deep .table-responsive {
+    overflow: visible;
+}
 
 .field-settings-footer {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     padding: 0.75rem 1rem;
-    border-top: 1px solid var(--bs-border-color, #dee2e6);
-    background: var(--bs-body-bg, #fff);
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-primary);
     flex-shrink: 0;
+}
+
+/* 隱藏欄位的列樣式 */
+::deep .field-row-hidden {
+    opacity: 0.5;
+}
+
+/* ===== 設定區段 ===== */
+
+.settings-section {
+    padding: 1rem;
+}
+
+.settings-section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--color-primary);
+    display: flex;
+    align-items: center;
+}
+
+/* ===== 審核設定區段 ===== */
+
+.approval-mode-card {
+    padding: 0.85rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    margin-bottom: 1rem;
+}
+
+.approval-assignees-section {
+    margin-top: 0.5rem;
+}
+
+.approver-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+}
+
+.approver-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.4rem;
+    border: 1px solid var(--border-light);
+    background: var(--bg-primary);
+    transition: background-color 0.15s;
+}
+
+.approver-item:hover {
+    background: var(--bg-secondary);
+}
+
+.approver-info {
+    display: flex;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.approver-actions {
+    display: flex;
+    align-items: center;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+}
+
+.approver-item:hover .approver-actions {
+    opacity: 1;
+}
+
+.add-approver-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.add-approver-row .form-select {
+    flex: 1;
+    font-size: 0.85rem;
+}
+
+.approval-hint {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    padding: 0.5rem 0.75rem;
+    background: color-mix(in srgb, var(--primary-blue) 5%, transparent);
+    border-radius: 0.35rem;
+    border-left: 3px solid var(--primary-blue);
+}
+
+/* ===== 深色模式微調 ===== */
+
+[data-bs-theme=dark] .field-settings-overlay {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+[data-bs-theme=dark] .field-settings-main {
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
+}
+
+/* ===== 響應式（手機模式書籤水平排列） ===== */
+
+@media (max-width: 640.98px) {
+    .field-settings-panel {
+        flex-direction: column;
+    }
+
+    .field-settings-bookmarks {
+        flex-direction: row;
+        padding-top: 0;
+        padding: 0.5rem 0.5rem 0;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .field-settings-bookmark {
+        writing-mode: horizontal-tb;
+        text-orientation: initial;
+        border-radius: 0.4rem 0.4rem 0 0;
+        left: 0;
+        font-size: 0.8rem;
+        padding: 0.35rem 0.75rem;
+        min-width: auto;
+    }
+
+    .field-settings-bookmark:hover,
+    .field-settings-bookmark.active {
+        transform: translateY(-2px);
+    }
+
+    .field-settings-main {
+        width: 100vw;
+        max-width: 100vw;
+    }
 }
