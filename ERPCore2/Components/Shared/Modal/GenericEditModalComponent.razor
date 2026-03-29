@@ -6,6 +6,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IUserPreferenceContext UserPreferenceContext
 @inject IFieldDisplaySettingService FieldDisplaySettingService
+@inject ITabDisplaySettingService TabDisplaySettingService
 @using System.Reflection
 @using ERPCore2.Helpers
 @using ERPCore2.Helpers.EditModal
@@ -218,7 +219,7 @@
                                     FieldDefinitions="@GetProcessedFormFields()"
                                     FieldSections="@FormSections"
                                     SectionColumnAssignments="@SectionColumnAssignments"
-                                    TabDefinitions="@TabDefinitions"
+                                    TabDefinitions="@GetProcessedTabDefinitions()"
                                     DisableSecondaryTabs="@(!Id.HasValue || Entity?.IsDraft == true)"
                                     OnFieldChanged="@HandleFieldChanged"
                                     OnTabChanged="@HandleTabChanged" />
@@ -304,6 +305,8 @@
                     ModuleDisplayName="@EntityName"
                     UpdatedBy="@_currentUserName"
                     FormFields="@FormFields?.ToList()"
+                    TabDefinitions="@TabDefinitions?.ToList()"
+                    TabSettings="@_tabDisplaySettings"
                     OnSettingsSaved="HandleFieldSettingsSaved" />
 
 @* 儲存為草稿確認 Modal（儲存時驗證失敗 → 詢問是否改存草稿） *@
@@ -738,6 +741,7 @@
     // ===== EBC 欄位設定 =====
     private bool _isFieldSettingsPanelVisible = false;
     private List<FieldDisplaySetting> _fieldDisplaySettings = new();
+    private List<TabDisplaySetting> _tabDisplaySettings = new();
     private string _moduleName => typeof(TEntity).Name;
 
     private void OpenFieldSettingsPanel()
@@ -752,8 +756,55 @@
         FieldDisplaySettingService.ClearCache(_moduleName);
         _fieldDisplaySettings = await FieldDisplaySettingService.GetByModuleAsync(_moduleName);
 
+        TabDisplaySettingService.ClearCache(_moduleName);
+        _tabDisplaySettings = await TabDisplaySettingService.GetByModuleAsync(_moduleName);
+
         // 清除已處理欄位的快取，強制重建
         _processedFormFieldsCache = null;
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// 套用 EBC Tab 顯示設定，篩選隱藏的 Tab 並依 SortOrder 排序
+    /// SystemRequired / ModuleRequired 的 Tab 不受設定影響
+    /// </summary>
+    private List<FormTabDefinition>? GetProcessedTabDefinitions()
+    {
+        if (TabDefinitions == null || !TabDefinitions.Any())
+            return TabDefinitions;
+
+        if (_tabDisplaySettings == null || !_tabDisplaySettings.Any())
+            return TabDefinitions;
+
+        var result = TabDefinitions
+            .Where(tab =>
+            {
+                if (tab.ProtectionLevel != TabProtectionLevel.Normal)
+                    return true;
+
+                if (string.IsNullOrEmpty(tab.TabKey))
+                    return true;
+
+                var setting = _tabDisplaySettings.FirstOrDefault(s => s.TabKey == tab.TabKey);
+                return setting?.IsVisible != false;
+            })
+            .ToList();
+
+        // 若有任何 SortOrder 設定，重新排序（保護等級 != Normal 的 Tab 維持原有相對順序排最前）
+        if (_tabDisplaySettings.Any(s => s.SortOrder.HasValue))
+        {
+            result = result.OrderBy(tab =>
+            {
+                if (tab.ProtectionLevel != TabProtectionLevel.Normal || string.IsNullOrEmpty(tab.TabKey))
+                    return -1;
+
+                var setting = _tabDisplaySettings.FirstOrDefault(s => s.TabKey == tab.TabKey);
+                return setting?.SortOrder ?? int.MaxValue;
+            })
+            .ThenBy(tab => TabDefinitions.IndexOf(tab))
+            .ToList();
+        }
+
+        return result;
     }
 }

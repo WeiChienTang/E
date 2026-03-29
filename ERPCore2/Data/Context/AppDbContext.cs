@@ -160,6 +160,7 @@ namespace ERPCore2.Data.Context
 
       // ── EBC 可配置化 ─────────────────────────────────────────────────────
       public DbSet<FieldDisplaySetting> FieldDisplaySettings { get; set; }
+      public DbSet<TabDisplaySetting> TabDisplaySettings { get; set; }
 
       // ── 自訂資料表（EBC Level 1）────────────────────────────────────────
       public DbSet<CustomTableDefinition> CustomTableDefinitions { get; set; }
@@ -1831,6 +1832,13 @@ namespace ERPCore2.Data.Context
                   modelBuilder.Entity<FieldDisplaySetting>(entity =>
                   {
                         entity.HasIndex(e => new { e.TargetModule, e.FieldName })
+                              .IsUnique();
+                  });
+
+                  // EBC Tab 顯示設定 — 每個模組的每個 Tab 只能有一筆設定
+                  modelBuilder.Entity<TabDisplaySetting>(entity =>
+                  {
+                        entity.HasIndex(e => new { e.TargetModule, e.TabKey })
                               .IsUnique();
                   });
 

@@ -1,5 +1,6 @@
 @* EBC 模組設定面板（書籤式導航） - 嵌入在 GenericEditModalComponent 中 *@
 @inject IFieldDisplaySettingService FieldDisplaySettingService
+@inject ITabDisplaySettingService TabDisplaySettingService
 @inject INotificationService NotificationService
 @inject IStringLocalizer<SharedResource> L
 @inject INavigationPermissionService NavigationPermissionService
@@ -7,7 +8,7 @@
 
 @if (IsVisible)
 {
-    <div class="field-settings-overlay" @onclick="HandleOverlayClick">
+    <div class="field-settings-overlay" style="z-index: @_overlayZIndex;" @onclick="HandleOverlayClick">
         <div class="field-settings-panel" @onclick:stopPropagation="true">
 
             @* ===== 左側書籤列 ===== *@
@@ -81,6 +82,33 @@
                             </div>
                         }
 
+                        @* ══════ Tab 設定區段 ══════ *@
+                        @if (_activeBookmarkId == "section-tabs")
+                        {
+                            <div class="settings-section">
+                                <div class="settings-section-title">
+                                    <i class="bi bi-layout-tabs me-2"></i>頁籤設定
+                                </div>
+                                @if (_tabRows.Any())
+                                {
+                                    <GenericInteractiveTableComponent TItem="TabSettingRow"
+                                                                     Items="@_tabRows"
+                                                                     ColumnDefinitions="@_tabColumnDefinitions"
+                                                                     ShowRowNumbers="false"
+                                                                     ShowBuiltInActions="false"
+                                                                     IsStriped="false"
+                                                                     IsBordered="false"
+                                                                     EnableColumnResize="false"
+                                                                     GetRowCssClass="@((row, _) => row.IsVisible == false ? "field-row-hidden" : "")"
+                                                                     EmptyMessage="此模組沒有可配置的頁籤" />
+                                }
+                                else
+                                {
+                                    <div class="text-center text-muted py-4">此模組沒有可配置的頁籤</div>
+                                }
+                            </div>
+                        }
+
                         @* ══════ 審核設定區段（僅可審核模組） ══════ *@
                         @if (_isApprovableModule && _activeBookmarkId == "section-approval")
                         {
@@ -142,11 +170,17 @@
     [Parameter] public string ModuleDisplayName { get; set; } = string.Empty;
     [Parameter] public string UpdatedBy { get; set; } = string.Empty;
     [Parameter] public List<FormFieldDefinition>? FormFields { get; set; }
+    [Parameter] public List<FormTabDefinition>? TabDefinitions { get; set; }
+    [Parameter] public List<TabDisplaySetting>? TabSettings { get; set; }
     [Parameter] public EventCallback OnSettingsSaved { get; set; }
 
     // ===== 欄位設定狀態 =====
     private List<FieldSettingRow> _fieldRows = new();
     private List<InteractiveColumnDefinition> _columnDefinitions = new();
+
+    // ===== Tab 設定狀態 =====
+    private List<TabSettingRow> _tabRows = new();
+    private List<InteractiveColumnDefinition> _tabColumnDefinitions = new();
 
     // ===== 面板狀態 =====
     private bool _isLoading;
@@ -155,6 +189,7 @@
     private DotNetObjectReference<FieldSettingsPanel>? _escKeyRef;
     private bool _escRegistered;
     private string _activeBookmarkId = "section-fields";
+    private int _overlayZIndex = 1060;
 
     // ===== 書籤 =====
     private record PanelBookmark(string Id, string Label, string Color);
@@ -172,6 +207,7 @@
     private string DebugName => _activeBookmarkId switch
     {
         "section-fields" => "FieldSettingsPanel > 欄位設定",
+        "section-tabs" => "FieldSettingsPanel > 頁籤設定",
         "section-approval" => "FieldSettingsPanel > ApprovalSettingsSection",
         _ => "FieldSettingsPanel"
     };
@@ -179,13 +215,16 @@
     protected override void OnInitialized()
     {
         _columnDefinitions = BuildColumnDefinitions();
+        _tabColumnDefinitions = BuildTabColumnDefinitions();
     }
 
     protected override async Task OnParametersSetAsync()
     {
         if (IsVisible && FormFields != null && FormFields.Any())
         {
+            _overlayZIndex = BaseModalComponent.CurrentTopZIndex + 10;
             _isApprovableModule = ApprovableModuleNames.Contains(TargetModule);
+            LoadTabRows();
             _bookmarks = BuildBookmarks();
             _activeBookmarkId = "section-fields";
             _isSuperAdmin = await NavigationPermissionService.IsCurrentEmployeeSuperAdminAsync();
@@ -217,6 +256,8 @@
         {
             new("section-fields", "欄位", "#F59E0B")
         };
+        if (_tabRows.Any())
+            list.Add(new("section-tabs", "頁籤", "#10B981"));
         if (_isApprovableModule)
             list.Add(new("section-approval", "審核", "#3B82F6"));
         return list;
@@ -227,7 +268,31 @@
         _activeBookmarkId = targetId;
     }
 
-    // ===== 資料載入（僅欄位設定；審核由子元件自行載入） =====
+    // ===== 資料載入（欄位設定與 Tab 設定；審核由子元件自行載入） =====
+
+    private void LoadTabRows()
+    {
+        if (TabDefinitions == null)
+        {
+            _tabRows = new();
+            return;
+        }
+
+        _tabRows = TabDefinitions
+            .Where(t => t.ProtectionLevel != TabProtectionLevel.ModuleRequired)
+            .Select(t =>
+            {
+                var saved = TabSettings?.FirstOrDefault(s => s.TabKey == t.TabKey);
+                return new TabSettingRow
+                {
+                    TabKey = t.TabKey,
+                    Label = t.Label,
+                    ProtectionLevel = t.ProtectionLevel,
+                    IsVisible = saved?.IsVisible,
+                };
+            })
+            .ToList();
+    }
 
     private async Task LoadFieldSettings()
     {
@@ -299,6 +364,23 @@
                 return;
             }
 
+            // 儲存 Tab 設定
+            var tabSettings = _tabRows
+                .Where(r => r.ProtectionLevel == TabProtectionLevel.Normal && !string.IsNullOrEmpty(r.TabKey))
+                .Select(r => new TabDisplaySetting
+                {
+                    TargetModule = TargetModule,
+                    TabKey = r.TabKey!,
+                    IsVisible = r.IsVisible,
+                }).ToList();
+
+            var tabResult = await TabDisplaySettingService.SaveModuleSettingsAsync(TargetModule, tabSettings, UpdatedBy);
+            if (!tabResult.IsSuccess)
+            {
+                await NotificationService.ShowErrorAsync(tabResult.ErrorMessage ?? "頁籤設定儲存失敗");
+                return;
+            }
+
             // 儲存審核設定（僅可審核模組且子元件已載入）
             if (_isApprovableModule && _approvalSectionRef != null)
             {
@@ -324,7 +406,8 @@
     private async Task HandleReset()
     {
         var result = await FieldDisplaySettingService.ResetModuleSettingsAsync(TargetModule);
-        if (result.IsSuccess)
+        var tabResult = await TabDisplaySettingService.ResetModuleSettingsAsync(TargetModule);
+        if (result.IsSuccess && tabResult.IsSuccess)
         {
             await NotificationService.ShowSuccessAsync("已恢復為程式碼預設值");
             await OnSettingsSaved.InvokeAsync();
@@ -332,7 +415,8 @@
         }
         else
         {
-            await NotificationService.ShowErrorAsync(result.ErrorMessage ?? "重設失敗");
+            var err = result.ErrorMessage ?? tabResult.ErrorMessage ?? "重設失敗";
+            await NotificationService.ShowErrorAsync(err);
         }
     }
 
@@ -438,6 +522,65 @@
                 })
             }
         };
+    }
+
+    private List<InteractiveColumnDefinition> BuildTabColumnDefinitions()
+    {
+        return new List<InteractiveColumnDefinition>
+        {
+            new InteractiveColumnDefinition
+            {
+                Title = "頁籤",
+                ColumnType = InteractiveColumnType.Custom,
+                Width = "auto",
+                CustomTemplate = item =>
+                {
+                    var row = (TabSettingRow)item;
+                    return builder =>
+                    {
+                        builder.OpenElement(0, "span");
+                        builder.AddContent(1, row.Label);
+                        builder.CloseElement();
+                        if (row.ProtectionLevel == TabProtectionLevel.SystemRequired)
+                        {
+                            builder.OpenElement(2, "span");
+                            builder.AddAttribute(3, "class", "badge bg-secondary ms-1");
+                            builder.AddAttribute(4, "style", "font-size: 0.7rem");
+                            builder.AddContent(5, "系統必要");
+                            builder.CloseElement();
+                        }
+                    };
+                }
+            },
+            new InteractiveColumnDefinition
+            {
+                Title = "顯示",
+                PropertyName = nameof(TabSettingRow.IsVisibleToggle),
+                ColumnType = InteractiveColumnType.Checkbox,
+                Width = "90px",
+                HeaderCssClass = "text-center",
+                IsDisabledFunc = item => ((TabSettingRow)item).ProtectionLevel != TabProtectionLevel.Normal,
+                OnCheckboxChanged = EventCallback.Factory.Create<(object item, bool isChecked)>(this, args =>
+                {
+                    ((TabSettingRow)args.item).IsVisibleToggle = args.isChecked;
+                    StateHasChanged();
+                })
+            }
+        };
+    }
+
+    private class TabSettingRow
+    {
+        public string? TabKey { get; set; }
+        public string Label { get; set; } = string.Empty;
+        public TabProtectionLevel ProtectionLevel { get; set; } = TabProtectionLevel.Normal;
+        public bool? IsVisible { get; set; }
+
+        public bool IsVisibleToggle
+        {
+            get => IsVisible != false;
+            set => IsVisible = value ? null : false;
+        }
     }
 
     private class FieldSettingRow

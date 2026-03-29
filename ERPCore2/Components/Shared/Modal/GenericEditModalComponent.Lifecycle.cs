@@ -141,6 +141,9 @@ public partial class GenericEditModalComponent<TEntity, TService>
             // 載入 EBC 欄位顯示設定（快取機制，不會每次都查 DB）
             _fieldDisplaySettings = await FieldDisplaySettingService.GetByModuleAsync(_moduleName);
 
+            // 載入 EBC Tab 顯示設定（快取機制，不會每次都查 DB）
+            _tabDisplaySettings = await TabDisplaySettingService.GetByModuleAsync(_moduleName);
+
             if (AdditionalDataLoader != null)
             {
                 await AdditionalDataLoader();

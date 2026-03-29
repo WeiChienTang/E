@@ -7,6 +7,21 @@ using Microsoft.AspNetCore.Components;
 namespace ERPCore2.Helpers.EditModal
 {
     /// <summary>
+    /// Tab 頁籤保護等級 - 控制 EBC 設定面板可對此 Tab 執行的操作範圍
+    /// </summary>
+    public enum TabProtectionLevel
+    {
+        /// <summary>系統必要 - 主資料表單 Tab，不可隱藏、不可排序（如 Customer Data）</summary>
+        SystemRequired,
+
+        /// <summary>模組控制 - 由 CompanyModule 開關決定，EBC 設定面板不介入</summary>
+        ModuleRequired,
+
+        /// <summary>一般 Tab - 可透過 EBC 設定隱藏或排序</summary>
+        Normal
+    }
+
+    /// <summary>
     /// Tab 頁籤定義 - 定義一個 Tab 包含哪些 Section
     /// </summary>
     public class FormTabDefinition
@@ -37,6 +52,18 @@ namespace ERPCore2.Helpers.EditModal
         /// 例：DebugComponentName = "CustomerVehicleTab"
         /// </summary>
         public string? DebugComponentName { get; set; }
+
+        /// <summary>
+        /// Tab 穩定識別鍵 - 用於 EBC Tab 顯示設定（TabDisplaySetting.TabKey）
+        /// 主表單 Tab 使用 "__main__"；自訂 Tab 使用 DebugComponentName（如 "CustomerBankAccountTab"）
+        /// </summary>
+        public string? TabKey { get; set; }
+
+        /// <summary>
+        /// Tab 保護等級 - 控制 EBC 設定面板對此 Tab 的可操作範圍
+        /// 預設 Normal（可隱藏、可排序）
+        /// </summary>
+        public TabProtectionLevel ProtectionLevel { get; set; } = TabProtectionLevel.Normal;
     }
 
     /// <summary>
@@ -177,7 +204,9 @@ namespace ERPCore2.Helpers.EditModal
             {
                 Label = tabLabel,
                 Icon = icon,
-                SectionNames = sectionNames.ToList()
+                SectionNames = sectionNames.ToList(),
+                TabKey = "__main__",
+                ProtectionLevel = TabProtectionLevel.SystemRequired
             });
             return this;
         }
@@ -190,7 +219,7 @@ namespace ERPCore2.Helpers.EditModal
         /// <param name="customContent">自訂內容 RenderFragment</param>
         /// <param name="debugComponentName">對應的 .razor 組件名稱（Debug 用，僅 SuperAdmin 可見）</param>
         /// <returns>當前實例，支援鏈式呼叫</returns>
-        public FormSectionHelper<TEntity> GroupIntoCustomTab(string tabLabel, string? icon, RenderFragment customContent, string? debugComponentName = null)
+        public FormSectionHelper<TEntity> GroupIntoCustomTab(string tabLabel, string? icon, RenderFragment customContent, string? debugComponentName = null, TabProtectionLevel protectionLevel = TabProtectionLevel.Normal)
         {
             _tabDefinitions.Add(new FormTabDefinition
             {
@@ -198,7 +227,9 @@ namespace ERPCore2.Helpers.EditModal
                 Icon = icon,
                 SectionNames = new List<string>(),
                 CustomContent = customContent,
-                DebugComponentName = debugComponentName
+                DebugComponentName = debugComponentName,
+                TabKey = debugComponentName,
+                ProtectionLevel = protectionLevel
             });
             return this;
         }

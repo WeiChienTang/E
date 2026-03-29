@@ -262,6 +262,8 @@ namespace ERPCore2.Data
 
             // 欄位顯示設定服務（EBC 可配置化）
             services.AddScoped<IFieldDisplaySettingService, FieldDisplaySettingService>();
+            // Tab 顯示設定服務（EBC 可配置化 Level 4 延伸）
+            services.AddScoped<ITabDisplaySettingService, TabDisplaySettingService>();
 
             // 自訂資料表服務（EBC Level 1）
             services.AddScoped<ICustomTableDefinitionService, CustomTableDefinitionService>();
